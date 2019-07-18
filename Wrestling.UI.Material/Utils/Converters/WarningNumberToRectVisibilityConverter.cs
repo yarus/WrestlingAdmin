@@ -1,0 +1,27 @@
+﻿using System;
+using System.Globalization;
+using System.Windows;
+using System.Windows.Data;
+
+namespace Wrestling.UI.Material.Utils.Converters
+{
+    public class WarningNumberToRectVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value == null || parameter == null) return Visibility.Hidden;
+
+            var intValue = int.Parse(value.ToString());
+            var intParam = int.Parse(parameter.ToString());
+
+            if (intValue >= intParam) return Visibility.Visible;
+
+            return Visibility.Hidden;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}

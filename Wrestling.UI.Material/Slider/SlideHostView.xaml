@@ -1,0 +1,53 @@
+﻿<model:PanelViewBase x:Class="Wrestling.UI.Material.Slider.SlideHostView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             xmlns:codeDisplayer="clr-namespace:CodeDisplayer;assembly=CodeDisplayer"
+             xmlns:model="clr-namespace:Wrestling.UI.Material.Model"
+             xmlns:groupBracketSlide1="clr-namespace:Wrestling.UI.Material.Slider.Slides.GroupBracketSlide"
+             xmlns:imageSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.ImageSlide"
+             xmlns:videoSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.VideoSlide"
+             xmlns:upcomingMatchesSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide"
+             md:DialogServiceViews.IsRegistered="True"
+             mc:Ignorable="d" 
+             Icon="../Resources/scoreboard.ico"
+             Background="Transparent"
+             Title="Электронное табло" Height="600" Width="800" Foreground="White" WindowStartupLocation="Manual"
+             d:DesignHeight="400" d:DesignWidth="800">
+
+    <model:PanelViewBase.Resources>
+        <ResourceDictionary>
+
+            <DataTemplate DataType="{x:Type groupBracketSlide1:GroupBracketViewModel}">
+                <groupBracketSlide1:GroupBracketView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type imageSlide:ImageSlideViewModel}">
+                <imageSlide:ImageSlideView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type videoSlide:VideoSlideViewModel}">
+                <videoSlide:VideoSlideView />
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type upcomingMatchesSlide:UpcomingMatchesViewModel}">
+                <upcomingMatchesSlide:UpcomingMatchesView />
+            </DataTemplate>
+        </ResourceDictionary>
+    </model:PanelViewBase.Resources>
+
+    <Grid x:Name="RootControl">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <codeDisplayer:XamlDisplayerHost Grid.Row="0" Grid.Column="0" Content="{Binding CurrentView}" x:Name="ContentControl" Margin="0" Padding="0" />
+
+    </Grid>
+</model:PanelViewBase>

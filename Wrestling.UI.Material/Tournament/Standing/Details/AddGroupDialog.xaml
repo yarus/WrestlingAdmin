@@ -1,0 +1,134 @@
+﻿<UserControl x:Class="Wrestling.UI.Material.Tournament.Standing.Details.AddGroupDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:system="clr-namespace:System;assembly=mscorlib"
+             xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:validation="clr-namespace:Wrestling.UI.Material.Model.Validation"
+             md:DialogServiceViews.IsRegistered="True"
+             mc:Ignorable="d" Width="460"
+             d:DesignHeight="400" d:DesignWidth="600">
+
+    <UserControl.Resources>
+        <converters1:BoolInverterConverter x:Key="BoolInverterConverter" />
+    </UserControl.Resources>
+
+    <Grid Margin="16">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" HorizontalAlignment="Center" FontSize="18" Margin="10 5 10 15">Весовая категория</TextBlock>
+
+        <Border Grid.Row="0" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1" Margin="10,0,10,0"></Border>
+        
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <TextBox Grid.Row="0" Grid.Column="0" materialDesign:HintAssist.Hint="Год рождения (мин)" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
+                <TextBox.Text>
+                    <Binding Path="Item.BirthYearMin" UpdateSourceTrigger="PropertyChanged">
+                        <Binding.ValidationRules>
+                            <validation:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <TextBox Grid.Row="0" Grid.Column="1" materialDesign:HintAssist.Hint="Год рождения (макс)" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
+                <TextBox.Text>
+                    <Binding Path="Item.BirthYearMax" UpdateSourceTrigger="PropertyChanged">
+                        <Binding.ValidationRules>
+                            <validation:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <TextBox Grid.Row="1" Grid.Column="0" materialDesign:HintAssist.Hint="Максимальный вес" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
+                <TextBox.Text>
+                    <Binding Path="Item.WeightMax" UpdateSourceTrigger="PropertyChanged">
+                        <Binding.ValidationRules>
+                            <validation:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="10 15 10 0" VerticalAlignment="Bottom" HorizontalAlignment="Left">
+                <RadioButton Content="Муж" Margin="0,0,0,10" IsChecked="{Binding Path=IsFemaleF, UpdateSourceTrigger=PropertyChanged}" />
+                <RadioButton Content="Жен" Margin="10,0,0,10" IsChecked="{Binding Path=IsFemaleT, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+
+            <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox Grid.Row="0" Grid.Column="0" materialDesign:HintAssist.Hint="Раунд (с)" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
+                    <TextBox.Text>
+                        <Binding Path="Item.MaxRoundSecond" UpdateSourceTrigger="PropertyChanged">
+                            <Binding.ValidationRules>
+                                <validation:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
+
+                <TextBox Grid.Row="0" Grid.Column="1" materialDesign:HintAssist.Hint="Таймаут (с)" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" HorizontalAlignment="Center">
+                    <TextBox.Text>
+                        <Binding Path="Item.MaxTimeoutSecond" UpdateSourceTrigger="PropertyChanged">
+                            <Binding.ValidationRules>
+                                <validation:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                            </Binding.ValidationRules>
+                        </Binding>                            
+                    </TextBox.Text>
+                </TextBox>
+
+                <TextBox Grid.Row="0" Grid.Column="2" materialDesign:HintAssist.Hint="Действие (с)" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" HorizontalAlignment="Center">
+                    <TextBox.Text>
+                        <Binding Path="Item.MaxActionSecond" UpdateSourceTrigger="PropertyChanged">
+                            <Binding.ValidationRules>
+                                <validation:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                            </Binding.ValidationRules>
+                        </Binding>                            
+                    </TextBox.Text>
+                </TextBox>
+            </Grid>
+        </Grid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0 16 0 0">
+            <Button IsDefault="True" Style="{DynamicResource MaterialDesignFlatButton}"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                <Button.CommandParameter>
+                    <system:Boolean>True</system:Boolean>
+                </Button.CommandParameter>
+                СОХРАНИТЬ
+            </Button>
+            <Button IsCancel="True" Margin="8 0 0 0" Style="{DynamicResource MaterialDesignFlatButton}"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                <Button.CommandParameter>
+                    <system:Boolean>False</system:Boolean>
+                </Button.CommandParameter>
+                ОТМЕНИТЬ
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

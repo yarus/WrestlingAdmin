@@ -1,0 +1,196 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows;
+using System.Windows.Input;
+using MaterialDesignThemes.Wpf;
+using Wrestling.Entities;
+using Wrestling.Entities.Bracket;
+using Wrestling.UI.Material.Model;
+using Wrestling.UI.Utils;
+
+namespace Wrestling.UI.Material.Tournament.Standing.Draw
+{
+    public class DrawViewModel : TournamentViewModelBase, IStandingPageViewModel
+    {
+        #region Fields
+
+        private IMatchNumbersGenerator _matchNumbersGenerator;
+
+        //private IGroupBracketProcessor _selectedDrawType;
+        //private AgeWeightGroup _selectedGroup;
+        
+        private ICommand _generateBracketCommand;
+        private ICommand _removeBracketCommand;
+
+        private List<IGroupBracketProcessor> _drawTypes;
+        //private List<Wrestler> _groupWrestlers;
+        private ObservableCollection<AgeWeightGroup> _groups;
+        //private List<GroupRound> _groupRounds;
+
+        #endregion
+
+        public DrawViewModel(IDiContainer container) : base(container)
+        {
+        }
+
+        public override void InitData()
+        {
+            base.InitData();
+
+            if (DataContext.Tournament == null)
+            {
+                throw new ApplicationException("Tournament property is not set!");
+            }
+
+            _matchNumbersGenerator = Resolve<IMatchNumbersGenerator>();
+
+            _drawTypes = Resolve<List<IGroupBracketProcessor>>();
+
+            Groups = new ObservableCollection<AgeWeightGroup>(DataContext.Tournament.Groups.OrderBy(g => g.IsFemale).ThenByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax));
+        }
+
+        #region Binding Properties
+
+        public int GroupsCount => DataContext.Tournament.GroupsCount;
+        public int WrestlersCount => DataContext.Tournament.AppliedWrestlersCount;
+        public int MatchesCount => DataContext.Tournament.MatchesCount;
+
+        public string PageName => "Жеребьевка";
+        public override string PageTitle => "Жеребьевка Участников";
+        
+        public ObservableCollection<AgeWeightGroup> Groups
+        {
+            get => _groups;
+            set
+            {
+                _groups = value;
+
+                OnPropertyChanged("Groups");
+            }
+        }
+        
+        #endregion
+
+        #region Command Properties
+        
+        public ICommand GenerateBracketCommand
+        {
+            get
+            {
+                if (_generateBracketCommand == null)
+                {
+                    _generateBracketCommand = new RelayCommand(param => GenerateBracket(param as AgeWeightGroup), param => param != null);
+                }
+                return _generateBracketCommand;
+            }
+        }
+
+        public ICommand RemoveBracketCommand
+        {
+            get
+            {
+                if (_removeBracketCommand == null)
+                {
+                    _removeBracketCommand = new RelayCommand(param => RemoveBracket(param as AgeWeightGroup), param => param != null);
+                }
+                return _removeBracketCommand;
+            }
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void RemoveBracket(AgeWeightGroup group)
+        {
+            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить результаты жеребьевки?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+
+            group.Bracket = null;
+
+            OnPropertyChanged("MatchesCount");
+        }
+
+        private async void GenerateBracket(AgeWeightGroup group)
+        {
+            if (group == null) return;
+            
+            var vm = new AddBracketViewModel(DiContainer, group);
+            vm.InitData();
+            var view = new AddBracketDialog
+            {
+                DataContext = vm
+            };
+
+            var result = await DialogHost.Show(view, "RootDialog");
+
+            if (result != null && (bool)result)
+            {
+                SeedWrestlers(group);
+
+                var drawType = _drawTypes.FirstOrDefault(d => d.Title == vm.SelectedDrawType.Title);
+
+                if (drawType == null) throw new ApplicationException("Wrong Bracket type!");
+
+                drawType.Generate(DataContext.Tournament, group);
+
+                foreach (var wr in group.Wrestlers)
+                {
+                    wr.FinalPlace = null;
+                }
+
+                if (group.Bracket != null)
+                {
+                    if (DataContext.Tournament.Carpets.FirstOrDefault(c => c.Groups.Contains(group)) != null)
+                    {
+                        _matchNumbersGenerator.Generate(DataContext.Tournament);
+                    }
+
+                    // We need to refresh Rounds collection to redraw it on UI
+                    group.Bracket.Rounds = new List<GroupRound>(group.Bracket.Rounds);
+
+                    OnPropertyChanged("MatchesCount");
+                }
+            }
+        }
+        
+        private void SeedWrestlers(AgeWeightGroup group)
+        {
+            var staticSeeds = new List<Wrestler>();
+
+            var tmpSeeds = new List<Wrestler>();
+            foreach (var wr in group.Wrestlers)
+            {
+                if (wr.IsSeedFixed && wr.SeedNumber.HasValue)
+                {
+                    staticSeeds.Add(wr);
+                }
+                else
+                {
+                    wr.IsSeedFixed = false;
+                    wr.SeedNumber = new Random().Next();
+                    tmpSeeds.Add(wr);
+                }
+            }
+
+            tmpSeeds.Shuffle(new Random());
+
+            foreach (var wr in staticSeeds.OrderBy(w => w.SeedNumber))
+            {
+                tmpSeeds.Add(wr);
+            }
+
+            tmpSeeds = tmpSeeds.OrderBy(w => w.SeedNumber).ToList();
+
+            for (int i = 0; i < tmpSeeds.Count; i++)
+            {
+                tmpSeeds[i].SeedNumber = i+1;
+            }
+
+            group.Wrestlers = tmpSeeds;
+        }
+
+        #endregion
+    }
+}

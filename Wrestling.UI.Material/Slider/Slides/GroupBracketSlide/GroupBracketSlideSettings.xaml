@@ -1,0 +1,87 @@
+﻿<UserControl x:Class="Wrestling.UI.Material.Slider.Slides.GroupBracketSlide.GroupBracketSlideSettings"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             md:DialogServiceViews.IsRegistered="True"
+             mc:Ignorable="d" d:DesignHeight="200" d:DesignWidth="300">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ComboBox Grid.Row="0" Grid.Column="0" materialDesign:HintAssist.Hint="Ковер" Style="{DynamicResource MaterialDesignFloatingHintComboBox}" 
+                  IsEditable="False" Margin="0 0 0 5" FontSize="18"
+                  ItemsSource="{Binding Carpets}" SelectedItem="{Binding SelectedCarpet}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Margin="0" Padding="0" Text="{Binding Name}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <ComboBox Grid.Row="1" Grid.Column="0" materialDesign:HintAssist.Hint="Весовая категория" Style="{DynamicResource MaterialDesignFloatingHintComboBox}" 
+                  IsEditable="False" Margin="0 5 0 5" FontSize="18"
+                  ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Margin="0" Padding="0" Text="{Binding Name}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <Grid Row="2" Margin="0 5 0 5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBox Grid.Column="0" VerticalAlignment="Center" materialDesign:HintAssist.Hint="Фоновое изображение слайдера" FontSize="18"
+                     Text="{Binding Path=SliderBackgroundImagePath, UpdateSourceTrigger=PropertyChanged}" MaxWidth="400" Style="{DynamicResource MaterialDesignFloatingHintTextBox}"/>
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10,0,0,0">
+                <Button ToolTip="Указать путь к файлу" Margin="0" Padding="0" Width="22" Height="22"
+                        Command="{Binding SetSliderBackgroundCommand}"
+                        CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <materialDesign:PackIcon Kind="DotsHorizontal" Width="22" Height="22" Margin="0" Padding="0" />
+                </Button>
+            </StackPanel>
+
+        </Grid>
+
+        <Grid Grid.Row="3" Margin="0 5 0 5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="140" />
+            </Grid.RowDefinitions>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" TextWrapping="NoWrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" 
+                       VerticalAlignment="Center" HorizontalAlignment="Center">
+                Прозрачность фонового изображения.
+            </TextBlock>
+
+            <StackPanel Grid.Row="1" Grid.Column="0">
+                <Slider Margin="0,10,0,10" Height="120" Value="{Binding Path=SliderOpacityValue}" TickFrequency="5" Orientation="Vertical"
+                        TickPlacement="BottomRight" Minimum="0" Maximum="100"/>
+            </StackPanel>
+
+            <Viewbox Grid.Row="1" Grid.Column="1" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Image Source="{Binding Path=SliderBackgroundImagePath}" Stretch="UniformToFill" Opacity="{Binding Path=SliderOpacity}" />
+            </Viewbox>
+
+        </Grid>
+
+    </Grid>
+</UserControl>

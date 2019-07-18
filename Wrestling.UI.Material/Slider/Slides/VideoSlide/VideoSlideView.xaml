@@ -1,0 +1,8 @@
+﻿<UserControl x:Class="Wrestling.UI.Material.Slider.Slides.VideoSlide.VideoSlideView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Foreground="White">
+    <Grid>
+        <MediaElement Source="{Binding VideoPath}" Stretch="UniformToFill" LoadedBehavior="Play" />
+    </Grid>
+</UserControl>

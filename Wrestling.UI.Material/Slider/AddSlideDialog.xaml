@@ -1,0 +1,94 @@
+﻿<UserControl x:Class="Wrestling.UI.Material.Slider.AddSlideDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:system="clr-namespace:System;assembly=mscorlib"
+             xmlns:codeDisplayer="clr-namespace:CodeDisplayer;assembly=CodeDisplayer"
+             xmlns:validation="clr-namespace:Wrestling.UI.Material.Model.Validation"
+             xmlns:groupBracketSlide1="clr-namespace:Wrestling.UI.Material.Slider.Slides.GroupBracketSlide"
+             xmlns:imageSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.ImageSlide"
+             xmlns:videoSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.VideoSlide"
+             xmlns:upcomingMatchesSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide"
+             mc:Ignorable="d" MinWidth="460" MaxWidth="680"
+             d:DesignHeight="200" d:DesignWidth="300">
+
+    <UserControl.Resources>
+        <DataTemplate DataType="{x:Type groupBracketSlide1:GroupBracketSlideSettingsViewModel}">
+            <groupBracketSlide1:GroupBracketSlideSettings />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type imageSlide:ImageSlideSettingsViewModel}">
+            <imageSlide:ImageSlideSettings />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type videoSlide:VideoSlideSettingsViewModel}">
+            <videoSlide:VideoSlideSettings />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type upcomingMatchesSlide:UpcomingMatchesSlideSettingsViewModel}">
+            <upcomingMatchesSlide:UpcomingMatchesSlideSettings />
+        </DataTemplate>
+
+    </UserControl.Resources>
+
+    <Grid Margin="16">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBox Grid.Row="0" Grid.Column="0" materialDesign:HintAssist.Hint="Название слайда" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
+            <TextBox.Text>
+                <Binding Path="Item.Title" UpdateSourceTrigger="PropertyChanged">
+                    <Binding.ValidationRules>
+                        <validation:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                    </Binding.ValidationRules>
+                </Binding>
+            </TextBox.Text>
+        </TextBox>
+
+        <TextBox Grid.Row="1" Grid.Column="0" materialDesign:HintAssist.Hint="Длительность" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
+            <TextBox.Text>
+                <Binding Path="Item.Duration" UpdateSourceTrigger="PropertyChanged">
+                    <Binding.ValidationRules>
+                        <validation:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                    </Binding.ValidationRules>
+                </Binding>
+            </TextBox.Text>
+        </TextBox>
+
+        <ComboBox Grid.Row="2" Grid.Column="0" materialDesign:HintAssist.Hint="Тип слайда" Style="{DynamicResource MaterialDesignFloatingHintComboBox}" IsEditable="False" Margin="10 5 10 5" FontSize="18"
+                  ItemsSource="{Binding SlideTypes}" SelectedItem="{Binding SelectedSlideType}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Margin="0" Padding="0" Text="{Binding SlideType}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <codeDisplayer:XamlDisplayerHost Grid.Row="3" Margin="10 5 10 5" Padding="0" Content="{Binding SelectedSlideType.SettingsControl}" x:Name="ContentControl" />
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0 10 0 0">
+            <Button IsDefault="True" Style="{DynamicResource MaterialDesignFlatButton}"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                <Button.CommandParameter>
+                    <system:Boolean>True</system:Boolean>
+                </Button.CommandParameter>
+                СОХРАНИТЬ
+            </Button>
+            <Button IsCancel="True" Margin="8 0 0 0" Style="{DynamicResource MaterialDesignFlatButton}"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                <Button.CommandParameter>
+                    <system:Boolean>False</system:Boolean>
+                </Button.CommandParameter>
+                ОТМЕНИТЬ
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,227 @@
+﻿<UserControl x:Class="Wrestling.UI.Material.Tournament.Results.ResultsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d"
+             md:DialogServiceViews.IsRegistered="True"
+             d:DesignHeight="800" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <CollectionViewSource x:Key="WrestlersGroup" Source="{Binding Path=PersonalResults}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="GroupName" />
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+
+        <converters:IndexConverter x:Key="IndexConverter"/>
+    </UserControl.Resources>
+
+    <ScrollViewer x:Name="RootControl" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="1*" />
+            </Grid.RowDefinitions>
+
+            <Expander Grid.Row="0" Grid.Column="0" IsExpanded="False">
+                <Expander.Header>
+                    <Grid Margin="10">
+                        <TextBlock TextWrapping="NoWrap" Text="Командные Результаты по Олимпийской системе" FontSize="20" VerticalAlignment="Center" TextAlignment="Center" FontWeight="Normal" />
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right">
+                            <Button ToolTip="Распечатать итоговый протокол командных результатов по Олимпийской системе" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                                    Command="{Binding Path=DataContext.PrintTeamResultsOlympicCommand, ElementName=RootControl}">
+                                <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0" Padding="0" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Expander.Header>
+                <Expander.Content>
+                    <ListView ItemsSource="{Binding OlympicTeamResults}">
+                        <ListView.View>
+                            <GridView AllowsColumnReorder="true">
+                                <GridViewColumn Header="#" DisplayMemberBinding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
+                                <GridViewColumn DisplayMemberBinding="{Binding TeamName}" Header="Команда" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding GoldMedals}" Header="1-е место" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding SilverMedals}" Header="2-е место" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding BronzeMedals}" Header="3-е место" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding TotalMedals}" Header="Всего" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding Wrestlers.Count}" Header="Борцов" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding GroupCount}" Header="Групп" Width="Auto" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Expander.Content>
+            </Expander>
+            
+            <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
+
+            <Expander Grid.Row="1" Grid.Column="0" IsExpanded="False">
+                <Expander.Header>
+                    <Grid Margin="10">
+                        <TextBlock TextWrapping="NoWrap" Text="Командные Результаты по количеству медалей" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" FontWeight="Normal" />
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right">
+                            <Button ToolTip="Распечатать итоговый протокол командных результатов по количеству медалей" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                                    Command="{Binding Path=DataContext.PrintTeamResultsMedalsCommand, ElementName=RootControl}">
+                                <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0" Padding="0" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Expander.Header>
+                <Expander.Content>
+                    <ListView ItemsSource="{Binding MedalsTeamResults}">
+                        <ListView.View>
+                            <GridView AllowsColumnReorder="true">
+                                <GridViewColumn Header="#" DisplayMemberBinding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
+                                <GridViewColumn DisplayMemberBinding="{Binding TeamName}" Header="Команда" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding TotalMedals}" Header="Всего" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding GoldMedals}" Header="1-е место" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding SilverMedals}" Header="2-е место" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding BronzeMedals}" Header="3-е место" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding Wrestlers.Count}" Header="Борцов" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding GroupCount}" Header="Групп" Width="Auto" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Expander.Content>
+            </Expander>
+
+            <Border Grid.Row="1" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
+
+            <Expander Grid.Row="2" Grid.Column="0" IsExpanded="False">
+                <Expander.Header>
+                    <Grid Margin="10">
+                        <TextBlock TextWrapping="NoWrap" Text="Командные Результаты по рейтингу Rosbos" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" FontWeight="Normal" />
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right">
+                            <Button ToolTip="Распечатать итоговый протокол командных результатов по рейтинку Rosbos" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                                    Command="{Binding Path=DataContext.PrintTeamResultsPointsCommand, ElementName=RootControl}">
+                                <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0" Padding="0" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Expander.Header>
+                <Expander.Content>
+                    <ListView ItemsSource="{Binding PointsTeamResults}">
+                        <ListView.View>
+                            <GridView AllowsColumnReorder="true">
+                                <GridViewColumn Header="#" DisplayMemberBinding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
+                                <GridViewColumn DisplayMemberBinding="{Binding TeamName}" Header="Команда" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding TotalPoints}" Header="Очки" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding GoldMedals}" Header="1-е место" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding SilverMedals}" Header="2-е место" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding BronzeMedals}" Header="3-е место" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding Wrestlers.Count}" Header="Борцов" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding GroupCount}" Header="Групп" Width="Auto" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Expander.Content>
+            </Expander>
+
+            <Border Grid.Row="2" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
+            
+            <Grid Grid.Row="3" Grid.Column="0" Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" TextWrapping="NoWrap" Text="Итоги соревнований по Весовым Категориям" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" FontWeight="Normal" />
+                <StackPanel Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,64,0">
+                    <Button ToolTip="Распечатать итоговый протокол соревнований по весовым категориям" VerticalAlignment="Center"
+                            Command="{Binding Path=DataContext.PrintPersonalResultsCommand, ElementName=RootControl}">
+                        <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0" Padding="0" />
+                    </Button>
+                </StackPanel>
+
+                <CheckBox Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" Margin="10" IsChecked="{Binding IsOnlyMedalsVisible}">Только призеры</CheckBox>
+
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" materialDesign:RippleAssist.IsCentered="True">
+                    <Grid Margin="20,10,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border BorderThickness="1" Grid.Column="1" Grid.ColumnSpan="2" BorderBrush="DarkGray"></Border>
+
+                        <Button Grid.Column="0" Style="{DynamicResource MaterialDesignToolButton}">
+                            <materialDesign:PackIcon Kind="Magnify" Opacity=".56" />
+                        </Button>
+
+                        <TextBox Grid.Column="1" Margin="8 0 0 0" materialDesign:HintAssist.Hint="Поиск по фамилии"
+                                 materialDesign:TextFieldAssist.DecorationVisibility="Hidden" BorderThickness="0"
+                                 MinWidth="200" VerticalAlignment="Center" Text="{Binding FilterString, UpdateSourceTrigger=PropertyChanged, Delay=1000}" />
+                    </Grid>
+                    <Button Style="{DynamicResource MaterialDesignToolForegroundButton}" Margin="8 0 0 0" Panel.ZIndex="0">
+                        <materialDesign:PackIcon Kind="Send" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <ListView Grid.Row="4" Grid.Column="0" Margin="10"
+                      DataContext="{StaticResource WrestlersGroup}"
+                      ItemsSource="{Binding IsAsync=True}">
+                <ListView.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.ContainerStyle>
+                            <Style TargetType="{x:Type GroupItem}">
+                                <Setter Property="Margin" Value="0,0,0,5" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type GroupItem}">
+                                            <Expander IsExpanded="True">
+                                                <Expander.Header>
+                                                    <DockPanel>
+                                                        <TextBlock FontWeight="Bold" Text="{Binding Path=Name}" />
+                                                    </DockPanel>
+                                                </Expander.Header>
+                                                <Expander.Content>
+                                                    <ItemsPresenter />
+                                                </Expander.Content>
+                                            </Expander>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </GroupStyle.ContainerStyle>
+                    </GroupStyle>
+                </ListView.GroupStyle>
+
+                <ListView.View>
+                    <GridView AllowsColumnReorder="true">
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.FinalPlace}" Header="#" Width="Auto" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.FullName}" Header="ФИО" Width="Auto" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="Клуб" Width="Auto" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=MatchesCount}" Header="Схваток" Width="Auto" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Wins}" Header="Побед" Width="Auto" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Loses}" Header="Поражений" Width="Auto" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=TotalPoints}" Header="Баллов" Width="Auto">
+                            <GridViewColumn.HeaderContainerStyle>
+                                <Style>
+                                    <Setter Property="Control.ToolTip" Value="1 (Участие) + (N побед - N автопобед) * 2 + Бонус за место (4/3/2)"/>
+                                </Style>
+                            </GridViewColumn.HeaderContainerStyle>
+                        </GridViewColumn>
+                    </GridView>
+
+                </ListView.View>
+            </ListView>
+
+        </Grid>
+    </ScrollViewer>
+
+</UserControl>

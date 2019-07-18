@@ -1,0 +1,93 @@
+﻿<UserControl x:Class="Wrestling.UI.Material.Home.HomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             mc:Ignorable="d" 
+             md:DialogServiceViews.IsRegistered="True"
+             d:DesignHeight="400" d:DesignWidth="1000">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Margin="0 0 0 32">
+            <Grid>
+                <StackPanel Orientation="Horizontal">
+
+                    <materialDesign:Card Width="420" Margin="8 2 4 16" Height="240">
+                        <Grid VerticalAlignment="Stretch">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="TrophyOutline" Width="160" Height="160" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            
+                            <StackPanel Grid.Row="0" Grid.Column="1">
+                                <TextBlock Style="{StaticResource MaterialDesignHeadlineTextBlock}" Margin="16 16 16 8">Турниры</TextBlock>
+                                
+                                <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
+                                    Вы можете начать подготовку к новому турниру или открыть ранее сохраненный файл для продолжения работы.
+                                </TextBlock>
+                            </StackPanel>
+                            
+                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Left" Style="{StaticResource MaterialDesignFlatButton}" HorizontalAlignment="Left" Margin="8 4 8 8"
+                                            Command="{Binding Path=OpenTournamentCommand}">ОТКРЫТЬ</Button>
+
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource MaterialDesignFlatButton}" HorizontalAlignment="Right" Margin="8 4 8 8"
+                                            Command="{Binding Path=NewTournamentCommand}">НОВЫЙ</Button>
+                                </DockPanel>
+                            </Border>
+                            
+                        </Grid>
+                    </materialDesign:Card>
+
+                    <materialDesign:Card Width="420" Margin="8 2 4 16" Height="240">
+                        <Grid VerticalAlignment="Stretch">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="AccountMultipleOutline" Width="160" Height="160" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                            <StackPanel Grid.Row="0" Grid.Column="1">
+                                <TextBlock Style="{StaticResource MaterialDesignHeadlineTextBlock}" Margin="16 16 16 8">Поединок</TextBlock>
+
+                                <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
+                                    Используйте этот модуль для проведения быстрой схватки вне рамок какого-либо турнира.
+                                </TextBlock>
+                            </StackPanel>
+
+                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Margin="8 4 8 8"
+                                            Style="{StaticResource MaterialDesignFlatButton}"
+                                            Command="{Binding Path=NewQuickMatchCommand}">НОВЫЙ</Button>
+                                </DockPanel>
+                            </Border>
+
+                        </Grid>
+                    </materialDesign:Card>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

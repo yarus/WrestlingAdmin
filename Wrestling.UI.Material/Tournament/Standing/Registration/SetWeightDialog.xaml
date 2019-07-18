@@ -1,0 +1,88 @@
+﻿<UserControl x:Class="Wrestling.UI.Material.Tournament.Standing.Registration.SetWeightDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:system="clr-namespace:System;assembly=mscorlib"
+             xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             xmlns:validation="clr-namespace:Wrestling.UI.Material.Model.Validation"
+             md:DialogServiceViews.IsRegistered="True"
+             mc:Ignorable="d" MinWidth="400" MaxWidth="600"
+             d:DesignHeight="600" d:DesignWidth="600">
+
+    <Grid Margin="16" x:Name="RootControl">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" HorizontalAlignment="Center" FontSize="18" Text="{Binding Wrestler.FullName}" Margin="10 5 10 15" />
+
+        <Border Grid.Row="0" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1" Margin="10,0,10,0"></Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" FontSize="18" Text="Дата рождения" Margin="10 5 10 5" />
+
+            <TextBlock Grid.Row="0" Grid.Column="1" FontSize="18" Text="{Binding Wrestler.BirthDate, StringFormat={}{0:d}}" Margin="10 5 10 5" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" FontSize="18" Text="Пол" VerticalAlignment="Center" Margin="10 5 10 5" />
+
+            <TextBlock Grid.Row="1" Grid.Column="1" FontSize="18" Text="{Binding Wrestler.IsFemaleLabel}" Margin="10 5 10 5" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" FontSize="18" Text="Группа" Margin="10 5 10 5" />
+
+            <TextBlock Grid.Row="2" Grid.Column="1" FontSize="18" Text="{Binding Wrestler.GroupName}" Margin="10 5 10 5" />
+
+            <TextBox Grid.Row="3" Grid.Column="0" materialDesign:HintAssist.Hint="Вес" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
+                <TextBox.Text>
+                    <Binding Path="Wrestler.Weight" UpdateSourceTrigger="PropertyChanged">
+                        <Binding.ValidationRules>
+                            <validation:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+
+            <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding Path=Wrestler.IsWeightApproved, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="10 5 10 5" FontSize="18">Вес подтвержден</CheckBox>
+
+            <TextBox Grid.Row="4" Grid.Column="0" materialDesign:HintAssist.Hint="Сумма" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18"
+                     Text="{Binding Path=Wrestler.PaidAmount, UpdateSourceTrigger=PropertyChanged}">
+            </TextBox>
+
+            <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding Path=Wrestler.IsEntryFeePaid, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="10 5 10 5" FontSize="18">Взнос оплачен</CheckBox>
+        </Grid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0 16 0 0">
+            <Button IsDefault="True" Style="{DynamicResource MaterialDesignFlatButton}"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                <Button.CommandParameter>
+                    <system:Boolean>True</system:Boolean>
+                </Button.CommandParameter>
+                СОХРАНИТЬ
+            </Button>
+            <Button IsCancel="True" Margin="8 0 0 0" Style="{DynamicResource MaterialDesignFlatButton}"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                <Button.CommandParameter>
+                    <system:Boolean>False</system:Boolean>
+                </Button.CommandParameter>
+                ОТМЕНИТЬ
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,369 @@
+﻿<UserControl x:Class="Wrestling.UI.Material.Tournament.Progress.Brackets.BracketsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:converters2="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             md:DialogServiceViews.IsRegistered="True"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <converters1:IndexItemsConverter x:Key="ItemsIndexConverter" />
+        <converters1:HighlightSelectedItemConverter x:Key="HighlightSelectedItem" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters2:BracketCellLineHeightConverter x:Key="BracketCellHeight" />
+        <converters2:BracketCellLeftLineVisConverter x:Key="LeftLineVis" />
+        <converters2:BracketColumnTopMarginConverter x:Key="BracketColTopMargin" />
+        <converters2:BracketRoundVertLineVisibilityConverter x:Key="VertVis" />
+    </UserControl.Resources>
+
+    <Grid x:Name="RootControl">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="1*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+            <ItemsControl ItemsSource="{Binding Carpets}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Margin="0" Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button ToolTip="Выбрать ковер" VerticalAlignment="Center"
+                                HorizontalAlignment="Center" Content="{Binding Name}" MinWidth="100"
+                                Command="{Binding Path=DataContext.ChangeCarpetCommand, ElementName=RootControl}"
+                                CommandParameter="{Binding }" Margin="0,0,20,0">
+                            <Button.Background>
+                                <MultiBinding Converter="{StaticResource HighlightSelectedItem}">
+                                    <Binding Path="DataContext.SelectedCarpet" ElementName="RootControl" />
+                                    <Binding Path="." />
+                                </MultiBinding>
+                            </Button.Background>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+
+        <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource MaterialDesignDivider}" />
+
+        <ScrollViewer Grid.Row="1" Margin="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid>
+                <ItemsControl ItemsSource="{Binding Path=SelectedCarpet.Groups}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Margin="0" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Expander Background="LightGray" Margin="0" Padding="0" IsExpanded="{Binding IsExpanded}">
+                                <Expander.Header>
+                                    <Grid Margin="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="40" />
+                                            <ColumnDefinition Width="Auto" MinWidth="300" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" TextWrapping="NoWrap" FontSize="16"
+                                                   VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource ItemsIndexConverter}"
+                                                              ConverterParameter="1">
+                                                    <Binding RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ItemsControl}}" />
+                                                    <Binding Path="." />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+
+                                        <TextBlock Grid.Column="1" TextWrapping="NoWrap" FontSize="16"
+                                                   Margin="20,0,20,0" VerticalAlignment="Center">
+                                            <Run Text="{Binding Name, Mode=OneWay}" />
+                                        </TextBlock>
+
+                                        <StackPanel Grid.Column="2" HorizontalAlignment="Right"
+                                                    Orientation="Horizontal">
+                                            <TextBlock Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
+                                                <Run Text="Участников:" />
+                                                <Run Text="{Binding Path=Bracket.WrestlersCount, Mode=OneWay}" />
+                                            </TextBlock>
+
+                                            <TextBlock Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
+                                                <Run Text="Поединков:" />
+                                                <Run Text="{Binding Path=Bracket.MatchesCount, Mode=OneWay}" />
+                                            </TextBlock>
+
+                                            <Button ToolTip="Распечатать сетку группы" VerticalAlignment="Center"
+                                                    HorizontalAlignment="Center"
+                                                    Command="{Binding Path=DataContext.PrintBracketCommand, ElementName=RootControl}"
+                                                    CommandParameter="{Binding }" Margin="20,0,0,0">
+                                                <materialDesign:PackIcon Kind="Printer" Width="22" Height="22"
+                                                                         Margin="0" Padding="0" />
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Expander.Header>
+                                <Expander.Content>                                    
+                                    <Grid x:Name="GroupPanel" Background="White">
+                                        <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                            <ItemsControl ItemsSource="{Binding Path=Bracket.Rounds}" Margin="10">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Margin="0">
+                                                            <TextBlock x:Name="RoundLabel" Text="{Binding RoundName}"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center">
+                                                                <TextBlock.Margin>
+                                                                    <MultiBinding
+                                                                    Converter="{StaticResource BracketColTopMargin}">
+                                                                        <Binding Path="." />
+                                                                        <Binding Path="DataContext" ElementName="GroupPanel" />
+                                                                    </MultiBinding>
+                                                                </TextBlock.Margin>
+                                                            </TextBlock>
+
+                                                            <ItemsControl ItemsSource="{Binding RoundMatches}">
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate>
+                                                                        <StackPanel Orientation="Vertical" />
+                                                                    </ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+
+                                                                        <Grid>
+                                                                            <Grid.RowDefinitions>
+                                                                                <RowDefinition Height="40" />
+                                                                                <RowDefinition>
+                                                                                    <RowDefinition.Height>
+                                                                                        <MultiBinding
+                                                                                        Converter="{StaticResource BracketCellHeight}">
+                                                                                            <Binding Path="." />
+                                                                                            <Binding Path="DataContext"
+                                                                                                    ElementName="GroupPanel" />
+                                                                                        </MultiBinding>
+                                                                                    </RowDefinition.Height>
+                                                                                </RowDefinition>
+                                                                            </Grid.RowDefinitions>
+
+                                                                            <Grid Grid.Row="0">
+                                                                                <Grid.RowDefinitions>
+                                                                                    <RowDefinition />
+                                                                                    <RowDefinition />
+                                                                                </Grid.RowDefinitions>
+
+                                                                                <Grid.ColumnDefinitions>
+                                                                                    <ColumnDefinition Width="20" />
+                                                                                    <ColumnDefinition Width="28" />
+                                                                                    <ColumnDefinition Width="1*" />
+                                                                                    <ColumnDefinition Width="20" />
+                                                                                    <ColumnDefinition Width="16" />
+                                                                                    <ColumnDefinition Width="40" />
+                                                                                </Grid.ColumnDefinitions>
+
+                                                                                <Border Grid.Row="0" Grid.Column="0"
+                                                                                    BorderBrush="Black"
+                                                                                    BorderThickness="0,0,0,1">
+                                                                                    <Border.Visibility>
+                                                                                        <MultiBinding
+                                                                                        Converter="{StaticResource LeftLineVis}">
+                                                                                            <Binding Path="." />
+                                                                                            <Binding Path="DataContext" ElementName="GroupPanel" />
+                                                                                        </MultiBinding>
+                                                                                    </Border.Visibility>
+                                                                                </Border>
+
+                                                                                <Border Grid.Row="0" Grid.Column="1"
+                                                                                    Grid.ColumnSpan="5"
+                                                                                    Grid.RowSpan="2"
+                                                                                    BorderBrush="Black"
+                                                                                    BorderThickness="1" />
+                                                                                <Border Grid.Row="0" Grid.Column="1"
+                                                                                    Grid.RowSpan="2"
+                                                                                    BorderBrush="Black"
+                                                                                    BorderThickness="0,0,1,0" />
+                                                                                <Border Grid.Row="0" Grid.Column="4"
+                                                                                    Grid.RowSpan="2"
+                                                                                    BorderBrush="Black"
+                                                                                    BorderThickness="0,0,1,0" />
+                                                                                <Border Grid.Row="0" Grid.Column="2"
+                                                                                    BorderBrush="Black"
+                                                                                    BorderThickness="0,0,0,1" />
+
+                                                                                <TextBlock Grid.Row="0" Grid.Column="1"
+                                                                                        Grid.RowSpan="2"
+                                                                                        VerticalAlignment="Center"
+                                                                                        HorizontalAlignment="Center"
+                                                                                        Text="{Binding MatchNumber}" />
+
+                                                                                <TextBlock Grid.Row="0" Grid.Column="2"
+                                                                                        Text="{Binding Path=WrestlerInRed.LastFirstName}"
+                                                                                        Margin="5,0,5,0"
+                                                                                        MinWidth="60" />
+                                                                                <TextBlock Grid.Row="1" Grid.Column="2"
+                                                                                        Text="{Binding Path=WrestlerInBlue.LastFirstName}"
+                                                                                        Margin="5,0,5,0"
+                                                                                        MinWidth="60" />
+
+                                                                                <Border Grid.Row="0" Grid.Column="3"
+                                                                                    Grid.RowSpan="2"
+                                                                                    BorderBrush="Black"
+                                                                                    BorderThickness="1,0,0,0" />
+                                                                                <Border Grid.Row="0" Grid.Column="4"
+                                                                                    Grid.RowSpan="2"
+                                                                                    BorderBrush="Black"
+                                                                                    BorderThickness="1,0,0,0" />
+
+                                                                                <TextBlock Grid.Row="0" Grid.Column="3"
+                                                                                        Text="{Binding PointsRed}"
+                                                                                        VerticalAlignment="Center"
+                                                                                        HorizontalAlignment="Center" />
+                                                                                <TextBlock Grid.Row="1" Grid.Column="3"
+                                                                                        Text="{Binding PointsBlue}"
+                                                                                        VerticalAlignment="Center"
+                                                                                        HorizontalAlignment="Center" />
+
+                                                                                <Grid Grid.Row="0" Grid.Column="4"
+                                                                                    Visibility="{Binding IsMatchCompleted, Converter={StaticResource BoolToVis}}"
+                                                                                    VerticalAlignment="Center"
+                                                                                    HorizontalAlignment="Center"
+                                                                                    Margin="0">
+
+                                                                                    <materialDesign:PackIcon
+                                                                                    Kind="CheckboxMarked"
+                                                                                    HorizontalAlignment="Center"
+                                                                                    VerticalAlignment="Center"
+                                                                                    Margin="0" Padding="0"
+                                                                                    Foreground="Red"
+                                                                                    Visibility="{Binding IsRedWon, Converter={StaticResource BoolToVis}}"
+                                                                                    Height="16" Width="16" />
+                                                                                </Grid>
+
+                                                                                <Grid Grid.Row="1" Grid.Column="4"
+                                                                                    Visibility="{Binding IsMatchCompleted, Converter={StaticResource BoolToVis}}"
+                                                                                    VerticalAlignment="Center"
+                                                                                    HorizontalAlignment="Center"
+                                                                                    Margin="0">
+                                                                                    <materialDesign:PackIcon
+                                                                                    Kind="CheckboxMarked"
+                                                                                    HorizontalAlignment="Center"
+                                                                                    VerticalAlignment="Center"
+                                                                                    Margin="0" Padding="0"
+                                                                                    Foreground="Blue"
+                                                                                    Visibility="{Binding IsBlueWon, Converter={StaticResource BoolToVis}}"
+                                                                                    Height="16" Width="16" />
+                                                                                </Grid>
+
+                                                                                <StackPanel Grid.Row="0" Grid.Column="5"
+                                                                                        Grid.RowSpan="2"
+                                                                                        VerticalAlignment="Center"
+                                                                                        HorizontalAlignment="Center"
+                                                                                        Orientation="Horizontal">
+                                                                                    <Button
+                                                                                    Visibility="{Binding IsMatchCanStart, Converter={StaticResource BoolToVis}}"
+                                                                                    CommandParameter="{Binding }"
+                                                                                    Margin="5" Padding="5,0,5,0"
+                                                                                    Command="{Binding ElementName=RootControl, Path=DataContext.OpenMatchCommand}"
+                                                                                    ToolTip="Загрузить поединок">
+                                                                                        <materialDesign:PackIcon
+                                                                                        Kind="Play"
+                                                                                        Width="22"
+                                                                                        Height="22" />
+                                                                                    </Button>
+
+                                                                                    <Button
+                                                                                    Visibility="{Binding IsMatchCompleted, Converter={StaticResource BoolToVis}}"
+                                                                                    CommandParameter="{Binding }"
+                                                                                    Margin="5" Padding="5,0,5,0"
+                                                                                    Command="{Binding ElementName=RootControl, Path=DataContext.OpenMatchCommand}"
+                                                                                    ToolTip="Открыть результаты поединка"
+                                                                                    Background="DarkGray"
+                                                                                    BorderBrush="DarkGray">
+                                                                                        <materialDesign:PackIcon
+                                                                                        Kind="InformationVariant"
+                                                                                        Foreground="White" Width="22"
+                                                                                        Height="22" />
+                                                                                    </Button>
+                                                                                </StackPanel>
+                                                                            </Grid>
+
+                                                                            <Grid Row="1">
+
+                                                                                <Grid.RowDefinitions>
+                                                                                    <RowDefinition Height="1*" />
+                                                                                    <RowDefinition Height="1*" />
+                                                                                </Grid.RowDefinitions>
+
+                                                                                <Grid.ColumnDefinitions>
+                                                                                    <ColumnDefinition Width="2*" />
+                                                                                    <ColumnDefinition Width="1*" />
+                                                                                </Grid.ColumnDefinitions>
+
+                                                                                <Border Grid.Row="0" Grid.Column="0"
+                                                                                    Grid.RowSpan="2"
+                                                                                    BorderBrush="Black"
+                                                                                    BorderThickness="0,0,1,0">
+                                                                                    <Border.Visibility>
+                                                                                        <MultiBinding
+                                                                                        Converter="{StaticResource VertVis}">
+                                                                                            <Binding Path="." />
+                                                                                            <Binding Path="DataContext"
+                                                                                                    ElementName="RoundLabel" />
+                                                                                            <Binding Path="DataContext"
+                                                                                                    ElementName="GroupPanel" />
+                                                                                        </MultiBinding>
+                                                                                    </Border.Visibility>
+                                                                                </Border>
+                                                                                <Border Grid.Row="0" Grid.Column="1"
+                                                                                    BorderBrush="Black"
+                                                                                    BorderThickness="0,0,0,1">
+                                                                                    <Border.Visibility>
+                                                                                        <MultiBinding
+                                                                                        Converter="{StaticResource VertVis}">
+                                                                                            <Binding Path="." />
+                                                                                            <Binding Path="DataContext"
+                                                                                                    ElementName="RoundLabel" />
+                                                                                            <Binding Path="DataContext"
+                                                                                                    ElementName="GroupPanel" />
+                                                                                        </MultiBinding>
+                                                                                    </Border.Visibility>
+                                                                                </Border>
+
+                                                                            </Grid>
+                                                                        </Grid>
+
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+
+                                                            </ItemsControl>
+
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Viewbox>
+                                    </Grid>                                                                        
+                                </Expander.Content>
+                            </Expander>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+
+</UserControl>

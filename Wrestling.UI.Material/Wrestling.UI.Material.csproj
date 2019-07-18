@@ -1,0 +1,727 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{F0C97B85-BF9A-43D0-9B6F-BB021CA09A91}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Wrestling.UI.Material</RootNamespace>
+    <AssemblyName>Wrestling.UI.Material</AssemblyName>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <WarningLevel>4</WarningLevel>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <PublishUrl>C:\Users\akardash.ONTARGET\Desktop\WrestlingAdmin4\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>false</MapFileExtensions>
+    <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
+    <DisallowUrlActivation>true</DisallowUrlActivation>
+    <ApplicationRevision>27</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <CreateDesktopShortcut>true</CreateDesktopShortcut>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Resources\scoreboard.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestCertificateThumbprint>0E81F0A8555C8AD356E57EB3BDE9B7009DF20717</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestKeyFile>Wrestling.UI.Material_TemporaryKey.pfx</ManifestKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateManifests>true</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>true</SignManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>Wrestling.UI.Material_TemporaryKey.pfx</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NoWin32Manifest>true</NoWin32Manifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="CodeDisplayer, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\XamlDisplayerPackage.1.0.6\lib\net45\CodeDisplayer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="MaterialDesignColors, Version=1.1.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MaterialDesignColors.1.1.3\lib\net45\MaterialDesignColors.dll</HintPath>
+    </Reference>
+    <Reference Include="MaterialDesignThemes.Wpf, Version=2.5.1.1224, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MaterialDesignThemes.2.5.1-ci1224\lib\net45\MaterialDesignThemes.Wpf.dll</HintPath>
+    </Reference>
+    <Reference Include="MvvmDialogs, Version=5.2.1.0, Culture=neutral, PublicKeyToken=3d3b9708589bc73e, processorArchitecture=MSIL">
+      <HintPath>..\packages\MvvmDialogs.5.2.1\lib\net45\MvvmDialogs.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Users\akardash.ONTARGET\.nuget\packages\newtonsoft.json\12.0.1-beta1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Controls.Input.Toolkit, Version=3.5.40128.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\WPFToolkit.3.5.50211.1\lib\System.Windows.Controls.Input.Toolkit.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows.Controls.Layout.Toolkit, Version=3.5.40128.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\WPFToolkit.3.5.50211.1\lib\System.Windows.Controls.Layout.Toolkit.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Interactivity, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xaml">
+      <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WPFToolkit, Version=3.5.40128.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\WPFToolkit.3.5.50211.1\lib\WPFToolkit.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Compile Include="Login\LoginView.xaml.cs">
+      <DependentUpon>LoginView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Login\LoginViewModel.cs" />
+    <Compile Include="Match\MatchControlView.xaml.cs">
+      <DependentUpon>MatchControlView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Match\MatchControlView2.xaml.cs">
+      <DependentUpon>MatchControlView2.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Match\MatchControlViewModel.cs" />
+    <Compile Include="Match\MatchResultsView.xaml.cs">
+      <DependentUpon>MatchResultsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Match\MatchResultsViewModel.cs" />
+    <Compile Include="Match\MatchSettingsDialog.xaml.cs">
+      <DependentUpon>MatchSettingsDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Match\MatchSettingsViewModel.cs" />
+    <Compile Include="Model\CarpetMatchNumbersGenerator.cs" />
+    <Compile Include="Model\CarpetStats.cs" />
+    <Compile Include="Model\ChildWindowBase.cs" />
+    <Compile Include="Model\CommandButtonItem.cs" />
+    <Compile Include="Model\DataContext.cs" />
+    <Compile Include="Model\IDataContext.cs" />
+    <Compile Include="Model\IMatchNumbersGenerator.cs" />
+    <Compile Include="Model\INavigationService.cs" />
+    <Compile Include="Model\IShellViewModel.cs" />
+    <Compile Include="Model\ITournamentImporter.cs" />
+    <Compile Include="Model\NavigationService.cs" />
+    <Compile Include="Model\UniqueMatchNumbersGenerator.cs" />
+    <Compile Include="Model\Validation\NotEmptyValidationRule.cs" />
+    <Compile Include="Model\TournamentImporter.cs" />
+    <Compile Include="Model\ViewModelBase.cs" />
+    <Compile Include="Utils\Converters\FullNameToLastNameConverter.cs" />
+    <Compile Include="Utils\Recording\IMatchRecorder.cs" />
+    <Compile Include="Utils\Recording\OverlayDrawer\BaseOverlayDrawer.cs" />
+    <Compile Include="Utils\Recording\OverlayDrawer\IOverlayDrawer.cs" />
+    <Compile Include="Utils\Recording\MatchRecorder.cs" />
+    <Compile Include="ReplayScreen\ReplayScreenView.xaml.cs">
+      <DependentUpon>ReplayScreenView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ReplayScreen\ReplayScreenViewModel.cs" />
+    <Compile Include="Slider\Slides\GroupBracketSlide\GroupBracketSlide.cs" />
+    <Compile Include="Slider\Slides\GroupBracketSlide\GroupBracketSlideSettings.xaml.cs">
+      <DependentUpon>GroupBracketSlideSettings.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Slider\Slides\GroupBracketSlide\GroupBracketSlideSettingsViewModel.cs" />
+    <Compile Include="Slider\AddSlideDialog.xaml.cs">
+      <DependentUpon>AddSlideDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Slider\AddSlideViewModel.cs" />
+    <Compile Include="Slider\Slides\ImageSlide\ImageSlide.cs" />
+    <Compile Include="Slider\Slides\ImageSlide\ImageSlideSettings.xaml.cs">
+      <DependentUpon>ImageSlideSettings.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Slider\Slides\ImageSlide\ImageSlideSettingsViewModel.cs" />
+    <Compile Include="Slider\Slides\ImageSlide\ImageSlideView.xaml.cs">
+      <DependentUpon>ImageSlideView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Slider\Slides\ImageSlide\ImageSlideViewModel.cs" />
+    <Compile Include="Slider\Slides\ISliderSettingsControl.cs" />
+    <Compile Include="Slider\Slides\ISliderViewControl.cs" />
+    <Compile Include="Slider\Slides\ISlideType.cs" />
+    <Compile Include="Slider\Slides\GroupBracketSlide\GroupBracketView.xaml.cs">
+      <DependentUpon>GroupBracketView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Slider\Slides\GroupBracketSlide\GroupBracketViewModel.cs" />
+    <Compile Include="Slider\SliderControlView.xaml.cs">
+      <DependentUpon>SliderControlView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Slider\SliderControlViewModel.cs" />
+    <Compile Include="Slider\SlideHostView.xaml.cs">
+      <DependentUpon>SlideHostView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Slider\SlideHostViewModel.cs" />
+    <Compile Include="ScoreScreen\ShowWinnerDialog.xaml.cs">
+      <DependentUpon>ShowWinnerDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ScoreScreen\ShowWinnerViewModel.cs" />
+    <Compile Include="ScoreScreen\InternationalScoreScreenView.xaml.cs">
+      <DependentUpon>InternationalScoreScreenView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Model\IPanelView.cs" />
+    <Compile Include="ScoreScreen\ScoreScreenView.xaml.cs">
+      <DependentUpon>ScoreScreenView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Model\PanelViewBase.cs" />
+    <Compile Include="ScoreScreen\ScoreScreenViewModel.cs" />
+    <Compile Include="Slider\Slides\UpcomingMatchesSlide\UpcomingMatchesSlideSettings.xaml.cs">
+      <DependentUpon>UpcomingMatchesSlideSettings.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Slider\Slides\UpcomingMatchesSlide\UpcomingMatchesSlideSettingsViewModel.cs" />
+    <Compile Include="Slider\Slides\UpcomingMatchesSlide\UpcomingMatchesSlide.cs" />
+    <Compile Include="Slider\Slides\UpcomingMatchesSlide\UpcomingMatchesView.xaml.cs">
+      <DependentUpon>UpcomingMatchesView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Slider\Slides\UpcomingMatchesSlide\UpcomingMatchesViewModel.cs" />
+    <Compile Include="Slider\Slides\VideoSlide\VideoSlide.cs" />
+    <Compile Include="Slider\Slides\VideoSlide\VideoSlideSettings.xaml.cs">
+      <DependentUpon>VideoSlideSettings.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Slider\Slides\VideoSlide\VideoSlideSettingsViewModel.cs" />
+    <Compile Include="Slider\Slides\VideoSlide\VideoSlideView.xaml.cs">
+      <DependentUpon>VideoSlideView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Slider\Slides\VideoSlide\VideoSlideViewModel.cs" />
+    <Compile Include="Tournament\Standing\Details\AddGroupDialog.xaml.cs">
+      <DependentUpon>AddGroupDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Standing\Details\AddGroupViewModel.cs" />
+    <Compile Include="Tournament\Dashboard\DashboardView.xaml.cs">
+      <DependentUpon>DashboardView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Dashboard\DashboardViewModel.cs" />
+    <Compile Include="Tournament\Print\PrintResults\PrintPersonalResultsView.xaml.cs">
+      <DependentUpon>PrintPersonalResultsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Print\PrintResults\PrintPersonalResultsViewModel.cs" />
+    <Compile Include="Tournament\Print\PrintResults\PrintPointsTeamResultsView.xaml.cs">
+      <DependentUpon>PrintPointsTeamResultsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Print\PrintResults\PrintPointsTeamResultsViewModel.cs" />
+    <Compile Include="Tournament\Print\PrintResults\PrintMedalsTeamResultsView.xaml.cs">
+      <DependentUpon>PrintMedalsTeamResultsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Print\PrintResults\PrintMedalsTeamResultsViewModel.cs" />
+    <Compile Include="Tournament\Print\PrintResults\PrintOlympicTeamResultsViewModel.cs" />
+    <Compile Include="Tournament\Print\PrintResults\PrintTeamResultsViewModel.cs" />
+    <Compile Include="Tournament\Print\PrintSchedule\PrintScheduleViewModel.cs" />
+    <Compile Include="Tournament\Print\PrintView.xaml.cs">
+      <DependentUpon>PrintView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Print\PrintSchedule\PrintScheduleView.xaml.cs">
+      <DependentUpon>PrintScheduleView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Results\CompletedMatchesView.xaml.cs">
+      <DependentUpon>CompletedMatchesView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Results\CompletedMatchesViewModel.cs" />
+    <Compile Include="Tournament\Standing\Details\DetailsView.xaml.cs">
+      <DependentUpon>DetailsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Standing\Draw\AddBracketDialog.xaml.cs">
+      <DependentUpon>AddBracketDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Standing\Draw\AddBracketViewModel.cs" />
+    <Compile Include="Tournament\Standing\Applications\AddAppDialog.xaml.cs">
+      <DependentUpon>AddAppDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Standing\Applications\AddAppViewModel.cs" />
+    <Compile Include="Tournament\Standing\Applications\ApplicationsView.xaml.cs">
+      <DependentUpon>ApplicationsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Standing\Applications\ApplicationsViewModel.cs" />
+    <Compile Include="Tournament\Standing\Applications\AddWrestlerDialog.xaml.cs">
+      <DependentUpon>AddWrestlerDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Standing\Applications\AddWrestlerViewModel.cs" />
+    <Compile Include="Tournament\Standing\Carpets\BindGroupViewModel.cs" />
+    <Compile Include="Tournament\Standing\Carpets\BindGroupDialog.xaml.cs">
+      <DependentUpon>BindGroupDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Standing\Carpets\CarpetsView.xaml.cs">
+      <DependentUpon>CarpetsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Standing\Carpets\CarpetsViewModel.cs" />
+    <Compile Include="Tournament\Standing\Carpets\CarpetDialog.xaml.cs">
+      <DependentUpon>CarpetDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Standing\Details\DetailsViewModel.cs" />
+    <Compile Include="Tournament\Standing\Draw\DrawView.xaml.cs">
+      <DependentUpon>DrawView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Standing\Draw\DrawViewModel.cs" />
+    <Compile Include="Tournament\Import\ImportView.xaml.cs">
+      <DependentUpon>ImportView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Import\ImportViewModel.cs" />
+    <Compile Include="Tournament\Standing\IStandingPageViewModel.cs" />
+    <Compile Include="Tournament\Progress\Brackets\BracketsView.xaml.cs">
+      <DependentUpon>BracketsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Progress\Brackets\BracketsViewModel.cs" />
+    <Compile Include="Tournament\Print\PrintResults\PrintOlympicTeamResultsView.xaml.cs">
+      <DependentUpon>PrintOlympicTeamResultsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Print\PrintBracket\PrintBracketView.xaml.cs">
+      <DependentUpon>PrintBracketView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Print\PrintBracket\PrintBracketViewModel.cs" />
+    <Compile Include="Tournament\Results\ResultsView.xaml.cs">
+      <DependentUpon>ResultsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Results\ResultsViewModel.cs" />
+    <Compile Include="Tournament\Progress\Schedule\ScheduleView.xaml.cs">
+      <DependentUpon>ScheduleView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Progress\Schedule\ScheduleViewModel.cs" />
+    <Compile Include="Tournament\Standing\StandingView.xaml.cs">
+      <DependentUpon>StandingView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Standing\StandingViewModel.cs" />
+    <Compile Include="Tournament\TournamentViewModelBase.cs" />
+    <Compile Include="Utils\Converters\BracketCellLeftLineVisConverter.cs" />
+    <Compile Include="Utils\Converters\BracketColumnTopMarginConverter.cs" />
+    <Compile Include="Utils\Converters\BracketCellLineHeightConverter.cs" />
+    <Compile Include="Utils\Converters\BracketRoundVertLineVisibilityConverter.cs" />
+    <Compile Include="Utils\Converters\MatchToCarpetConverter.cs" />
+    <Compile Include="Utils\Converters\PathToImageConverter.cs" />
+    <Compile Include="Settings\SettingsView.xaml.cs">
+      <DependentUpon>SettingsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Settings\SettingsViewModel.cs" />
+    <Compile Include="Utils\DiContainer.cs" />
+    <Compile Include="Utils\Converters\MatchBackgroundMultiValueConverter.cs" />
+    <Compile Include="Utils\Converters\WarningNumberToRectVisibilityConverter.cs" />
+    <Compile Include="Utils\Converters\WinTypeRadioButtonConverter.cs" />
+    <Compile Include="Utils\Converters\WinTypeToStringConverter.cs" />
+    <Compile Include="Utils\PrintRequestedEventArgs.cs" />
+    <Compile Include="Utils\Recording\OverlayDrawer\OlympicOverlayDrawer.cs" />
+    <Compile Include="Utils\Recording\OverlayDrawer\SimpleOverlayDrawer.cs" />
+    <Page Include="Home\HomeView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Login\LoginView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Home\HomeView.xaml.cs">
+      <DependentUpon>HomeView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Home\HomeViewModel.cs" />
+    <Compile Include="MainWindow.xaml.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Page Include="Match\MatchControlView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Match\MatchControlView2.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Match\MatchResultsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Match\MatchSettingsDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ReplayScreen\ReplayScreenView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Slider\Slides\GroupBracketSlide\GroupBracketSlideSettings.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Slider\AddSlideDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Slider\Slides\GroupBracketSlide\GroupBracketView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Slider\SliderControlView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Slider\SlideHostView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ScoreScreen\ShowWinnerDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ScoreScreen\InternationalScoreScreenView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ScoreScreen\ScoreScreenView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Settings\SettingsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Slider\Slides\ImageSlide\ImageSlideSettings.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Slider\Slides\ImageSlide\ImageSlideView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Slider\Slides\UpcomingMatchesSlide\UpcomingMatchesSlideSettings.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Slider\Slides\UpcomingMatchesSlide\UpcomingMatchesView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Slider\Slides\VideoSlide\VideoSlideSettings.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Slider\Slides\VideoSlide\VideoSlideView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Standing\Details\AddGroupDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Dashboard\DashboardView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Print\PrintResults\PrintPersonalResultsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Print\PrintResults\PrintPointsTeamResultsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Print\PrintResults\PrintMedalsTeamResultsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Print\PrintView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Print\PrintSchedule\PrintScheduleView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Results\CompletedMatchesView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Standing\Details\DetailsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Tournament\Standing\Draw\AddBracketDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Standing\Applications\AddAppDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Tournament\Standing\Applications\ApplicationsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Standing\Applications\AddWrestlerDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Standing\Carpets\BindGroupDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Standing\Carpets\CarpetsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Standing\Carpets\CarpetDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Standing\Draw\DrawView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Import\ImportView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Progress\Brackets\BracketsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Print\PrintResults\PrintOlympicTeamResultsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Print\PrintBracket\PrintBracketView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Results\ResultsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Progress\Schedule\ScheduleView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Standing\StandingView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="MainWindowViewModel.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Content Include="..\Wrestling.Recorder.Configurator\bin\Release\Wrestling.Recorder.Configurator.exe.config">
+      <Link>Wrestling.Recorder.Configurator.exe.config</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <AppDesigner Include="Properties\" />
+    <None Include="Wrestling.UI.Material_TemporaryKey.pfx" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Wrestling.DataAccess\Wrestling.DataAccess.csproj">
+      <Project>{298FEBD9-84AF-4F1D-AC40-1870C40E5E00}</Project>
+      <Name>Wrestling.DataAccess</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Wrestling.Entities\Wrestling.Entities.csproj">
+      <Project>{0a59304d-5423-40df-ac74-9faa5a03828c}</Project>
+      <Name>Wrestling.Entities</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Wrestling.Integration\Wrestling.Integration.csproj">
+      <Project>{400898E6-294D-4A66-9827-58112D24FF3F}</Project>
+      <Name>Wrestling.Integration</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Wrestling.Providers\Wrestling.Providers.csproj">
+      <Project>{44BAA51A-7712-46CA-8E4A-502E7167460B}</Project>
+      <Name>Wrestling.Providers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Wrestling.Recorder.Configurator\Wrestling.Recorder.Configurator.csproj">
+      <Project>{fb3ed9dd-a7e4-4e86-b352-95a6b42de772}</Project>
+      <Name>Wrestling.Recorder.Configurator</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Wrestling.Recorder.DataAccess\Wrestling.Recorder.DataAccess.csproj">
+      <Project>{040ea18d-09d8-4cde-bc5d-db4d41ecee14}</Project>
+      <Name>Wrestling.Recorder.DataAccess</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Wrestling.Recorder\Wrestling.Recorder.csproj">
+      <Project>{13f5b335-2cb6-4c38-8e50-5afd33524e65}</Project>
+      <Name>Wrestling.Recorder</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Wrestling.UI.Utils\Wrestling.UI.Utils.csproj">
+      <Project>{0167d0ac-f1aa-4cdf-bfd3-0f834906b1e4}</Project>
+      <Name>Wrestling.UI.Utils</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\30sec.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\30sec_cancel.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Confirm.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\logo_img.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\MainLogo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\scoreboard.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\Wrestling.Recorder\FFMPEG\bin\ffmpeg_x64.exe">
+      <Link>ffmpeg_x64.exe</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\DefaultLogo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\RosbosLogo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Libs\avcodec-57.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Visible>false</Visible>
+    </Content>
+    <Content Include="Libs\avdevice-57.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Visible>false</Visible>
+    </Content>
+    <Content Include="Libs\avfilter-6.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Visible>false</Visible>
+    </Content>
+    <Content Include="Libs\avformat-57.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Visible>false</Visible>
+    </Content>
+    <Content Include="Libs\avutil-55.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Visible>false</Visible>
+    </Content>
+    <Content Include="Libs\postproc-54.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Visible>false</Visible>
+    </Content>
+    <Content Include="Libs\swresample-2.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Visible>false</Visible>
+    </Content>
+    <Content Include="Libs\swscale-4.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Visible>false</Visible>
+    </Content>
+    <Content Include="Sounds\SingleGongBeep.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Sounds\TripleGongBeep.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Images\SliderLogo.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Sounds\SingleGong.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Sounds\TripleGong.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.7.1">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.7.1 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

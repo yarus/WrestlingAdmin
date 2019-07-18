@@ -1,0 +1,153 @@
+﻿<UserControl x:Class="Wrestling.UI.Material.Match.MatchSettingsDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:system="clr-namespace:System;assembly=mscorlib"
+             xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             mc:Ignorable="d"
+             Width="680"
+             md:DialogServiceViews.IsRegistered="True"
+             d:DesignHeight="400" d:DesignWidth="300">
+
+    <UserControl.Resources>
+        <converters:PathToImageConverter x:Key="ClubToIconConverter" />
+    </UserControl.Resources>
+
+    <Grid Margin="16">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" HorizontalAlignment="Center" FontSize="18" Margin="10 5 10 15">Настройки поединка</TextBlock>
+
+        <Border Grid.Row="0" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1" Margin="10,0,10,0"></Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" materialDesign:HintAssist.Hint="Заголовок" Text="{Binding ScoreScreenVm.TournamentTitle, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" />
+
+            <TextBox Grid.Row="0" Grid.Column="2" materialDesign:HintAssist.Hint="Ковер" Text="{Binding ScoreScreenVm.CarpetLabel, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" />
+
+            <TextBox Grid.Row="1" Grid.Column="0" materialDesign:HintAssist.Hint="Группа" Text="{Binding ScoreScreenVm.GroupLabel, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" />
+
+            <TextBox Grid.Row="1" Grid.Column="1" materialDesign:HintAssist.Hint="Номер схватки" Text="{Binding ScoreScreenVm.MatchFullNumber, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" />
+
+            <TextBox Grid.Row="1" Grid.Column="2" materialDesign:HintAssist.Hint="Стадия" Text="{Binding ScoreScreenVm.RoundName, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" />
+
+            <TextBox Grid.Row="2" Grid.Column="0" materialDesign:HintAssist.Hint="Раунд (с)" Text="{Binding ScoreScreenVm.MaxRoundSecond, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" />
+
+            <TextBox Grid.Row="2" Grid.Column="1" materialDesign:HintAssist.Hint="Таймаут (с)" Text="{Binding ScoreScreenVm.MaxTimeoutSecond, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" />
+
+            <TextBox Grid.Row="2" Grid.Column="2" materialDesign:HintAssist.Hint="Действие (с)" Text="{Binding ScoreScreenVm.MaxActionSecond, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" />
+
+            <TextBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" materialDesign:HintAssist.Hint="Борец в красном" Text="{Binding ScoreScreenVm.Wrestler1, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" />
+
+            <TextBox Grid.Row="3" Grid.Column="2" materialDesign:HintAssist.Hint="Команда" Text="{Binding ScoreScreenVm.Wrestler1TeamName, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" />
+
+            <TextBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" materialDesign:HintAssist.Hint="Борец в синем" Text="{Binding ScoreScreenVm.Wrestler2, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" />
+
+            <TextBox Grid.Row="4" Grid.Column="2" materialDesign:HintAssist.Hint="Команда" Text="{Binding ScoreScreenVm.Wrestler2TeamName, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" />
+
+            <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Margin="10 5 10 5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                
+                <Grid Grid.Column="0" Height="160">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="60" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" FontSize="18">Эмблема команды красного</TextBlock>
+                    <Button Grid.Row="0" Grid.Column="1" ToolTip="Указать путь к файлу" Margin="0" Padding="0" Width="22" Height="22"
+                            Command="{Binding SetEmblemCommand}" CommandParameter="red" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="DotsHorizontal" Width="22" Height="22" Margin="0" Padding="0" />
+                    </Button>
+
+                    <Viewbox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Stretch="Uniform" VerticalAlignment="Center">
+                        <Image Source="{Binding Path=ScoreScreenVm.Wrestler1TeamEmblem, Converter={StaticResource ClubToIconConverter}, ConverterParameter=DefaultLogo.png}" Stretch="UniformToFill" />
+                    </Viewbox>
+                </Grid>
+
+                <Grid Grid.Column="1" Height="160">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="60" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" FontSize="18">Эмблема команды синего</TextBlock>
+                    <Button Grid.Row="0" Grid.Column="1" ToolTip="Указать путь к файлу" Margin="0" Padding="0" Width="22" Height="22"
+                            Command="{Binding SetEmblemCommand}" CommandParameter="blue" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="DotsHorizontal" Width="22" Height="22" Margin="0" Padding="0" />
+                    </Button>
+
+                    <Viewbox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Stretch="Uniform" VerticalAlignment="Center">
+                        <Image Source="{Binding Path=ScoreScreenVm.Wrestler2TeamEmblem, Converter={StaticResource ClubToIconConverter}, ConverterParameter=DefaultLogo.png}" Stretch="UniformToFill" />
+                    </Viewbox>
+                </Grid>
+            </Grid>
+
+        </Grid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0 16 0 0">
+            <Button IsDefault="True" Style="{DynamicResource MaterialDesignFlatButton}"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                <Button.CommandParameter>
+                    <system:Boolean>True</system:Boolean>
+                </Button.CommandParameter>
+                СОХРАНИТЬ
+            </Button>
+            <Button IsCancel="True" Margin="8 0 0 0" Style="{DynamicResource MaterialDesignFlatButton}"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                <Button.CommandParameter>
+                    <system:Boolean>False</system:Boolean>
+                </Button.CommandParameter>
+                ОТМЕНИТЬ
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>
