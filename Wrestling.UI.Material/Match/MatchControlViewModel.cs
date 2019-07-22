@@ -33,6 +33,7 @@ namespace Wrestling.UI.Material.Match
         private DispatcherTimer _timer;
 
         private bool _isRunning;
+        private bool _isSettingsOpen;
 
         private const string START_BTN_TEXT = "Старт";
         private const string STOP_BTN_TEXT = "Стоп";
@@ -339,7 +340,7 @@ namespace Wrestling.UI.Material.Match
                 return;
             }
 
-            if (e.Key == Key.Space || e.Key == Key.Enter)
+            if (!_isSettingsOpen && (e.Key == Key.Space || e.Key == Key.Enter))
             {
                 StartStop();
                 e.Handled = true;
@@ -378,28 +379,35 @@ namespace Wrestling.UI.Material.Match
                 DataContext = vm
             };
 
+            _isSettingsOpen = true;
+
             var result = await DialogHost.Show(view, "RootDialog");
-
-            if (result != null && (bool)result)
+            
+            if (result != null)
             {
-                ScoreScreenVm.TournamentTitle = tmp.TournamentTitle;
-                ScoreScreenVm.CarpetLabel = tmp.CarpetLabel;
-                ScoreScreenVm.GroupLabel = tmp.GroupLabel;
-                ScoreScreenVm.MatchFullNumber = tmp.MatchFullNumber;
-                ScoreScreenVm.RoundName = tmp.RoundName;
-                ScoreScreenVm.MaxRoundSecond = tmp.MaxRoundSecond;
-                ScoreScreenVm.MaxActionSecond = tmp.MaxActionSecond;
-                ScoreScreenVm.MaxTimeoutSecond = tmp.MaxTimeoutSecond;
-                ScoreScreenVm.Wrestler1 = tmp.Wrestler1;
-                ScoreScreenVm.Wrestler1TeamName = tmp.Wrestler1TeamName;
-                ScoreScreenVm.Wrestler2 = tmp.Wrestler2;
-                ScoreScreenVm.Wrestler2TeamName = tmp.Wrestler2TeamName;
-                ScoreScreenVm.Wrestler1TeamEmblem = tmp.Wrestler1TeamEmblem;
-                ScoreScreenVm.Wrestler2TeamEmblem = tmp.Wrestler2TeamEmblem;
+                _isSettingsOpen = false;
 
-                if (DataContext.Tournament == null)
+                if ((bool) result)
                 {
-                    CopyDataFromViewToMatch();
+                    ScoreScreenVm.TournamentTitle = tmp.TournamentTitle;
+                    ScoreScreenVm.CarpetLabel = tmp.CarpetLabel;
+                    ScoreScreenVm.GroupLabel = tmp.GroupLabel;
+                    ScoreScreenVm.MatchFullNumber = tmp.MatchFullNumber;
+                    ScoreScreenVm.RoundName = tmp.RoundName;
+                    ScoreScreenVm.MaxRoundSecond = tmp.MaxRoundSecond;
+                    ScoreScreenVm.MaxActionSecond = tmp.MaxActionSecond;
+                    ScoreScreenVm.MaxTimeoutSecond = tmp.MaxTimeoutSecond;
+                    ScoreScreenVm.Wrestler1 = tmp.Wrestler1;
+                    ScoreScreenVm.Wrestler1TeamName = tmp.Wrestler1TeamName;
+                    ScoreScreenVm.Wrestler2 = tmp.Wrestler2;
+                    ScoreScreenVm.Wrestler2TeamName = tmp.Wrestler2TeamName;
+                    ScoreScreenVm.Wrestler1TeamEmblem = tmp.Wrestler1TeamEmblem;
+                    ScoreScreenVm.Wrestler2TeamEmblem = tmp.Wrestler2TeamEmblem;
+
+                    if (DataContext.Tournament == null)
+                    {
+                        CopyDataFromViewToMatch();
+                    }
                 }
             }
         }
