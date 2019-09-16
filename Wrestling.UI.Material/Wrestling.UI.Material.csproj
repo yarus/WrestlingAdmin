@@ -158,6 +158,9 @@
     <Compile Include="Model\Validation\NotEmptyValidationRule.cs" />
     <Compile Include="Model\TournamentImporter.cs" />
     <Compile Include="Model\ViewModelBase.cs" />
+    <Compile Include="ScoreScreen\WwfScoreScreenView.xaml.cs">
+      <DependentUpon>WwfScoreScreenView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Utils\Converters\FullNameToLastNameConverter.cs" />
     <Compile Include="Utils\Recording\IMatchRecorder.cs" />
     <Compile Include="Utils\Recording\OverlayDrawer\BaseOverlayDrawer.cs" />
@@ -385,6 +388,10 @@
     <Page Include="Match\MatchSettingsDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ScoreScreen\WwfScoreScreenView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="ReplayScreen\ReplayScreenView.xaml">
       <Generator>MSBuild:Compile</Generator>
