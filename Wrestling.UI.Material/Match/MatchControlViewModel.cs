@@ -63,8 +63,17 @@ namespace Wrestling.UI.Material.Match
         public MatchControlViewModel(IDiContainer container) : base(container)
         {
             _matchActions = new List<MatchAction>();
-
             SetupTimer();
+        }
+
+        public bool IsRunning
+        {
+            get { return _isRunning; }
+            set
+            {
+                _isRunning = value;
+                _currentRecorder?.CreateOverlay(_isRunning);
+            }
         }
 
         public override bool IsBackButtonAvailable => true;
@@ -491,6 +500,7 @@ namespace Wrestling.UI.Material.Match
             {
                 StartStopButtonCaption = START_BTN_TEXT;
                 _timer.Stop();
+                _currentRecorder.CreateOverlay(false);
                 AddAction("Таймер остановлен", 0, null);
             }
             else
@@ -503,13 +513,17 @@ namespace Wrestling.UI.Material.Match
                 _timer.Start();
                 AddAction("Таймер запущен", 0, null);
 
+                _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
+
                 if (ScoreScreenVm.MainSeconds == 0 && ScoreScreenVm.IsSoundEnabled)
                 {
                     PlaySingleGongSound();
                 }
+                                
+                //ScoreScreenVm.MainSeconds
             }
 
-            _isRunning = !_isRunning;
+            IsRunning = !IsRunning;
         }
 
         private void PlaySingleGongSound()
@@ -539,7 +553,7 @@ namespace Wrestling.UI.Material.Match
             if (_isRunning)
             {
                 StartStopButtonCaption = START_BTN_TEXT;
-                _isRunning = false;
+                IsRunning = false;
             }
 
             _startDateTime = null;
@@ -617,7 +631,7 @@ namespace Wrestling.UI.Material.Match
             if (_isRunning)
             {
                 StartStopButtonCaption = START_BTN_TEXT;
-                _isRunning = false;
+                IsRunning = false;
             }
 
             CopyDataFromViewToMatch();
@@ -664,7 +678,7 @@ namespace Wrestling.UI.Material.Match
 
         private void SetupTimer()
         {
-            _isRunning = false;
+            IsRunning = false;
             _timer?.Stop();
 
             _timer = new DispatcherTimer();
@@ -935,7 +949,7 @@ namespace Wrestling.UI.Material.Match
                 }
 
                 _timer.Stop();
-                _isRunning = false;
+                IsRunning = false;
 
                 if (ScoreScreenVm.Round == 1)
                 {

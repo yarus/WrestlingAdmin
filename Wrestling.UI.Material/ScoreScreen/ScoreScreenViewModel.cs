@@ -72,6 +72,10 @@ namespace Wrestling.UI.Material.ScoreScreen
             }
         }
 
+        public System.Drawing.Bitmap LogoImage { get; set; }
+        public System.Drawing.RectangleF LogoRectangle { get; set; }
+        public LogoPositionEnum LogoPosition { get; set; }
+
         private double _backgroundOpacity;
 
         public double BackgroundOpacity
@@ -511,7 +515,9 @@ namespace Wrestling.UI.Material.ScoreScreen
             }
         }
 
-        public TimeSpan TickCounter => IsTimerBackward ? new TimeSpan(0, 0, 0, (IsTimeout ? MaxTimeoutSecond : MaxRoundSecond) - MainSeconds) : new TimeSpan(0, 0, 0, MainSeconds);
+        public TimeSpan TickCounter => IsTimerBackward 
+            ? new TimeSpan(0, 0, 0, (IsTimeout ? MaxTimeoutSecond : MaxRoundSecond) - MainSeconds) 
+            : new TimeSpan(0, 0, 0, MainSeconds);
 
         public TimeSpan TickCounterAction1 => IsTimerBackward
             ? new TimeSpan(0, 0, 0, MaxActionSecond - SecondarySeconds)

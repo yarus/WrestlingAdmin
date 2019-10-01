@@ -137,6 +137,8 @@ namespace Wrestling.UI.Material.Login
 
         private bool CheckPreviousAuth(string userName, string password)
         {
+            return true;
+
             if (File.Exists("Cache_User.txt"))
             {
                 try

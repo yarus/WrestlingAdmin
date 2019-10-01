@@ -67,6 +67,20 @@ namespace Wrestling.Recorder
         public int OverlayPeriod { get; set; } = 1000;
         public int OverlayPostprocessTime { get; set; } = 10000;
 
+        private long _timeTimerOffset = 0;
+        private long _timeCurrent = 0L;
+        private bool _createOverlay = false;
+
+        void IRecorder.SetTimerOffset(int t)
+        {
+            _timeTimerOffset = _timeCurrent - t;
+        }
+
+        public void CreateOverlay(bool flag)
+        {
+            _createOverlay = flag;
+        }
+
         public FfmpegCamRecorder(string fileName, RecorderConfiguration configuration)
         {
             if (IsRecording || string.IsNullOrEmpty(fileName))
@@ -106,7 +120,7 @@ namespace Wrestling.Recorder
                 return r;
         }
 
-    public void StartRecording()
+        public void StartRecording()
         {
             if (IsRecording || string.IsNullOrEmpty(_fileName))
                 return;
@@ -114,8 +128,8 @@ namespace Wrestling.Recorder
             DirectXDevices.Refresh();
 
             //"@device_pnp_\\\\?\\usb#vid_04f2&pid_b56b&mi_00#6&25ee911b&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\global"
-            String video_name = _configuration.VideoDeviceID.ToUpper();
-            String video_guid = "";
+            var video_name = _configuration.VideoDeviceID.ToUpper();
+            var video_guid = "";
 
             Match match = pattern_guid.Match(video_name);
             while (match.Success)
@@ -124,7 +138,7 @@ namespace Wrestling.Recorder
                 match = match.NextMatch();
             }
 
-            if (String.IsNullOrEmpty(video_guid))
+            if (string.IsNullOrEmpty(video_guid))
                 throw new Exception("Could not find video GUID!");
 
             var video_stream = DirectXDevices.List.FirstOrDefault(o => o.Name.ToUpper().Contains(video_guid));
@@ -132,7 +146,7 @@ namespace Wrestling.Recorder
             MediaStream audio_stream = null;
             if (_configuration.AudioDeviceID != null)
             {
-                String audio_guid = _configuration.AudioDeviceID.ToString().ToUpper();
+                var audio_guid = _configuration.AudioDeviceID.ToString().ToUpper();
                 audio_stream = DirectXDevices.List.FirstOrDefault(o => o.Name.ToUpper().Contains(audio_guid));
                 if (audio_stream == null)
                     audio_stream = DirectXDevices.List.FirstOrDefault(o => o.StreamType == StreamTypeEnum.Audio);
@@ -160,7 +174,7 @@ namespace Wrestling.Recorder
         {
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 
-            String fileName = dir + @"\out.m3u8";
+            var fileName = dir + @"\out.m3u8";
             String prefix = "out";
 
             if (!File.Exists(fileName))
@@ -168,14 +182,14 @@ namespace Wrestling.Recorder
 
             try
             {
-                List<Scene> res = new List<Scene>();
+                var res = new List<Scene>();
                 res.AddRange(list);
 
-                using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                using (StreamReader sr = new StreamReader(fs))
+                using (var fs = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var sr = new StreamReader(fs))
                 {
-                    String line = null;
-                    String extInf = null;
+                    string line = null;
+                    string extInf = null;
                     while ((line = sr.ReadLine()) != null)
                     {
                         if (String.IsNullOrEmpty(extInf) && line.Contains("#EXTINF:"))
@@ -184,13 +198,11 @@ namespace Wrestling.Recorder
                         }
                         else
                         {
-                            if (!String.IsNullOrEmpty(extInf) && line.Contains(prefix))
+                            if (!string.IsNullOrEmpty(extInf) && line.Contains(prefix))
                             {
-                                int num = 0;
-                                String numStr = line.Replace(prefix, "").Replace(".mp4", "").Replace(".ts", "");
-                                float len = 0.0f;
-                                String lenStr = extInf.Replace("#EXTINF:", "").Replace(",", "");
-                                if (Int32.TryParse(numStr, out num) && !res.Any(o => o.Index == num) && Single.TryParse(lenStr, out len))
+                                var numStr = line.Replace(prefix, "").Replace(".mp4", "").Replace(".ts", "");
+                                var lenStr = extInf.Replace("#EXTINF:", "").Replace(",", "");
+                                if (int.TryParse(numStr, out var num) && !res.Any(o => o.Index == num) && float.TryParse(lenStr, out var len))
                                 {
                                     Scene sc = new Scene
                                     {
@@ -218,8 +230,8 @@ namespace Wrestling.Recorder
         }
 
         private bool CreateOverlay(
-                   String tmp_dir,
-                   List<Tuple<int, String>> overley_list,
+                   string tmp_dir,
+                   List<Tuple<int, string>> overley_list,
                    bool mute,
                    bool record_is_over,
                    CancellationToken token)
@@ -232,16 +244,15 @@ namespace Wrestling.Recorder
                 //Последний кусок
                 if (record_is_over && scenes.Count > 0)
                 {
-                    foreach (String fnout in Directory.GetFiles(tmp_dir, "out*.ts"))
+                    foreach (var fnout in Directory.GetFiles(tmp_dir, "out*.ts"))
                     {
-                        FileInfo fiout = new FileInfo(fnout);
-                        String fn_index = fiout.Name.Replace("out", "").Replace(".ts", "");
-                        int f_index;
-                        if (Int32.TryParse(fn_index, out f_index))
+                        var fiout = new FileInfo(fnout);
+                        var fn_index = fiout.Name.Replace("out", "").Replace(".ts", "");
+                        if (int.TryParse(fn_index, out var f_index))
                         {
                             if (!scenes.Any(o => o.Index == f_index))
                             {
-                                Ffprobe ff = new Ffprobe(fiout.FullName);
+                                var ff = new Ffprobe(fiout.FullName);
                                 scenes.Add(
                                     new Scene
                                     {
@@ -261,7 +272,7 @@ namespace Wrestling.Recorder
                     .Where(o
                         => o.Step == 0
                         && (o.IsLast || o.NameImages.All(o1 => overley_list.Any(o2 => o2.Item2.Contains(o1)))))
-                    .ToList<Scene>();
+                    .ToList();
             }
 
             foreach (Scene sc in not_over_list)
@@ -269,7 +280,7 @@ namespace Wrestling.Recorder
                 if (token.IsCancellationRequested)
                     return true;
 
-                String tmp_dir_over = Path.Combine(tmp_dir, "over");
+                var tmp_dir_over = Path.Combine(tmp_dir, "over");
                 if (!Directory.Exists(tmp_dir_over))
                     Directory.CreateDirectory(tmp_dir_over);
                 else
@@ -279,22 +290,22 @@ namespace Wrestling.Recorder
                 {
                     //Переносим в темп для овера
                     int index = 0;
-                    foreach (String fn in sc.NameImages)
+                    foreach (var fn in sc.NameImages)
                     {
-                        String src = Path.Combine(tmp_dir, fn);
+                        var src = Path.Combine(tmp_dir, fn);
 
                         if (!File.Exists(src))
                             continue;
 
-                        String dest = Path.Combine(tmp_dir_over, $"over{index.ToString("000000")}.png");
+                        var dest = Path.Combine(tmp_dir_over, $"over{index.ToString("000000")}.png");
                         File.Move(src, dest);
                         index++;
                     }
 
-                    String video_fn = Path.Combine(tmp_dir, sc.NameCode);
-                    String result_fn = Path.Combine(tmp_dir, sc.NameOver);
+                    var video_fn = Path.Combine(tmp_dir, sc.NameCode);
+                    var result_fn = Path.Combine(tmp_dir, sc.NameOver);
 
-                    String last_log = "";
+                    var last_log = "";
                     Process proc_a = Ffmpeg.AttachOverlay(
                         video_fn,
                         tmp_dir_over,
@@ -327,16 +338,13 @@ namespace Wrestling.Recorder
 
                     if (proc_a.ExitCode != 0)
                     {
-                        if (OverlayException != null)
-                            OverlayException(this, new Exception(last_log));
-
+                        OverlayException?.Invoke(this, new Exception(last_log));
                         break;
                     }
 
                     offset_segment += sc.Len;
 
-                    if (OverlayProcess != null)
-                        OverlayProcess(this, offset_segment);
+                    OverlayProcess?.Invoke(this, offset_segment);
 
                     Console.WriteLine($"Over {result_fn}");
 
@@ -352,7 +360,7 @@ namespace Wrestling.Recorder
                 }
             }
 
-            bool ret = false;
+            var ret = false;
             lock (scenes)
             {
                 if (scenes.Count == 0)
@@ -372,16 +380,16 @@ namespace Wrestling.Recorder
         {
             Task task_over = null;
             cts = new CancellationTokenSource();
-            CancellationTokenSource cts_over = new CancellationTokenSource();
+            var cts_over = new CancellationTokenSource();
             offset_segment = 0f;
             scenes = new List<Scene>();
-            List<Tuple<int, String>> overley_list = new List<Tuple<int, String>>();
+            var overley_list = new List<Tuple<int, String>>();
 
             try
             {
                 proc_enc = Ffmpeg.CreateRecordProcess(
-                    video_stream.Name,
-                    audio_stream?.Name,
+                    video_stream.AlterName ?? video_stream.Name,
+                    audio_stream?.AlterName ?? audio_stream?.Name,
                     _configuration.VideoWidth.Value,
                     _configuration.VideoHeight.Value,
                     _configuration.VideoFrameRate.Value,
@@ -399,17 +407,16 @@ namespace Wrestling.Recorder
 
                 proc_enc.ErrorDataReceived += (object sender, DataReceivedEventArgs e) =>
                 {
-                    if (!String.IsNullOrEmpty(e.Data))
+                    if (!string.IsNullOrEmpty(e.Data))
                     {
-                        String time = "";
-                        Match match = pattern_time.Match(e.Data);
+                        var time = "";
+                        var match = pattern_time.Match(e.Data);
                         while (match.Success)
                         {
                             time = match.Groups[1].Value.ToUpper();
                             match = match.NextMatch();
 
-                            if (RecordProcess != null)
-                                RecordProcess(this, time);
+                            RecordProcess?.Invoke(this, time);
                         }
                         match = pattern_rate.Match(e.Data);
                         while (match.Success)
@@ -419,8 +426,7 @@ namespace Wrestling.Recorder
 
                             Console.WriteLine("Record: " + time);
 
-                            if (RecordProcess != null)
-                                RecordProcess(this, time);
+                            RecordProcess?.Invoke(this, time);
                         }
                         //Console.WriteLine("Record: " + e.Data);
                     }
@@ -429,9 +435,9 @@ namespace Wrestling.Recorder
                 proc_enc.Start();
                 proc_enc.BeginErrorReadLine();
 
-                int bmp_index = -1;
-                long time_offset = 0;
-                Stopwatch sw = new Stopwatch();
+                var bmp_index = -1;
+                var time_offset = 0L;
+                var sw = new Stopwatch();
                 sw.Start();
 
                 //Читаем плейлист, накладываем оверлей
@@ -486,36 +492,84 @@ namespace Wrestling.Recorder
                     { }
                 });
 
+                // Ограничиваем обработку
+                var taskList = new List<Task>();
+                Task.Factory.StartNew(() => 
+                {
+                    int max = 3;
+                    while (!cts.Token.IsCancellationRequested && !proc_enc.HasExited && IsRecording)
+                    {
+                        try
+                        {
+                            lock (taskList)
+                            {
+                                if (taskList.Count(o => o.Status == TaskStatus.Running) >= max)
+                                {
+                                    continue;
+                                }
+
+                                var task = taskList.FirstOrDefault(o => o.Status == TaskStatus.Created);
+
+                                if (task != null)
+                                {
+                                    task.Start();
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            Task.Delay(100, cts_over.Token).Wait();
+                        }
+                    }
+                }, cts.Token);
+
+                // Команды на создание оверлея
                 while (!cts.Token.IsCancellationRequested && !proc_enc.HasExited && IsRecording)
                 {
-                    long time_curr = sw.ElapsedMilliseconds;
-                    long t = time_curr - time_offset;
+                    _timeCurrent = sw.ElapsedMilliseconds - _timeTimerOffset;
+                    long t = _timeCurrent - time_offset;
                     if (t >= OverlayPeriod)
                     {
                         bmp_index++;
-                        time_offset = time_curr;
-                        Console.WriteLine($"{time_curr} => {t} => {bmp_index}");
+                        time_offset = _timeCurrent;
+                        Console.WriteLine($"{_timeCurrent} => {t} => {bmp_index}");
 
-                        Stopwatch sw2 = new Stopwatch();
+                        var sw2 = new Stopwatch();
                         sw2.Start();
                         int bmp_index_ = bmp_index;
 
-                        Task.Factory.StartNew(() =>
+                        lock (taskList)
                         {
-                            using (var bmp = new Bitmap(_configuration.VideoWidth.Value, _configuration.VideoHeight.Value))
+                            var time = _timeCurrent - _timeTimerOffset;
+                            var createOverlay = _createOverlay;
+                            taskList.Add(new Task(() =>
                             {
-                                var fgea = new FrameGeneratedEventArgs(bmp, time_curr, bmp_index_);
-                                OnNewFrame(fgea);
-
-                                String overlay_fn = Path.Combine(tmp_dir, fgea.FileName);
-                                bmp.Save(overlay_fn);
-
-                                lock (overley_list)
+                                using (var bmp = new Bitmap(
+                                    _configuration.VideoWidth.Value,
+                                    _configuration.VideoHeight.Value))
                                 {
-                                    overley_list.Add(new Tuple<int, string>(bmp_index_, overlay_fn));
+                                    try
+                                    {
+                                        var fgea = new FrameGeneratedEventArgs(bmp, time, bmp_index_);
+
+                                        if (createOverlay)
+                                        {
+                                            OnNewFrame(fgea);
+                                        }
+
+                                        var overlay_fn = Path.Combine(tmp_dir, fgea.FileName);
+                                        bmp.Save(overlay_fn);
+
+                                        lock (overley_list)
+                                        {
+                                            overley_list.Add(new Tuple<int, string>(bmp_index_, overlay_fn));
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    { }
                                 }
-                            }
-                        });
+                            }));
+                        }
 
                         sw2.Stop();
                         time_offset += sw2.ElapsedMilliseconds;
@@ -530,13 +584,11 @@ namespace Wrestling.Recorder
             }
             catch (Exception ex)
             {
-                if (RecordException != null)
-                    RecordException(this, ex);
+                RecordException?.Invoke(this, ex);
             }
             finally
             {
-                if (RecordFinishing != null)
-                    RecordFinishing(this, EventArgs.Empty);
+                RecordFinishing?.Invoke(this, EventArgs.Empty);
 
                 //Завершаем процесс записи
                 CloseProcess(proc_enc);
@@ -548,7 +600,7 @@ namespace Wrestling.Recorder
                     {
                         if (OverlayPostprocessTime >= 0)
                         {
-                            bool w_res = task_over.Wait(OverlayPostprocessTime);
+                            var w_res = task_over.Wait(OverlayPostprocessTime);
                             //Если не завершилось за таймаут, то отменяем принудительно и ждем
                             if (!w_res)
                             {
@@ -567,13 +619,11 @@ namespace Wrestling.Recorder
                     }
                     catch (Exception ex)
                     {
-                        if (OverlayException != null)
-                            OverlayException(this, ex);
+                        OverlayException?.Invoke(this, ex);
                     }
                 }
 
-                if (RecordCompleted != null)
-                    RecordCompleted(this, EventArgs.Empty);
+                RecordCompleted?.Invoke(this, EventArgs.Empty);
 
                 try
                 {
@@ -581,8 +631,7 @@ namespace Wrestling.Recorder
                 }
                 catch (Exception ex)
                 {
-                    if (ConcatException != null)
-                        ConcatException(this, ex);
+                    ConcatException?.Invoke(this, ex);
                 }
                 finally
                 {
@@ -596,13 +645,13 @@ namespace Wrestling.Recorder
 
         private static void ClearDir(String dir_path)
         {
-            DirectoryInfo di = new DirectoryInfo(dir_path);
+            var di = new DirectoryInfo(dir_path);
             foreach (var d in di.GetDirectories())
             {
                 ClearDir(d.FullName);
             }
 
-            foreach (FileInfo fn in di.GetFiles())
+            foreach (var fn in di.GetFiles())
             {
                 File.Delete(fn.FullName);
             }
@@ -620,12 +669,12 @@ namespace Wrestling.Recorder
                     .ToList<String>();
             }
 
-            String play_list = Path.Combine(tmp_dir, "play.list");
-            using (StreamWriter sw = File.CreateText(play_list))
+            var play_list = Path.Combine(tmp_dir, "play.list");
+            using (var sw = File.CreateText(play_list))
             {
-                foreach (String e in scenes_over)
+                foreach (var e in scenes_over)
                 {
-                    String fn = "file '" + e.Replace(@"\", "/") + "'";
+                    var fn = "file '" + e.Replace(@"\", "/") + "'";
                     sw.WriteLine(fn);
                 }
             }
@@ -643,8 +692,7 @@ namespace Wrestling.Recorder
             if (proc_o.ExitCode != 0 && ConcatException != null)
                 ConcatException(this, new Exception(""));
 
-            if (ConcatCompleted != null)
-                ConcatCompleted(this, fileName);
+            ConcatCompleted?.Invoke(this, fileName);
         }
 
         public void CloseProcess(Process proc)
@@ -684,8 +732,7 @@ namespace Wrestling.Recorder
 
         protected virtual void OnNewFrame(FrameGeneratedEventArgs e)
         {
-            EventHandler<FrameGeneratedEventArgs> handler = NewFrame;
-            handler?.Invoke(this, e);
+            NewFrame?.Invoke(this, e);
         }
         
         #region Video/Audio source handlers

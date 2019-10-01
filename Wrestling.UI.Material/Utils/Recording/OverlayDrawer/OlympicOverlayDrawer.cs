@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.Drawing.Text;
 using Wrestling.UI.Material.ScoreScreen;
 
@@ -8,13 +9,30 @@ namespace Wrestling.UI.Material.Utils.Recording.OverlayDrawer
     {
         private ScoreScreenViewModel _currentMatch;
 
-        public override void DrawOverlay(Bitmap frame, ScoreScreenViewModel currentMatch)
+        private static int transparency = 255;
+
+        private static SolidBrush redBrush = new SolidBrush(Color.FromArgb(transparency, 205, 45, 45));
+        private static SolidBrush blueBrush = new SolidBrush(Color.FromArgb(transparency, 40, 60, 150));
+        private static SolidBrush whiteBrush = new SolidBrush(Color.FromArgb(transparency, 255, 255, 255));
+        private static SolidBrush yellowBrush = new SolidBrush(Color.FromArgb(transparency, Color.Yellow));
+        private static SolidBrush blackBrush = new SolidBrush(Color.FromArgb(transparency, Color.Black));
+        private static SolidBrush darkGrayBrush = new SolidBrush(Color.FromArgb(transparency, 70, 70, 70));
+        //SolidBrush cyanBrush = new SolidBrush(Color.FromArgb(transparency, Color.Cyan));
+
+        private static int _fontSize = 10;
+        private static int _largeSize = 20;
+
+        private static Font mainFont = new Font("Times New Roman", _fontSize, FontStyle.Regular);
+        private static Font boldFont = new Font("Times New Roman", _fontSize, FontStyle.Bold);
+        private static Font largeBoldFont = new Font("Times New Roman", _largeSize, FontStyle.Bold);
+
+        public override void DrawOverlay(Bitmap frame, long time, ScoreScreenViewModel currentMatch)
         {
             if (currentMatch == null || frame == null) return;
 
             _currentMatch = currentMatch;
 
-            using (Graphics g = Graphics.FromImage(frame))
+            using (var g = Graphics.FromImage(frame))
             {
                 var imageWidth = frame.Width;
                 var imageHeight = frame.Height;
@@ -25,7 +43,8 @@ namespace Wrestling.UI.Material.Utils.Recording.OverlayDrawer
                 var wr1 = GetStringInUpper(GetFirstStringBySplit(_currentMatch.Wrestler1, ' '));
                 var wr2 = GetStringInUpper(GetFirstStringBySplit(_currentMatch.Wrestler2, ' '));
 
-                string timeValue = _currentMatch.TickCounter.ToString("m\\:ss");
+                var ttt = _currentMatch.TickCounter.ToString("m\\:ss");
+                string timeValue = TimeSpan.FromMilliseconds(time).ToString("m\\:ss");//_currentMatch.TickCounter.ToString("m\\:ss");
                 var pt1 = _currentMatch.Points1.ToString();
                 var pt2 = _currentMatch.Points2.ToString();
                 var team1 = GetStringInUpper(_currentMatch.Wrestler1TeamName);
@@ -44,20 +63,19 @@ namespace Wrestling.UI.Material.Utils.Recording.OverlayDrawer
                 int fontSize = imageHeight / 48;
                 int largeSize = fontSize * 2;
 
-                var mainFont = new Font("Times New Roman", fontSize, FontStyle.Regular);
+                /*var mainFont = new Font("Times New Roman", fontSize, FontStyle.Regular);
                 var boldFont = new Font("Times New Roman", fontSize, FontStyle.Bold);
-                var largeBoldFont = new Font("Times New Roman", largeSize, FontStyle.Bold);
+                var largeBoldFont = new Font("Times New Roman", largeSize, FontStyle.Bold);*/
+
+                if (fontSize != _fontSize)
+                {
+                    _fontSize = fontSize;
+                    mainFont = new Font("Times New Roman", fontSize, FontStyle.Regular);
+                    boldFont = new Font("Times New Roman", fontSize, FontStyle.Bold);
+                    largeBoldFont = new Font("Times New Roman", largeSize, FontStyle.Bold);
+                }
+
                 var pointsSize = GetRectSizeForText(g, "99", mainFont);
-
-                var transparency = 255;
-
-                SolidBrush redBrush = new SolidBrush(Color.FromArgb(transparency, 205, 45, 45));
-                SolidBrush blueBrush = new SolidBrush(Color.FromArgb(transparency, 40, 60, 150));
-                SolidBrush whiteBrush = new SolidBrush(Color.FromArgb(transparency, 255, 255, 255));
-                //SolidBrush cyanBrush = new SolidBrush(Color.FromArgb(transparency, Color.Cyan));
-                SolidBrush yellowBrush = new SolidBrush(Color.FromArgb(transparency, Color.Yellow));
-                SolidBrush blackBrush = new SolidBrush(Color.FromArgb(transparency, Color.Black));
-                SolidBrush darkGrayBrush = new SolidBrush(Color.FromArgb(transparency, 70, 70, 70));
 
                 g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
 
@@ -73,7 +91,7 @@ namespace Wrestling.UI.Material.Utils.Recording.OverlayDrawer
                 }
 
                 var groupText = _currentMatch.GroupLabel;
-                if (groupText.Length > 17)
+                if (groupText != null && groupText.Length > 17)
                 {
                     groupText = groupText.Replace(".", string.Empty);
 
@@ -176,16 +194,50 @@ namespace Wrestling.UI.Material.Utils.Recording.OverlayDrawer
                 DrawImage(g, "Images//RosbosLogo.png", imgStartPoint, imgSize);
                 */
 
-                redBrush.Dispose();
-                blueBrush.Dispose();
-                whiteBrush.Dispose();
-                blackBrush.Dispose();
+                if (_currentMatch.LogoImage != null && !_currentMatch.LogoRectangle.IsEmpty)
+                {
+                    var rc = _currentMatch.LogoRectangle;
+
+                    switch (_currentMatch.LogoPosition)
+                    {
+                        case Model.LogoPositionEnum.LEFT_BOTTOM:
+                            rc = new RectangleF(
+                                rc.Left, 
+                                imageHeight - rc.Top - rc.Height, 
+                                rc.Width, 
+                                rc.Height);
+                            break;
+
+                        case Model.LogoPositionEnum.RIGHT_BOTTOM:
+                            rc = new RectangleF(
+                                imageWidth - rc.Width - rc.Left, 
+                                imageHeight - rc.Top - rc.Height, 
+                                rc.Width, 
+                                rc.Height);
+                            break;
+
+                        case Model.LogoPositionEnum.RIGHT_TOP:
+                            rc = new RectangleF(
+                                imageWidth - rc.Width - rc.Left,
+                                rc.Top,
+                                rc.Width,
+                                rc.Height);
+                            break;
+                    }
+
+                    g.DrawImage(_currentMatch.LogoImage, rc);
+                }
+
+                //redBrush.Dispose();
+                //blueBrush.Dispose();
+                //whiteBrush.Dispose();
+                //blackBrush.Dispose();
                 //cyanBrush.Dispose();
-                mainFont.Dispose();
-                boldFont.Dispose();
-                largeBoldFont.Dispose();
-                yellowBrush.Dispose();
-                darkGrayBrush.Dispose();
+                //mainFont.Dispose();
+                //boldFont.Dispose();
+                //largeBoldFont.Dispose();
+                //yellowBrush.Dispose();
+                //darkGrayBrush.Dispose();
             }
         }
     }

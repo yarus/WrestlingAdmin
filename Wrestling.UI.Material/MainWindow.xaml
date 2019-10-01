@@ -31,7 +31,9 @@
         Icon="Resources/scoreboard.ico"
         Title="{Binding CurrentViewModel.WindowTitle}"
         md:DialogServiceViews.IsRegistered="True" 
-        Height="800" Width="1100">
+        Height="800" 
+        Width="1100" 
+        WindowStartupLocation="CenterScreen">
     
     <Window.Resources>
         <ResourceDictionary>

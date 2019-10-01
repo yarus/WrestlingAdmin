@@ -35,11 +35,24 @@ namespace Wrestling.Recorder.FFMPEG
 
         private int canGetDev = 0;
         private int canGetDevIndex = 0;
+        private MediaStream mslast;
+
         private void HandleFfmpegDetectDevicesErrorDataReceived(object sender, System.Diagnostics.DataReceivedEventArgs e)
         {
             if (e.Data != null)
             {
                 String line = e.Data.ToString();
+
+                if (line.Contains("Alternative name \"") && mslast != null)
+                {
+                    var lan = line.Split(new string[] { "Alternative name \"" }, StringSplitOptions.None);
+                    if (lan.Length != 2)
+                        return;
+
+                    var an = lan[1].Replace("\"", "");
+                    mslast.AlterName = an;
+                }
+
                 if (line.Contains("DirectShow video devices"))
                 {
                     canGetDev = 1;
@@ -57,26 +70,29 @@ namespace Wrestling.Recorder.FFMPEG
                     String[] ll = line.Split(new String[] { " \"" }, StringSplitOptions.None);
                     if (ll.Length == 2)
                     {
-                        Streams.Add(new MediaStream
+                        mslast = new MediaStream
                         {
                             StreamType = StreamTypeEnum.Video,
                             Name = ll[1].Replace("\"", ""),
                             Index = canGetDevIndex++,
-                        });
+                        };
+                        Streams.Add(mslast);
                     }
                 }
 
                 if (canGetDev == 2)
                 {
+                    //Alternative name 
                     String[] ll = line.Split(new String[] { " \"" }, StringSplitOptions.None);
                     if (ll.Length == 2)
                     {
-                        Streams.Add(new MediaStream
+                        mslast = new MediaStream
                         {
                             StreamType = StreamTypeEnum.Audio,
                             Name = GetName(ll[1]),
                             Index = canGetDevIndex++,
-                        });
+                        };
+                        Streams.Add(mslast);
                     }
                 }
             }

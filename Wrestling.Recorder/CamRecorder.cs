@@ -441,6 +441,15 @@ namespace Wrestling.Recorder
             }
         }
 
+        public void SetTimerOffset(int t)
+        {
+        }
+
+        public void CreateOverlay(bool flag)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 }

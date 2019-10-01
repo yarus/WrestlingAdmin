@@ -10,6 +10,8 @@ namespace Wrestling.Recorder
         void Dispose();
         void StartRecording();
         void StopRecording();
+        void SetTimerOffset(int t);
+        void CreateOverlay(bool flag);
 
         event EventHandler<FrameGeneratedEventArgs> NewFrame;
     }
