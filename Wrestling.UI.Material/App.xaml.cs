@@ -143,8 +143,9 @@ namespace Wrestling.UI.Material
 
             di.Add<ITournamentImporter>(new TournamentImporter(di.Resolve<ITournamentsManager>(), di.Resolve<List<IGroupBracketProcessor>>()));
 
-            di.Add(new InternationalScoreScreenView(), "ScoreScreen");
-            
+            //di.Add(new InternationalScoreScreenView(), "ScoreScreen");
+            di.Add(new WwfScoreScreenView(), "ScoreScreen");
+
             di.Add(new SlideHostView(), "SlideHost");
             di.Add<SlideHostViewModel>(new SlideHostViewModel(di));
 
