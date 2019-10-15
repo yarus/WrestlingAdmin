@@ -23,6 +23,8 @@ namespace Wrestling.UI.Material.Utils.Recording
             //_recorder.NewFrame += RecorderOnNewFrame;
         }
 
+        bool IMatchRecorder.IsRecording => _currentRecorder != null ? _currentRecorder.IsRecording : false; 
+
         private void RecorderOnNewFrame(object sender, FrameGeneratedEventArgs e)
         {
             _overlayDrawer?.DrawOverlay(e.Frame, e.Time, _currentMatch);
@@ -138,12 +140,12 @@ namespace Wrestling.UI.Material.Utils.Recording
 
         public void SetTimerOffset(int t)
         {
-            _currentRecorder.SetTimerOffset(t);
+            _currentRecorder?.SetTimerOffset(t);
         }
 
         public void CreateOverlay(bool flag)
         {
-            _currentRecorder.CreateOverlay(flag);
+            _currentRecorder?.CreateOverlay(flag);
         }
     }
 }

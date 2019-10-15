@@ -13,6 +13,7 @@ namespace Wrestling.UI.Material.Utils.Recording
         void StopRecording();
         void SetTimerOffset(int t);
         void CreateOverlay(bool flag);
+        bool IsRecording { get; }
         IEnumerable<string> GetMatchRecordings(string storagePath, WrestlingMatch match, Guid? tournamentId);
     }
 }

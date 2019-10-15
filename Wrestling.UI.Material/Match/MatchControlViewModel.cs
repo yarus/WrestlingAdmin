@@ -35,6 +35,7 @@ namespace Wrestling.UI.Material.Match
         private bool _isRunning;
         private bool _isSettingsOpen;
 
+        private const string REC_BTN_TEXT = "Запись";
         private const string START_BTN_TEXT = "Старт";
         private const string STOP_BTN_TEXT = "Стоп";
 
@@ -159,7 +160,7 @@ namespace Wrestling.UI.Material.Match
 
             if (_settings.IsVideoRecordingEnabled && !DataContext.WrestlingMatch.IsMatchCompleted)
             {
-                StartRecording();
+                //StartRecording();
             }
 
             var keyHandler = Resolve<IKeyHandler>();
@@ -168,6 +169,8 @@ namespace Wrestling.UI.Material.Match
                 keyHandler.KeyPressed -= KeyHandler_KeyPressed;
                 keyHandler.KeyPressed += KeyHandler_KeyPressed;
             }
+
+            StartStopButtonCaption = REC_BTN_TEXT;
         }
 
         #region Commands
@@ -476,7 +479,11 @@ namespace Wrestling.UI.Material.Match
 
         private void StartRecording()
         {
-            _currentRecorder?.StartRecording(_settings.VideoStoragePath, _recConfig, ScoreScreenVm, DataContext.Tournament?.ID);
+            _currentRecorder?.StartRecording(
+                _settings.VideoStoragePath, 
+                _recConfig, 
+                ScoreScreenVm, 
+                DataContext.Tournament?.ID);
         }
 
         private void StopRecording()
@@ -489,8 +496,18 @@ namespace Wrestling.UI.Material.Match
             _currentRecorder?.DeleteRecording(_settings.VideoStoragePath, DataContext.WrestlingMatch.MatchNumber, DataContext.Tournament?.ID);
         }
 
+        private bool _isVideoStarted = false;
+
         private void StartStop()
         {
+            if (!_isVideoStarted)
+            {
+                _isVideoStarted = true;
+                StartRecording();
+                StartStopButtonCaption = START_BTN_TEXT;
+                return;
+            }
+
             if (!_startDateTime.HasValue)
             {
                 _startDateTime = DateTime.Now;
@@ -498,6 +515,9 @@ namespace Wrestling.UI.Material.Match
 
             if (_isRunning)
             {
+                // Лисапет типо 
+                _isVideoStarted = false;
+
                 StartStopButtonCaption = START_BTN_TEXT;
                 _timer.Stop();
                 _currentRecorder.CreateOverlay(false);
@@ -626,13 +646,16 @@ namespace Wrestling.UI.Material.Match
 
         private void CompleteMatch()
         {
+            _isVideoStarted = false;
             _timer?.Stop();
 
             if (_isRunning)
             {
-                StartStopButtonCaption = START_BTN_TEXT;
                 IsRunning = false;
             }
+
+            StartStopButtonCaption = REC_BTN_TEXT;
+            _currentRecorder.StopRecording();
 
             CopyDataFromViewToMatch();
 

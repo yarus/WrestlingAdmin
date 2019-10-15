@@ -16,11 +16,11 @@ namespace Wrestling.Recorder
             Index = index;
         }
 
-        public String FileName
+        public string FileName
         {
             get
             {
-                return $"over{Index.ToString("000000")}.png";
+                return $"over{Index.ToString("000000")}{FFMPEG.Scene.ImageOverExt}";
             }
         }
     }
