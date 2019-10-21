@@ -68,7 +68,7 @@ namespace Wrestling.UI.Material.Utils.Recording
             _currentMatch = match;
 
             // LOGO
-            _currentMatch.LogoImage = new System.Drawing.Bitmap("logo.png");
+            _currentMatch.LogoImage = new System.Drawing.Bitmap("Images\\RosbosLogo.png");
             _currentMatch.LogoRectangle = new System.Drawing.RectangleF(50, 50, 100, 100);
             _currentMatch.LogoPosition = Model.LogoPositionEnum.RIGHT_BOTTOM;
             // LOGO
@@ -138,12 +138,12 @@ namespace Wrestling.UI.Material.Utils.Recording
 
         public void SetTimerOffset(int t)
         {
-            _currentRecorder.SetTimerOffset(t);
+            _currentRecorder?.SetTimerOffset(t);
         }
 
         public void CreateOverlay(bool flag)
         {
-            _currentRecorder.CreateOverlay(flag);
+            _currentRecorder?.CreateOverlay(flag);
         }
     }
 }
