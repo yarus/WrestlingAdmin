@@ -97,8 +97,8 @@ namespace Wrestling.Recorder.FFMPEG
             sb.AppendFormat(" -y -i {0}",
                 video_filename);
 
-            sb.AppendFormat(" -r 1 -f image2 -i \"{0}\\over%6d.png\"",
-                path_to_overlay);
+            sb.AppendFormat(" -r 1 -f image2 -i \"{0}\\over%6d{1}\"",
+                path_to_overlay, Scene.ImageOverExt);
 
             sb.AppendFormat(" -filter_complex \"[0:0][1:0]overlay=0:0[m]\"");
 

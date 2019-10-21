@@ -6,6 +6,9 @@ namespace Wrestling.Recorder.FFMPEG
     [Serializable()]
     public class Scene
     {
+        public static string ImageOverExt = ".tiff";
+        public static System.Drawing.Imaging.ImageFormat ImageOverFmt = System.Drawing.Imaging.ImageFormat.Tiff;
+
         public Scene()
         {
             PrefixName = "out";
@@ -51,7 +54,7 @@ namespace Wrestling.Recorder.FFMPEG
         {
             get
             {
-                return $"over{Index.ToString("000000")}.png";
+                return $"over{Index.ToString("000000")}{ImageOverExt}";
             }
         }
 
@@ -66,7 +69,7 @@ namespace Wrestling.Recorder.FFMPEG
                     _nameImages = new List<string>();
                     for (int i = 0; i < 10; i++)
                     {
-                        _nameImages.Add($"over{(Index * 10 + i).ToString("000000")}.png");
+                        _nameImages.Add($"over{(Index * 10 + i).ToString("000000")}{ImageOverExt}");
                     }
                 }
                 return _nameImages;

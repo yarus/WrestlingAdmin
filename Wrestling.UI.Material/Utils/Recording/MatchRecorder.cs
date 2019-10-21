@@ -23,6 +23,8 @@ namespace Wrestling.UI.Material.Utils.Recording
             //_recorder.NewFrame += RecorderOnNewFrame;
         }
 
+        bool IMatchRecorder.IsRecording => _currentRecorder != null ? _currentRecorder.IsRecording : false; 
+
         private void RecorderOnNewFrame(object sender, FrameGeneratedEventArgs e)
         {
             _overlayDrawer?.DrawOverlay(e.Frame, e.Time, _currentMatch);
