@@ -70,7 +70,7 @@ namespace Wrestling.UI.Material.Utils.Recording
             _currentMatch = match;
 
             // LOGO
-            _currentMatch.LogoImage = new System.Drawing.Bitmap("logo.png");
+            _currentMatch.LogoImage = new System.Drawing.Bitmap("Images\\RosbosLogo.png");
             _currentMatch.LogoRectangle = new System.Drawing.RectangleF(50, 50, 100, 100);
             _currentMatch.LogoPosition = Model.LogoPositionEnum.RIGHT_BOTTOM;
             // LOGO
