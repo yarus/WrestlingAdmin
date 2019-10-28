@@ -441,7 +441,19 @@
                     <TextBlock Text="ПЕРЕРЫВ" Foreground="Black" FontWeight="Bold" />
                 </Viewbox>
 
-                <Border Grid.Row="0" Grid.Column="0" BorderBrush="White" BorderThickness="0,0,0,1"></Border>
+                <Border 
+                    Grid.Row="0" 
+                    Grid.Column="0" 
+                    BorderBrush="White" 
+                    BorderThickness="0,0,0,1"></Border>
+                
+                <TextBlock 
+                    Grid.Column="0" 
+                    Grid.Row="0" 
+                    Text="финализация" 
+                    Foreground="Black" 
+                    FontWeight="Normal"
+                    Visibility="{Binding ScoreScreenVm.IsFinalization} />
 
                 <Grid Grid.Row="1" Grid.Column="0">
                     <Grid.ColumnDefinitions>

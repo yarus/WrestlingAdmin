@@ -30,6 +30,7 @@ namespace Wrestling.UI.Material.ScoreScreen
         private bool _isTimerBackward;
         private bool _isSoundEnabled;
         private bool _isTimeout;
+        private bool _isFinalization;
         private int _round;
         private int _wrestler1WarningsNumber;
         private int _wrestler2WarningsNumber;
@@ -691,6 +692,16 @@ namespace Wrestling.UI.Material.ScoreScreen
                 _isTimeout = value;
                 OnPropertyChanged("IsTimeout");
                 OnPropertyChanged("TickCounter");
+            }
+        }
+
+        public bool IsFinalization
+        {
+            get { return _isFinalization; }
+            set
+            {
+                _isFinalization = value;
+                OnPropertyChanged("IsFinalization");
             }
         }
     }
