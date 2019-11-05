@@ -35,10 +35,6 @@ namespace Wrestling.UI.Material.Match
         private bool _isRunning;
         private bool _isSettingsOpen;
 
-        private const string REC_BTN_TEXT = "Запись";
-        private const string START_BTN_TEXT = "Старт";
-        private const string STOP_BTN_TEXT = "Стоп";
-
         private IPanelView _scoreScreenView;
 
         private ScoreScreenViewModel _scoreScreen;
@@ -50,15 +46,16 @@ namespace Wrestling.UI.Material.Match
         private BitmapImage _action2Image;
         private Visibility _action1Visibility;
         private Visibility _action2Visibility;
-        private string _startStopButtonCaption;
         
-        private ICommand _startStopCommand;
+        private ICommand _startCommand;
+        private ICommand _stopCommand;
         private ICommand _adjustPointsCommand;
         private ICommand _actionStartStopCommand;
         private ICommand _resetCommand;
         private ICommand _changeWarningsCommand;
 
         private IList<CommandButtonItem> _quickButtons;
+
         #endregion
 
         public MatchControlViewModel(IDiContainer container) : base(container)
@@ -73,11 +70,16 @@ namespace Wrestling.UI.Material.Match
             set
             {
                 _isRunning = value;
-                _currentRecorder?.CreateOverlay(_isRunning);
+                //_currentRecorder?.CreateOverlay(_isRunning);
+                OnPropertyChanged("IsStartButtonVisible");
+                OnPropertyChanged("IsStopButtonVisible");
             }
         }
 
         public override bool IsBackButtonAvailable => true;
+        public bool IsStartButtonVisible => IsMatchNotCompleted && !IsRunning && (ScoreScreenVm != null && !ScoreScreenVm.IsTimeout);
+        public bool IsStopButtonVisible => IsMatchNotCompleted && IsRunning && (ScoreScreenVm != null && !ScoreScreenVm.IsTimeout);
+
         public override string PageTitle => "Управление Электронным Табло";
 
         public override IList<CommandButtonItem> QuickButtons
@@ -138,8 +140,6 @@ namespace Wrestling.UI.Material.Match
                 _matchActions = DataContext.WrestlingMatch.MatchActions;
             }
 
-            StartStopButtonCaption = START_BTN_TEXT;
-
             if (DataContext.Tournament == null)
             {
                 _settings = Resolve<GlobalSettings>();
@@ -157,10 +157,10 @@ namespace Wrestling.UI.Material.Match
             CalculateAdvantage();
 
             SetActionTimers();
-
-            if (_settings.IsVideoRecordingEnabled && !DataContext.WrestlingMatch.IsMatchCompleted)
+            
+            if (_settings.IsVideoRecordingEnabled && IsMatchNotCompleted && !IsRunning)
             {
-                //StartRecording();
+                StartRecording();
             }
 
             var keyHandler = Resolve<IKeyHandler>();
@@ -169,8 +169,6 @@ namespace Wrestling.UI.Material.Match
                 keyHandler.KeyPressed -= KeyHandler_KeyPressed;
                 keyHandler.KeyPressed += KeyHandler_KeyPressed;
             }
-
-            StartStopButtonCaption = REC_BTN_TEXT;
         }
 
         #region Commands
@@ -206,18 +204,33 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        public ICommand StartStopCommand
+        public ICommand StartCommand
         {
             get
             {
-                if (_startStopCommand == null)
+                if (_startCommand == null)
                 {
-                    _startStopCommand = new RelayCommand(
-                        param => StartStop(),
+                    _startCommand = new RelayCommand(
+                        param => Start(),
                         param => true
                     );
                 }
-                return _startStopCommand;
+                return _startCommand;
+            }
+        }
+
+        public ICommand StopCommand
+        {
+            get
+            {
+                if (_stopCommand == null)
+                {
+                    _stopCommand = new RelayCommand(
+                        param => Stop(),
+                        param => true
+                    );
+                }
+                return _stopCommand;
             }
         }
 
@@ -255,7 +268,7 @@ namespace Wrestling.UI.Material.Match
 
         #region Properties
 
-        public bool IsMatchNotCompleted => DataContext.WrestlingMatch != null && DataContext.WrestlingMatch.LastSecondInMatch < DataContext.WrestlingMatch.MaxRoundSecond * 2;
+        public bool IsMatchNotCompleted => DataContext.WrestlingMatch != null && DataContext.WrestlingMatch.LastSecondInMatch < DataContext.WrestlingMatch.MaxRoundSecond * 2 && !DataContext.WrestlingMatch.IsMatchCompleted;
 
         public bool IsTournamentEmpty => DataContext.Tournament == null;
 
@@ -295,20 +308,6 @@ namespace Wrestling.UI.Material.Match
                 _action2Image = value;
 
                 OnPropertyChanged("Action2Image");
-            }
-        }
-
-        public string StartStopButtonCaption
-        {
-            get
-            {
-                return _startStopButtonCaption;
-            }
-            set
-            {
-                _startStopButtonCaption = value;
-
-                OnPropertyChanged("StartStopButtonCaption");
             }
         }
 
@@ -354,7 +353,15 @@ namespace Wrestling.UI.Material.Match
 
             if (!_isSettingsOpen && (e.Key == Key.Space || e.Key == Key.Enter))
             {
-                StartStop();
+                if (IsRunning)
+                {
+                    Stop();
+                }
+                else
+                {
+                    Start();
+                }
+                
                 e.Handled = true;
             }
         }
@@ -428,7 +435,6 @@ namespace Wrestling.UI.Material.Match
         {
             StopRecording();
 
-            StartStopButtonCaption = START_BTN_TEXT;
             _timer.Stop();
 
             AddAction("Таймер остановлен", 0, null);
@@ -484,6 +490,7 @@ namespace Wrestling.UI.Material.Match
                 _recConfig, 
                 ScoreScreenVm, 
                 DataContext.Tournament?.ID);
+            _currentRecorder?.CreateOverlay(true);
         }
 
         private void StopRecording()
@@ -496,54 +503,43 @@ namespace Wrestling.UI.Material.Match
             _currentRecorder?.DeleteRecording(_settings.VideoStoragePath, DataContext.WrestlingMatch.MatchNumber, DataContext.Tournament?.ID);
         }
 
-        private bool _isVideoStarted = false;
-
-        private void StartStop()
+        private void Stop()
         {
-            if (!_isVideoStarted)
-            {
-                _isVideoStarted = true;
-                StartRecording();
-                StartStopButtonCaption = START_BTN_TEXT;
-                return;
-            }
+            _timer.Stop();
+            //_currentRecorder.CreateOverlay(false);
+            AddAction("Таймер остановлен", 0, null);
 
+            IsRunning = false;
+        }
+
+        private void Start()
+        {
             if (!_startDateTime.HasValue)
             {
                 _startDateTime = DateTime.Now;
             }
 
-            if (_isRunning)
+            // No need to continue if 2nd round finished
+            if (ScoreScreenVm.MainSeconds == ScoreScreenVm.MaxRoundSecond && ScoreScreenVm.Round == 2) return;
+
+            _timer.Start();
+
+            AddAction("Таймер запущен", 0, null);
+
+            _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
+
+            if (ScoreScreenVm.MainSeconds == 0 && ScoreScreenVm.IsSoundEnabled)
             {
-                // Лисапет типо 
-                _isVideoStarted = false;
-
-                StartStopButtonCaption = START_BTN_TEXT;
-                _timer.Stop();
-                _currentRecorder.CreateOverlay(false);
-                AddAction("Таймер остановлен", 0, null);
-            }
-            else
-            {
-                // No need to continue if 2nd round finished
-                if(ScoreScreenVm.MainSeconds == ScoreScreenVm.MaxRoundSecond && ScoreScreenVm.Round == 2) return;
-
-                StartStopButtonCaption = STOP_BTN_TEXT;
-
-                _timer.Start();
-                AddAction("Таймер запущен", 0, null);
-
-                _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
-
-                if (ScoreScreenVm.MainSeconds == 0 && ScoreScreenVm.IsSoundEnabled)
-                {
-                    PlaySingleGongSound();
-                }
-                                
-                //ScoreScreenVm.MainSeconds
+                PlaySingleGongSound();
             }
 
-            IsRunning = !IsRunning;
+            // If recording was stopped we need to start it again
+            if (_settings.IsVideoRecordingEnabled && !_currentRecorder.IsRecording)
+            {
+                StartRecording();
+            }
+
+            IsRunning = true;
         }
 
         private void PlaySingleGongSound()
@@ -568,13 +564,7 @@ namespace Wrestling.UI.Material.Match
 
         private void Reset()
         {
-            _timer?.Stop();
-
-            if (_isRunning)
-            {
-                StartStopButtonCaption = START_BTN_TEXT;
-                IsRunning = false;
-            }
+            Stop();
 
             _startDateTime = null;
             _matchActions = new List<MatchAction>();
@@ -646,16 +636,14 @@ namespace Wrestling.UI.Material.Match
 
         private void CompleteMatch()
         {
-            _isVideoStarted = false;
             _timer?.Stop();
 
             if (_isRunning)
             {
                 IsRunning = false;
             }
-
-            StartStopButtonCaption = REC_BTN_TEXT;
-            _currentRecorder.StopRecording();
+         
+            //_currentRecorder.StopRecording();
 
             CopyDataFromViewToMatch();
 
@@ -952,10 +940,12 @@ namespace Wrestling.UI.Material.Match
 
                 _timer.Stop();
 
-                StartStopButtonCaption = START_BTN_TEXT;
                 ScoreScreenVm.IsTimeout = false;
                 ScoreScreenVm.MainSeconds = 0;
                 ScoreScreenVm.Round = 2;
+
+                OnPropertyChanged("IsStartButtonVisible");
+                OnPropertyChanged("IsStopButtonVisible");
             }
         }
 
@@ -978,12 +968,13 @@ namespace Wrestling.UI.Material.Match
                 {
                     ScoreScreenVm.IsTimeout = true;
                     ScoreScreenVm.MainSeconds = 0;
+
                     _timer.Start();
+
                     AddAction("Начался таймаут", 0, null);
-                }
-                else
-                {
-                    StartStopButtonCaption = START_BTN_TEXT;
+
+                    OnPropertyChanged("IsStartButtonVisible");
+                    OnPropertyChanged("IsStopButtonVisible");
                 }
 
                 OnPropertyChanged("IsMatchNotCompleted");
