@@ -601,9 +601,15 @@ namespace Wrestling.Recorder
                                 {
                                     try
                                     {
-                                        var fgea = new FrameGeneratedEventArgs(bmp, 3 * 60000 - _halfTime, bmpIndex_);
+                                        var strike_time = _halfTime - time;
+                                        var over_flag = createOverlay && time < _halfTime;
 
-                                        if (createOverlay && time < _halfTime)
+                                        if (!over_flag)
+                                            strike_time = 0;
+
+                                        var fgea = new FrameGeneratedEventArgs(bmp, strike_time, bmpIndex_);
+
+                                        if (over_flag)
                                         {
                                             OnNewFrame(fgea);
                                         }
@@ -617,7 +623,7 @@ namespace Wrestling.Recorder
                                             overley_list.Add(new Tuple<int, string>(bmpIndex_, overlay_fn));
                                         }
 
-                                        Console.WriteLine($"-->Created over for {TimeSpan.FromMilliseconds(clock).ToString("m\\:ss")} index={bmpIndex}");
+                                        Console.WriteLine($"-->Created over for {TimeSpan.FromMilliseconds(clock).ToString("m\\:ss")} index={bmpIndex} ({over_flag} = {TimeSpan.FromMilliseconds(strike_time).ToString("m\\:ss")})");
                                     }
                                     catch (Exception ex)
                                     {
