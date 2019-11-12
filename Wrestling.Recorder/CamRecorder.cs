@@ -450,6 +450,11 @@ namespace Wrestling.Recorder
             throw new NotImplementedException();
         }
 
+        public void SetMainSecond(int t)
+        {
+            
+        }
+
         #endregion
     }
 }
