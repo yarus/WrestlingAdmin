@@ -490,7 +490,7 @@ namespace Wrestling.UI.Material.Match
                 _recConfig, 
                 ScoreScreenVm, 
                 DataContext.Tournament?.ID);
-            _currentRecorder?.CreateOverlay(true);
+            //_currentRecorder?.CreateOverlay(true);
         }
 
         private void StopRecording()
@@ -534,10 +534,12 @@ namespace Wrestling.UI.Material.Match
             }
 
             // If recording was stopped we need to start it again
-            if (_settings.IsVideoRecordingEnabled && !_currentRecorder.IsRecording)
+            /*if (_settings.IsVideoRecordingEnabled && !_currentRecorder.IsRecording)
             {
                 StartRecording();
-            }
+            }*/
+
+            _currentRecorder?.CreateOverlay(true);
 
             IsRunning = true;
         }
