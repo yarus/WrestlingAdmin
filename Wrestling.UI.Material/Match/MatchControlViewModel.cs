@@ -33,6 +33,7 @@ namespace Wrestling.UI.Material.Match
         private DispatcherTimer _timer;
 
         private bool _isRunning;
+        private bool _isVideoRecording;
         private bool _isSettingsOpen;
 
         private IPanelView _scoreScreenView;
@@ -73,6 +74,16 @@ namespace Wrestling.UI.Material.Match
                 //_currentRecorder?.CreateOverlay(_isRunning);
                 OnPropertyChanged("IsStartButtonVisible");
                 OnPropertyChanged("IsStopButtonVisible");
+            }
+        }
+
+        public bool IsVideoRecording
+        {
+            get { return _isVideoRecording; }
+            set
+            {
+                _isVideoRecording = value;
+                OnPropertyChanged("IsVideoRecording");
             }
         }
 
@@ -158,7 +169,7 @@ namespace Wrestling.UI.Material.Match
 
             SetActionTimers();
             
-            if (_settings.IsVideoRecordingEnabled && IsMatchNotCompleted && !IsRunning)
+            if (_settings.IsVideoRecordingEnabled && IsMatchNotCompleted && !IsRunning && !IsVideoRecording)
             {
                 StartRecording();
             }
@@ -490,12 +501,14 @@ namespace Wrestling.UI.Material.Match
                 _recConfig, 
                 ScoreScreenVm, 
                 DataContext.Tournament?.ID);
-            //_currentRecorder?.CreateOverlay(true);
+            _currentRecorder?.CreateOverlay(true);
+            IsVideoRecording = true;
         }
 
         private void StopRecording()
         {
             _currentRecorder?.StopRecording();
+            IsVideoRecording = false;
         }
 
         private void DeleteRecording()
@@ -539,7 +552,7 @@ namespace Wrestling.UI.Material.Match
                 StartRecording();
             }*/
 
-            _currentRecorder?.CreateOverlay(true);
+            //_currentRecorder?.CreateOverlay(true);
 
             IsRunning = true;
         }

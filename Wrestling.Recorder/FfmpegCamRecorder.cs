@@ -604,8 +604,10 @@ namespace Wrestling.Recorder
                                         var strike_time = _halfTime - time;
                                         var over_flag = createOverlay && time < _halfTime;
 
+                                        /*
                                         if (!over_flag)
                                             strike_time = 0;
+                                            */
 
                                         var fgea = new FrameGeneratedEventArgs(bmp, strike_time, bmpIndex_, over_flag);
 
