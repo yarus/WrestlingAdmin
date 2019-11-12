@@ -77,7 +77,11 @@ namespace Wrestling.UI.Material.Utils.Recording
 
             var fileName = GetAvailableFileName(storagePath, match, tournamentId);
 
-            _currentRecorder = FfmpegCamRecorder.StartRecording(fileName, config, RecorderOnNewFrame);
+            _currentRecorder = FfmpegCamRecorder.StartRecording(
+                fileName, 
+                config, 
+                RecorderOnNewFrame, 
+                match.MaxRoundSecond * 1000); // we need ms
         }
 
         public void StopRecording()

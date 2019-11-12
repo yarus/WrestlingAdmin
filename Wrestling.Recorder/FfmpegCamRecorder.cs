@@ -99,6 +99,7 @@ namespace Wrestling.Recorder
             string fileName,
             RecorderConfiguration configuration,
             EventHandler<FrameGeneratedEventArgs> _newFrame,
+            long halfTime,
             EventHandler<string> _recordProcess = null,
             EventHandler<double> _overlayProcess = null,
             EventHandler _recordFinishing = null,
@@ -106,8 +107,7 @@ namespace Wrestling.Recorder
             EventHandler<string> _concatCompleted = null,
             EventHandler<Exception> _recordException = null,
             EventHandler<Exception> _overlayException = null,
-            EventHandler<Exception> _concatException = null,
-            long halfTime = 180000)
+            EventHandler<Exception> _concatException = null)
         {
             var r = new FfmpegCamRecorder(fileName, configuration, halfTime)
             {
