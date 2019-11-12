@@ -58,7 +58,7 @@ namespace Wrestling.Recorder.Test
                 recorderConfiguration.AudioDeviceID = audioDevices[audioIndex].ID;
             }
 
-            var recorder = FfmpegCamRecorder.StartRecording(TEST_FILE_NAME, recorderConfiguration, NewFrame, 90);
+            var recorder = FfmpegCamRecorder.StartRecording(TEST_FILE_NAME, recorderConfiguration, NewFrame, 180000);
 
             Console.WriteLine("Press Enter to start recording (to complete recording press Enter again)...");
 
@@ -68,7 +68,7 @@ namespace Wrestling.Recorder.Test
 
             recorder.StopRecording();
 
-            recorder = FfmpegCamRecorder.StartRecording(TEST_FILE_NAME, recorderConfiguration, NewFrame, 90);
+            recorder = FfmpegCamRecorder.StartRecording(TEST_FILE_NAME, recorderConfiguration, NewFrame, 180000);
 
             while (Console.ReadKey().Key != ConsoleKey.Enter)
             {

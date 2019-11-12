@@ -72,6 +72,7 @@ namespace Wrestling.Recorder
         private bool _createOverlay = false;
         private long _timeOffset = 0L;
         private long _halfTime = 180000L;
+        private long _currentTimer = 0;
 
         void IRecorder.SetTimerOffset(int t)
         {
@@ -81,6 +82,11 @@ namespace Wrestling.Recorder
         public void CreateOverlay(bool flag)
         {
             _createOverlay = flag;
+        }
+
+        public void SetMainSecond(int t)
+        {
+            _currentTimer = t;
         }
 
         public FfmpegCamRecorder(string fileName, RecorderConfiguration configuration, long halfTime)
@@ -93,6 +99,7 @@ namespace Wrestling.Recorder
             _fileName = fileName;
             _configuration = configuration;
             _halfTime = halfTime;
+            _currentTimer = _halfTime;
         }
 
         public static FfmpegCamRecorder StartRecording(
@@ -601,13 +608,13 @@ namespace Wrestling.Recorder
                                 {
                                     try
                                     {
-                                        var strike_time = _halfTime - time;
+                                        var strike_time = _halfTime - _currentTimer;// time;
                                         var over_flag = createOverlay && time < _halfTime;
 
-                                        /*
-                                        if (!over_flag)
-                                            strike_time = 0;
-                                            */
+                                        //if (!over_flag)
+                                            //strike_time = 0;
+
+                                        //strike_time = _currentTimer;
 
                                         var fgea = new FrameGeneratedEventArgs(bmp, strike_time, bmpIndex_, over_flag);
 

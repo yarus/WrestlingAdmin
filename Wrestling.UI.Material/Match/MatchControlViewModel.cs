@@ -715,6 +715,7 @@ namespace Wrestling.UI.Material.Match
         private void TimerTick(object sender, EventArgs e)
         {
             ScoreScreenVm.MainSeconds++;
+            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds * 1000);
 
             if (ScoreScreenVm.IsAction1TimerEnabled || ScoreScreenVm.IsAction2TimerEnabled)
             {
