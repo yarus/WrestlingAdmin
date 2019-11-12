@@ -82,6 +82,8 @@ namespace Wrestling.UI.Material.Utils.Recording
                 config, 
                 RecorderOnNewFrame, 
                 match.MaxRoundSecond * 1000); // we need ms
+
+
         }
 
         public void StopRecording()
