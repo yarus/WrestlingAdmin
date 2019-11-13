@@ -153,7 +153,7 @@ namespace Wrestling.UI.Material.Match
             }
 
             _currentRecorder = Resolve<IMatchRecorder>();
-            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds * 1000);
+            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
             //_recorderGen = Resolve<App.IMatchRecorderGenerator>();
 
             _scoreScreen.InitData();
@@ -702,7 +702,7 @@ namespace Wrestling.UI.Material.Match
             IsRunning = false;
             _timer?.Stop();
 
-            _timer = new DispatcherTimer();
+            _timer = new DispatcherTimer(DispatcherPriority.Send);
             _timer.Tick += TimerTick;
             _timer.Interval = new TimeSpan(0, 0, 0, 1);
         }
@@ -710,7 +710,8 @@ namespace Wrestling.UI.Material.Match
         private void TimerTick(object sender, EventArgs e)
         {
             ScoreScreenVm.MainSeconds++;
-            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds * 1000);
+
+            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
 
             if (ScoreScreenVm.IsAction1TimerEnabled || ScoreScreenVm.IsAction2TimerEnabled)
             {
@@ -955,6 +956,8 @@ namespace Wrestling.UI.Material.Match
                 ScoreScreenVm.MainSeconds = 0;
                 ScoreScreenVm.Round = 2;
 
+                _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxRoundSecond);
+
                 OnPropertyChanged("IsStartButtonVisible");
                 OnPropertyChanged("IsStopButtonVisible");
             }
@@ -979,6 +982,8 @@ namespace Wrestling.UI.Material.Match
                 {
                     ScoreScreenVm.IsTimeout = true;
                     ScoreScreenVm.MainSeconds = 0;
+
+                    _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxTimeoutSecond);
 
                     _timer.Start();
 

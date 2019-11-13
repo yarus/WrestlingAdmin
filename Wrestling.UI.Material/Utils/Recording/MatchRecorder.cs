@@ -154,6 +154,11 @@ namespace Wrestling.UI.Material.Utils.Recording
             _currentRecorder?.SetMainSecond(t);
         }
 
+        public void SetMaxSeconds(int t)
+        {
+            _currentRecorder?.SetMaxSeconds(t);
+        }
+
         public void CreateOverlay(bool flag)
         {
             _currentRecorder?.CreateOverlay(flag);

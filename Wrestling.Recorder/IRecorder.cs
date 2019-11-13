@@ -13,6 +13,7 @@ namespace Wrestling.Recorder
         void SetTimerOffset(int t);
         void CreateOverlay(bool flag);
         void SetMainSecond(int t);
+        void SetMaxSeconds(int seconds);
 
         event EventHandler<FrameGeneratedEventArgs> NewFrame;
     }

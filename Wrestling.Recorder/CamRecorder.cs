@@ -90,6 +90,11 @@ namespace Wrestling.Recorder
             CleanupInternalResources();
         }
 
+        public void SetMaxSeconds(int seconds)
+        {
+            
+        }
+
         public event EventHandler<FrameGeneratedEventArgs> NewFrame;
 
         protected virtual void OnNewFrame(FrameGeneratedEventArgs e)

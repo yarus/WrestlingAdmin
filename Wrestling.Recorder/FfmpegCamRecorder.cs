@@ -84,9 +84,14 @@ namespace Wrestling.Recorder
             _createOverlay = flag;
         }
 
+        public void SetMaxSeconds(int seconds)
+        {
+            _halfTime = seconds * 1000;
+        }
+
         public void SetMainSecond(int t)
         {
-            _currentTimer = t;
+            _currentTimer = t * 1000;
         }
 
         public FfmpegCamRecorder(string fileName, RecorderConfiguration configuration, long halfTime)
