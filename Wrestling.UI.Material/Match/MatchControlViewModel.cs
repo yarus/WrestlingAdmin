@@ -78,15 +78,7 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        public bool IsVideoRecording
-        {
-            get { return _isVideoRecording; }
-            set
-            {
-                _isVideoRecording = value;
-                OnPropertyChanged("IsVideoRecording");
-            }
-        }
+        public bool IsVideoRecording => _currentRecorder?.IsRecording ?? false;
 
         public override bool IsBackButtonAvailable => true;
         public bool IsStartButtonVisible => IsMatchNotCompleted && !IsRunning && (ScoreScreenVm != null && !ScoreScreenVm.IsTimeout);
@@ -162,6 +154,7 @@ namespace Wrestling.UI.Material.Match
             }
 
             _currentRecorder = Resolve<IMatchRecorder>();
+            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds * 1000);
             //_recorderGen = Resolve<App.IMatchRecorderGenerator>();
 
             _scoreScreen.InitData();
@@ -503,13 +496,15 @@ namespace Wrestling.UI.Material.Match
                 ScoreScreenVm, 
                 DataContext.Tournament?.ID);
             _currentRecorder?.CreateOverlay(true);
-            IsVideoRecording = true;
+            
+            OnPropertyChanged("IsVideoRecording");
         }
 
         private void StopRecording()
         {
             _currentRecorder?.StopRecording();
-            IsVideoRecording = false;
+
+            OnPropertyChanged("IsVideoRecording");
         }
 
         private void DeleteRecording()
