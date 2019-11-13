@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Media;
@@ -536,6 +537,7 @@ namespace Wrestling.UI.Material.Match
             if (ScoreScreenVm.MainSeconds == ScoreScreenVm.MaxRoundSecond && ScoreScreenVm.Round == 2) return;
 
             _timer.Start();
+            _timerSw.Restart();
 
             AddAction("Таймер запущен", 0, null);
 
@@ -712,9 +714,11 @@ namespace Wrestling.UI.Material.Match
             _timer.Interval = new TimeSpan(0, 0, 0, 1);
         }
 
+        private Stopwatch _timerSw = new Stopwatch();
+
         private void TimerTick(object sender, EventArgs e)
         {
-            ScoreScreenVm.MainSeconds++;
+            ScoreScreenVm.MainSeconds = Convert.ToInt32(_timerSw.ElapsedMilliseconds / 1000L);
             _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds * 1000);
 
             if (ScoreScreenVm.IsAction1TimerEnabled || ScoreScreenVm.IsAction2TimerEnabled)
@@ -986,6 +990,7 @@ namespace Wrestling.UI.Material.Match
                     ScoreScreenVm.MainSeconds = 0;
 
                     _timer.Start();
+                    _timerSw.Restart();
 
                     AddAction("Начался таймаут", 0, null);
 

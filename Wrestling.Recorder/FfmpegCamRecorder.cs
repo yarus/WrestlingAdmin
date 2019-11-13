@@ -99,7 +99,7 @@ namespace Wrestling.Recorder
             _fileName = fileName;
             _configuration = configuration;
             _halfTime = halfTime;
-            _currentTimer = _halfTime;
+            _currentTimer = 0;
         }
 
         public static FfmpegCamRecorder StartRecording(
