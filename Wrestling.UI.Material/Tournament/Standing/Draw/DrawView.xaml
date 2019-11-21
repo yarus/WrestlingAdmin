@@ -45,7 +45,7 @@
             </TextBlock>
 
             <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Участников:" />
+                <Run Text="Допущено Участников:" />
                 <Run Text="{Binding WrestlersCount, Mode=OneWay}" />
             </TextBlock>
 

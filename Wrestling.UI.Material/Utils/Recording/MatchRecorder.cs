@@ -135,11 +135,11 @@ namespace Wrestling.UI.Material.Utils.Recording
             }
 
             int partNumber = 1;
-            var fileName = Path.Combine(dirPath, GetTournamentName(tournamentId) + "_" + match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
+            var fileName = Path.Combine(dirPath, GetTournamentName(tournamentId) + "\\" + match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
             while (File.Exists(fileName))
             {
                 partNumber++;
-                fileName = Path.Combine(dirPath, match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
+                fileName = Path.Combine(dirPath, GetTournamentName(tournamentId) + "\\" + match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
             }
             return fileName;
         }

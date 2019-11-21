@@ -12,9 +12,26 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <Grid Row="0" Margin="0 5 0 5">
+            <ComboBox Grid.Row="1" Grid.Column="0" materialDesign:HintAssist.Hint="Ковер" Style="{DynamicResource MaterialDesignFloatingHintComboBox}" 
+                  IsEditable="False" Margin="0 5 0 5" FontSize="18"
+                  ItemsSource="{Binding Carpets}" SelectedItem="{Binding SelectedCarpet}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Margin="0" Padding="0" Text="{Binding Name}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+        </Grid>
+
+        <TextBox Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" materialDesign:HintAssist.Hint="Количество отображаемых схваток" FontSize="18"
+                 Text="{Binding Path=ShowMatchesCount, UpdateSourceTrigger=PropertyChanged}" Style="{DynamicResource MaterialDesignFloatingHintTextBox}"/>
+
+        <Grid Row="2" Margin="0 5 0 5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="Auto" />
@@ -33,7 +50,7 @@
 
         </Grid>
 
-        <Grid Grid.Row="1" Margin="0 5 0 5">
+        <Grid Grid.Row="3" Margin="0 5 0 5">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="140" />

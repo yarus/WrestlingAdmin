@@ -137,8 +137,9 @@ namespace Wrestling.UI.Material.ScoreScreen
                     {
                         UpcomingMatches = new ObservableCollection<WrestlingMatch>(LastMatchCarpet.Groups
                             .SelectMany(g => g.Bracket.Rounds)
-                            .SelectMany(r => r.RoundMatches).Where(m => m.Status == MatchStatusEnum.Pending)
-                            .OrderBy(m => m.MatchNumber).Take(2));
+                            .SelectMany(r => r.RoundMatches)
+                            .Where(m => m.IsMatchCanStart)
+                            .OrderBy(m => m.MatchNumber).Take(3));
 
                         if (UpcomingMatches.Count > 0)
                         {

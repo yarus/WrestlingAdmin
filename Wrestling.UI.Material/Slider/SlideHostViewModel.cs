@@ -57,7 +57,7 @@ namespace Wrestling.UI.Material.Slider
                 ChangeSlide(_slides[0]);
             }
 
-            IsTimerEnabled = true;
+            //IsTimerEnabled = true;
         }
 
         public int SlideSeconds
@@ -241,9 +241,9 @@ namespace Wrestling.UI.Material.Slider
 
         private void SetupTimer()
         {
-            if (Slides == null || Slides.Count == 0) return;
-
             _timer?.Stop();
+
+            if (Slides == null || Slides.Count == 0) return;            
 
             _timer = new DispatcherTimer();
             _timer.Tick += OnTimerTick;
@@ -254,6 +254,12 @@ namespace Wrestling.UI.Material.Slider
 
         private void OnTimerTick(object sender, EventArgs e)
         {
+            if (Slides.Count == 0)
+            {
+                _timer?.Stop();
+                return;
+            }
+
             _currentSecond++;
 
             if (_currentSecond >= SlideSeconds)

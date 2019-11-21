@@ -34,7 +34,6 @@ namespace Wrestling.UI.Material.Match
         private DispatcherTimer _timer;
 
         private bool _isRunning;
-        private bool _isVideoRecording;
         private bool _isSettingsOpen;
 
         private IPanelView _scoreScreenView;
@@ -154,7 +153,6 @@ namespace Wrestling.UI.Material.Match
             }
 
             _currentRecorder = Resolve<IMatchRecorder>();
-            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
             //_recorderGen = Resolve<App.IMatchRecorderGenerator>();
 
             _scoreScreen.InitData();
@@ -495,6 +493,9 @@ namespace Wrestling.UI.Material.Match
                 _recConfig, 
                 ScoreScreenVm, 
                 DataContext.Tournament?.ID);
+            _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxRoundSecond);
+            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
+            _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
             _currentRecorder?.CreateOverlay(true);
             
             OnPropertyChanged("IsVideoRecording");
@@ -578,6 +579,16 @@ namespace Wrestling.UI.Material.Match
         {
             Stop();
 
+            if (_settings.IsVideoRecordingEnabled)
+            {
+                StopRecording();
+
+                if (!DataContext.WrestlingMatch.IsMatchCompleted)
+                {
+                    DeleteRecording();
+                }
+            }
+
             _startDateTime = null;
             _matchActions = new List<MatchAction>();
 
@@ -588,6 +599,11 @@ namespace Wrestling.UI.Material.Match
             Action2Visibility = Visibility.Visible;
 
             ScoreScreenVm.Reset();
+
+            CopyDataFromViewToMatch();
+
+            OnPropertyChanged("IsStartButtonVisible");
+            OnPropertyChanged("IsStopButtonVisible");
         }
 
         private void AdjustWarnings(string param)
@@ -614,18 +630,10 @@ namespace Wrestling.UI.Material.Match
                     "Матч не звершен! Если вы вернетесь назад, то текущие результаты будут потеряны. Вы уверены, что хотите вернуться?",
                     "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
 
-            if (_settings.IsVideoRecordingEnabled)
-            {
-                StopRecording();
-                DeleteRecording();
-            }
-
-            Reset();
-
-            CopyDataFromViewToMatch();
-
             if (!DataContext.WrestlingMatch.IsMatchCompleted)
             {
+                Reset();
+
                 DataContext.WrestlingMatch = null;
             }
 
