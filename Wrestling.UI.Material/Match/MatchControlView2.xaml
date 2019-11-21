@@ -334,10 +334,14 @@
                     </Button>
                 </Viewbox>
 
-                <Viewbox Stretch="Uniform" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2">
-                    <Button Content="{Binding StartStopButtonCaption}" Background="LightGray" TabIndex="3" Foreground="Black" FontStretch="Medium"
-                            Command="{Binding StartStopCommand}" ToolTip="Основной таймер"
-                            Visibility="{Binding IsMatchNotCompleted, Converter={StaticResource BoolToVis}}"/>
+                <Viewbox Stretch="Uniform" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2" Visibility="{Binding IsStartButtonVisible, Converter={StaticResource BoolToVis}}">
+                    <Button Content="СТАРТ" Background="LightGray" TabIndex="3" Foreground="Black" FontStretch="Medium"
+                            Command="{Binding StartCommand}" ToolTip="Основной таймер" />
+                </Viewbox>
+
+                <Viewbox Stretch="Uniform" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2" Visibility="{Binding IsStopButtonVisible, Converter={StaticResource BoolToVis}}">
+                    <Button Content="СТОП" Background="LightGray" TabIndex="3" Foreground="Black" FontStretch="Medium"
+                            Command="{Binding StopCommand}" ToolTip="Основной таймер"/>
                 </Viewbox>
 
                 <Viewbox Grid.Column="2" Stretch="Uniform" HorizontalAlignment="Center"
@@ -441,7 +445,11 @@
                     <TextBlock Text="ПЕРЕРЫВ" Foreground="Black" FontWeight="Bold" />
                 </Viewbox>
 
-                <Border Grid.Row="0" Grid.Column="0" BorderBrush="White" BorderThickness="0,0,0,1"></Border>
+                <Border 
+                    Grid.Row="0" 
+                    Grid.Column="0" 
+                    BorderBrush="White" 
+                    BorderThickness="0,0,0,1"></Border>
 
                 <Grid Grid.Row="1" Grid.Column="0">
                     <Grid.ColumnDefinitions>

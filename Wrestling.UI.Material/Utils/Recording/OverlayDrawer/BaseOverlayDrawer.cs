@@ -5,7 +5,7 @@ namespace Wrestling.UI.Material.Utils.Recording.OverlayDrawer
 {
     public abstract class BaseOverlayDrawer : IOverlayDrawer
     {
-        public abstract void DrawOverlay(Bitmap frame, ScoreScreenViewModel currentMatch);
+        public abstract void DrawOverlay(Bitmap frame, long time, ScoreScreenViewModel currentMatch);
 
         protected string GetFirstStringBySplit(string value, char symbol)
         {
@@ -25,9 +25,15 @@ namespace Wrestling.UI.Material.Utils.Recording.OverlayDrawer
         {
             var rect = new RectangleF(startX, startY, rectSize.Width, rectSize.Height);
 
-            g.FillRectangle(background, rect);
+            lock (background)
+            {
+                g.FillRectangle(background, rect);
+            }
 
-            g.DrawString(text, font, forecolor, rect, format);
+            lock (forecolor)
+            {
+                g.DrawString(text, font, forecolor, rect, format);
+            }
         }
 
         protected void DrawRectWithStringCenter(Graphics g, string text, Font font, float startX, float startY, SizeF rectSize, SolidBrush background, SolidBrush forecolor)

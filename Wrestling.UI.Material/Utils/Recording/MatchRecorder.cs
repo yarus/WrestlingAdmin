@@ -23,9 +23,11 @@ namespace Wrestling.UI.Material.Utils.Recording
             //_recorder.NewFrame += RecorderOnNewFrame;
         }
 
+        bool IMatchRecorder.IsRecording => _currentRecorder != null ? _currentRecorder.IsRecording : false; 
+
         private void RecorderOnNewFrame(object sender, FrameGeneratedEventArgs e)
         {
-            _overlayDrawer?.DrawOverlay(e.Frame, _currentMatch);
+            _overlayDrawer?.DrawOverlay(e.Frame, e.Time, _currentMatch);
         }
 
         public void DeleteRecording(string storagePath, int matchNumber, Guid? tournamentId)
@@ -66,10 +68,22 @@ namespace Wrestling.UI.Material.Utils.Recording
             }
 
             _currentMatch = match;
-            
+
+            // LOGO
+            _currentMatch.LogoImage = new System.Drawing.Bitmap("Images\\RosbosLogo.png");
+            _currentMatch.LogoRectangle = new System.Drawing.RectangleF(50, 50, 100, 100);
+            _currentMatch.LogoPosition = Model.LogoPositionEnum.RIGHT_BOTTOM;
+            // LOGO
+
             var fileName = GetAvailableFileName(storagePath, match, tournamentId);
 
-            _currentRecorder = FfmpegCamRecorder.StartRecording(fileName, config, RecorderOnNewFrame);
+            _currentRecorder = FfmpegCamRecorder.StartRecording(
+                fileName, 
+                config, 
+                RecorderOnNewFrame, 
+                match.MaxRoundSecond * 1000); // we need ms
+
+
         }
 
         public void StopRecording()
@@ -98,23 +112,22 @@ namespace Wrestling.UI.Material.Utils.Recording
 
         public static string GetFullStoragePath(Guid? tournamentId, string baseStoragePath)
         {
-            string dirPath = baseStoragePath;
+            string dirPath = Path.Combine(baseStoragePath, GetTournamentName(tournamentId));
+            return dirPath;
+        }
 
+        public static string GetTournamentName(Guid? tournamentId)
+        {
             if (tournamentId.HasValue)
             {
-                dirPath = Path.Combine(dirPath, tournamentId.Value.ToString());
+                return tournamentId.Value.ToString();
             }
-            else
-            {
-                dirPath = Path.Combine(dirPath, DateTime.Now.ToString("yyyyMMdd"));
-            }
-
-            return dirPath;
+            return  DateTime.Now.ToString("yyyyMMdd");
         }
 
         private string GetAvailableFileName(string storagePath, ScoreScreenViewModel match, Guid? tournamentId)
         {
-            string dirPath = GetFullStoragePath(tournamentId, storagePath);
+            string dirPath = storagePath;// GetFullStoragePath(tournamentId, storagePath);
 
             if (!Directory.Exists(dirPath))
             {
@@ -122,13 +135,33 @@ namespace Wrestling.UI.Material.Utils.Recording
             }
 
             int partNumber = 1;
-            var fileName = Path.Combine(dirPath, match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
+            var fileName = Path.Combine(dirPath, GetTournamentName(tournamentId) + "\\" + match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
             while (File.Exists(fileName))
             {
                 partNumber++;
-                fileName = Path.Combine(dirPath, match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
+                fileName = Path.Combine(dirPath, GetTournamentName(tournamentId) + "\\" + match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
             }
             return fileName;
+        }
+
+        public void SetTimerOffset(int t)
+        {
+            _currentRecorder?.SetTimerOffset(t);
+        }
+
+        public void SetMainSecond(int t)
+        {
+            _currentRecorder?.SetMainSecond(t);
+        }
+
+        public void SetMaxSeconds(int t)
+        {
+            _currentRecorder?.SetMaxSeconds(t);
+        }
+
+        public void CreateOverlay(bool flag)
+        {
+            _currentRecorder?.CreateOverlay(flag);
         }
     }
 }

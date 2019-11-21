@@ -8,19 +8,21 @@ namespace Wrestling.Recorder
         public Bitmap Frame { get; set; }
         public long Time { get; set; }
         public int Index { get; set; }
+        public bool IsDrawTimer { get; set; }
 
-        public FrameGeneratedEventArgs(Bitmap frame, long time, int index)
+        public FrameGeneratedEventArgs(Bitmap frame, long time, int index, bool isDrawTimer)
         {
             Frame = frame;
             Time = time;
             Index = index;
+            IsDrawTimer = isDrawTimer;
         }
 
-        public String FileName
+        public string FileName
         {
             get
             {
-                return $"over{Index.ToString("000000")}.png";
+                return $"over{Index.ToString("000000")}{FFMPEG.Scene.ImageOverExt}";
             }
         }
     }

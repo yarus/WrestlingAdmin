@@ -11,22 +11,14 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
     {
         private ScreenSlide _item;
         private ObservableCollection<WrestlingMatch> _upcomingMatches;
+        private ObservableCollection<AgeWeightGroup> _groups;
 
         private int _sliderOpacityValue;
+        private int _showMatchesCount;
         private string _sliderBackgroundImagePath;
 
         public UpcomingMatchesViewModel(IDiContainer container) : base(container)
         {
-        }
-
-        public override void InitData()
-        {
-            base.InitData();
-
-            UpcomingMatches = new ObservableCollection<WrestlingMatch>(DataContext.Tournament.Groups
-                .SelectMany(g => g.Bracket.Rounds)
-                .SelectMany(r => r.RoundMatches).Where(m => m.Status == MatchStatusEnum.Pending)
-                .OrderBy(m => m.MatchNumber).Take(5));
         }
 
         #region Binding Properties
@@ -43,6 +35,8 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
 
         public double SliderOpacity => (double)_sliderOpacityValue / 100;
 
+        public string SliderName => Item?.Title;
+
         public int SliderOpacityValue
         {
             get { return _sliderOpacityValue; }
@@ -51,6 +45,28 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
                 _sliderOpacityValue = value;
                 OnPropertyChanged("SliderOpacity");
                 OnPropertyChanged("SliderOpacityValue");
+            }
+        }
+
+        public int ShowMatchesCount
+        {
+            get { return _showMatchesCount; }
+            set
+            {
+                _showMatchesCount = value;
+                OnPropertyChanged("ShowMatchesCount");
+                OnPropertyChanged("UpcomingMatches");
+            }
+        }
+
+        public ObservableCollection<AgeWeightGroup> Groups
+        {
+            get { return _groups; }
+            set
+            {
+                _groups = value;
+
+                OnPropertyChanged("Groups");
             }
         }
 
@@ -71,10 +87,20 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             {
                 _item = value;
                 OnPropertyChanged("Item");
+                OnPropertyChanged("SliderName");
             }
         }
        
         #endregion
+
+        private void LoadMatches()
+        {
+            UpcomingMatches = new ObservableCollection<WrestlingMatch>(Groups
+                .SelectMany(g => g.Bracket.Rounds)
+                .SelectMany(r => r.RoundMatches)
+                .Where(m => m.IsMatchCanStart)
+                .OrderBy(m => m.MatchNumber).Take(ShowMatchesCount));
+        }
 
         public void TimerTick()
         {
@@ -83,9 +109,38 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
 
         public void InitContext(ScreenSlide slide)
         {
-            _item = slide;
+            Item = slide;
 
             InitData();
+
+            var showMatchesCount = _item.GetNamedValue("ShowMatchesCount");
+            if (showMatchesCount != null)
+            {
+                ShowMatchesCount = Convert.ToInt32(showMatchesCount);
+            }
+            else
+            {
+                ShowMatchesCount = 4;
+            }
+
+            var carpetID = _item.GetNamedValue("CarpetID");
+            if (carpetID != null)
+            {
+                var carpetGuid = new Guid(carpetID.ToString());
+                var carpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == carpetGuid);
+                if (carpet != null)
+                {
+                    Groups = carpet.Groups;
+                }
+                else
+                {
+                    Groups = DataContext.Tournament.Groups;
+                }
+            }
+            else
+            {
+                Groups = DataContext.Tournament.Groups;
+            }
 
             var opacity = _item.GetNamedValue("SliderOpacityValue");
             if (opacity != null)
@@ -106,6 +161,8 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             {
                 SliderBackgroundImagePath = DataContext.Tournament.Settings.SliderBackgroundImagePath;
             }
+
+            LoadMatches();
         }
     }
 }

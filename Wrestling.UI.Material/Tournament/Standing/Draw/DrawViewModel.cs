@@ -49,12 +49,30 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             _drawTypes = Resolve<List<IGroupBracketProcessor>>();
 
             Groups = new ObservableCollection<AgeWeightGroup>(DataContext.Tournament.Groups.OrderBy(g => g.IsFemale).ThenByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax));
+
+            // Check groups
+            foreach (var wrestler in DataContext.Tournament.Wrestlers)
+            {
+                var group = Groups.FirstOrDefault(gr => gr.ID == wrestler.GroupID);
+                if (group != null)
+                {
+                    if (wrestler.IsRegistrationApproved && group.Wrestlers.FirstOrDefault(wr => wr == wrestler) == null)
+                    {
+                        group.Wrestlers.Add(wrestler);
+                    }
+                }
+                else
+                {
+                    wrestler.GroupID = null;
+                    wrestler.GroupName = string.Empty;
+                }
+            }
         }
 
         #region Binding Properties
 
         public int GroupsCount => DataContext.Tournament.GroupsCount;
-        public int WrestlersCount => DataContext.Tournament.AppliedWrestlersCount;
+        public int WrestlersCount => Groups?.SelectMany(gr => gr.Wrestlers).Count() ?? 0;
         public int MatchesCount => DataContext.Tournament.MatchesCount;
 
         public string PageName => "Жеребьевка";

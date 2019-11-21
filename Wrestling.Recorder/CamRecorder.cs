@@ -90,6 +90,11 @@ namespace Wrestling.Recorder
             CleanupInternalResources();
         }
 
+        public void SetMaxSeconds(int seconds)
+        {
+            
+        }
+
         public event EventHandler<FrameGeneratedEventArgs> NewFrame;
 
         protected virtual void OnNewFrame(FrameGeneratedEventArgs e)
@@ -439,6 +444,20 @@ namespace Wrestling.Recorder
                     _videoWriter = null;
                 }
             }
+        }
+
+        public void SetTimerOffset(int t)
+        {
+        }
+
+        public void CreateOverlay(bool flag)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetMainSecond(int t)
+        {
+            
         }
 
         #endregion

@@ -7,7 +7,7 @@ namespace Wrestling.Entities.Bracket
     {
         public override string Title => "Олимпийская с матчем за 3-е место";
         public override string Code => BracketTypeEnum.Olympic.ToString();
-        public override int? AthletsMinCount => 8;
+        public override int? AthletsMinCount => 4;
         public override int? AthletsMaxCount => 64;
 
         protected override void GenerateMainRounds()

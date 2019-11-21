@@ -5,6 +5,6 @@ namespace Wrestling.UI.Material.Utils.Recording.OverlayDrawer
 {
     public interface IOverlayDrawer
     {
-        void DrawOverlay(Bitmap frame, ScoreScreenViewModel currentMatch);
+        void DrawOverlay(Bitmap frame, long time, ScoreScreenViewModel currentMatch);
     }
 }

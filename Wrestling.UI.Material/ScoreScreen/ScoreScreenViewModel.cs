@@ -30,6 +30,7 @@ namespace Wrestling.UI.Material.ScoreScreen
         private bool _isTimerBackward;
         private bool _isSoundEnabled;
         private bool _isTimeout;
+        private bool _isFinalization;
         private int _round;
         private int _wrestler1WarningsNumber;
         private int _wrestler2WarningsNumber;
@@ -71,6 +72,10 @@ namespace Wrestling.UI.Material.ScoreScreen
                 OnPropertyChanged("BackgroundPath");
             }
         }
+
+        public System.Drawing.Bitmap LogoImage { get; set; }
+        public System.Drawing.RectangleF LogoRectangle { get; set; }
+        public LogoPositionEnum LogoPosition { get; set; }
 
         private double _backgroundOpacity;
 
@@ -132,8 +137,9 @@ namespace Wrestling.UI.Material.ScoreScreen
                     {
                         UpcomingMatches = new ObservableCollection<WrestlingMatch>(LastMatchCarpet.Groups
                             .SelectMany(g => g.Bracket.Rounds)
-                            .SelectMany(r => r.RoundMatches).Where(m => m.Status == MatchStatusEnum.Pending)
-                            .OrderBy(m => m.MatchNumber).Take(2));
+                            .SelectMany(r => r.RoundMatches)
+                            .Where(m => m.IsMatchCanStart)
+                            .OrderBy(m => m.MatchNumber).Take(3));
 
                         if (UpcomingMatches.Count > 0)
                         {
@@ -511,7 +517,9 @@ namespace Wrestling.UI.Material.ScoreScreen
             }
         }
 
-        public TimeSpan TickCounter => IsTimerBackward ? new TimeSpan(0, 0, 0, (IsTimeout ? MaxTimeoutSecond : MaxRoundSecond) - MainSeconds) : new TimeSpan(0, 0, 0, MainSeconds);
+        public TimeSpan TickCounter => IsTimerBackward 
+            ? new TimeSpan(0, 0, 0, (IsTimeout ? MaxTimeoutSecond : MaxRoundSecond) - MainSeconds) 
+            : new TimeSpan(0, 0, 0, MainSeconds);
 
         public TimeSpan TickCounterAction1 => IsTimerBackward
             ? new TimeSpan(0, 0, 0, MaxActionSecond - SecondarySeconds)
@@ -685,6 +693,16 @@ namespace Wrestling.UI.Material.ScoreScreen
                 _isTimeout = value;
                 OnPropertyChanged("IsTimeout");
                 OnPropertyChanged("TickCounter");
+            }
+        }
+
+        public bool IsFinalization
+        {
+            get { return _isFinalization; }
+            set
+            {
+                _isFinalization = value;
+                OnPropertyChanged("IsFinalization");
             }
         }
     }

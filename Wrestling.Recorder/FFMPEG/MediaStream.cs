@@ -13,6 +13,7 @@ namespace Wrestling.Recorder.FFMPEG
         public String Lang { get; set; }
         public StreamTypeEnum StreamType { get; set; }
         public String Name { get; set; }
+        public String AlterName { get; set; }
         public String Code { get; set; }
         public int Bitrate { get; set; }
         public String Fps { get; set; }

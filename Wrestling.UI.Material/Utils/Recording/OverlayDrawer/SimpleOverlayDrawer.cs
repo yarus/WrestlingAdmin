@@ -6,7 +6,7 @@ namespace Wrestling.UI.Material.Utils.Recording.OverlayDrawer
 {
     public class SimpleOverlayDrawer : BaseOverlayDrawer
     {
-        public override void DrawOverlay(Bitmap frame, ScoreScreenViewModel currentMatch)
+        public override void DrawOverlay(Bitmap frame, long time, ScoreScreenViewModel currentMatch)
         {
             if (currentMatch == null || frame == null) return;
 
