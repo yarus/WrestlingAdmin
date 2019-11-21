@@ -291,10 +291,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 ID = Guid.NewGuid(),
                 TeamID = app.ID,
-                TeamName = app.ShortName,
-                IsFemale = false,
-                IsWeightApproved = false,
-                IsEntryFeePaid = false
+                TeamName = app.ShortName
             };
 
             if (!DataContext.Tournament.EntryFee.HasValue || DataContext.Tournament.EntryFee.Value == 0)
