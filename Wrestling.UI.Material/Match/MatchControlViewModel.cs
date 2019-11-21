@@ -537,6 +537,7 @@ namespace Wrestling.UI.Material.Match
 
             AddAction("Таймер запущен", 0, null);
 
+            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
             _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
 
             if (ScoreScreenVm.MainSeconds == 0 && ScoreScreenVm.IsSoundEnabled)
@@ -969,6 +970,7 @@ namespace Wrestling.UI.Material.Match
                 }
 
                 _timer.Stop();
+                IsRunning = false;
 
                 ScoreScreenVm.IsTimeout = false;
                 ScoreScreenVm.MainSeconds = 0;
@@ -976,6 +978,7 @@ namespace Wrestling.UI.Material.Match
 
                 _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxRoundSecond);
                 _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
+                _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
 
                 OnPropertyChanged("IsStartButtonVisible");
                 OnPropertyChanged("IsStopButtonVisible");

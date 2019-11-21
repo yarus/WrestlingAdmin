@@ -17,5 +17,7 @@ namespace Wrestling.UI.Material.Utils.Recording
         void SetMainSecond(int t);
         void SetMaxSeconds(int t);
         IEnumerable<string> GetMatchRecordings(string storagePath, WrestlingMatch match, Guid? tournamentId);
+
+        event EventHandler<string> RecordingCompleted;
     }
 }

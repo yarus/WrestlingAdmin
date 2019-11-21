@@ -14,6 +14,7 @@ using Wrestling.UI.Material.Tournament;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
 using Wrestling.UI.Material.Tournament.Results;
+using Wrestling.UI.Material.Utils;
 using Wrestling.UI.Material.Utils.Recording;
 using Wrestling.UI.Utils;
 
@@ -34,6 +35,8 @@ namespace Wrestling.UI.Material.Match
         private IGroupBracketProcessor _processor;
 
         private ICommand _setWinnerCommand;
+
+        private GlobalSettings _settings;
 
         public MatchResultsViewModel(IDiContainer container) : base(container)
         {
@@ -143,6 +146,8 @@ namespace Wrestling.UI.Material.Match
                 _processor.Load(DataContext.Tournament, DataContext.Group);
                 CanRejectResult = _processor.CanMatchBeReverted(WrestlingMatch);
             }
+
+            _settings = DataContext.Tournament != null ? DataContext.Tournament.Settings : GlobalSettings;
         }
 
         #region Binding Properties
@@ -294,12 +299,39 @@ namespace Wrestling.UI.Material.Match
                 SecondInRound = WrestlingMatch.LastSecondInMatch > WrestlingMatch.MaxRoundSecond ? WrestlingMatch.LastSecondInMatch - WrestlingMatch.MaxRoundSecond : WrestlingMatch.LastSecondInMatch,
                 Text = "Матч завершен"
             });
+            
+            if (_settings.IsVideoRecordingEnabled)
+            {
+                _recorder.RecordingCompleted += OnRecordingCompleted;
 
-            _recorder.StopRecording();
+                CompleteMatch();
+
+                ShowSnackMessage("Идет запись видео-файла...");
+
+                _recorder.StopRecording();
+            }
+            else
+            {
+                if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
+                {
+                    NavigateToMatches();
+                }
+                else
+                {
+                    BackToNavigateToHome();
+                }
+            }
+        }
+
+        private void OnRecordingCompleted(object sender, string e)
+        {
+            ShowSnackMessage(e);
+
+            _recorder.RecordingCompleted -= OnRecordingCompleted;
 
             if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
             {
-                CompleteMatchAndNavigateToMatches();
+                NavigateToMatches();
             }
             else
             {
@@ -307,7 +339,7 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        private void CompleteMatchAndNavigateToMatches()
+        private void CompleteMatch()
         {
             var group = DataContext.Tournament.Groups.FirstOrDefault(p => p.ID == WrestlingMatch.GroupID);
             if (group == null) throw new ApplicationException("Can't find group!");
@@ -317,7 +349,10 @@ namespace Wrestling.UI.Material.Match
             _processor.CompleteMatch(WrestlingMatch, WrestlingMatch.IsRedWon.Value, WrestlingMatch.WinType.Value);
 
             _scoreScreenVm.ShowWinner(WrestlingMatch);
+        }
 
+        private void NavigateToMatches()
+        {
             if (DataContext.IsBracketView)
             {
                 NavigateToView<BracketsViewModel>();

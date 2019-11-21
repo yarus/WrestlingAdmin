@@ -96,6 +96,8 @@ namespace Wrestling.Recorder
         }
 
         public event EventHandler<FrameGeneratedEventArgs> NewFrame;
+        public event EventHandler<string> ConcatCompleted;
+        public event EventHandler<Exception> ConcatException;
 
         protected virtual void OnNewFrame(FrameGeneratedEventArgs e)
         {

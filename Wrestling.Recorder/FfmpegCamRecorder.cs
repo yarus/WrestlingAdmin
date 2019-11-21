@@ -782,8 +782,10 @@ namespace Wrestling.Recorder
             proc_o.BeginErrorReadLine();
             proc_o.WaitForExit();
 
-            if (proc_o.ExitCode != 0 && ConcatException != null)
-                ConcatException(this, new Exception(""));
+            if (proc_o.ExitCode != 0)
+            {
+                throw new Exception("PrepareResults process completed with failure. ExitCode: " + proc_o.ExitCode);
+            }
 
             ConcatCompleted?.Invoke(this, fileName);
         }

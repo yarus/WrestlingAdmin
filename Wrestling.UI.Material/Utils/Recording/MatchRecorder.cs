@@ -83,12 +83,23 @@ namespace Wrestling.UI.Material.Utils.Recording
                 RecorderOnNewFrame, 
                 match.MaxRoundSecond * 1000); // we need ms
 
-
+            _currentRecorder.ConcatCompleted += OnConcatCompleted;
+            _currentRecorder.ConcatException += OnConcatException;
         }
 
         public void StopRecording()
         {
             _currentRecorder?.StopRecording();
+        }
+
+        private void OnConcatException(object sender, Exception e)
+        {
+            RecordingCompleted?.Invoke(this, "При сохранении файла произошла ошибка!");
+        }
+
+        public void OnConcatCompleted(object sender, string result)
+        {
+            RecordingCompleted?.Invoke(this, "Сохранение файла успешно завершено!");
         }
 
         public IEnumerable<string> GetMatchRecordings(string storagePath, WrestlingMatch match, Guid? tournamentId)
@@ -109,6 +120,8 @@ namespace Wrestling.UI.Material.Utils.Recording
 
             return result;
         }
+
+        public event EventHandler<string> RecordingCompleted;
 
         public static string GetFullStoragePath(Guid? tournamentId, string baseStoragePath)
         {

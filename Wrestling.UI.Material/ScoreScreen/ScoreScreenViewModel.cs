@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
@@ -51,6 +52,8 @@ namespace Wrestling.UI.Material.ScoreScreen
         private string _winnerTeamEmblem;
         private Wrestler _winner;
         private SolidColorBrush _winnerColorBrush;
+
+        private DispatcherTimer _timer;
 
         private Carpet _lastMatchCarpet;
 
@@ -125,40 +128,48 @@ namespace Wrestling.UI.Material.ScoreScreen
             IsMainScreenVisible = false;
             IsWinnerDialogVisible = true;
 
-            Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith((t, _) =>
+            _timer = new DispatcherTimer(DispatcherPriority.Send);
+            _timer.Tick += OnWinnerShowCompleted;
+            _timer.Interval = new TimeSpan(0, 0, 0, 5);
+            _timer.Start();
+        }
+
+        private void OnWinnerShowCompleted(object sender, EventArgs e)
+        {
+            WinnerColorBrush = null;
+            WinnerTeamEmblem = string.Empty;
+            IsWinnerDialogVisible = false;
+
+            if (LastMatchCarpet != null && DataContext.Tournament != null)
             {
-                WinnerColorBrush = null;
-                WinnerTeamEmblem = string.Empty;
-                IsWinnerDialogVisible = false;
-
-                if (LastMatchCarpet != null && DataContext.Tournament != null)
+                if (!IsMainScreenVisible)
                 {
-                    if (!IsMainScreenVisible)
-                    {
-                        UpcomingMatches = new ObservableCollection<WrestlingMatch>(LastMatchCarpet.Groups
-                            .SelectMany(g => g.Bracket.Rounds)
-                            .SelectMany(r => r.RoundMatches)
-                            .Where(m => m.IsMatchCanStart)
-                            .OrderBy(m => m.MatchNumber).Take(3));
+                    UpcomingMatches = new ObservableCollection<WrestlingMatch>(LastMatchCarpet.Groups
+                        .SelectMany(g => g.Bracket.Rounds)
+                        .SelectMany(r => r.RoundMatches)
+                        .Where(m => m.IsMatchCanStart)
+                        .OrderBy(m => m.MatchNumber).Take(3));
 
-                        if (UpcomingMatches.Count > 0)
-                        {
-                            IsUpcomingMatchesVisible = true;
-                        }
-                        else
-                        {
-                            IsMainScreenVisible = true;
-                        }
+                    if (UpcomingMatches.Count > 0)
+                    {
+                        IsUpcomingMatchesVisible = true;
+                    }
+                    else
+                    {
+                        IsMainScreenVisible = true;
                     }
                 }
-                else
-                {
-                    IsMainScreenVisible = true;
-                }
+            }
+            else
+            {
+                IsMainScreenVisible = true;
+            }
 
-                Winner = null;
+            Winner = null;
 
-            }, null, TaskScheduler.FromCurrentSynchronizationContext());
+            _timer.Stop();
+            _timer.Tick -= OnWinnerShowCompleted;
+            _timer = null;
         }
 
         public override void InitData()
