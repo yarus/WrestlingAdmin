@@ -14,7 +14,6 @@ using Wrestling.UI.Material.Tournament;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
 using Wrestling.UI.Material.Tournament.Results;
-using Wrestling.UI.Material.Utils;
 using Wrestling.UI.Material.Utils.Recording;
 using Wrestling.UI.Utils;
 
@@ -30,6 +29,7 @@ namespace Wrestling.UI.Material.Match
         private Guid? _winner;
         private MatchWinTypeEnum? _winType;
         private string _note;
+        private bool _isFormEnabled;
 
         private readonly List<IGroupBracketProcessor> _drawTypes;
         private IGroupBracketProcessor _processor;
@@ -148,6 +148,8 @@ namespace Wrestling.UI.Material.Match
             }
 
             _settings = DataContext.Tournament != null ? DataContext.Tournament.Settings : GlobalSettings;
+
+            IsFormEnabled = true;
         }
 
         #region Binding Properties
@@ -188,6 +190,17 @@ namespace Wrestling.UI.Material.Match
                 _winType = value;
 
                 OnPropertyChanged("WinType");
+            }
+        }
+
+        public bool IsFormEnabled
+        {
+            get { return _isFormEnabled; }
+            set
+            {
+                _isFormEnabled = value;
+
+                OnPropertyChanged("IsFormEnabled");
             }
         }
 
@@ -304,9 +317,11 @@ namespace Wrestling.UI.Material.Match
             {
                 _recorder.RecordingCompleted += OnRecordingCompleted;
 
+                IsFormEnabled = false;
+
                 CompleteMatch();
 
-                ShowSnackMessage("Идет запись видео-файла...");
+                ShowSnackMessage("Подождите, идет запись видео-файла...");
 
                 _recorder.StopRecording();
             }
@@ -325,6 +340,8 @@ namespace Wrestling.UI.Material.Match
 
         private void OnRecordingCompleted(object sender, string e)
         {
+            IsFormEnabled = true;
+
             ShowSnackMessage(e);
 
             _recorder.RecordingCompleted -= OnRecordingCompleted;

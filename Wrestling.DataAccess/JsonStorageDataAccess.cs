@@ -77,7 +77,7 @@ namespace Wrestling.DataAccess
                     jsonWriter.Flush();
                 }
             }
-            catch(Exception ex)
+            catch (Exception)
             {
                 return false;
             }

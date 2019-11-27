@@ -22,7 +22,7 @@
         </converters1:ValueConverterGroup>
     </UserControl.Resources>
 
-    <Grid x:Name="MainForm">
+    <Grid x:Name="MainForm" IsEnabled="{Binding IsFormEnabled}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />

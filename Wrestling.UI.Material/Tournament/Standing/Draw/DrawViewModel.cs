@@ -136,6 +136,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             
             var vm = new AddBracketViewModel(DiContainer, group);
             vm.InitData();
+
             var view = new AddBracketDialog
             {
                 DataContext = vm
@@ -156,6 +157,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                 foreach (var wr in group.Wrestlers)
                 {
                     wr.FinalPlace = null;
+                    wr.IsSeedFixed = true;
                 }
 
                 if (group.Bracket != null)

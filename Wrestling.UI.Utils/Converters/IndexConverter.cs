@@ -9,7 +9,10 @@ namespace Wrestling.UI.Utils.Converters
     {
         public object Convert(object value, Type TargetType, object parameter, CultureInfo culture)
         {
+            if (value == null) return string.Empty;
+
             ListViewItem item = (ListViewItem)value;
+
             ListView listView = ItemsControl.ItemsControlFromItemContainer(item) as ListView;
 
             if (listView == null) return string.Empty;
@@ -18,9 +21,7 @@ namespace Wrestling.UI.Utils.Converters
 
             if (parameter != null)
             {
-                int adjustment;
-
-                if (int.TryParse(parameter.ToString(), out adjustment))
+                if (int.TryParse(parameter.ToString(), out var adjustment))
                 {
                     index += adjustment;
                 }
@@ -30,7 +31,7 @@ namespace Wrestling.UI.Utils.Converters
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            return string.Empty;
         }
     }
 }
