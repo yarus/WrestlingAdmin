@@ -103,14 +103,14 @@ namespace Wrestling.Entities.Results
                 var redActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
                     .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed == _wrestler) && x.LastSecondInMatch > 3)
                     .SelectMany(m => m.MatchActions)
-                    .Where(a => a.Points > 0 && a.IsForRed.HasValue && a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 1)
+                    .Where(a => a.Points > 0 && a.IsForRed.HasValue && a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
                     .OrderBy(a => a.SecondInRound)
                     .ToList();
 
                 var blueActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
                     .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue == _wrestler) && x.LastSecondInMatch > 3)
                     .SelectMany(m => m.MatchActions)
-                    .Where(a => a.Points > 0 && a.IsForRed.HasValue && !a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 1)
+                    .Where(a => a.Points > 0 && a.IsForRed.HasValue && !a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
                     .OrderBy(a => a.SecondInRound)
                     .ToList();
 

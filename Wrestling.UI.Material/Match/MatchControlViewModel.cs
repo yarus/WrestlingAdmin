@@ -1003,10 +1003,12 @@ namespace Wrestling.UI.Material.Match
                 if (ScoreScreenVm.Round == 1)
                 {
                     ScoreScreenVm.IsTimeout = true;
-                    ScoreScreenVm.MainSeconds = 0;
+                    ScoreScreenVm.MainSeconds = 0;                    
 
                     _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxTimeoutSecond);
                     _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
+
+                    ScoreScreenVm.Round = 2;
 
                     _timer.Start();
                     //_timerSw.Restart();
