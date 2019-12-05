@@ -8,6 +8,7 @@ using Wrestling.DataAccess;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Entities.Results;
+using Wrestling.Entities.Results.Achievements;
 using Wrestling.Integration;
 using Wrestling.Providers;
 using Wrestling.Recorder;
@@ -158,6 +159,16 @@ namespace Wrestling.UI.Material
             di.Add(new OlympicTeamResultsOrderer(), "OlympicOrderer");
             di.Add(new MedalsTeamResultsOrderer(), "MedalsOrderer");
             di.Add(new PointsTeamResultsOrderer(), "PointsOrderer");
+
+            di.Add<List<IAchievementCalculator>>(new List<IAchievementCalculator>
+            {
+                new FastestWinAchievementCalculator(),
+                new FastestActionAchievementCalculator(),
+                new MostAmplitudeActionsAchievementCalculator(),
+                new MostPointsCountAchievementCalculator(),
+                new MostTusheWinsAchievementCalculator(),
+                new MostDominationWinsAchievementCalculator()
+            });
 
             di.Add<IRosbosApi>(new RosbosApi());
 

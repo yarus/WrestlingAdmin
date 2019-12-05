@@ -650,10 +650,6 @@
     <Resource Include="Resources\scoreboard.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\Wrestling.Recorder\FFMPEG\bin\ffmpeg_x64.exe">
-      <Link>ffmpeg_x64.exe</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="Images\DefaultLogo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

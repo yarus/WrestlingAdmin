@@ -109,6 +109,13 @@
     <None Include="app.config" />
     <None Include="FFMPEG\doc\examples\Makefile" />
     <None Include="FFMPEG\doc\examples\README" />
+    <Content Include="FFMPEG\bin\ffplay.exe" />
+    <Content Include="FFMPEG\bin\ffprobe.exe" />
+    <Content Include="FFMPEG\doc\bootstrap.min.css" />
+    <Content Include="FFMPEG\doc\default.css" />
+    <Content Include="FFMPEG\doc\mailing-list-faq.html" />
+    <Content Include="FFMPEG\doc\style.min.css" />
+    <Content Include="FFMPEG\LICENSE.txt" />
     <Content Include="FFMPEG\presets\ffprobe.xsd">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

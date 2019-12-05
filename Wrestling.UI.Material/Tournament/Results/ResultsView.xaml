@@ -27,6 +27,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="1*" />
             </Grid.RowDefinitions>
 
@@ -125,8 +126,33 @@
             </Expander>
 
             <Border Grid.Row="2" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
-            
-            <Grid Grid.Row="3" Grid.Column="0" Margin="10">
+
+            <Expander Grid.Row="3" Grid.Column="0" IsExpanded="False">
+                <Expander.Header>
+                    <Grid Margin="10">
+                        <TextBlock TextWrapping="NoWrap" Text="Достижения спортсменов в турнире" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" FontWeight="Normal" />
+                    </Grid>
+                </Expander.Header>
+                <Expander.Content>
+                    <ListView ItemsSource="{Binding Achievements}">
+                        <ListView.View>
+                            <GridView AllowsColumnReorder="true">
+                                <GridViewColumn Header="#" DisplayMemberBinding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
+                                <GridViewColumn DisplayMemberBinding="{Binding Wrestler.FullName}" Header="ФИО" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding Wrestler.TeamName}" Header="Команда" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding Wrestler.GroupName}" Header="Категория" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding Title}" Header="Номинация" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding AchievementType}" Header="Тип" Width="Auto" />
+                                <GridViewColumn DisplayMemberBinding="{Binding AchievementValue}" Header="Достижение" Width="Auto" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Expander.Content>
+            </Expander>
+
+            <Border Grid.Row="3" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
+
+            <Grid Grid.Row="4" Grid.Column="0" Margin="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -172,7 +198,7 @@
                 </StackPanel>
             </Grid>
 
-            <ListView Grid.Row="4" Grid.Column="0" Margin="10"
+            <ListView Grid.Row="5" Grid.Column="0" Margin="10"
                       DataContext="{StaticResource WrestlersGroup}"
                       ItemsSource="{Binding IsAsync=True}">
                 <ListView.GroupStyle>

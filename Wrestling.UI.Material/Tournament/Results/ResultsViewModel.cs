@@ -4,8 +4,10 @@ using System.Globalization;
 using System.Linq;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
+using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Entities.Results;
+using Wrestling.Entities.Results.Achievements;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Tournament.Dashboard;
 using Wrestling.UI.Material.Tournament.Print.PrintResults;
@@ -13,7 +15,7 @@ using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Results
 {
-    public class ResultsViewModel : TournamentViewModelBase
+    public partial class ResultsViewModel : TournamentViewModelBase
     {
         #region Fields
 
@@ -34,6 +36,7 @@ namespace Wrestling.UI.Material.Tournament.Results
         private List<TournamentTeamResult> _olympicTeamResults;
         private List<TournamentTeamResult> _medalsTeamResults;
         private List<TournamentTeamResult> _pointsTeamResults;
+        private List<WrestlerAchievement> _achievements;
 
         private IList<CommandButtonItem> _quickButtons;
 
@@ -134,6 +137,16 @@ namespace Wrestling.UI.Material.Tournament.Results
             }
         }
 
+        public List<WrestlerAchievement> Achievements
+        {
+            get { return _achievements; }
+            set
+            {
+                _achievements = value;
+                OnPropertyChanged("Achievements");
+            }
+        }
+
         public List<TournamentResult> PersonalResults
         {
             get { return _personalResults; }
@@ -205,6 +218,7 @@ namespace Wrestling.UI.Material.Tournament.Results
             MedalsTeamResults = Resolve<ITeamResultsOrderer>("MedalsOrderer").GetOrderedResults(_teamResults);
             PointsTeamResults = Resolve<ITeamResultsOrderer>("PointsOrderer").GetOrderedResults(_teamResults);
 
+            Achievements = CalculateAchievements();
         }
 
         protected override void OnBackCommand()
@@ -229,6 +243,25 @@ namespace Wrestling.UI.Material.Tournament.Results
         private void PrintPersonalResults()
         {
             ShowPrintPreview(new PrintPersonalResultsViewModel(DiContainer) {Results = PersonalResults});
+        }
+
+        private List<WrestlerAchievement> CalculateAchievements()
+        {
+            var achievements = new List<WrestlerAchievement>();
+
+            var calculators = Resolve<List<IAchievementCalculator>>();
+
+            foreach (var calc in calculators)
+            {
+                var achievement = calc.CalculateAchievement(PersonalResults);
+
+                if (achievement != null)
+                {
+                    achievements.Add(achievement);
+                }
+            }
+
+            return achievements;
         }
 
         private void CalculatePersonalResults()
