@@ -224,6 +224,12 @@ namespace Wrestling.Entities.Bracket
         {
             if (Group.Bracket == null) return;
 
+            var notCompletedMainMatches = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).SelectMany(p => p.RoundMatches).Where(x => x.Status != MatchStatusEnum.Completed).ToList();
+            if (notCompletedMainMatches.Count > 0)
+            {
+                return;
+            }
+
             InitInternalProcessors();
 
             var resultsA = _groupAProcessor.GetResults().ToList();
@@ -243,38 +249,55 @@ namespace Wrestling.Entities.Bracket
             var finalists = new List<Wrestler>();
 
             // 1-2 place
-            var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
-            if (winner != null)
+            if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue)
             {
-                finalists.Add(winner);
-                winner.FinalPlace = currentPlace;
-                currentPlace++;
-            }
+                var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
+                if (winner != null)
+                {
+                    finalists.Add(winner);
+                    winner.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
 
-            var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
-            if (looser != null)
+                var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
+                if (looser != null)
+                {
+                    finalists.Add(looser);
+                    looser.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
+            } 
+            else
             {
-                finalists.Add(looser);
-                looser.FinalPlace = currentPlace;
-                currentPlace++;
+                // can't calculate yet
+                currentPlace += 2;
             }
 
             // 3-4 place
             var thirdPlace = addRounds[addRounds.Count - 1].RoundMatches[0];
-            var bronzeWinner = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
-            if (bronzeWinner != null)
-            {
-                finalists.Add(bronzeWinner);
-                bronzeWinner.FinalPlace = currentPlace;
-                currentPlace++;
-            }
 
-            var bronzeLooser = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
-            if (bronzeLooser != null)
+            if (thirdPlace.Status == MatchStatusEnum.Completed && thirdPlace.IsRedWon.HasValue)
             {
-                finalists.Add(bronzeLooser);
-                bronzeLooser.FinalPlace = currentPlace;
-                currentPlace++;
+                var bronzeWinner = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
+                if (bronzeWinner != null)
+                {
+                    finalists.Add(bronzeWinner);
+                    bronzeWinner.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
+
+                var bronzeLooser = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
+                if (bronzeLooser != null)
+                {
+                    finalists.Add(bronzeLooser);
+                    bronzeLooser.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
+            }
+            else
+            {
+                // can't calculate yet
+                currentPlace += 2;
             }
 
             // Other places should be set based on main round robin results
