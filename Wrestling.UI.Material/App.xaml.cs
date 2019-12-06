@@ -167,7 +167,8 @@ namespace Wrestling.UI.Material
                 new MostAmplitudeActionsAchievementCalculator(),
                 new MostPointsCountAchievementCalculator(),
                 new MostTusheWinsAchievementCalculator(),
-                new MostDominationWinsAchievementCalculator()
+                new MostDominationWinsAchievementCalculator(),
+                new WinInLast10SecondsAchievementCalculator()
             });
 
             di.Add<IRosbosApi>(new RosbosApi());

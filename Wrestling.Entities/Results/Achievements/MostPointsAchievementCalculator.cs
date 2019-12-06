@@ -7,8 +7,9 @@ namespace Wrestling.Entities.Results.Achievements
     {
         public string AchievementTitle => "Машина Борьбы";
         public string AchievementType => "MostPointsCount";
+        public string AchievementDefinition => "Борец, набравший больше всех баллов за турнир";
 
-        public WrestlerAchievement CalculateAchievement(List<TournamentResult> results)
+        public List<WrestlerAchievement> CalculateAchievement(Tournament tournament, List<TournamentResult> results)
         {
             if (results == null || results.Count == 0)
             {
@@ -17,20 +18,28 @@ namespace Wrestling.Entities.Results.Achievements
 
             var result = results.Max(r => r.AllGainedPoints);
 
-            var finalResult = results
+            var finalResults = results
                 .Where(r => r.AllGainedPoints == result)
                 .OrderBy(r => r.MatchesCount)
                 .ThenByDescending(r => r.Wins)
                 .ThenByDescending(r => r.Wrestler.BirthDate)
-                .First();
+                .ToList();
 
-            return new WrestlerAchievement
+            var response = new List<WrestlerAchievement>();
+
+            foreach (var item in finalResults)
             {
-                Title = AchievementTitle,
-                Wrestler = finalResult.Wrestler,
-                AchievementType = AchievementType,
-                AchievementValue = finalResult.AllGainedPoints.ToString()
-            };
+                response.Add(new WrestlerAchievement
+                {
+                    Title = AchievementTitle,
+                    Wrestler = item.Wrestler,
+                    AchievementType = AchievementType,
+                    AchievementValue = item.AllGainedPoints.ToString(),
+                    AchievementDefinition = AchievementDefinition
+                });
+            }
+
+            return response;
         }
     }
 }

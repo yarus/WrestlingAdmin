@@ -8,8 +8,9 @@ namespace Wrestling.Entities.Results.Achievements
         public string AchievementTitle => "Доминатор";
 
         public string AchievementType => "MostDominationWins";
+        public string AchievementDefinition => "Борец, выигравший больше всего схваток по техническому превосходству";
 
-        public WrestlerAchievement CalculateAchievement(List<TournamentResult> results)
+        public List<WrestlerAchievement> CalculateAchievement(Tournament tournament, List<TournamentResult> results)
         {
             if (results == null || results.Count == 0)
             {
@@ -18,20 +19,28 @@ namespace Wrestling.Entities.Results.Achievements
 
             var result = results.Max(r => r.WinsByDomination);
 
-            var finalResult = results
+            var finalResults = results
                 .Where(r => r.WinsByDomination == result)
                 .OrderBy(r => r.MatchesCount)
                 .ThenByDescending(r => r.Wins)
                 .ThenByDescending(r => r.Wrestler.BirthDate)
-                .First();
+                .ToList();
 
-            return new WrestlerAchievement
+            var response = new List<WrestlerAchievement>();
+
+            foreach (var item in finalResults)
             {
-                Title = AchievementTitle,
-                Wrestler = finalResult.Wrestler,
-                AchievementType = AchievementType,
-                AchievementValue = finalResult.WinsByDomination.ToString()
-            };
+                response.Add(new WrestlerAchievement
+                {
+                    Title = AchievementTitle,
+                    Wrestler = item.Wrestler,
+                    AchievementType = AchievementType,
+                    AchievementValue = item.WinsByDomination.ToString(),
+                    AchievementDefinition = AchievementDefinition
+                });
+            }
+
+            return response;
         }
     }
 }

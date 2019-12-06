@@ -52,6 +52,7 @@
     <Compile Include="Results\Achievements\IAchievementCalculator.cs" />
     <Compile Include="Results\Achievements\MostAmplitudeActionsAchievementCalculator.cs" />
     <Compile Include="Results\Achievements\MostTusheWinsAchievementCalculator.cs" />
+    <Compile Include="Results\Achievements\WinInLast10SecondsAchievementCalculator.cs" />
     <Compile Include="Results\Achievements\WrestlerAchievement.cs" />
     <Compile Include="Results\ITeamResultsCalculator.cs" />
     <Compile Include="Results\ITeamResultsOrderer.cs" />

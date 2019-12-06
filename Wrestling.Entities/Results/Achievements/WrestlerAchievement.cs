@@ -6,5 +6,7 @@
         public string Title { get; set; }
         public string AchievementType { get; set; }
         public string AchievementValue { get; set; }
+        public string AchievementDefinition { get; set; }
+        public string AchievementDetails { get; set; }
     }
 }

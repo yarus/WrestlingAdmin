@@ -160,8 +160,8 @@ namespace Wrestling.UI.Material.Match
         public bool IsPointsWinEnabled => !IsMatchStarted || IsMatchCompletedInTime;
         public bool IsActionWinEnabled => IsMatchCompletedInTime && WrestlingMatch.PointsBlue == WrestlingMatch.PointsRed;
         public bool IsDominationWinEnabled => WrestlingMatch.PointsBlue - WrestlingMatch.PointsRed >= 10 || WrestlingMatch.PointsRed - WrestlingMatch.PointsBlue >= 10;
-        public bool IsTusheWinEnabled => !IsMatchStarted || !IsMatchCompletedInTime && !IsFreeWinEnabled;
-        public bool IsTechWinEnabled => !IsMatchStarted || !IsMatchCompletedInTime && !IsFreeWinEnabled;
+        public bool IsTusheWinEnabled => !IsMatchStarted && !IsFreeWinEnabled;
+        public bool IsTechWinEnabled => !IsMatchStarted && !IsFreeWinEnabled;
         public bool IsWinnerRed => Winner.HasValue && WrestlingMatch.WrestlerInRed != null && Winner.Value == WrestlingMatch.WrestlerInRed.ID;
         public bool IsWinnerBlue => Winner.HasValue && WrestlingMatch.WrestlerInBlue != null && Winner.Value == WrestlingMatch.WrestlerInBlue.ID;
         public bool IsSetWinnerRedVisible => WrestlingMatch.Status == MatchStatusEnum.Pending && (!Winner.HasValue || WrestlingMatch.WrestlerInBlue != null && WrestlingMatch.WrestlerInBlue.ID == Winner.Value);

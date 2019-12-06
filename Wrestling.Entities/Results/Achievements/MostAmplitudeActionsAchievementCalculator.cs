@@ -7,8 +7,9 @@ namespace Wrestling.Entities.Results.Achievements
     {
         public string AchievementTitle => "Космодром";
         public string AchievementType => "MostAmplitudeActions";
+        public string AchievementDefinition => "Борец, выполнивший больше всех 4-бальных бросков за турнир";
 
-        public WrestlerAchievement CalculateAchievement(List<TournamentResult> results)
+        public List<WrestlerAchievement> CalculateAchievement(Tournament tournament, List<TournamentResult> results)
         {
             if (results == null || results.Count == 0)
             {
@@ -17,25 +18,28 @@ namespace Wrestling.Entities.Results.Achievements
 
             var result = results.Max(r => r.NumberOfAmplitudeActions);
 
-            var finalResult = results
+            var finalResults = results
                 .Where(r => r.NumberOfAmplitudeActions == result)
                 .OrderBy(r => r.MatchesCount)
                 .ThenByDescending(r => r.Wins)
                 .ThenByDescending(r => r.Wrestler.BirthDate)
-                .First();
+                .ToList();
 
-            if (finalResult == null)
+            var response = new List<WrestlerAchievement>();
+
+            foreach (var item in finalResults)
             {
-                return null;
+                response.Add(new WrestlerAchievement
+                {
+                    Title = AchievementTitle,
+                    Wrestler = item.Wrestler,
+                    AchievementType = AchievementType,
+                    AchievementValue = item.NumberOfAmplitudeActions.ToString(),
+                    AchievementDefinition = AchievementDefinition
+                });
             }
 
-            return new WrestlerAchievement
-            {
-                Title = AchievementTitle,
-                Wrestler = finalResult.Wrestler,
-                AchievementType = AchievementType,
-                AchievementValue = finalResult.NumberOfAmplitudeActions.ToString()
-            };
+            return response;
         }
     }
 }

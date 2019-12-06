@@ -8,8 +8,9 @@ namespace Wrestling.Entities.Results.Achievements
         public string AchievementTitle => "Метеор";
 
         public string AchievementType => "FastestAction";
+        public string AchievementDefinition => "Борец, быстрее всех выполнивший результативное действие";
 
-        public WrestlerAchievement CalculateAchievement(List<TournamentResult> results)
+        public List<WrestlerAchievement> CalculateAchievement(Tournament tournament, List<TournamentResult> results)
         {
             if (results == null || results.Count == 0)
             {
@@ -18,20 +19,28 @@ namespace Wrestling.Entities.Results.Achievements
 
             var smallestResult = results.Min(r => r.FastestActionSecond);
 
-            var finalResult =
+            var finalResults =
                 results
                 .Where(r => r.FastestActionSecond == smallestResult)
                 .OrderByDescending(r => r.Wins)
                 .ThenByDescending(r => r.Wrestler.BirthDate)
-                .First();
+                .ToList();
 
-            return new WrestlerAchievement
+            var response = new List<WrestlerAchievement>();
+
+            foreach (var item in finalResults)
             {
-                Title = AchievementTitle,
-                Wrestler = finalResult.Wrestler,
-                AchievementType = AchievementType,
-                AchievementValue = finalResult.FastestActionSecond.ToString()
-            };
+                response.Add(new WrestlerAchievement
+                {
+                    Title = AchievementTitle,
+                    Wrestler = item.Wrestler,
+                    AchievementType = AchievementType,
+                    AchievementValue = item.FastestActionSecond.ToString(),
+                    AchievementDefinition = AchievementDefinition
+                });
+            }
+
+            return response;
         }
     }
 }

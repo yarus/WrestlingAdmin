@@ -6,7 +6,8 @@ namespace Wrestling.Entities.Results.Achievements
     {
         string AchievementTitle { get; }
         string AchievementType { get; }
+        string AchievementDefinition { get; }
 
-        WrestlerAchievement CalculateAchievement(List<TournamentResult> results);
+        List<WrestlerAchievement> CalculateAchievement(Tournament tournament, List<TournamentResult> results);
     }
 }
