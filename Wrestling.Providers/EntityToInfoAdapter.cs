@@ -28,7 +28,9 @@ namespace Wrestling.Providers
                 IsAutosaveEnabled = info.IsAutosaveEnabled,
                 AutosaveMaxSecond = info.AutosaveMaxSecond,
                 IsTournamentScoreInternational = info.IsTournamentScoreInternational,
-                IsOverlayOlympic = info.IsOverlayOlympic
+                IsOverlayOlympic = info.IsOverlayOlympic,
+                IsVideoRecordingEnabled = info.IsVideoRecordingEnabled,
+                VideoStoragePath = info.VideStoragePath
             };
 
             return entity;
@@ -53,7 +55,9 @@ namespace Wrestling.Providers
                 IsAutosaveEnabled = entity.IsAutosaveEnabled,
                 AutosaveMaxSecond = entity.AutosaveMaxSecond,
                 IsTournamentScoreInternational = entity.IsTournamentScoreInternational,
-                IsOverlayOlympic = entity.IsOverlayOlympic
+                IsOverlayOlympic = entity.IsOverlayOlympic,
+                IsVideoRecordingEnabled = entity.IsVideoRecordingEnabled,
+                VideStoragePath = entity.VideoStoragePath
             };
 
             return info;
