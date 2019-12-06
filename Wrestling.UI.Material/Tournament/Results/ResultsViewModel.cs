@@ -28,6 +28,7 @@ namespace Wrestling.UI.Material.Tournament.Results
         private ICommand _printTeamResultsMedalsCommand;
         private ICommand _printTeamResultsPointsCommand;
         private ICommand _printPersonalResultsCommand;
+        private ICommand _printWrestlerAchievementsCommand;
 
         private List<TournamentResult> _allResults;
         private List<TournamentResult> _visibleResults;
@@ -94,6 +95,18 @@ namespace Wrestling.UI.Material.Tournament.Results
                     _printTeamResultsPointsCommand = new RelayCommand(param => PrintTeamResults(new PrintPointsTeamResultsViewModel(DiContainer) { TeamResults = PointsTeamResults }), param => true);
                 }
                 return _printTeamResultsPointsCommand;
+            }
+        }
+
+        public ICommand PrintWrestlerAchievementsCommand
+        {
+            get
+            {
+                if (_printWrestlerAchievementsCommand == null)
+                {
+                    _printWrestlerAchievementsCommand = new RelayCommand(param => PrintWrestlerAchievements(new PrintAchievementNominantsViewModel(DiContainer) { Results = Achievements }), param => true);
+                }
+                return _printWrestlerAchievementsCommand;
             }
         }
 
@@ -239,6 +252,11 @@ namespace Wrestling.UI.Material.Tournament.Results
         }
 
         private void PrintTeamResults(PrintTeamResultsViewModel vm)
+        {
+            ShowPrintPreview(vm);
+        }
+
+        private void PrintWrestlerAchievements(PrintAchievementNominantsViewModel vm)
         {
             ShowPrintPreview(vm);
         }

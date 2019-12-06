@@ -35,7 +35,7 @@ namespace Wrestling.Entities.Results.Achievements
                     Title = AchievementTitle,
                     Wrestler = item.Wrestler,
                     AchievementType = AchievementType,
-                    AchievementValue = item.FastestActionSecond.ToString(),
+                    AchievementValue = $"{item.FastestActionSecond} (сек.)",
                     AchievementDefinition = AchievementDefinition
                 });
             }

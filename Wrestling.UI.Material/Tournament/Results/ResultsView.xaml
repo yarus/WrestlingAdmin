@@ -100,7 +100,7 @@
                     <Grid Margin="10">
                         <TextBlock TextWrapping="NoWrap" Text="Командные Результаты по рейтингу Rosbos" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" FontWeight="Normal" />
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right">
-                            <Button ToolTip="Распечатать итоговый протокол командных результатов по рейтинку Rosbos" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                            <Button ToolTip="Распечатать итоговый протокол командных результатов по рейтингу Rosbos" VerticalAlignment="Center" HorizontalAlignment="Right" 
                                     Command="{Binding Path=DataContext.PrintTeamResultsPointsCommand, ElementName=RootControl}">
                                 <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0" Padding="0" />
                             </Button>
@@ -131,6 +131,12 @@
                 <Expander.Header>
                     <Grid Margin="10">
                         <TextBlock TextWrapping="NoWrap" Text="Достижения спортсменов в турнире" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" FontWeight="Normal" />
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right">
+                            <Button ToolTip="Распечатать Достижения спортсменов" VerticalAlignment="Center" HorizontalAlignment="Right" 
+                                    Command="{Binding Path=DataContext.PrintWrestlerAchievementsCommand, ElementName=RootControl}">
+                                <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0" Padding="0" />
+                            </Button>
+                        </StackPanel>
                     </Grid>
                 </Expander.Header>
                 <Expander.Content>

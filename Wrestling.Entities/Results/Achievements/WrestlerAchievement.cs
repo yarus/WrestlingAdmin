@@ -8,5 +8,7 @@
         public string AchievementValue { get; set; }
         public string AchievementDefinition { get; set; }
         public string AchievementDetails { get; set; }
+
+        public string FullTitle => $"{Title}: {AchievementDefinition}";
     }
 }

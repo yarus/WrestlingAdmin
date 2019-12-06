@@ -171,6 +171,10 @@
     <Compile Include="ScoreScreen\WwfScoreScreenView.xaml.cs">
       <DependentUpon>WwfScoreScreenView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Tournament\Print\PrintResults\PrintAchievementNominantsView.xaml.cs">
+      <DependentUpon>PrintAchievementNominantsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Print\PrintResults\PrintAchievementNominantsViewModel.cs" />
     <Compile Include="Utils\Converters\FullNameToLastNameConverter.cs" />
     <Compile Include="Utils\Recording\IMatchRecorder.cs" />
     <Compile Include="Utils\Recording\OverlayDrawer\BaseOverlayDrawer.cs" />
@@ -466,6 +470,10 @@
     <Page Include="Slider\Slides\VideoSlide\VideoSlideView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Print\PrintResults\PrintAchievementNominantsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Tournament\Standing\Details\AddGroupDialog.xaml">
       <Generator>MSBuild:Compile</Generator>

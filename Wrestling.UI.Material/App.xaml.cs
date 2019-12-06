@@ -27,7 +27,7 @@ using Wrestling.UI.Material.Utils;
 using Wrestling.UI.Material.Utils.Recording;
 using Wrestling.UI.Material.Utils.Recording.OverlayDrawer;
 using Wrestling.UI.Utils;
-using InternationalScoreScreenView = Wrestling.UI.Material.ScoreScreen.InternationalScoreScreenView;
+
 using SlideHostView = Wrestling.UI.Material.Slider.SlideHostView;
 
 namespace Wrestling.UI.Material

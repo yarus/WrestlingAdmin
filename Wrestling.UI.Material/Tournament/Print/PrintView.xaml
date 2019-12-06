@@ -44,8 +44,12 @@
 
             <DataTemplate DataType="{x:Type printResults:PrintPersonalResultsViewModel}">
                 <printResults:PrintPersonalResultsView />
-            </DataTemplate>         
-            
+            </DataTemplate>
+
+            <DataTemplate DataType="{x:Type printResults:PrintAchievementNominantsViewModel}">
+                <printResults:PrintAchievementNominantsView />
+            </DataTemplate>
+
         </ResourceDictionary>
     </model:ChildWindowBase.Resources>
 
