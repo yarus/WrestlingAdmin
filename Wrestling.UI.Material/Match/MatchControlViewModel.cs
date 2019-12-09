@@ -490,16 +490,24 @@ namespace Wrestling.UI.Material.Match
 
         private void StartRecording()
         {
-            _currentRecorder?.StartRecording(
-                _settings.VideoStoragePath, 
-                _recConfig, 
-                ScoreScreenVm, 
-                DataContext.Tournament?.ID);
-            _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxRoundSecond);
-            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
-            _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
-            _currentRecorder?.CreateOverlay(true);
-            
+            try
+            {
+                _currentRecorder?.StartRecording(
+                    _settings.VideoStoragePath,
+                    _recConfig,
+                    ScoreScreenVm,
+                    DataContext.Tournament?.ID);
+                _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxRoundSecond);
+                _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
+                _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
+                _currentRecorder?.CreateOverlay(true);
+            }
+            catch(Exception ex)
+            {
+                ShowSnackMessage($"При попытке начать видеозапись произошла ошибка: {ex.Message}");
+            }
+
+
             OnPropertyChanged("IsVideoRecording");
         }
 
