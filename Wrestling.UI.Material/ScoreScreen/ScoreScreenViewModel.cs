@@ -41,7 +41,9 @@ namespace Wrestling.UI.Material.ScoreScreen
         private int _secondarySeconds;
         private string _matchFullNumber;
         private int _bestActionRed;
+        private int _bestActionRedCount;
         private int _bestActionBlue;
+        private int _bestActionBlueCount;
         private bool _isLastActionRed;
         private bool _isPlayer1WithAdvantage;
         private bool _isPlayer2WithAdvantage;
@@ -267,7 +269,9 @@ namespace Wrestling.UI.Material.ScoreScreen
             Points2 = 0;
             Wrestler1WarningsNumber = 0;
             Wrestler2WarningsNumber = 0;
+            _bestActionBlueCount = 0;
             BestActionBlue = 0;
+            BestActionRedCount = 0;
             BestActionRed = 0;
             Round = 1;
             IsAction1TimerEnabled = false;
@@ -454,6 +458,16 @@ namespace Wrestling.UI.Material.ScoreScreen
             }
         }
 
+        public int BestActionRedCount
+        {
+            get { return _bestActionRedCount; }
+            set
+            {
+                _bestActionRedCount = value;
+                OnPropertyChanged("BestActionRedCount");
+            }
+        }
+
         public int BestActionBlue
         {
             get { return _bestActionBlue; }
@@ -461,6 +475,16 @@ namespace Wrestling.UI.Material.ScoreScreen
             {
                 _bestActionBlue = value;
                 OnPropertyChanged("BestActionBlue");
+            }
+        }
+
+        public int BestActionBlueCount
+        {
+            get { return _bestActionBlueCount; }
+            set
+            {
+                _bestActionBlueCount = value;
+                OnPropertyChanged("BestActionBlueCount");
             }
         }
 

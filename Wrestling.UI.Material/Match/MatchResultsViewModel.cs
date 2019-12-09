@@ -160,8 +160,8 @@ namespace Wrestling.UI.Material.Match
         public bool IsPointsWinEnabled => !IsMatchStarted || IsMatchCompletedInTime;
         public bool IsActionWinEnabled => IsMatchCompletedInTime && WrestlingMatch.PointsBlue == WrestlingMatch.PointsRed;
         public bool IsDominationWinEnabled => WrestlingMatch.PointsBlue - WrestlingMatch.PointsRed >= 10 || WrestlingMatch.PointsRed - WrestlingMatch.PointsBlue >= 10;
-        public bool IsTusheWinEnabled => !IsMatchStarted && !IsFreeWinEnabled;
-        public bool IsTechWinEnabled => !IsMatchStarted && !IsFreeWinEnabled;
+        public bool IsTusheWinEnabled => !IsFreeWinEnabled;
+        public bool IsTechWinEnabled => !IsFreeWinEnabled;
         public bool IsWinnerRed => Winner.HasValue && WrestlingMatch.WrestlerInRed != null && Winner.Value == WrestlingMatch.WrestlerInRed.ID;
         public bool IsWinnerBlue => Winner.HasValue && WrestlingMatch.WrestlerInBlue != null && Winner.Value == WrestlingMatch.WrestlerInBlue.ID;
         public bool IsSetWinnerRedVisible => WrestlingMatch.Status == MatchStatusEnum.Pending && (!Winner.HasValue || WrestlingMatch.WrestlerInBlue != null && WrestlingMatch.WrestlerInBlue.ID == Winner.Value);
@@ -276,6 +276,7 @@ namespace Wrestling.UI.Material.Match
             }
 
             WrestlingMatch = null;
+            WinType = null;
             Note = string.Empty;
 
             if (Tournament == null)
@@ -312,15 +313,15 @@ namespace Wrestling.UI.Material.Match
                 SecondInRound = WrestlingMatch.LastSecondInMatch > WrestlingMatch.MaxRoundSecond ? WrestlingMatch.LastSecondInMatch - WrestlingMatch.MaxRoundSecond : WrestlingMatch.LastSecondInMatch,
                 Text = "Матч завершен"
             });
-            
+
+            CompleteMatch();
+
             if (_settings.IsVideoRecordingEnabled)
             {
                 _recorder.RecordingCompleted += OnRecordingCompleted;
 
                 IsFormEnabled = false;
-
-                CompleteMatch();
-
+                
                 ShowSnackMessage("Подождите, идет запись видео-файла...");
 
                 _recorder.StopRecording();
@@ -420,6 +421,7 @@ namespace Wrestling.UI.Material.Match
             else
             {
                 Winner = null;
+                WinType = null;
 
                 if (IsMatchCompletedInTime)
                 {
@@ -449,7 +451,8 @@ namespace Wrestling.UI.Material.Match
                         WinType = MatchWinTypeEnum.ActionWin;
                     }
                 }
-                else
+
+                if (Winner == null && WinType == null)
                 {
                     if (WrestlingMatch.PointsRed - WrestlingMatch.PointsBlue >= 10)
                     {

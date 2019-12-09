@@ -35,7 +35,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />                        
                     </Grid.ColumnDefinitions>
                     
                     <Border BorderThickness="1" Grid.Column="1" Grid.ColumnSpan="2" BorderBrush="DarkGray"></Border>
@@ -54,19 +54,20 @@
             </StackPanel>
 
             <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Ковров:" />
-                <Run Text="{Binding CarpetsCount, Mode=OneWay}" />
-            </TextBlock>
-
-            <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Поединков:" />
+                <Run Text="Схваток:" />
                 <Run Text="{Binding MatchesCount, Mode=OneWay}" />
             </TextBlock>
 
-            <TextBlock Grid.Row="0" Grid.Column="4" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
+            <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
                 <Run Text="Завершено:" />
                 <Run Text="{Binding CompletedMatchesCount, Mode=OneWay}" />
             </TextBlock>
+
+            <TextBlock Grid.Row="0" Grid.Column="4" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
+                <Run Text="Осталось:" />
+                <Run Text="{Binding LeftMatchesCount, Mode=OneWay}" />
+            </TextBlock>            
+            
         </Grid>
     
         <ScrollViewer Grid.Row="1" Margin="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">

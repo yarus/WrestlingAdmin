@@ -34,6 +34,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         public int CarpetsCount => DataContext.Tournament.Carpets.Count;
         public int MatchesCount => DataContext.Tournament.Groups.Sum(g => g.Bracket?.MatchesCount ?? 0);
         public int CompletedMatchesCount => DataContext.Tournament.Groups.Sum(g => g.Bracket?.CompletedMatchesCount ?? 0);
+        public int LeftMatchesCount => MatchesCount - CompletedMatchesCount;
 
         public ScheduleViewModel(IDiContainer container) : base(container)
         {

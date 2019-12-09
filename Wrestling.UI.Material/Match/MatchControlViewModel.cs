@@ -172,6 +172,8 @@ namespace Wrestling.UI.Material.Match
                 keyHandler.KeyPressed -= KeyHandler_KeyPressed;
                 keyHandler.KeyPressed += KeyHandler_KeyPressed;
             }
+
+            ScoreScreenVm.IsTimeout = false;
         }
 
         #region Commands
@@ -663,7 +665,9 @@ namespace Wrestling.UI.Material.Match
             {
                 IsRunning = false;
             }
-         
+
+            ScoreScreenVm.IsTimeout = false;
+
             //_currentRecorder.StopRecording();
 
             CopyDataFromViewToMatch();
@@ -686,7 +690,9 @@ namespace Wrestling.UI.Material.Match
             DataContext.WrestlingMatch.MaxActionSecond = ScoreScreenVm.MaxActionSecond;
             DataContext.WrestlingMatch.MaxTimeoutSecond = ScoreScreenVm.MaxTimeoutSecond;
             DataContext.WrestlingMatch.BestActionRed = ScoreScreenVm.BestActionRed;
+            DataContext.WrestlingMatch.BestActionRedCount = ScoreScreenVm.BestActionRedCount;
             DataContext.WrestlingMatch.BestActionBlue = ScoreScreenVm.BestActionBlue;
+            DataContext.WrestlingMatch.BestActionBlueCount = ScoreScreenVm.BestActionBlueCount;
             DataContext.WrestlingMatch.IsLastActionRed = ScoreScreenVm.IsLastActionRed;
             DataContext.WrestlingMatch.WarningsNumberRed = ScoreScreenVm.Wrestler1WarningsNumber;
             DataContext.WrestlingMatch.WarningsNumberBlue = ScoreScreenVm.Wrestler2WarningsNumber;
@@ -760,11 +766,25 @@ namespace Wrestling.UI.Material.Match
             return new BitmapImage(new Uri(isEnabled ? enablePath : cancelPath, UriKind.Relative));
         }
 
-        private MatchAction GetBestAction(bool? isRed)
+        private void ResetBestActions()
         {
-            var action = _matchActions.Where(a => (!isRed.HasValue || a.IsForRed == isRed)).OrderByDescending(a => a.Points).FirstOrDefault();
+            var redBestAction = _matchActions.Where(a => a.IsForRed.HasValue && a.IsForRed.Value).OrderByDescending(a => a.Points).FirstOrDefault();
+            if (redBestAction != null)
+            {
+                ScoreScreenVm.BestActionRed = redBestAction.Points;
 
-            return action;
+                var actionCount = _matchActions.Count(a => a.IsForRed.HasValue && a.IsForRed.Value && a.Points == redBestAction.Points);
+                ScoreScreenVm.BestActionRedCount = actionCount;
+            }
+
+            var blueBestAction = _matchActions.Where(a => a.IsForRed.HasValue && !a.IsForRed.Value).OrderByDescending(a => a.Points).FirstOrDefault();
+            if (blueBestAction != null)
+            {
+                ScoreScreenVm.BestActionBlue = blueBestAction.Points;
+
+                var actionCount = _matchActions.Count(a => a.IsForRed.HasValue && !a.IsForRed.Value && a.Points == redBestAction.Points);
+                ScoreScreenVm.BestActionBlueCount = actionCount;
+            }
         }
 
         private MatchAction GetLastWrestlerPointsAction(bool? isRed)
@@ -772,12 +792,94 @@ namespace Wrestling.UI.Material.Match
             for (int i = _matchActions.Count - 1; i >= 0; i--)
             {
                 var action = _matchActions[i];
-                if (action.Points > 0 && action.IsForRed == isRed) return action;
+                if (action.Points > 0 && (!isRed.HasValue || action.IsForRed.Value == isRed.Value)) return action;
             }
 
             return null;
         }
         
+        private void AdjustLastPoint(bool isForRed)
+        {
+            var lastPoint = GetLastWrestlerPointsAction(isForRed);
+            if (lastPoint != null)
+            {
+                if (isForRed)
+                {
+                    ScoreScreenVm.Points1 -= lastPoint.Points;
+                } 
+                else
+                {
+                    ScoreScreenVm.Points2 -= lastPoint.Points;
+                }
+
+                _matchActions.Remove(lastPoint);
+
+                var lastPointsAction = GetLastWrestlerPointsAction(null);
+                if (lastPointsAction != null)
+                {
+                    ScoreScreenVm.IsLastActionRed = lastPointsAction.IsForRed.Value;
+                }
+
+                AddAction($"Коррекция баллов для борца в красном на {lastPoint.Points}", 0, lastPoint.IsForRed);
+
+                ResetBestActions();
+            }
+        }
+
+        private void AddPoints(bool isForRed, int value)
+        {
+            if (isForRed)
+            {
+                ScoreScreenVm.Points1 = ScoreScreenVm.Points1 + value;
+            } 
+            else
+            {
+                ScoreScreenVm.Points2 = ScoreScreenVm.Points1 + value;
+            }            
+
+            if (value > 0)
+            {
+                if (isForRed)
+                {
+                    if (ScoreScreenVm.BestActionRed < value)
+                    {
+                        ScoreScreenVm.BestActionRed = value;
+                        ScoreScreenVm.BestActionRedCount = 1;
+                    }
+                    else if (ScoreScreenVm.BestActionRed == value)
+                    {
+                        ScoreScreenVm.BestActionRedCount++;
+                    }
+                }
+                else
+                {
+                    if (ScoreScreenVm.BestActionBlue < value)
+                    {
+                        ScoreScreenVm.BestActionBlue = value;
+                        ScoreScreenVm.BestActionBlueCount = 1;
+                    }
+                    else if (ScoreScreenVm.BestActionBlue == value)
+                    {
+                        ScoreScreenVm.BestActionBlueCount++;
+                    }
+                }
+
+                AddPointsAction(isForRed, value);
+
+                ScoreScreenVm.IsLastActionRed = isForRed;
+            }
+            else
+            {
+                // Correction
+                AdjustLastPoint(true);
+            }
+
+            if (ScoreScreenVm.Points1 < 0)
+            {
+                ScoreScreenVm.Points1 = 0;
+            }
+        }
+
         private void AdjustPoints(string param)
         {
             var items = param.Split(',');
@@ -797,81 +899,7 @@ namespace Wrestling.UI.Material.Match
                 Action2Visibility = Visibility.Visible;
             }
 
-            if (isRed)
-            {
-                ScoreScreenVm.Points1 = ScoreScreenVm.Points1 + value;
-
-                if (value > 0)
-                {
-                    if (ScoreScreenVm.BestActionRed < value) ScoreScreenVm.BestActionRed = value;
-                    AddPointsAction(true, value);
-                    ScoreScreenVm.IsLastActionRed = true;
-                }
-                else
-                {
-                    var lastPoint = GetLastWrestlerPointsAction(true);
-                    if (lastPoint != null)
-                    {
-                        ScoreScreenVm.Points1 -= lastPoint.Points;
-                        AddAction($"Коррекция баллов для борца в красном на {value}", 0, null);
-                        _matchActions.Remove(lastPoint);
-
-                        var lastPointsAction = GetLastWrestlerPointsAction(null);
-                        if (lastPointsAction?.IsForRed != null)
-                        {
-                            ScoreScreenVm.IsLastActionRed = lastPointsAction.IsForRed.Value;
-                        }
-
-                        var bestAction = GetBestAction(true);
-                        if (bestAction != null)
-                        {
-                            ScoreScreenVm.BestActionRed = bestAction.Points;
-                        }
-                    }
-                }
-
-                if (ScoreScreenVm.Points1 < 0)
-                {
-                    ScoreScreenVm.Points1 = 0;
-                }
-            }
-            else
-            {
-                ScoreScreenVm.Points2 = ScoreScreenVm.Points2 + value;
-                if (value > 0)
-                {
-                    if (ScoreScreenVm.BestActionBlue < value) ScoreScreenVm.BestActionBlue = value;
-                    AddPointsAction(false, value);
-                    ScoreScreenVm.IsLastActionRed = false;
-                }
-                else
-                {
-                    var lastPoint = GetLastWrestlerPointsAction(false);
-                    if (lastPoint != null)
-                    {
-                        ScoreScreenVm.Points2 -= lastPoint.Points;
-                        AddAction($"Коррекция баллов для борца в синем на {value}", 0, null);
-                        _matchActions.Remove(lastPoint);
-
-                        var lastPointsAction = GetLastWrestlerPointsAction(null);
-                        if (lastPointsAction?.IsForRed != null)
-                        {
-                            ScoreScreenVm.IsLastActionRed = lastPointsAction.IsForRed.Value;
-                        }
-
-                        var bestAction = GetBestAction(false);
-                        if (bestAction != null)
-                        {
-                            ScoreScreenVm.BestActionBlue = bestAction.Points;
-                        }
-                    }
-                }
-
-                if (ScoreScreenVm.Points2 < 0)
-                {
-                    ScoreScreenVm.Points2 = 0;
-                }
-            }
+            AddPoints(isRed, value);
 
             CalculateAdvantage();
         }
@@ -889,6 +917,14 @@ namespace Wrestling.UI.Material.Match
                     ScoreScreenVm.IsPlayer1WithAdvantage = true;
                 }
                 else if (ScoreScreenVm.BestActionBlue > ScoreScreenVm.BestActionRed)
+                {
+                    ScoreScreenVm.IsPlayer2WithAdvantage = true;
+                }
+                else if (ScoreScreenVm.BestActionRed == ScoreScreenVm.BestActionBlue && ScoreScreenVm.BestActionRedCount > ScoreScreenVm.BestActionBlueCount)
+                {
+                    ScoreScreenVm.IsPlayer1WithAdvantage = true;
+                }
+                else if (ScoreScreenVm.BestActionRed == ScoreScreenVm.BestActionBlue && ScoreScreenVm.BestActionBlueCount > ScoreScreenVm.BestActionRedCount)
                 {
                     ScoreScreenVm.IsPlayer2WithAdvantage = true;
                 }
