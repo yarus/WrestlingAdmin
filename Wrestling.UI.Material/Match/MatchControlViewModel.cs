@@ -505,6 +505,14 @@ namespace Wrestling.UI.Material.Match
             catch(Exception ex)
             {
                 ShowSnackMessage($"При попытке начать видеозапись произошла ошибка: {ex.Message}");
+
+                try
+                {
+                    StopRecording();
+                }
+                catch
+                {
+                }
             }
 
 
