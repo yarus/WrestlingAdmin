@@ -1,11 +1,13 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Wrestling.Entities;
+using Wrestling.Entities.Bracket;
 
 namespace Wrestling.UI.Material.Model
 {
     public class UniqueMatchNumbersGenerator : IMatchNumbersGenerator
     {
-        public void Generate(Entities.Tournament tournament)
+        public void Generate(Entities.Tournament tournament, List<IGroupBracketProcessor> processors)
         {
             var groupList = tournament.Carpets.SelectMany(c => c.Groups).ToList();
 

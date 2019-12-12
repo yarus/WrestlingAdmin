@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
+using Wrestling.Entities.Bracket;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
 
@@ -263,7 +265,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
 
         private void GenerateMatchNumbers()
         {
-            _matchNumbersGenerator.Generate(DataContext.Tournament);
+            _matchNumbersGenerator.Generate(DataContext.Tournament, Resolve<List<IGroupBracketProcessor>>());
         }
     }
 }

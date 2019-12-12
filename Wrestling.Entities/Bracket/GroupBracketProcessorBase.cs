@@ -284,5 +284,60 @@ namespace Wrestling.Entities.Bracket
             list[i] = list[j];
             list[j] = temp;
         }
+
+        public virtual GroupRound GetSemiFinalRound(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null || group.Bracket.Rounds.Count < 2) return null;
+
+            var mainRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+
+            if (mainRounds.Count < 2) return null;
+
+            return mainRounds[mainRounds.Count - 2];
+        }
+
+        public virtual List<GroupRound> GetMainQualificationRounds(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
+
+            var result = new List<GroupRound>();
+
+            var semiFinalRound = GetSemiFinalRound(group);
+
+            if (semiFinalRound == null) return result;
+
+            foreach(var round in group.Bracket.Rounds)
+            {
+                if (round.RoundNumber < semiFinalRound.RoundNumber)
+                {
+                    result.Add(round);
+                }
+            }
+
+            return result;
+        }
+
+        public virtual GroupRound Get3rdPlaceRound(AgeWeightGroup group)
+        {
+            return null;
+        }
+
+        public virtual List<GroupRound> GetAdditionalQualificationRounds(AgeWeightGroup group)
+        {
+            return new List<GroupRound>();
+        }
+
+        public virtual GroupRound GetFinalRound(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
+
+            var mainRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+
+            if (mainRounds.Count == 0) return null;
+
+            var finalRound = mainRounds[mainRounds.Count - 1];
+
+            return finalRound;
+        }
     }
 }

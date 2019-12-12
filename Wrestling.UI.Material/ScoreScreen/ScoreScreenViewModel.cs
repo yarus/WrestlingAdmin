@@ -169,9 +169,12 @@ namespace Wrestling.UI.Material.ScoreScreen
 
             Winner = null;
 
-            _timer.Stop();
-            _timer.Tick -= OnWinnerShowCompleted;
-            _timer = null;
+            if (_timer != null)
+            {
+                _timer.Stop();
+                _timer.Tick -= OnWinnerShowCompleted;
+                _timer = null;
+            }
         }
 
         public override void InitData()

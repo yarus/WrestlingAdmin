@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Wrestling.Entities.Bracket
@@ -364,6 +365,30 @@ namespace Wrestling.Entities.Bracket
                     }
                 }
             }
+        }        
+
+        public override GroupRound Get3rdPlaceRound(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
+
+            var addRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+
+            if (addRounds.Count == 0) return null;
+
+            return addRounds[addRounds.Count - 1];
+        }
+
+        public override List<GroupRound> GetAdditionalQualificationRounds(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
+
+            var addRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+
+            if (addRounds.Count == 0) return null;
+
+            addRounds.RemoveAt(addRounds.Count - 1);            
+
+            return addRounds;
         }
     }
 }

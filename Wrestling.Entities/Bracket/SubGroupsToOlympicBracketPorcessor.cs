@@ -493,5 +493,59 @@ namespace Wrestling.Entities.Bracket
             return Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional)
                        .SelectMany(r => r.RoundMatches).Count(m => m.Status == MatchStatusEnum.Completed) == 0;
         }
+
+        public override List<GroupRound> GetMainQualificationRounds(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
+
+            return group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+        }
+
+        public override GroupRound GetSemiFinalRound(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null || group.Bracket.Rounds.Count == 0)
+            {
+                return null;
+            }
+
+            var additionalRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+
+            if (additionalRounds.Count == 0)
+            {
+                return null;
+            }
+            
+            return additionalRounds[0];
+        }
+
+        public override GroupRound Get3rdPlaceRound(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null || group.Bracket.Rounds.Count == 0)
+            {
+                return null;
+            }
+
+            var additionalRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+
+            if (additionalRounds.Count == 0)
+            {
+                return null;
+            }
+
+            return additionalRounds[additionalRounds.Count - 1];
+        }
+
+        public override GroupRound GetFinalRound(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
+
+            var additionalRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+
+            if (additionalRounds.Count < 2) return null;
+
+            var finalRound = additionalRounds[additionalRounds.Count - 2];
+
+            return finalRound;
+        }
     }
 }

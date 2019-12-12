@@ -440,7 +440,7 @@ namespace Wrestling.UI.Material.Match
         {
             StopRecording();
 
-            _timer.Stop();
+            _timer?.Stop();
 
             AddAction("Таймер остановлен", 0, null);
 
@@ -533,7 +533,7 @@ namespace Wrestling.UI.Material.Match
 
         private void Stop()
         {
-            _timer.Stop();
+            _timer?.Stop();
             //_currentRecorder.CreateOverlay(false);
             AddAction("Таймер остановлен", 0, null);
 
@@ -550,8 +550,12 @@ namespace Wrestling.UI.Material.Match
             // No need to continue if 2nd round finished
             if (ScoreScreenVm.MainSeconds == ScoreScreenVm.MaxRoundSecond && ScoreScreenVm.Round == 2) return;
 
-            _timer.Start();
-            //_timerSw.Restart();
+            if (_timer == null)
+            {
+                SetupTimer();
+            }
+
+            _timer.Start();            
 
             AddAction("Таймер запущен", 0, null);
 
@@ -1021,7 +1025,7 @@ namespace Wrestling.UI.Material.Match
                     AddAction("Таймаут завершен", 0, null);
                 }
 
-                _timer.Stop();
+                _timer?.Stop();
                 IsRunning = false;
 
                 ScoreScreenVm.IsTimeout = false;
@@ -1049,7 +1053,7 @@ namespace Wrestling.UI.Material.Match
                     AddAction($"Раунд {ScoreScreenVm.Round} завершен", 0, null);
                 }
 
-                _timer.Stop();
+                _timer?.Stop();
                 IsRunning = false;
 
                 if (ScoreScreenVm.Round == 1)
@@ -1062,8 +1066,12 @@ namespace Wrestling.UI.Material.Match
 
                     ScoreScreenVm.Round = 2;
 
-                    _timer.Start();
-                    //_timerSw.Restart();
+                    if (_timer == null)
+                    {
+                        SetupTimer();
+                    }
+
+                    _timer.Start();                    
 
                     AddAction("Начался таймаут", 0, null);
 

@@ -304,5 +304,17 @@ namespace Wrestling.Entities.Bracket
             }
             return (int)result;
         }
+
+        public override GroupRound Get3rdPlaceRound(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null || group.Bracket.Rounds.Count == 0)
+            {
+                return null;
+            }
+
+            var addRound = group.Bracket.Rounds.FirstOrDefault(r => r.RoundType == GroupRoundTypeEnum.Additional);
+
+            return addRound;
+        }
     }
 }

@@ -164,7 +164,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                 {
                     if (DataContext.Tournament.Carpets.FirstOrDefault(c => c.Groups.Contains(group)) != null)
                     {
-                        _matchNumbersGenerator.Generate(DataContext.Tournament);
+                        _matchNumbersGenerator.Generate(DataContext.Tournament, _drawTypes);
                     }
 
                     // We need to refresh Rounds collection to redraw it on UI
