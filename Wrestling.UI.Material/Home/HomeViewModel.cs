@@ -146,12 +146,60 @@ namespace Wrestling.UI.Material.Home
                 var tournament = _tournManager.LoadFromFile(settings.FileName);
                 if (tournament != null)
                 {
+                    VerifyTeamEmblems(tournament);
+
                     VerifySettings(tournament);
 
                     DataContext.Tournament = tournament;
 
                     NavigateToView<DashboardViewModel>();
                 }
+            }
+        }
+
+        private void VerifyTeamEmblems(Entities.Tournament entity)
+        {
+            foreach(var app in entity.TeamApplications)
+            {
+                if (string.IsNullOrEmpty(app.EmblemPath)) continue;                
+                
+                if (!File.Exists(app.EmblemPath))
+                {
+                    var imgPath = $"{AppDomain.CurrentDomain.BaseDirectory}Images\\";
+                    
+                    var fileNameItems = app.EmblemPath.ToString().Split('\\');
+
+                    if (fileNameItems.Length == 0) continue;
+
+                    string fileName = fileNameItems[fileNameItems.Length - 1];
+
+                    var fullFilePath = $"{imgPath}{fileName}";
+
+                    if (!File.Exists(fullFilePath))
+                    {
+                        var fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+
+                        var teamNameItems = fileNameWithoutExt.Split('_');
+
+                        if (teamNameItems.Length == 0) continue;
+
+                        var teamName = teamNameItems[teamNameItems.Length - 1];
+
+                        var existingTeamEmblems = Directory.EnumerateFiles(imgPath, "*.*");
+
+                        foreach (var img in existingTeamEmblems)
+                        {
+                            var loadedLogo = Path.GetFileName(img);
+
+                            if (loadedLogo.Contains(teamName))
+                            {
+                                app.EmblemPath = loadedLogo;
+                                break;
+                            }
+                        }
+                    }
+                }
+
             }
         }
 
