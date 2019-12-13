@@ -54,12 +54,32 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
 
             WrestlingMatch previousMatch = null;
 
+            List<Guid> _pathedGroups = new List<Guid>();
+            Guid? currentGroupId = null;
+
             foreach(var match in matches)
             {
                 if (previousMatch == null || (match.MatchNumber == (previousMatch.MatchNumber+1)))
                 {
                     if (match.IsMatchCanStart)
                     {
+                        if (!currentGroupId.HasValue)
+                        {
+                            currentGroupId = match.GroupID;
+                        }
+
+                        if (match.GroupID != currentGroupId.Value)
+                        {
+                            if (_pathedGroups.Contains(match.GroupID))
+                            {
+                                break;
+                            }
+
+                            _pathedGroups.Add(currentGroupId.Value);
+                            currentGroupId = match.GroupID;
+                        }
+
+
                         cycleMatches.Add(match);
                         previousMatch = match;
                         continue;
