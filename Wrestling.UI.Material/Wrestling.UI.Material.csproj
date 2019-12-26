@@ -38,7 +38,7 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -137,6 +137,10 @@
       <DependentUpon>LoginView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Login\LoginViewModel.cs" />
+    <Compile Include="Match\SetWinTypeDialog.xaml.cs">
+      <DependentUpon>SetWinTypeDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Match\SetWinTypeViewModel.cs" />
     <Compile Include="Match\MatchControlView.xaml.cs">
       <DependentUpon>MatchControlView.xaml</DependentUpon>
     </Compile>
@@ -387,6 +391,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Match\SetWinTypeDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Match\MatchControlView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

@@ -21,22 +21,16 @@ namespace Wrestling.UI.Material.Match
 {
     public class MatchResultsViewModel : TournamentViewModelBase
     {
-        private readonly IMatchRecorder _recorder;
+        #region Fields
 
-        private ScoreScreenViewModel _scoreScreenVm;
         private IList<CommandButtonItem> _quickButtons;
-
-        private Guid? _winner;
-        private MatchWinTypeEnum? _winType;
-        private string _note;
-        private bool _isFormEnabled;
-
+        private ScoreScreenViewModel _scoreScreenVm;
+        private GlobalSettings _settings;
+        private readonly IMatchRecorder _recorder;
         private readonly List<IGroupBracketProcessor> _drawTypes;
         private IGroupBracketProcessor _processor;
 
-        private ICommand _setWinnerCommand;
-
-        private GlobalSettings _settings;
+        #endregion
 
         public MatchResultsViewModel(IDiContainer container) : base(container)
         {
@@ -78,45 +72,13 @@ namespace Wrestling.UI.Material.Match
                         _quickButtons.Add(new CommandButtonItem("Подтвердить", PackIconKind.CheckAll,
                             new RelayCommand(param => Approve(),
                                 param => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Pending &&
-                                         Winner.HasValue)));
+                                         Winner.HasValue && WinType.HasValue)));
                     }
                 }
 
                 return _quickButtons;
             }
-        }
-
-        public ICommand SetWinnerCommand
-        {
-            get
-            {
-                if (_setWinnerCommand == null)
-                {
-                    _setWinnerCommand = new RelayCommand(
-                        param => SetWinner(param.ToString()),
-                        param => true
-                    );
-                }
-                return _setWinnerCommand;
-            }
-        }
-
-        private void ShowReplayScreen()
-        {
-            NavigateToView<ReplayScreenViewModel>();
-        }
-
-        private void SetWinner(string winner)
-        {
-            if (string.IsNullOrEmpty(winner)) return;
-
-            if (winner == "Red") Winner = WrestlingMatch.WrestlerInRed.ID;
-            if (winner == "Blue") Winner = WrestlingMatch.WrestlerInBlue.ID;
-        }
-
-        public bool CanRejectResult { get; private set; }
-
-        public override bool IsBackButtonAvailable => true;
+        }        
 
         public override void InitData()
         {
@@ -149,84 +111,20 @@ namespace Wrestling.UI.Material.Match
 
             _settings = DataContext.Tournament != null ? DataContext.Tournament.Settings : GlobalSettings;
 
+            if (DataContext.WrestlingMatch.WrestlerInRed.TeamID.HasValue && DataContext.Tournament != null)
+            {
+                Wrestler1TeamEmblem = GetTeamEmblem(DataContext.WrestlingMatch.WrestlerInRed.TeamID.Value, DataContext.Tournament.TeamApplications);
+            }
+
+            if (DataContext.WrestlingMatch.WrestlerInBlue.TeamID.HasValue && DataContext.Tournament != null)
+            {
+                Wrestler2TeamEmblem = GetTeamEmblem(DataContext.WrestlingMatch.WrestlerInBlue.TeamID.Value, DataContext.Tournament.TeamApplications);
+            }
+
             IsFormEnabled = true;
         }
 
-        #region Binding Properties
-
-        private bool IsMatchStarted => WrestlingMatch.LastSecondInMatch > 0;
-        private bool IsMatchCompletedInTime => WrestlingMatch.LastSecondInMatch == WrestlingMatch.MaxRoundSecond * 2;
-        public bool IsFreeWinEnabled => WrestlingMatch.WinType == MatchWinTypeEnum.FreeWin;
-        public bool IsPointsWinEnabled => !IsMatchStarted || IsMatchCompletedInTime;
-        public bool IsActionWinEnabled => IsMatchCompletedInTime && WrestlingMatch.PointsBlue == WrestlingMatch.PointsRed;
-        public bool IsDominationWinEnabled => WrestlingMatch.PointsBlue - WrestlingMatch.PointsRed >= 10 || WrestlingMatch.PointsRed - WrestlingMatch.PointsBlue >= 10;
-        public bool IsTusheWinEnabled => !IsFreeWinEnabled;
-        public bool IsTechWinEnabled => !IsFreeWinEnabled;
-        public bool IsWinnerRed => Winner.HasValue && WrestlingMatch.WrestlerInRed != null && Winner.Value == WrestlingMatch.WrestlerInRed.ID;
-        public bool IsWinnerBlue => Winner.HasValue && WrestlingMatch.WrestlerInBlue != null && Winner.Value == WrestlingMatch.WrestlerInBlue.ID;
-        public bool IsSetWinnerRedVisible => WrestlingMatch.Status == MatchStatusEnum.Pending && (!Winner.HasValue || WrestlingMatch.WrestlerInBlue != null && WrestlingMatch.WrestlerInBlue.ID == Winner.Value);
-        public bool IsSetWinnerBlueVisible => WrestlingMatch.Status == MatchStatusEnum.Pending && (!Winner.HasValue || WrestlingMatch.WrestlerInRed != null && WrestlingMatch.WrestlerInRed.ID == Winner.Value);
-
-        public Guid? Winner
-        {
-            get { return _winner; }
-            set
-            {
-                _winner = value;
-
-                OnPropertyChanged("Winner");
-                OnPropertyChanged("IsSetWinnerRedVisible");
-                OnPropertyChanged("IsSetWinnerBlueVisible");
-                OnPropertyChanged("IsWinnerRed");
-                OnPropertyChanged("IsWinnerBlue");
-            }
-        }
-
-        public MatchWinTypeEnum? WinType
-        {
-            get { return _winType; }
-            set
-            {
-                _winType = value;
-
-                OnPropertyChanged("WinType");
-            }
-        }
-
-        public bool IsFormEnabled
-        {
-            get { return _isFormEnabled; }
-            set
-            {
-                _isFormEnabled = value;
-
-                OnPropertyChanged("IsFormEnabled");
-            }
-        }
-
-        public string Note
-        {
-            get { return _note; }
-            set
-            {
-                _note = value;
-
-                OnPropertyChanged("Note");
-            }
-        }
-
-        public WrestlingMatch WrestlingMatch
-        {
-            get { return DataContext.WrestlingMatch; }
-            set
-            {
-                DataContext.WrestlingMatch = value;
-
-                OnPropertyChanged("WrestlingMatch");
-            }
-        }
-
-        #endregion
+        public override bool IsBackButtonAvailable => true;
 
         protected override void OnBackCommand()
         {
@@ -255,6 +153,334 @@ namespace Wrestling.UI.Material.Match
                 }
             }
         }
+
+        #region Commands
+
+        private ICommand _setWinnerCommand;
+        public ICommand SetWinnerCommand
+        {
+            get
+            {
+                if (_setWinnerCommand == null)
+                {
+                    _setWinnerCommand = new RelayCommand(
+                        param => SetWinner(param.ToString()),
+                        param => true
+                    );
+                }
+                return _setWinnerCommand;
+            }
+        }
+
+        private ICommand _setWinTypeCommand;
+        public ICommand SetWinTypeCommand
+        {
+            get
+            {
+                if (_setWinTypeCommand == null)
+                {
+                    _setWinTypeCommand = new RelayCommand(param => SetWinType(), param => true);
+                }
+
+                return _setWinTypeCommand;
+            }
+        }
+
+        private ICommand _redSelectedCommand;
+        public ICommand RedSelectedCommand
+        {
+            get
+            {
+                if (_redSelectedCommand == null)
+                {
+                    _redSelectedCommand = new RelayCommand(param => ChangeWrestlerSelected(true, true), param => true);
+                }
+
+                return _redSelectedCommand;
+            }
+        }
+
+        private ICommand _redDeselectedCommand;
+        public ICommand RedDeselectedCommand
+        {
+            get
+            {
+                if (_redDeselectedCommand == null)
+                {
+                    _redDeselectedCommand = new RelayCommand(param => ChangeWrestlerSelected(true, false), param => true);
+                }
+
+                return _redDeselectedCommand;
+            }
+        }
+
+        private ICommand _blueSelectedCommand;
+        public ICommand BlueSelectedCommand
+        {
+            get
+            {
+                if (_blueSelectedCommand == null)
+                {
+                    _blueSelectedCommand = new RelayCommand(param => ChangeWrestlerSelected(false, true), param => true);
+                }
+
+                return _blueSelectedCommand;
+            }
+        }
+
+        private ICommand _blueDeselectedCommand;
+        public ICommand BlueDeselectedCommand
+        {
+            get
+            {
+                if (_blueDeselectedCommand == null)
+                {
+                    _blueDeselectedCommand = new RelayCommand(param => ChangeWrestlerSelected(false, false), param => true);
+                }
+
+                return _blueDeselectedCommand;
+            }
+        }
+
+        #endregion        
+
+        #region Binding Properties
+
+        public bool CanRejectResult { get; private set; }
+        public bool IsWinTypeSet => WinType.HasValue;
+        private bool IsMatchStarted => WrestlingMatch.LastSecondInMatch > 0;
+        private bool IsMatchCompletedInTime => WrestlingMatch.LastSecondInMatch == WrestlingMatch.MaxRoundSecond * 2;
+        public bool IsFreeWinEnabled => WrestlingMatch.WinType == MatchWinTypeEnum.FreeWin;
+        public bool IsPointsWinEnabled => !IsMatchStarted || IsMatchCompletedInTime;
+        public bool IsActionWinEnabled => IsMatchCompletedInTime && WrestlingMatch.PointsBlue == WrestlingMatch.PointsRed;
+        public bool IsDominationWinEnabled => WrestlingMatch.PointsBlue - WrestlingMatch.PointsRed >= 10 || WrestlingMatch.PointsRed - WrestlingMatch.PointsBlue >= 10;
+        public bool IsTusheWinEnabled => !IsFreeWinEnabled;
+        public bool IsTechWinEnabled => !IsFreeWinEnabled;
+        public bool IsWinnerRed => Winner.HasValue && WrestlingMatch.WrestlerInRed != null && Winner.Value == WrestlingMatch.WrestlerInRed.ID;
+        public bool IsWinnerBlue => Winner.HasValue && WrestlingMatch.WrestlerInBlue != null && Winner.Value == WrestlingMatch.WrestlerInBlue.ID;
+
+        private Guid? _winner;
+        public Guid? Winner
+        {
+            get { return _winner; }
+            set
+            {
+                _winner = value;
+
+                OnPropertyChanged("Winner");
+                OnPropertyChanged("IsWinnerRed");
+                OnPropertyChanged("IsWinnerBlue");
+            }
+        }
+
+        private bool _isPlayer1WithAdvantage;
+        public bool IsPlayer1WithAdvantage
+        {
+            get { return _isPlayer1WithAdvantage; }
+            set
+            {
+                _isPlayer1WithAdvantage = value;
+                OnPropertyChanged("IsPlayer1WithAdvantage");
+            }
+        }
+
+        private bool _isPlayer2WithAdvantage;
+        public bool IsPlayer2WithAdvantage
+        {
+            get { return _isPlayer2WithAdvantage; }
+            set
+            {
+                _isPlayer2WithAdvantage = value;
+                OnPropertyChanged("IsPlayer2WithAdvantage");
+            }
+        }
+
+        private bool _isRedSelected;
+        public bool IsRedSelected
+        {
+            get { return _isRedSelected; }
+            set
+            {
+                _isRedSelected = value;
+                OnPropertyChanged("IsRedSelected");
+            }
+        }
+
+        private bool _isBlueSelected;
+        public bool IsBlueSelected
+        {
+            get { return _isBlueSelected; }
+            set
+            {
+                _isBlueSelected = value;
+                OnPropertyChanged("IsBlueSelected");
+            }
+        }
+
+        private string _wrestler2TeamEmblem;
+        public string Wrestler2TeamEmblem
+        {
+            get { return _wrestler2TeamEmblem; }
+            set
+            {
+                _wrestler2TeamEmblem = value;
+                OnPropertyChanged("Wrestler2TeamEmblem");
+            }
+        }
+
+        private string _wrestler1TeamEmblem;
+        public string Wrestler1TeamEmblem
+        {
+            get { return _wrestler1TeamEmblem; }
+            set
+            {
+                _wrestler1TeamEmblem = value;
+                OnPropertyChanged("Wrestler1TeamEmblem");
+            }
+        }
+
+        private MatchWinTypeEnum? _winType;
+        public MatchWinTypeEnum? WinType
+        {
+            get { return _winType; }
+            set
+            {
+                _winType = value;
+
+                OnPropertyChanged("WinType");
+                OnPropertyChanged("IsWinTypeSet");
+            }
+        }
+
+        private bool _isFormEnabled;
+        public bool IsFormEnabled
+        {
+            get { return _isFormEnabled; }
+            set
+            {
+                _isFormEnabled = value;
+
+                OnPropertyChanged("IsFormEnabled");
+            }
+        }
+
+        private string _note;
+        public string Note
+        {
+            get { return _note; }
+            set
+            {
+                _note = value;
+
+                OnPropertyChanged("Note");
+            }
+        }
+
+        public WrestlingMatch WrestlingMatch
+        {
+            get { return DataContext.WrestlingMatch; }
+            set
+            {
+                DataContext.WrestlingMatch = value;                
+
+                OnPropertyChanged("WrestlingMatch");
+            }
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private void ChangeWrestlerSelected(bool isRed, bool isSelected)
+        {
+            if (isRed)
+            {
+                IsRedSelected = isSelected;
+
+                if (isSelected)
+                {
+                    IsBlueSelected = !isSelected;
+                }
+            }
+            else
+            {
+                IsBlueSelected = isSelected;
+
+                if (isSelected)
+                {
+                    IsRedSelected = !isSelected;
+                }
+            }
+        }
+
+        private void ShowReplayScreen()
+        {
+            NavigateToView<ReplayScreenViewModel>();
+        }
+
+        private async void SetWinType()
+        {
+            var availableWinTypes = new List<MatchWinTypeEnum>();
+
+            if (IsTusheWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.Tushe);
+            if (IsDominationWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.DominationWin);
+            if (IsPointsWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.PointsWin);
+            if (IsTechWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.DisqualifyWin);
+            if (IsActionWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.ActionWin);
+
+            var vm = new SetWinTypeViewModel(DiContainer, WinType, availableWinTypes);
+            vm.InitData();
+
+            var view = new SetWinTypeDialog
+            {
+                DataContext = vm
+            };
+
+            var result = await DialogHost.Show(view, "RootDialog");
+
+            if (result != null && (bool)result)
+            {
+                WinType = vm.SelectedItem;
+            }
+
+            OnPropertyChanged("IsWinTypeSet");
+        }
+
+        private void SetWinner(string winner)
+        {
+            if (string.IsNullOrEmpty(winner)) return;
+
+            if (winner == "Red")
+            {
+                if (Winner == null || Winner != WrestlingMatch.WrestlerInRed.ID)
+                {
+                    Winner = WrestlingMatch.WrestlerInRed.ID;
+                }
+                else
+                {
+                    Winner = null;
+                }
+            }
+            if (winner == "Blue")
+            {
+                if (Winner == null || Winner != WrestlingMatch.WrestlerInBlue.ID)
+                {
+                    Winner = WrestlingMatch.WrestlerInBlue.ID;
+                }
+                else
+                {
+                    Winner = null;
+                }
+            }
+        }
+
+        private string GetTeamEmblem(Guid teamID, IEnumerable<TeamApplication> apps)
+        {
+            var team = apps.FirstOrDefault(t => t.ID == teamID);
+
+            return team != null ? team.EmblemPath : string.Empty;
+        }
+
 
         private void Reject()
         {
@@ -295,7 +521,7 @@ namespace Wrestling.UI.Material.Match
                 }
             }
         }
-        
+
         private void Approve()
         {
             if (WrestlingMatch.StartDateTime == null)
@@ -321,7 +547,7 @@ namespace Wrestling.UI.Material.Match
                 _recorder.RecordingCompleted += OnRecordingCompleted;
 
                 IsFormEnabled = false;
-                
+
                 ShowSnackMessage("Подождите, идет запись видео-файла...");
 
                 _recorder.StopRecording();
@@ -361,7 +587,7 @@ namespace Wrestling.UI.Material.Match
         {
             var group = DataContext.Tournament.Groups.FirstOrDefault(p => p.ID == WrestlingMatch.GroupID);
             if (group == null) throw new ApplicationException("Can't find group!");
-            
+
             if (!WrestlingMatch.IsRedWon.HasValue || !WrestlingMatch.WinType.HasValue) throw new ApplicationException("Completed match does not have result provided!");
 
             _processor.CompleteMatch(WrestlingMatch, WrestlingMatch.IsRedWon.Value, WrestlingMatch.WinType.Value);
@@ -421,7 +647,6 @@ namespace Wrestling.UI.Material.Match
             else
             {
                 Winner = null;
-                WinType = null;
 
                 if (IsMatchCompletedInTime)
                 {
@@ -439,11 +664,15 @@ namespace Wrestling.UI.Material.Match
                     {
                         if (WrestlingMatch.BestActionRed != WrestlingMatch.BestActionBlue)
                         {
+                            IsPlayer1WithAdvantage = true;
+                            IsPlayer2WithAdvantage = false;
                             Winner = WrestlingMatch.BestActionRed > WrestlingMatch.BestActionBlue ? WrestlingMatch.WrestlerInRed.ID : WrestlingMatch.WrestlerInBlue.ID;
                             Note = "Победа присуждена по качеству результативного действия.";
                         }
                         else
                         {
+                            IsPlayer1WithAdvantage = false;
+                            IsPlayer2WithAdvantage = true;
                             Winner = WrestlingMatch.IsLastActionRed ? WrestlingMatch.WrestlerInRed.ID : WrestlingMatch.WrestlerInBlue.ID;
                             Note = "При равном счете и равном качестве результативных действий победа присуждена по последнему действию.";
                         }
@@ -471,5 +700,7 @@ namespace Wrestling.UI.Material.Match
                 }
             }
         }
+
+        #endregion
     } 
 }

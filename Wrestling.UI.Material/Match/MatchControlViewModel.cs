@@ -854,7 +854,7 @@ namespace Wrestling.UI.Material.Match
             } 
             else
             {
-                ScoreScreenVm.Points2 = ScoreScreenVm.Points1 + value;
+                ScoreScreenVm.Points2 = ScoreScreenVm.Points2 + value;
             }            
 
             if (value > 0)
@@ -897,6 +897,11 @@ namespace Wrestling.UI.Material.Match
             if (ScoreScreenVm.Points1 < 0)
             {
                 ScoreScreenVm.Points1 = 0;
+            }
+
+            if (ScoreScreenVm.Points2 < 0)
+            {
+                ScoreScreenVm.Points2 = 0;
             }
         }
 
