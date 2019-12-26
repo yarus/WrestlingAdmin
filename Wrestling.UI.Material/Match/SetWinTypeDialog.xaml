@@ -9,7 +9,7 @@
              xmlns:converters2="clr-namespace:Wrestling.UI.Material.Utils.Converters"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              md:DialogServiceViews.IsRegistered="True"
-             mc:Ignorable="d" Width="400"
+             mc:Ignorable="d" Width="500"
              d:DesignHeight="600" d:DesignWidth="600">
 
     <UserControl.Resources>

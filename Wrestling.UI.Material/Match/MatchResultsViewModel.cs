@@ -626,6 +626,8 @@ namespace Wrestling.UI.Material.Match
         private void SetWinnerAndWinType()
         {
             Note = string.Empty;
+            WinType = null;
+            Winner = null;
 
             if (WrestlingMatch.Status == MatchStatusEnum.Completed)
             {
