@@ -19,6 +19,12 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters1:BoolToBrushConverter x:Key="BoolHighlight" />
         <converters1:UpperCaseConverter x:Key="UpperCaseConverter" />
+        <converters1:BoolInverterConverter x:Key="BoolInverterConverter" />
+
+        <converters1:ValueConverterGroup x:Key="UpperWinType">
+            <converters2:WinTypeToStringConverter />
+            <converters1:UpperCaseConverter />
+        </converters1:ValueConverterGroup>
 
         <converters1:ValueConverterGroup x:Key="InvBoolToVis">
             <converters1:BoolInverterConverter />
@@ -131,7 +137,7 @@
                     <TextBlock Grid.Row="0" Style="{StaticResource MaterialDesignHeadlineTextBlock}" HorizontalAlignment="Center" Margin="10,10,10,10">
                             <Run Text="СХВАТКА"></Run>
                             <Run Text="#"></Run>
-                            <Run Text="{Binding WrestlingMatch.MatchNumber, Mode=OneWay, Converter={StaticResource UpperCaseConverter}}"></Run>
+                            <Run Text="{Binding Path=WrestlingMatch.MatchNumber}"></Run>
                     </TextBlock>
                 </StackPanel>
             </Viewbox>
@@ -167,32 +173,27 @@
 
             <!-- WinType -->
             <Grid Grid.Row="2" Grid.Column="1">
-
-                <Viewbox Stretch="Uniform" Height="60" VerticalAlignment="Bottom">
-                    <StackPanel Orientation="Horizontal" Margin="8" Visibility="{Binding Path=WrestlingMatch.IsMatchCompleted, Converter={StaticResource InvBoolToVis}}">
-
+                <Viewbox Stretch="Uniform" Visibility="{Binding Path=WrestlingMatch.IsMatchCompleted, Converter={StaticResource InvBoolToVis}}" Margin="8">
+                    <Grid>
                         <Button Style="{StaticResource MaterialDesignRaisedButton}" 
-                                    HorizontalAlignment="Center"
-                                    Margin="10,0,0,0"
-                                    Visibility="{Binding Path=WrestlingMatch.IsMatchCompleted, Converter={StaticResource InvBoolToVis}}"
-                                    Command="{Binding Path=SetWinTypeCommand}">
-                            <TextBlock Text="{Binding WinType, Converter={StaticResource WinTypeToStringConverter}}"
-                                    TextWrapping="NoWrap" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="200"
-                                    Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                                HorizontalAlignment="Center" Margin="8,0,8,0"
+                                Command="{Binding Path=SetWinTypeCommand}">
+                            <TextBlock Text="{Binding WinType, Converter={StaticResource UpperWinType}}"
+                                TextWrapping="NoWrap" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="200"
+                                Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
                         </Button>
-
-                        <Grid Background="Yellow" Visibility="{Binding Path=WrestlingMatch.IsMatchCompleted, Converter={StaticResource BoolToVis}}">
-                            <Border BorderBrush="Black" BorderThickness="1" />
-
-                            <TextBlock Text="{Binding WinType, Converter={StaticResource WinTypeToStringConverter}}" Margin="10,4,10,4" 
-                                    TextWrapping="NoWrap" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="200"
-                                    Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
-                        </Grid>
-
-                    </StackPanel>
-
+                    </Grid>
                 </Viewbox>
 
+                <Viewbox Stretch="Uniform" Visibility="{Binding Path=WrestlingMatch.IsMatchCompleted, Converter={StaticResource BoolToVis}}" Margin="8">
+                    <Grid Background="Yellow">
+                        <Border BorderBrush="Black" BorderThickness="1">
+                            <TextBlock Text="{Binding WinType, Converter={StaticResource UpperWinType}}" MinWidth="200"
+                                    TextWrapping="NoWrap" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                    Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                        </Border>
+                    </Grid>
+                </Viewbox>
             </Grid>
 
             <Viewbox Grid.Row="0" Grid.Column="2" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
