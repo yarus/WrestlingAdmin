@@ -393,6 +393,11 @@ namespace Wrestling.UI.Material.Match
 
         private void ChangeWrestlerSelected(bool isRed, bool isSelected)
         {
+            if (WrestlingMatch.IsMatchCompleted)
+            {
+                return;
+            }
+
             if (isRed)
             {
                 IsRedSelected = isSelected;
@@ -448,6 +453,7 @@ namespace Wrestling.UI.Material.Match
 
         private void SetWinner(string winner)
         {
+            if (WrestlingMatch.IsMatchCompleted) return;
             if (string.IsNullOrEmpty(winner)) return;
 
             if (winner == "Red")

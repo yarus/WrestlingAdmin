@@ -802,7 +802,7 @@ namespace Wrestling.UI.Material.Match
             {
                 ScoreScreenVm.BestActionBlue = blueBestAction.Points;
 
-                var actionCount = _matchActions.Count(a => a.IsForRed.HasValue && !a.IsForRed.Value && a.Points == redBestAction.Points);
+                var actionCount = _matchActions.Count(a => a.IsForRed.HasValue && !a.IsForRed.Value && a.Points == blueBestAction.Points);
                 ScoreScreenVm.BestActionBlueCount = actionCount;
             }
         }
@@ -891,7 +891,7 @@ namespace Wrestling.UI.Material.Match
             else
             {
                 // Correction
-                AdjustLastPoint(true);
+                AdjustLastPoint(isForRed);
             }
 
             if (ScoreScreenVm.Points1 < 0)
