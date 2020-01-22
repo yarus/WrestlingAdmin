@@ -4,9 +4,8 @@
         Foreground="White">
 
     <UserControl.Background>
-        <ImageBrush ImageSource="{Binding ImagePath}" Stretch="UniformToFill"/>
+        <ImageBrush ImageSource="{Binding ImagePath}" Stretch="Uniform"/>
     </UserControl.Background>
 
-    <Grid x:Name="RootControl">
-    </Grid>
+    <Grid x:Name="RootControl"></Grid>
 </UserControl>

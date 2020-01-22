@@ -79,6 +79,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                         _item.IsEntryFeePaid = false;
                     }
 
+                    _item.IsWeightApproved = false;
+
                     OnPropertyChanged("Item");
 
                     OnPropertyChanged("IsFemaleT");

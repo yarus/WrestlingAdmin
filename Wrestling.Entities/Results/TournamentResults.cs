@@ -76,6 +76,110 @@ namespace Wrestling.Entities.Results
             }
         }
 
+        public int AllGainedPoints
+        {
+            get
+            {
+                if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
+
+                var redPoints = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed == _wrestler))
+                    .Sum(x => x.PointsRed);
+
+                var bluePoints = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue == _wrestler))
+                    .Sum(x => x.PointsBlue);
+
+                return redPoints + bluePoints;
+            }
+        }
+
+        public int FastestActionSecond
+        {
+            get
+            {
+                if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
+
+                var redActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed == _wrestler) && x.LastSecondInMatch > 3)
+                    .SelectMany(m => m.MatchActions)
+                    .Where(a => a.Points > 0 && a.IsForRed.HasValue && a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
+                    .OrderBy(a => a.SecondInRound)
+                    .ToList();
+
+                var blueActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue == _wrestler) && x.LastSecondInMatch > 3)
+                    .SelectMany(m => m.MatchActions)
+                    .Where(a => a.Points > 0 && a.IsForRed.HasValue && !a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
+                    .OrderBy(a => a.SecondInRound)
+                    .ToList();
+
+                var redSecond = _group.MaxRoundSecond * 2;
+                if (redActions.Count > 0)
+                {
+                    redSecond = redActions[0].SecondInRound;
+                }
+
+                var blueSecond = _group.MaxRoundSecond * 2;
+                if (blueActions.Count > 0)
+                {
+                    blueSecond = blueActions[0].SecondInRound;
+                }
+
+                return redSecond < blueSecond ? redSecond : blueSecond;
+            }
+        }
+        
+        public int FastestWinSecond
+        {
+            get
+            {
+                if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
+
+                var redFastestWinSecond = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
+                        .Where(x => x.Status == MatchStatusEnum.Completed && x.WrestlerInRed == _wrestler && x.IsRedWon.Value && x.LastSecondInMatch > 3) // 3 because some matches can be completed manually
+                        .ToList();
+
+                var blueFastestWinSecond = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && x.WrestlerInBlue == _wrestler && !x.IsRedWon.Value && x.LastSecondInMatch > 3)
+                    .ToList();
+
+                var redSecond = _group.MaxRoundSecond * 2;
+                if (redFastestWinSecond != null && redFastestWinSecond.Count > 0)
+                {
+                    redSecond = redFastestWinSecond.Min(m => m.LastSecondInMatch);
+                }
+
+                var blueSecond = _group.MaxRoundSecond * 2;
+                if (blueFastestWinSecond != null && blueFastestWinSecond.Count > 0)
+                {
+                    blueSecond = blueFastestWinSecond.Min(m => m.LastSecondInMatch);
+                }
+
+                return redSecond < blueSecond ? redSecond : blueSecond;
+            }
+        }        
+
+        public int NumberOfAmplitudeActions
+        {
+            get
+            {
+                if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
+
+                var redActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed == _wrestler))
+                    .SelectMany(m => m.MatchActions)
+                    .Count(a => a.Points == 4 && a.IsForRed.HasValue && a.IsForRed.Value);
+
+                var blueActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue == _wrestler))
+                    .SelectMany(m => m.MatchActions)
+                    .Count(a => a.Points == 4 && a.IsForRed.HasValue && !a.IsForRed.Value);
+
+                return redActions + blueActions;
+            }
+        }
+
         public int TotalLostPointsWithoutTusheAndDomination
         {
             get

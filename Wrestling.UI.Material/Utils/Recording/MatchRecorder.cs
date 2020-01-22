@@ -23,7 +23,7 @@ namespace Wrestling.UI.Material.Utils.Recording
             //_recorder.NewFrame += RecorderOnNewFrame;
         }
 
-        bool IMatchRecorder.IsRecording => _currentRecorder != null ? _currentRecorder.IsRecording : false; 
+        bool IMatchRecorder.IsRecording => _currentRecorder?.IsRecording ?? false; 
 
         private void RecorderOnNewFrame(object sender, FrameGeneratedEventArgs e)
         {
@@ -83,12 +83,23 @@ namespace Wrestling.UI.Material.Utils.Recording
                 RecorderOnNewFrame, 
                 match.MaxRoundSecond * 1000); // we need ms
 
-
+            _currentRecorder.ConcatCompleted += OnConcatCompleted;
+            _currentRecorder.ConcatException += OnConcatException;
         }
 
         public void StopRecording()
         {
             _currentRecorder?.StopRecording();
+        }
+
+        private void OnConcatException(object sender, Exception e)
+        {
+            RecordingCompleted?.Invoke(this, "При сохранении файла произошла ошибка!");
+        }
+
+        public void OnConcatCompleted(object sender, string result)
+        {
+            RecordingCompleted?.Invoke(this, "Сохранение файла успешно завершено!");
         }
 
         public IEnumerable<string> GetMatchRecordings(string storagePath, WrestlingMatch match, Guid? tournamentId)
@@ -109,6 +120,8 @@ namespace Wrestling.UI.Material.Utils.Recording
 
             return result;
         }
+
+        public event EventHandler<string> RecordingCompleted;
 
         public static string GetFullStoragePath(Guid? tournamentId, string baseStoragePath)
         {
@@ -135,11 +148,11 @@ namespace Wrestling.UI.Material.Utils.Recording
             }
 
             int partNumber = 1;
-            var fileName = Path.Combine(dirPath, GetTournamentName(tournamentId) + "_" + match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
+            var fileName = Path.Combine(dirPath, GetTournamentName(tournamentId) + "\\" + match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
             while (File.Exists(fileName))
             {
                 partNumber++;
-                fileName = Path.Combine(dirPath, match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
+                fileName = Path.Combine(dirPath, GetTournamentName(tournamentId) + "\\" + match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
             }
             return fileName;
         }
@@ -152,6 +165,11 @@ namespace Wrestling.UI.Material.Utils.Recording
         public void SetMainSecond(int t)
         {
             _currentRecorder?.SetMainSecond(t);
+        }
+
+        public void SetMaxSeconds(int t)
+        {
+            _currentRecorder?.SetMaxSeconds(t);
         }
 
         public void CreateOverlay(bool flag)

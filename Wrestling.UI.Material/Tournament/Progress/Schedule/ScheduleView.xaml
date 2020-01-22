@@ -35,7 +35,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />                        
                     </Grid.ColumnDefinitions>
                     
                     <Border BorderThickness="1" Grid.Column="1" Grid.ColumnSpan="2" BorderBrush="DarkGray"></Border>
@@ -54,19 +54,20 @@
             </StackPanel>
 
             <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Ковров:" />
-                <Run Text="{Binding CarpetsCount, Mode=OneWay}" />
-            </TextBlock>
-
-            <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Поединков:" />
+                <Run Text="Схваток:" />
                 <Run Text="{Binding MatchesCount, Mode=OneWay}" />
             </TextBlock>
 
-            <TextBlock Grid.Row="0" Grid.Column="4" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
+            <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
                 <Run Text="Завершено:" />
                 <Run Text="{Binding CompletedMatchesCount, Mode=OneWay}" />
             </TextBlock>
+
+            <TextBlock Grid.Row="0" Grid.Column="4" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
+                <Run Text="Осталось:" />
+                <Run Text="{Binding LeftMatchesCount, Mode=OneWay}" />
+            </TextBlock>            
+            
         </Grid>
     
         <ScrollViewer Grid.Row="1" Margin="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
@@ -127,7 +128,7 @@
                                                     <GridViewColumn Header="#" Width="Auto">
                                                         <GridViewColumn.CellTemplate>
                                                             <DataTemplate>
-                                                                <TextBlock Text="{Binding MatchNumber}" Margin="0,20,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                                <TextBlock Text="{Binding MatchNumber}" Margin="0,20,0,0" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
                                                             </DataTemplate>
                                                         </GridViewColumn.CellTemplate>
                                                     </GridViewColumn>
@@ -136,8 +137,8 @@
                                                         <GridViewColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <StackPanel>
-                                                                    <TextBlock Text="{Binding GroupName}" Margin="0,5,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
-                                                                    <TextBlock Text="{Binding RoundName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
+                                                                    <TextBlock Text="{Binding GroupName}" Margin="0,5,0,0" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
+                                                                    <TextBlock Text="{Binding RoundName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
                                                                 </StackPanel>
                                                             </DataTemplate>
                                                         </GridViewColumn.CellTemplate>
@@ -149,11 +150,11 @@
                                                                 <StackPanel>
                                                                     <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                                                                         <materialDesign:PackIcon Foreground="DarkRed" Width="20" Height="20" Margin="0" Padding="0" ToolTip="Спортсмен в красном трико" Kind="CheckboxBlank" />
-                                                                        <TextBlock Text="{Binding WrestlerInRed.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
+                                                                        <TextBlock Text="{Binding WrestlerInRed.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="16" HorizontalAlignment="Left" />
                                                                     </StackPanel>
                                                                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                                                         <materialDesign:PackIcon Foreground="Blue" Width="20" Height="20" Margin="0" Padding="0" ToolTip="Спортсмен в синем трико." Kind="CheckboxBlank" />
-                                                                        <TextBlock Text="{Binding WrestlerInBlue.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
+                                                                        <TextBlock Text="{Binding WrestlerInBlue.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="16" HorizontalAlignment="Left" />
                                                                     </StackPanel>
                                                                 </StackPanel>
                                                             </DataTemplate>
@@ -164,8 +165,8 @@
                                                         <GridViewColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <StackPanel>
-                                                                    <TextBlock Text="{Binding WrestlerInRed.TeamName}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" HorizontalAlignment="Left" />
-                                                                    <TextBlock Text="{Binding WrestlerInBlue.TeamName}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="14" HorizontalAlignment="Left" />
+                                                                    <TextBlock Text="{Binding WrestlerInRed.TeamName}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="16" HorizontalAlignment="Left" />
+                                                                    <TextBlock Text="{Binding WrestlerInBlue.TeamName}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="16" HorizontalAlignment="Left" />
                                                                 </StackPanel>
                                                             </DataTemplate>
                                                         </GridViewColumn.CellTemplate>

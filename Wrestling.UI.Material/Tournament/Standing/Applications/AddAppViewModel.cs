@@ -125,12 +125,21 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 var ext = Path.GetExtension(settings.FileName);
 
                 var storagePath = Path.GetFullPath("Images");
-                var filePattern = $"team_{(string.IsNullOrEmpty(Item.HashTag) ? Item.ShortName : Item.HashTag)}{ext}";
+                var filePattern = $"{(string.IsNullOrEmpty(Item.HashTag) ? Item.ShortName : Item.HashTag)}{ext}";
                 var fullPath = $"{storagePath}\\{filePattern}";
 
-                File.Copy(settings.FileName, fullPath, true);
+                var previousPath = Item.EmblemPath;
 
-                Item.EmblemPath = filePattern;
+                try
+                {
+                    File.Copy(settings.FileName, fullPath, true);
+                    Item.EmblemPath = filePattern;
+                }
+                catch(Exception ex)
+                {
+                    ShowSnackMessage($"При сохранении изображения произошла ошибка: {ex.Message}");
+                    Item.EmblemPath = previousPath;
+                }                
             }
         }
     }

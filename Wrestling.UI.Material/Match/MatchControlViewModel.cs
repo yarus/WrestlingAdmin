@@ -34,7 +34,6 @@ namespace Wrestling.UI.Material.Match
         private DispatcherTimer _timer;
 
         private bool _isRunning;
-        private bool _isVideoRecording;
         private bool _isSettingsOpen;
 
         private IPanelView _scoreScreenView;
@@ -154,7 +153,6 @@ namespace Wrestling.UI.Material.Match
             }
 
             _currentRecorder = Resolve<IMatchRecorder>();
-            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds * 1000);
             //_recorderGen = Resolve<App.IMatchRecorderGenerator>();
 
             _scoreScreen.InitData();
@@ -174,6 +172,8 @@ namespace Wrestling.UI.Material.Match
                 keyHandler.KeyPressed -= KeyHandler_KeyPressed;
                 keyHandler.KeyPressed += KeyHandler_KeyPressed;
             }
+
+            ScoreScreenVm.IsTimeout = false;
         }
 
         #region Commands
@@ -440,7 +440,7 @@ namespace Wrestling.UI.Material.Match
         {
             StopRecording();
 
-            _timer.Stop();
+            _timer?.Stop();
 
             AddAction("Таймер остановлен", 0, null);
 
@@ -490,13 +490,32 @@ namespace Wrestling.UI.Material.Match
 
         private void StartRecording()
         {
-            _currentRecorder?.StartRecording(
-                _settings.VideoStoragePath, 
-                _recConfig, 
-                ScoreScreenVm, 
-                DataContext.Tournament?.ID);
-            _currentRecorder?.CreateOverlay(true);
-            
+            try
+            {
+                _currentRecorder?.StartRecording(
+                    _settings.VideoStoragePath,
+                    _recConfig,
+                    ScoreScreenVm,
+                    DataContext.Tournament?.ID);
+                _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxRoundSecond);
+                _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
+                _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
+                _currentRecorder?.CreateOverlay(true);
+            }
+            catch(Exception ex)
+            {
+                ShowSnackMessage($"При попытке начать видеозапись произошла ошибка: {ex.Message}");
+
+                try
+                {
+                    StopRecording();
+                }
+                catch
+                {
+                }
+            }
+
+
             OnPropertyChanged("IsVideoRecording");
         }
 
@@ -514,18 +533,11 @@ namespace Wrestling.UI.Material.Match
 
         private void Stop()
         {
-            _timer.Stop();
+            _timer?.Stop();
             //_currentRecorder.CreateOverlay(false);
             AddAction("Таймер остановлен", 0, null);
 
             IsRunning = false;
-        }
-
-        private void StartTimer()
-        {
-            _oldMainSeconds = ScoreScreenVm.MainSeconds;
-            _timer.Start();
-            _timerSw.Restart();
         }
 
         private void Start()
@@ -538,10 +550,16 @@ namespace Wrestling.UI.Material.Match
             // No need to continue if 2nd round finished
             if (ScoreScreenVm.MainSeconds == ScoreScreenVm.MaxRoundSecond && ScoreScreenVm.Round == 2) return;
 
-            StartTimer();
+            if (_timer == null)
+            {
+                SetupTimer();
+            }
+
+            _timer.Start();            
 
             AddAction("Таймер запущен", 0, null);
 
+            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
             _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
 
             if (ScoreScreenVm.MainSeconds == 0 && ScoreScreenVm.IsSoundEnabled)
@@ -584,6 +602,16 @@ namespace Wrestling.UI.Material.Match
         {
             Stop();
 
+            if (_settings.IsVideoRecordingEnabled)
+            {
+                StopRecording();
+
+                if (!DataContext.WrestlingMatch.IsMatchCompleted)
+                {
+                    DeleteRecording();
+                }
+            }
+
             _startDateTime = null;
             _matchActions = new List<MatchAction>();
 
@@ -594,6 +622,11 @@ namespace Wrestling.UI.Material.Match
             Action2Visibility = Visibility.Visible;
 
             ScoreScreenVm.Reset();
+
+            CopyDataFromViewToMatch();
+
+            OnPropertyChanged("IsStartButtonVisible");
+            OnPropertyChanged("IsStopButtonVisible");
         }
 
         private void AdjustWarnings(string param)
@@ -620,18 +653,10 @@ namespace Wrestling.UI.Material.Match
                     "Матч не звершен! Если вы вернетесь назад, то текущие результаты будут потеряны. Вы уверены, что хотите вернуться?",
                     "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
 
-            if (_settings.IsVideoRecordingEnabled)
-            {
-                StopRecording();
-                DeleteRecording();
-            }
-
-            Reset();
-
-            CopyDataFromViewToMatch();
-
             if (!DataContext.WrestlingMatch.IsMatchCompleted)
             {
+                Reset();
+
                 DataContext.WrestlingMatch = null;
             }
 
@@ -660,7 +685,9 @@ namespace Wrestling.UI.Material.Match
             {
                 IsRunning = false;
             }
-         
+
+            ScoreScreenVm.IsTimeout = false;
+
             //_currentRecorder.StopRecording();
 
             CopyDataFromViewToMatch();
@@ -683,7 +710,9 @@ namespace Wrestling.UI.Material.Match
             DataContext.WrestlingMatch.MaxActionSecond = ScoreScreenVm.MaxActionSecond;
             DataContext.WrestlingMatch.MaxTimeoutSecond = ScoreScreenVm.MaxTimeoutSecond;
             DataContext.WrestlingMatch.BestActionRed = ScoreScreenVm.BestActionRed;
+            DataContext.WrestlingMatch.BestActionRedCount = ScoreScreenVm.BestActionRedCount;
             DataContext.WrestlingMatch.BestActionBlue = ScoreScreenVm.BestActionBlue;
+            DataContext.WrestlingMatch.BestActionBlueCount = ScoreScreenVm.BestActionBlueCount;
             DataContext.WrestlingMatch.IsLastActionRed = ScoreScreenVm.IsLastActionRed;
             DataContext.WrestlingMatch.WarningsNumberRed = ScoreScreenVm.Wrestler1WarningsNumber;
             DataContext.WrestlingMatch.WarningsNumberBlue = ScoreScreenVm.Wrestler2WarningsNumber;
@@ -708,20 +737,26 @@ namespace Wrestling.UI.Material.Match
         private void SetupTimer()
         {
             IsRunning = false;
-            _timer?.Stop();
 
-            _timer = new DispatcherTimer();
+            if (_timer != null)
+            {
+                _timer.Stop();
+                _timer.Tick -= TimerTick;
+            }
+
+            _timer = new DispatcherTimer(DispatcherPriority.Send);
             _timer.Tick += TimerTick;
             _timer.Interval = new TimeSpan(0, 0, 0, 1);
         }
 
-        private Stopwatch _timerSw = new Stopwatch();
-        private int _oldMainSeconds = 0;
+        //private Stopwatch _timerSw = new Stopwatch();
 
         private void TimerTick(object sender, EventArgs e)
         {
-            ScoreScreenVm.MainSeconds = Convert.ToInt32(_timerSw.ElapsedMilliseconds / 1000L) + _oldMainSeconds;
-            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds * 1000);
+            //ScoreScreenVm.MainSeconds = Convert.ToInt32(_timerSw.ElapsedMilliseconds / 1000L);
+            ScoreScreenVm.MainSeconds++;
+
+            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
 
             if (ScoreScreenVm.IsAction1TimerEnabled || ScoreScreenVm.IsAction2TimerEnabled)
             {
@@ -751,11 +786,25 @@ namespace Wrestling.UI.Material.Match
             return new BitmapImage(new Uri(isEnabled ? enablePath : cancelPath, UriKind.Relative));
         }
 
-        private MatchAction GetBestAction(bool? isRed)
+        private void ResetBestActions()
         {
-            var action = _matchActions.Where(a => (!isRed.HasValue || a.IsForRed == isRed)).OrderByDescending(a => a.Points).FirstOrDefault();
+            var redBestAction = _matchActions.Where(a => a.IsForRed.HasValue && a.IsForRed.Value).OrderByDescending(a => a.Points).FirstOrDefault();
+            if (redBestAction != null)
+            {
+                ScoreScreenVm.BestActionRed = redBestAction.Points;
 
-            return action;
+                var actionCount = _matchActions.Count(a => a.IsForRed.HasValue && a.IsForRed.Value && a.Points == redBestAction.Points);
+                ScoreScreenVm.BestActionRedCount = actionCount;
+            }
+
+            var blueBestAction = _matchActions.Where(a => a.IsForRed.HasValue && !a.IsForRed.Value).OrderByDescending(a => a.Points).FirstOrDefault();
+            if (blueBestAction != null)
+            {
+                ScoreScreenVm.BestActionBlue = blueBestAction.Points;
+
+                var actionCount = _matchActions.Count(a => a.IsForRed.HasValue && !a.IsForRed.Value && a.Points == blueBestAction.Points);
+                ScoreScreenVm.BestActionBlueCount = actionCount;
+            }
         }
 
         private MatchAction GetLastWrestlerPointsAction(bool? isRed)
@@ -763,12 +812,99 @@ namespace Wrestling.UI.Material.Match
             for (int i = _matchActions.Count - 1; i >= 0; i--)
             {
                 var action = _matchActions[i];
-                if (action.Points > 0 && action.IsForRed == isRed) return action;
+                if (action.Points > 0 && (!isRed.HasValue || action.IsForRed.Value == isRed.Value)) return action;
             }
 
             return null;
         }
         
+        private void AdjustLastPoint(bool isForRed)
+        {
+            var lastPoint = GetLastWrestlerPointsAction(isForRed);
+            if (lastPoint != null)
+            {
+                if (isForRed)
+                {
+                    ScoreScreenVm.Points1 -= lastPoint.Points;
+                } 
+                else
+                {
+                    ScoreScreenVm.Points2 -= lastPoint.Points;
+                }
+
+                _matchActions.Remove(lastPoint);
+
+                var lastPointsAction = GetLastWrestlerPointsAction(null);
+                if (lastPointsAction != null)
+                {
+                    ScoreScreenVm.IsLastActionRed = lastPointsAction.IsForRed.Value;
+                }
+
+                AddAction($"Коррекция баллов для борца в красном на {lastPoint.Points}", 0, lastPoint.IsForRed);
+
+                ResetBestActions();
+            }
+        }
+
+        private void AddPoints(bool isForRed, int value)
+        {
+            if (isForRed)
+            {
+                ScoreScreenVm.Points1 = ScoreScreenVm.Points1 + value;
+            } 
+            else
+            {
+                ScoreScreenVm.Points2 = ScoreScreenVm.Points2 + value;
+            }            
+
+            if (value > 0)
+            {
+                if (isForRed)
+                {
+                    if (ScoreScreenVm.BestActionRed < value)
+                    {
+                        ScoreScreenVm.BestActionRed = value;
+                        ScoreScreenVm.BestActionRedCount = 1;
+                    }
+                    else if (ScoreScreenVm.BestActionRed == value)
+                    {
+                        ScoreScreenVm.BestActionRedCount++;
+                    }
+                }
+                else
+                {
+                    if (ScoreScreenVm.BestActionBlue < value)
+                    {
+                        ScoreScreenVm.BestActionBlue = value;
+                        ScoreScreenVm.BestActionBlueCount = 1;
+                    }
+                    else if (ScoreScreenVm.BestActionBlue == value)
+                    {
+                        ScoreScreenVm.BestActionBlueCount++;
+                    }
+                }
+
+                AddPointsAction(isForRed, value);
+
+                ScoreScreenVm.IsLastActionRed = isForRed;
+            }
+            else
+            {
+                // Correction
+                AdjustLastPoint(isForRed);
+            }
+
+            if (ScoreScreenVm.Points1 < 0)
+            {
+                ScoreScreenVm.Points1 = 0;
+            }
+
+            if (ScoreScreenVm.Points2 < 0)
+            {
+                ScoreScreenVm.Points2 = 0;
+            }
+        }
+
         private void AdjustPoints(string param)
         {
             var items = param.Split(',');
@@ -788,81 +924,7 @@ namespace Wrestling.UI.Material.Match
                 Action2Visibility = Visibility.Visible;
             }
 
-            if (isRed)
-            {
-                ScoreScreenVm.Points1 = ScoreScreenVm.Points1 + value;
-
-                if (value > 0)
-                {
-                    if (ScoreScreenVm.BestActionRed < value) ScoreScreenVm.BestActionRed = value;
-                    AddPointsAction(true, value);
-                    ScoreScreenVm.IsLastActionRed = true;
-                }
-                else
-                {
-                    var lastPoint = GetLastWrestlerPointsAction(true);
-                    if (lastPoint != null)
-                    {
-                        ScoreScreenVm.Points1 -= lastPoint.Points;
-                        AddAction($"Коррекция баллов для борца в красном на {value}", 0, null);
-                        _matchActions.Remove(lastPoint);
-
-                        var lastPointsAction = GetLastWrestlerPointsAction(null);
-                        if (lastPointsAction?.IsForRed != null)
-                        {
-                            ScoreScreenVm.IsLastActionRed = lastPointsAction.IsForRed.Value;
-                        }
-
-                        var bestAction = GetBestAction(true);
-                        if (bestAction != null)
-                        {
-                            ScoreScreenVm.BestActionRed = bestAction.Points;
-                        }
-                    }
-                }
-
-                if (ScoreScreenVm.Points1 < 0)
-                {
-                    ScoreScreenVm.Points1 = 0;
-                }
-            }
-            else
-            {
-                ScoreScreenVm.Points2 = ScoreScreenVm.Points2 + value;
-                if (value > 0)
-                {
-                    if (ScoreScreenVm.BestActionBlue < value) ScoreScreenVm.BestActionBlue = value;
-                    AddPointsAction(false, value);
-                    ScoreScreenVm.IsLastActionRed = false;
-                }
-                else
-                {
-                    var lastPoint = GetLastWrestlerPointsAction(false);
-                    if (lastPoint != null)
-                    {
-                        ScoreScreenVm.Points2 -= lastPoint.Points;
-                        AddAction($"Коррекция баллов для борца в синем на {value}", 0, null);
-                        _matchActions.Remove(lastPoint);
-
-                        var lastPointsAction = GetLastWrestlerPointsAction(null);
-                        if (lastPointsAction?.IsForRed != null)
-                        {
-                            ScoreScreenVm.IsLastActionRed = lastPointsAction.IsForRed.Value;
-                        }
-
-                        var bestAction = GetBestAction(false);
-                        if (bestAction != null)
-                        {
-                            ScoreScreenVm.BestActionBlue = bestAction.Points;
-                        }
-                    }
-                }
-
-                if (ScoreScreenVm.Points2 < 0)
-                {
-                    ScoreScreenVm.Points2 = 0;
-                }
-            }
+            AddPoints(isRed, value);
 
             CalculateAdvantage();
         }
@@ -880,6 +942,14 @@ namespace Wrestling.UI.Material.Match
                     ScoreScreenVm.IsPlayer1WithAdvantage = true;
                 }
                 else if (ScoreScreenVm.BestActionBlue > ScoreScreenVm.BestActionRed)
+                {
+                    ScoreScreenVm.IsPlayer2WithAdvantage = true;
+                }
+                else if (ScoreScreenVm.BestActionRed == ScoreScreenVm.BestActionBlue && ScoreScreenVm.BestActionRedCount > ScoreScreenVm.BestActionBlueCount)
+                {
+                    ScoreScreenVm.IsPlayer1WithAdvantage = true;
+                }
+                else if (ScoreScreenVm.BestActionRed == ScoreScreenVm.BestActionBlue && ScoreScreenVm.BestActionBlueCount > ScoreScreenVm.BestActionRedCount)
                 {
                     ScoreScreenVm.IsPlayer2WithAdvantage = true;
                 }
@@ -960,11 +1030,16 @@ namespace Wrestling.UI.Material.Match
                     AddAction("Таймаут завершен", 0, null);
                 }
 
-                _timer.Stop();
+                _timer?.Stop();
+                IsRunning = false;
 
                 ScoreScreenVm.IsTimeout = false;
                 ScoreScreenVm.MainSeconds = 0;
                 ScoreScreenVm.Round = 2;
+
+                _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxRoundSecond);
+                _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
+                _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
 
                 OnPropertyChanged("IsStartButtonVisible");
                 OnPropertyChanged("IsStopButtonVisible");
@@ -983,15 +1058,25 @@ namespace Wrestling.UI.Material.Match
                     AddAction($"Раунд {ScoreScreenVm.Round} завершен", 0, null);
                 }
 
-                _timer.Stop();
+                _timer?.Stop();
                 IsRunning = false;
 
                 if (ScoreScreenVm.Round == 1)
                 {
                     ScoreScreenVm.IsTimeout = true;
-                    ScoreScreenVm.MainSeconds = 0;
+                    ScoreScreenVm.MainSeconds = 0;                    
 
-                    StartTimer();
+                    _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxTimeoutSecond);
+                    _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
+
+                    ScoreScreenVm.Round = 2;
+
+                    if (_timer == null)
+                    {
+                        SetupTimer();
+                    }
+
+                    _timer.Start();                    
 
                     AddAction("Начался таймаут", 0, null);
 

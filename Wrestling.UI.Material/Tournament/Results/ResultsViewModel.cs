@@ -4,8 +4,10 @@ using System.Globalization;
 using System.Linq;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
+using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Entities.Results;
+using Wrestling.Entities.Results.Achievements;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Tournament.Dashboard;
 using Wrestling.UI.Material.Tournament.Print.PrintResults;
@@ -13,7 +15,7 @@ using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Results
 {
-    public class ResultsViewModel : TournamentViewModelBase
+    public partial class ResultsViewModel : TournamentViewModelBase
     {
         #region Fields
 
@@ -26,14 +28,17 @@ namespace Wrestling.UI.Material.Tournament.Results
         private ICommand _printTeamResultsMedalsCommand;
         private ICommand _printTeamResultsPointsCommand;
         private ICommand _printPersonalResultsCommand;
+        private ICommand _printWrestlerAchievementsCommand;
 
-        private List<TournamentResult> _personalResults;
+        private List<TournamentResult> _allResults;
+        private List<TournamentResult> _visibleResults;
         private List<TournamentTeamResult> _teamResults;
         private List<IGroupBracketProcessor> _barcketProcessors;
 
         private List<TournamentTeamResult> _olympicTeamResults;
         private List<TournamentTeamResult> _medalsTeamResults;
         private List<TournamentTeamResult> _pointsTeamResults;
+        private List<WrestlerAchievement> _achievements;
 
         private IList<CommandButtonItem> _quickButtons;
 
@@ -93,6 +98,18 @@ namespace Wrestling.UI.Material.Tournament.Results
             }
         }
 
+        public ICommand PrintWrestlerAchievementsCommand
+        {
+            get
+            {
+                if (_printWrestlerAchievementsCommand == null)
+                {
+                    _printWrestlerAchievementsCommand = new RelayCommand(param => PrintWrestlerAchievements(new PrintAchievementNominantsViewModel(DiContainer) { Results = Achievements }), param => true);
+                }
+                return _printWrestlerAchievementsCommand;
+            }
+        }
+
         #endregion
 
         #region Binding properties
@@ -128,18 +145,28 @@ namespace Wrestling.UI.Material.Tournament.Results
 
                     if (prevValue != null && prevValue.Length > 2 && _filterString.Length == 0 || _filterString.Length > 2)
                     {
-                        CalculatePersonalResults();
+                        PersonalResults = GetVisibleResults(_allResults, IsOnlyMedalsVisible, FilterString);
                     }
                 }
             }
         }
 
-        public List<TournamentResult> PersonalResults
+        public List<WrestlerAchievement> Achievements
         {
-            get { return _personalResults; }
+            get { return _achievements; }
             set
             {
-                _personalResults = value;
+                _achievements = value;
+                OnPropertyChanged("Achievements");
+            }
+        }
+
+        public List<TournamentResult> PersonalResults
+        {
+            get { return _visibleResults; }
+            set
+            {
+                _visibleResults = value;
                 OnPropertyChanged("PersonalResults");
             }
         }
@@ -151,7 +178,7 @@ namespace Wrestling.UI.Material.Tournament.Results
             {
                 _isOnlyMedalsVisible = value;
 
-                CalculatePersonalResults();
+                PersonalResults = GetVisibleResults(_allResults, IsOnlyMedalsVisible, FilterString);
 
                 OnPropertyChanged("IsOnlyMedalsVisible");
             }
@@ -197,14 +224,17 @@ namespace Wrestling.UI.Material.Tournament.Results
 
             _barcketProcessors = Resolve<List<IGroupBracketProcessor>>();
 
-            CalculatePersonalResults();
+            _allResults = CalculateAllResults(DataContext.Tournament);
 
-            _teamResults = _teamCalculator.GetTeamResults(PersonalResults, null);
+            _teamResults = _teamCalculator.GetTeamResults(_allResults, null);
+
+            PersonalResults = GetVisibleResults(_allResults, IsOnlyMedalsVisible, FilterString);
 
             OlympicTeamResults = Resolve<ITeamResultsOrderer>("OlympicOrderer").GetOrderedResults(_teamResults);
             MedalsTeamResults = Resolve<ITeamResultsOrderer>("MedalsOrderer").GetOrderedResults(_teamResults);
             PointsTeamResults = Resolve<ITeamResultsOrderer>("PointsOrderer").GetOrderedResults(_teamResults);
 
+            Achievements = CalculateAchievements(DataContext.Tournament, _allResults);
         }
 
         protected override void OnBackCommand()
@@ -226,16 +256,40 @@ namespace Wrestling.UI.Material.Tournament.Results
             ShowPrintPreview(vm);
         }
 
+        private void PrintWrestlerAchievements(PrintAchievementNominantsViewModel vm)
+        {
+            ShowPrintPreview(vm);
+        }
+
         private void PrintPersonalResults()
         {
             ShowPrintPreview(new PrintPersonalResultsViewModel(DiContainer) {Results = PersonalResults});
         }
 
-        private void CalculatePersonalResults()
+        private List<WrestlerAchievement> CalculateAchievements(Entities.Tournament tournament, List<TournamentResult> allResults)
+        {
+            var achievements = new List<WrestlerAchievement>();
+
+            var calculators = Resolve<List<IAchievementCalculator>>();
+
+            foreach (var calc in calculators)
+            {
+                var results = calc.CalculateAchievement(tournament, allResults);
+
+                if (results != null && results.Count > 0)
+                {
+                    achievements.AddRange(results);
+                }
+            }
+
+            return achievements;
+        }
+
+        private List<TournamentResult> CalculateAllResults(Entities.Tournament tournament)
         {
             var tmpResults = new List<TournamentResult>();
 
-            foreach (var group in DataContext.Tournament.Groups)
+            foreach (var group in tournament.Groups)
             {
                 if (group.Bracket == null) continue;
 
@@ -250,8 +304,15 @@ namespace Wrestling.UI.Material.Tournament.Results
                 }
             }
 
-            PersonalResults = new List<TournamentResult>(tmpResults
-                .Where(w => (!IsOnlyMedalsVisible || w.Wrestler.FinalPlace <= 3) && (string.IsNullOrEmpty(FilterString) || w.Wrestler.LastName.StartsWith(FilterString, true, CultureInfo.InvariantCulture)))
+            return new List<TournamentResult>(tmpResults                
+                .OrderBy(x => x.Group.Name)
+                .ThenBy(p => p.Wrestler.FinalPlace));
+        }
+
+        private List<TournamentResult> GetVisibleResults(List<TournamentResult> allResults, bool getMedalistsOnly, string filterString)
+        {
+            return new List<TournamentResult>(allResults
+                .Where(w => (!getMedalistsOnly || w.Wrestler.FinalPlace <= 3) && (string.IsNullOrEmpty(filterString) || w.Wrestler.LastName.StartsWith(filterString, true, CultureInfo.InvariantCulture)))
                 .OrderBy(x => x.Group.Name).ThenBy(p => p.Wrestler.FinalPlace));
         }
 

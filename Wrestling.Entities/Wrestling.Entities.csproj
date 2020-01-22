@@ -45,6 +45,15 @@
     <Compile Include="Carpet.cs" />
     <Compile Include="GlobalSettings.cs" />
     <Compile Include="GroupRoundTypeEnum.cs" />
+    <Compile Include="Results\Achievements\FastestActionAchievementCalculator.cs" />
+    <Compile Include="Results\Achievements\FastestWinAchievementCalculator.cs" />
+    <Compile Include="Results\Achievements\MostDominationWinsAchievementCalculator.cs" />
+    <Compile Include="Results\Achievements\MostPointsAchievementCalculator.cs" />
+    <Compile Include="Results\Achievements\IAchievementCalculator.cs" />
+    <Compile Include="Results\Achievements\MostAmplitudeActionsAchievementCalculator.cs" />
+    <Compile Include="Results\Achievements\MostTusheWinsAchievementCalculator.cs" />
+    <Compile Include="Results\Achievements\WinInLast10SecondsAchievementCalculator.cs" />
+    <Compile Include="Results\Achievements\WrestlerAchievement.cs" />
     <Compile Include="Results\ITeamResultsCalculator.cs" />
     <Compile Include="Results\ITeamResultsOrderer.cs" />
     <Compile Include="MatchAction.cs" />

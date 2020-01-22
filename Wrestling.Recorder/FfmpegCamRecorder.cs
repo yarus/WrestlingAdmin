@@ -84,9 +84,14 @@ namespace Wrestling.Recorder
             _createOverlay = flag;
         }
 
+        public void SetMaxSeconds(int seconds)
+        {
+            _halfTime = seconds * 1000;
+        }
+
         public void SetMainSecond(int t)
         {
-            _currentTimer = t;
+            _currentTimer = t * 1000;
         }
 
         public FfmpegCamRecorder(string fileName, RecorderConfiguration configuration, long halfTime)
@@ -777,8 +782,10 @@ namespace Wrestling.Recorder
             proc_o.BeginErrorReadLine();
             proc_o.WaitForExit();
 
-            if (proc_o.ExitCode != 0 && ConcatException != null)
-                throw new Exception("");
+            if (proc_o.ExitCode != 0)
+            {
+                throw new Exception("PrepareResults process completed with failure. ExitCode: " + proc_o.ExitCode);
+            }
 
             ConcatCompleted?.Invoke(this, fileName);
         }

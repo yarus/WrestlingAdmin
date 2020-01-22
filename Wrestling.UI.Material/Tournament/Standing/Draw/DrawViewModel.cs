@@ -49,12 +49,30 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             _drawTypes = Resolve<List<IGroupBracketProcessor>>();
 
             Groups = new ObservableCollection<AgeWeightGroup>(DataContext.Tournament.Groups.OrderBy(g => g.IsFemale).ThenByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax));
+
+            // Check groups
+            foreach (var wrestler in DataContext.Tournament.Wrestlers)
+            {
+                var group = Groups.FirstOrDefault(gr => gr.ID == wrestler.GroupID);
+                if (group != null)
+                {
+                    if (wrestler.IsRegistrationApproved && group.Wrestlers.FirstOrDefault(wr => wr == wrestler) == null)
+                    {
+                        group.Wrestlers.Add(wrestler);
+                    }
+                }
+                else
+                {
+                    wrestler.GroupID = null;
+                    wrestler.GroupName = string.Empty;
+                }
+            }
         }
 
         #region Binding Properties
 
         public int GroupsCount => DataContext.Tournament.GroupsCount;
-        public int WrestlersCount => DataContext.Tournament.AppliedWrestlersCount;
+        public int WrestlersCount => Groups?.SelectMany(gr => gr.Wrestlers).Count() ?? 0;
         public int MatchesCount => DataContext.Tournament.MatchesCount;
 
         public string PageName => "Жеребьевка";
@@ -118,6 +136,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             
             var vm = new AddBracketViewModel(DiContainer, group);
             vm.InitData();
+
             var view = new AddBracketDialog
             {
                 DataContext = vm
@@ -138,13 +157,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                 foreach (var wr in group.Wrestlers)
                 {
                     wr.FinalPlace = null;
+                    wr.IsSeedFixed = true;
                 }
 
                 if (group.Bracket != null)
                 {
                     if (DataContext.Tournament.Carpets.FirstOrDefault(c => c.Groups.Contains(group)) != null)
                     {
-                        _matchNumbersGenerator.Generate(DataContext.Tournament);
+                        _matchNumbersGenerator.Generate(DataContext.Tournament, _drawTypes);
                     }
 
                     // We need to refresh Rounds collection to redraw it on UI

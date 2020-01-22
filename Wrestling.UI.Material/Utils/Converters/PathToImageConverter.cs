@@ -26,9 +26,17 @@ namespace Wrestling.UI.Material.Utils.Converters
 
             if (string.IsNullOrEmpty(value?.ToString())) return defaultEmblem;
 
-            var fileNameItems = value.ToString().Split('\\');
-            var fileName = fileNameItems[fileNameItems.Length - 1];
-            var fullFilePath = $"{imgPath}{fileName}";
+            string fullFilePath = string.Empty;
+
+            if (File.Exists(value.ToString())) {
+                fullFilePath = value.ToString();
+            }
+            else
+            {
+                var fileNameItems = value.ToString().Split('\\');
+                string fileName = fileNameItems[fileNameItems.Length - 1];
+                fullFilePath = $"{imgPath}{fileName}";
+            }
 
             return File.Exists(fullFilePath)
                 ? new BitmapImage(new Uri(fullFilePath, UriKind.Absolute))

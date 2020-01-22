@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
+using Wrestling.Entities.Bracket;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
 
@@ -43,6 +45,18 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             Items = DataContext.Tournament.Carpets;
 
             _groups = DataContext.Tournament.Groups;
+
+            VerifyCarpets();            
+        }
+
+        private void VerifyCarpets()
+        {
+            var invalidCarpetGroups = _groups.Where(g => g.CarpetID.HasValue && Items.FirstOrDefault(c => c.ID == g.CarpetID.Value) == null).ToList();
+            foreach (var invalidGroup in invalidCarpetGroups)
+            {
+                invalidGroup.CarpetID = null;
+                invalidGroup.CarpetLabel = string.Empty;
+            }
         }
 
         public ICommand UpGroupCommand
@@ -208,14 +222,16 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
         private void DeleteCarpet(Carpet carpet)
         {
             if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить ковер?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
-            
-            Items.Remove(carpet);
 
-            foreach (var group in carpet.Groups)
+            var groups = _groups.Where(g => g.CarpetID.HasValue && g.CarpetID.Value == carpet.ID.Value).ToList();
+
+            foreach (var group in groups)
             {
                 group.CarpetID = null;
                 group.CarpetLabel = string.Empty;
             }
+
+            Items.Remove(carpet);
         }
 
         private async void BindGroup(Carpet carpet)
@@ -263,7 +279,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
 
         private void GenerateMatchNumbers()
         {
-            _matchNumbersGenerator.Generate(DataContext.Tournament);
+            _matchNumbersGenerator.Generate(DataContext.Tournament, Resolve<List<IGroupBracketProcessor>>());
         }
     }
 }

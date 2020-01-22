@@ -88,6 +88,8 @@
                                         <TextBlock Grid.Column="1" TextWrapping="NoWrap" FontSize="16"
                                                    Margin="20,0,20,0" VerticalAlignment="Center">
                                             <Run Text="{Binding Name, Mode=OneWay}" />
+                                            <Run Text="-"></Run>
+                                            <Run Text="{Binding Bracket.BracketTypeLabel, Mode=OneWay}"></Run>
                                         </TextBlock>
 
                                         <StackPanel Grid.Column="2" HorizontalAlignment="Right"

@@ -29,6 +29,8 @@ namespace Wrestling.Entities
         private string _nextMatchBracketFullNumber;
         private int _bestActionRed;
         private int _bestActionBlue;
+        private int _bestActionRedCount;
+        private int _bestActionBlueCount;
         private bool _isLastActionRed;
 
         private int _warningsNumberRed;
@@ -333,6 +335,26 @@ namespace Wrestling.Entities
             {
                 _bestActionBlue = value;
                 OnPropertyChanged("BestActionBlue");
+            }
+        }
+
+        public int BestActionRedCount
+        {
+            get { return _bestActionRedCount; }
+            set
+            {
+                _bestActionRedCount = value;
+                OnPropertyChanged("BestActionRedCount");
+            }
+        }
+
+        public int BestActionBlueCount
+        {
+            get { return _bestActionBlueCount; }
+            set
+            {
+                _bestActionBlueCount = value;
+                OnPropertyChanged("BestActionBlueCount");
             }
         }
 

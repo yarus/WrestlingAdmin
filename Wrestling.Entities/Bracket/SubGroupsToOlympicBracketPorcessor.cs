@@ -224,6 +224,12 @@ namespace Wrestling.Entities.Bracket
         {
             if (Group.Bracket == null) return;
 
+            var notCompletedMainMatches = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).SelectMany(p => p.RoundMatches).Where(x => x.Status != MatchStatusEnum.Completed).ToList();
+            if (notCompletedMainMatches.Count > 0)
+            {
+                return;
+            }
+
             InitInternalProcessors();
 
             var resultsA = _groupAProcessor.GetResults().ToList();
@@ -243,38 +249,55 @@ namespace Wrestling.Entities.Bracket
             var finalists = new List<Wrestler>();
 
             // 1-2 place
-            var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
-            if (winner != null)
+            if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue)
             {
-                finalists.Add(winner);
-                winner.FinalPlace = currentPlace;
-                currentPlace++;
-            }
+                var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
+                if (winner != null)
+                {
+                    finalists.Add(winner);
+                    winner.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
 
-            var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
-            if (looser != null)
+                var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
+                if (looser != null)
+                {
+                    finalists.Add(looser);
+                    looser.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
+            } 
+            else
             {
-                finalists.Add(looser);
-                looser.FinalPlace = currentPlace;
-                currentPlace++;
+                // can't calculate yet
+                currentPlace += 2;
             }
 
             // 3-4 place
             var thirdPlace = addRounds[addRounds.Count - 1].RoundMatches[0];
-            var bronzeWinner = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
-            if (bronzeWinner != null)
-            {
-                finalists.Add(bronzeWinner);
-                bronzeWinner.FinalPlace = currentPlace;
-                currentPlace++;
-            }
 
-            var bronzeLooser = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
-            if (bronzeLooser != null)
+            if (thirdPlace.Status == MatchStatusEnum.Completed && thirdPlace.IsRedWon.HasValue)
             {
-                finalists.Add(bronzeLooser);
-                bronzeLooser.FinalPlace = currentPlace;
-                currentPlace++;
+                var bronzeWinner = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
+                if (bronzeWinner != null)
+                {
+                    finalists.Add(bronzeWinner);
+                    bronzeWinner.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
+
+                var bronzeLooser = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
+                if (bronzeLooser != null)
+                {
+                    finalists.Add(bronzeLooser);
+                    bronzeLooser.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
+            }
+            else
+            {
+                // can't calculate yet
+                currentPlace += 2;
             }
 
             // Other places should be set based on main round robin results
@@ -469,6 +492,60 @@ namespace Wrestling.Entities.Bracket
             // Main bracket match can be reverted only if no additional bracket matches completed
             return Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional)
                        .SelectMany(r => r.RoundMatches).Count(m => m.Status == MatchStatusEnum.Completed) == 0;
+        }
+
+        public override List<GroupRound> GetMainQualificationRounds(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
+
+            return group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+        }
+
+        public override GroupRound GetSemiFinalRound(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null || group.Bracket.Rounds.Count == 0)
+            {
+                return null;
+            }
+
+            var additionalRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+
+            if (additionalRounds.Count == 0)
+            {
+                return null;
+            }
+            
+            return additionalRounds[0];
+        }
+
+        public override GroupRound Get3rdPlaceRound(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null || group.Bracket.Rounds.Count == 0)
+            {
+                return null;
+            }
+
+            var additionalRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+
+            if (additionalRounds.Count == 0)
+            {
+                return null;
+            }
+
+            return additionalRounds[additionalRounds.Count - 1];
+        }
+
+        public override GroupRound GetFinalRound(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
+
+            var additionalRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+
+            if (additionalRounds.Count < 2) return null;
+
+            var finalRound = additionalRounds[additionalRounds.Count - 2];
+
+            return finalRound;
         }
     }
 }

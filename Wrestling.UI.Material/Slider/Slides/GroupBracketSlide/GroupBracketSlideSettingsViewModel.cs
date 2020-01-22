@@ -205,7 +205,6 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
             bool? success = Dialog.ShowOpenFileDialog(this, settings);
             if (success == true)
             {
-                _item.SetNamedValue("BackgroundImagePath", settings.FileName);
                 SliderBackgroundImagePath = settings.FileName;
             }
         }

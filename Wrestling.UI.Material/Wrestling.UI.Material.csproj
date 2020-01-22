@@ -8,7 +8,7 @@
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Wrestling.UI.Material</RootNamespace>
-    <AssemblyName>Wrestling.UI.Material</AssemblyName>
+    <AssemblyName>WrestlingAdmin</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -18,7 +18,7 @@
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <PublishUrl>C:\Users\akardash.ONTARGET\Desktop\WrestlingAdmin4\</PublishUrl>
+    <PublishUrl>C:\Users\ank_w\Desktop\WrestlingAdminTool\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>false</UpdateEnabled>
@@ -30,7 +30,7 @@
     <MapFileExtensions>false</MapFileExtensions>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
     <DisallowUrlActivation>true</DisallowUrlActivation>
-    <ApplicationRevision>27</ApplicationRevision>
+    <ApplicationRevision>38</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -38,7 +38,7 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -81,6 +81,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <NoWin32Manifest>true</NoWin32Manifest>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Wrestling.UI.Material.App</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CodeDisplayer, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -134,6 +137,10 @@
       <DependentUpon>LoginView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Login\LoginViewModel.cs" />
+    <Compile Include="Match\SetWinTypeDialog.xaml.cs">
+      <DependentUpon>SetWinTypeDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Match\SetWinTypeViewModel.cs" />
     <Compile Include="Match\MatchControlView.xaml.cs">
       <DependentUpon>MatchControlView.xaml</DependentUpon>
     </Compile>
@@ -168,6 +175,10 @@
     <Compile Include="ScoreScreen\WwfScoreScreenView.xaml.cs">
       <DependentUpon>WwfScoreScreenView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Tournament\Print\PrintResults\PrintAchievementNominantsView.xaml.cs">
+      <DependentUpon>PrintAchievementNominantsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Print\PrintResults\PrintAchievementNominantsViewModel.cs" />
     <Compile Include="Utils\Converters\FullNameToLastNameConverter.cs" />
     <Compile Include="Utils\Recording\IMatchRecorder.cs" />
     <Compile Include="Utils\Recording\OverlayDrawer\BaseOverlayDrawer.cs" />
@@ -380,6 +391,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Match\SetWinTypeDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Match\MatchControlView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -463,6 +478,10 @@
     <Page Include="Slider\Slides\VideoSlide\VideoSlideView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Print\PrintResults\PrintAchievementNominantsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Tournament\Standing\Details\AddGroupDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -647,10 +666,6 @@
     <Resource Include="Resources\scoreboard.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\Wrestling.Recorder\FFMPEG\bin\ffmpeg_x64.exe">
-      <Link>ffmpeg_x64.exe</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="Images\DefaultLogo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

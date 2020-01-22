@@ -7,7 +7,7 @@ namespace Wrestling.Entities.Bracket
     {
         public override string Title => "Олимпийская с матчем за 3-е место";
         public override string Code => BracketTypeEnum.Olympic.ToString();
-        public override int? AthletsMinCount => 8;
+        public override int? AthletsMinCount => 4;
         public override int? AthletsMaxCount => 64;
 
         protected override void GenerateMainRounds()
@@ -303,6 +303,18 @@ namespace Wrestling.Entities.Bracket
                 n++;
             }
             return (int)result;
+        }
+
+        public override GroupRound Get3rdPlaceRound(AgeWeightGroup group)
+        {
+            if (group == null || group.Bracket == null || group.Bracket.Rounds == null || group.Bracket.Rounds.Count == 0)
+            {
+                return null;
+            }
+
+            var addRound = group.Bracket.Rounds.FirstOrDefault(r => r.RoundType == GroupRoundTypeEnum.Additional);
+
+            return addRound;
         }
     }
 }

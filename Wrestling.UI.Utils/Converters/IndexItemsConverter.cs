@@ -9,8 +9,19 @@ namespace Wrestling.UI.Utils.Converters
     {
         public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
+            if (values == null || values.Length < 2)
+            {
+                return string.Empty;
+            }
+
             var itemsControl = values[0] as ItemsControl;
             var item = values[1];
+
+            if (itemsControl == null || item == null)
+            {
+                return string.Empty;
+            }
+
             var itemContainer = itemsControl.ItemContainerGenerator.ContainerFromItem(item);
 
             // It may not yet be in the collection...

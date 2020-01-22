@@ -33,5 +33,9 @@ namespace Wrestling.Data
         public bool IsTournamentScoreInternational { get; set; }
         [DataMember]
         public bool IsOverlayOlympic { get; set; }
+        [DataMember]
+        public bool IsVideoRecordingEnabled { get; set; }
+        [DataMember]
+        public string VideStoragePath { get; set; }
     }
 }

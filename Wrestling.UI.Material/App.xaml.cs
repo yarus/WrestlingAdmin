@@ -8,6 +8,7 @@ using Wrestling.DataAccess;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Entities.Results;
+using Wrestling.Entities.Results.Achievements;
 using Wrestling.Integration;
 using Wrestling.Providers;
 using Wrestling.Recorder;
@@ -26,7 +27,7 @@ using Wrestling.UI.Material.Utils;
 using Wrestling.UI.Material.Utils.Recording;
 using Wrestling.UI.Material.Utils.Recording.OverlayDrawer;
 using Wrestling.UI.Utils;
-using InternationalScoreScreenView = Wrestling.UI.Material.ScoreScreen.InternationalScoreScreenView;
+
 using SlideHostView = Wrestling.UI.Material.Slider.SlideHostView;
 
 namespace Wrestling.UI.Material
@@ -158,6 +159,17 @@ namespace Wrestling.UI.Material
             di.Add(new OlympicTeamResultsOrderer(), "OlympicOrderer");
             di.Add(new MedalsTeamResultsOrderer(), "MedalsOrderer");
             di.Add(new PointsTeamResultsOrderer(), "PointsOrderer");
+
+            di.Add<List<IAchievementCalculator>>(new List<IAchievementCalculator>
+            {
+                new FastestWinAchievementCalculator(),
+                new FastestActionAchievementCalculator(),
+                new MostAmplitudeActionsAchievementCalculator(),
+                new MostPointsCountAchievementCalculator(),
+                new MostTusheWinsAchievementCalculator(),
+                new MostDominationWinsAchievementCalculator(),
+                new WinInLast10SecondsAchievementCalculator()
+            });
 
             di.Add<IRosbosApi>(new RosbosApi());
 

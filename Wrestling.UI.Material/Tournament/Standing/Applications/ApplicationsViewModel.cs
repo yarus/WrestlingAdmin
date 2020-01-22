@@ -272,6 +272,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                     {
                         group.Wrestlers.Remove(wrestler);
                         group.Bracket = null;
+                        group.RefreshState();
                     }
                 }
             }
@@ -290,14 +291,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 ID = Guid.NewGuid(),
                 TeamID = app.ID,
-                TeamName = app.ShortName,
-                IsFemale = false
+                TeamName = app.ShortName
             };
 
-            tmpWresler.IsWeightApproved = false;
-            tmpWresler.IsEntryFeePaid = false;
-
-            if (!DataContext.Tournament.EntryFee.HasValue)
+            if (!DataContext.Tournament.EntryFee.HasValue || DataContext.Tournament.EntryFee.Value == 0)
             {
                 tmpWresler.IsEntryFeePaid = true;
                 tmpWresler.PaidAmount = 0;
@@ -305,6 +302,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             else
             {
                 tmpWresler.PaidAmount = DataContext.Tournament.EntryFee;
+                tmpWresler.IsEntryFeePaid = false;
             }
 
             var vm = new AddWrestlerViewModel(DiContainer, tmpWresler);
@@ -327,16 +325,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
                 app.Wrestlers = new ObservableCollection<Wrestler>(app.Wrestlers.OrderBy(w => w.LastName));
 
-                var originalGroup = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == tmpWresler.GroupID);
-                if (originalGroup != null)
-                {
-                    if (!originalGroup.Wrestlers.Contains(tmpWresler))
-                    {
-                        originalGroup.Wrestlers.Add(tmpWresler);
-                        originalGroup.Bracket = null;
-                        originalGroup.RefreshState();
-                    }
-                }
+                AddWrestlerToHisGroup(tmpWresler);
 
                 app.RefreshStats();
                 OnPropertyChanged("WrestlersCount");
@@ -344,6 +333,55 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         }
 
         private bool _editWrestlerDialogOpened = false;
+
+        private void RemoveWrestlerFromGroup(Wrestler wrestler)
+        {
+            if (!wrestler.GroupID.HasValue)
+            {
+                return;
+            }
+
+            var oldGroup = DataContext.Tournament.Groups.FirstOrDefault(gr => gr.ID == wrestler.GroupID.Value);
+            if (oldGroup != null)
+            {
+                var groupEntry = oldGroup.Wrestlers.FirstOrDefault(wr => wr.ID == wrestler.ID);
+                if (groupEntry != null)
+                {
+                    oldGroup.Wrestlers.Remove(groupEntry);
+                    oldGroup.Bracket = null;
+                    oldGroup.RefreshState();
+
+                    wrestler.GroupID = null;
+                    wrestler.GroupName = string.Empty;
+                }
+            }
+            else
+            {
+                wrestler.GroupID = null;
+                wrestler.GroupName = string.Empty;
+            }
+        }
+
+        private void AddWrestlerToHisGroup(Wrestler wrestler)
+        {
+            if (wrestler.GroupID.HasValue && wrestler.IsRegistrationApproved)
+            {
+                var group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == wrestler.GroupID.Value);
+                if (group != null)
+                {
+                    var groupWrestler = group.Wrestlers.FirstOrDefault(wr => wr.ID == wrestler.ID);
+                    if (groupWrestler != null)
+                    {
+                        group.Wrestlers.Add(wrestler);
+                        group.Bracket = null;
+                        group.RefreshState();
+                        
+                        wrestler.GroupName = group.Name;
+                    }
+                }
+            }
+        }
+
         private async void EditWrestler(Wrestler wrestler)
         {
             if (_editWrestlerDialogOpened) return;
@@ -363,34 +401,21 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             var result = await DialogHost.Show(view, "RootDialog");
             if (result != null && (bool)result)
             {
-                var item = Items.FirstOrDefault(a => a.ID == wrestler.TeamID);
-                if (item != null && tmpWrestler != null)
+                var teamApp = Items.FirstOrDefault(a => a.ID == wrestler.TeamID);
+                if (teamApp != null && tmpWrestler != null)
                 {
-                    if (wrestler.GroupID.HasValue && tmpWrestler.GroupID != wrestler.GroupID)
-                    {
-                        var group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == wrestler.GroupID.Value);
-                        if (group != null)
-                        {
-                            group.Wrestlers.Remove(wrestler);
-                            group.Bracket = null;
-                            group.RefreshState();
-                        }
+                    // Remove wrestler from old group
+                    RemoveWrestlerFromGroup(wrestler);
 
-                        if (tmpWrestler.GroupID.HasValue)
-                        {
-                            var tmpGroup = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == tmpWrestler.GroupID.Value);
-                            if (tmpGroup != null)
-                            {
-                                tmpGroup.Wrestlers.Add(wrestler);
-                                tmpGroup.Bracket = null;
-                                tmpGroup.RefreshState();
-                            }
-                        }
-                    }
-
-                    wrestler.Sync(tmpWrestler);
+                    // Remove wrestler from new group if it was already added
+                    RemoveWrestlerFromGroup(tmpWrestler);
                     
-                    item.RefreshStats();
+                    wrestler.Sync(tmpWrestler);
+
+                    // Add wrestler to Group if all data is valid
+                    AddWrestlerToHisGroup(tmpWrestler);
+
+                    teamApp.RefreshStats();
                 }
             }
 
@@ -401,22 +426,17 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         {
             if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить спортсмена из заявки?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
 
+            RemoveWrestlerFromGroup(wrestler);
+
             DataContext.Tournament.Wrestlers.Remove(wrestler);
 
             if (wrestler.TeamID.HasValue)
             {
                 var teamApp = Items.FirstOrDefault(a => a.ID == wrestler.TeamID);
-                teamApp?.Wrestlers.Remove(wrestler);
-                teamApp.RefreshStats();
-            }
-
-            if (wrestler.GroupID.HasValue && wrestler.IsRegistrationApproved)
-            {
-                var group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == wrestler.GroupID.Value);
-                if (group != null)
+                if (teamApp != null)
                 {
-                    group.Wrestlers.Remove(wrestler);
-                    group.Bracket = null;
+                    teamApp.Wrestlers.Remove(wrestler);
+                    teamApp.RefreshStats();
                 }
             }
 

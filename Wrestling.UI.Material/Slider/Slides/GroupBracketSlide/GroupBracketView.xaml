@@ -16,7 +16,7 @@
     </UserControl.Resources>
 
     <UserControl.Background>
-        <ImageBrush ImageSource="{Binding SliderBackgroundImagePath, Converter={StaticResource PathToImage}, ConverterParameter=SliderLogo.jpg}" Stretch="UniformToFill" Opacity="{Binding SliderOpacity}"/>
+        <ImageBrush ImageSource="{Binding SliderBackgroundImagePath, Converter={StaticResource PathToImage}, ConverterParameter=SliderLogo.jpg}" Stretch="Uniform" Opacity="{Binding SliderOpacity}"/>
     </UserControl.Background>
 
     <Grid x:Name="RootControl">
@@ -46,7 +46,7 @@
             </Viewbox>            
             
             <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Tournament.Name, Converter={StaticResource converter}}" Margin="10,0,10,0"/>
+                <TextBlock Text="ТУРНИРНАЯ СЕТКА" Margin="10,0,10,0"/>
             </Viewbox>
 
             <Viewbox Stretch="Uniform" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -136,8 +136,8 @@
                                                     <Border Grid.Row="0" Grid.Column="4" Grid.RowSpan="2" BorderBrush="White" BorderThickness="1,0,0,0" />
 
                                                     <TextBlock Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding MatchNumber}" />
-                                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding Path=WrestlerInRed.FullNameShort}" Margin="5,0,5,0" MinWidth="60" />
-                                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Path=WrestlerInBlue.FullNameShort}" Margin="5,0,5,0" MinWidth="60" />
+                                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding Path=WrestlerInRed.FullNameShort, Converter={StaticResource converter}}" Margin="5,0,5,0" MinWidth="60" />
+                                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Path=WrestlerInBlue.FullNameShort, Converter={StaticResource converter}}" Margin="5,0,5,0" MinWidth="60" />
 
                                                     <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding PointsRed}" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                                     <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding PointsBlue}" VerticalAlignment="Center" HorizontalAlignment="Center"/>

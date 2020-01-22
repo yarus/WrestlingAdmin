@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Windows.Input;
+using System.Collections.ObjectModel;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
+using System.Linq;
 
 namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
 {
@@ -11,13 +13,24 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
     {
         private ScreenSlide _item;
 
+        private ObservableCollection<Carpet> _carpets;
+        private ObservableCollection<AgeWeightGroup> _groups;
         private int _sliderOpacityValue;
+        private int _showMatchesCount;
         private string _sliderBackgroundImagePath;
+        private Carpet _selectedCarpet;
 
         private ICommand _setSliderBackgroundCommand;
 
         public UpcomingMatchesSlideSettingsViewModel(IDiContainer container) : base(container)
         {
+        }
+
+        public override void InitData()
+        {
+            base.InitData();
+
+            Carpets = DataContext.Tournament.Carpets;
         }
 
         public ICommand SetSliderBackgroundCommand
@@ -32,6 +45,48 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
                     );
                 }
                 return _setSliderBackgroundCommand;
+            }
+        }
+
+        public Carpet SelectedCarpet
+        {
+            get { return _selectedCarpet; }
+            set
+            {
+                _selectedCarpet = value;
+
+                _item.SetNamedValue("CarpetID", _selectedCarpet?.ID);
+
+                if (_selectedCarpet == null)
+                {
+                    Groups = DataContext.Tournament.Groups;
+                }
+                else
+                {
+                    Groups = _selectedCarpet.Groups;
+                }
+
+                OnPropertyChanged("SelectedCarpet");
+            }
+        }
+
+        public ObservableCollection<AgeWeightGroup> Groups
+        {
+            get { return _groups; }
+            set
+            {
+                _groups = value;
+                OnPropertyChanged("Groups");
+            }
+        }
+
+        public ObservableCollection<Carpet> Carpets
+        {
+            get { return _carpets; }
+            set
+            {
+                _carpets = value;
+                OnPropertyChanged("Carpets");
             }
         }
 
@@ -63,7 +118,18 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
                 OnPropertyChanged("SliderOpacityValue");
             }
         }
-        
+
+        public int ShowMatchesCount
+        {
+            get { return _showMatchesCount; }
+            set
+            {
+                _showMatchesCount = value;
+
+                _item.SetNamedValue("ShowMatchesCount", _showMatchesCount);
+            }
+        }
+
         public void InitContext(ScreenSlide slide)
         {
             InitData();
@@ -71,7 +137,30 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             _item = slide;
 
             if (slide == null) return;
-            
+
+            var carpetID = _item.GetNamedValue("CarpetID");
+            if (carpetID != null)
+            {
+                var carpetGuid = new Guid(carpetID.ToString());
+                SelectedCarpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == carpetGuid);
+            }
+            else
+            {
+                SelectedCarpet = null;
+            }
+
+            var showMatchesCount = _item.GetNamedValue("ShowMatchesCount");
+            if (showMatchesCount != null)
+            {
+
+                var carpetGuid = new Guid(carpetID.ToString());
+                ShowMatchesCount = Convert.ToInt32(showMatchesCount);
+            }
+            else
+            {
+                ShowMatchesCount = 4;
+            }
+
             var opacity = _item.GetNamedValue("SliderOpacityValue");
             if (opacity != null)
             {
@@ -105,7 +194,7 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             bool? success = Dialog.ShowOpenFileDialog(this, settings);
             if (success == true)
             {
-                _item.SetNamedValue("BackgroundImagePath", settings.FileName);
+                _item.SetNamedValue("SliderBackgroundImagePath", settings.FileName);
                 SliderBackgroundImagePath = settings.FileName;
             }
         }
