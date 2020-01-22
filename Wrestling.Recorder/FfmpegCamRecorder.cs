@@ -778,7 +778,7 @@ namespace Wrestling.Recorder
             proc_o.WaitForExit();
 
             if (proc_o.ExitCode != 0 && ConcatException != null)
-                ConcatException(this, new Exception(""));
+                throw new Exception("");
 
             ConcatCompleted?.Invoke(this, fileName);
         }

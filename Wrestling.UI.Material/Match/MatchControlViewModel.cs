@@ -521,6 +521,13 @@ namespace Wrestling.UI.Material.Match
             IsRunning = false;
         }
 
+        private void StartTimer()
+        {
+            _oldMainSeconds = ScoreScreenVm.MainSeconds;
+            _timer.Start();
+            _timerSw.Restart();
+        }
+
         private void Start()
         {
             if (!_startDateTime.HasValue)
@@ -531,8 +538,7 @@ namespace Wrestling.UI.Material.Match
             // No need to continue if 2nd round finished
             if (ScoreScreenVm.MainSeconds == ScoreScreenVm.MaxRoundSecond && ScoreScreenVm.Round == 2) return;
 
-            _timer.Start();
-            _timerSw.Restart();
+            StartTimer();
 
             AddAction("Таймер запущен", 0, null);
 
@@ -710,10 +716,11 @@ namespace Wrestling.UI.Material.Match
         }
 
         private Stopwatch _timerSw = new Stopwatch();
+        private int _oldMainSeconds = 0;
 
         private void TimerTick(object sender, EventArgs e)
         {
-            ScoreScreenVm.MainSeconds = Convert.ToInt32(_timerSw.ElapsedMilliseconds / 1000L);
+            ScoreScreenVm.MainSeconds = Convert.ToInt32(_timerSw.ElapsedMilliseconds / 1000L) + _oldMainSeconds;
             _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds * 1000);
 
             if (ScoreScreenVm.IsAction1TimerEnabled || ScoreScreenVm.IsAction2TimerEnabled)
@@ -984,8 +991,7 @@ namespace Wrestling.UI.Material.Match
                     ScoreScreenVm.IsTimeout = true;
                     ScoreScreenVm.MainSeconds = 0;
 
-                    _timer.Start();
-                    _timerSw.Restart();
+                    StartTimer();
 
                     AddAction("Начался таймаут", 0, null);
 
