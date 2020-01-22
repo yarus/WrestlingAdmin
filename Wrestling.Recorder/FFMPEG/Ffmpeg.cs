@@ -10,7 +10,7 @@ namespace Wrestling.Recorder.FFMPEG
     public class Ffmpeg
     {
         public static String FfmpegExe_x64 { get; set; } = @".\ffmpeg_x64.exe";
-        public static String FfmpegExe_x64_long { get; set; } = @".\ffmpeg\bin\ffmpeg_x64.exe";
+        //public static String FfmpegExe_x64_long { get; set; } = @".\ffmpeg\bin\ffmpeg_x64.exe";
 
         /*ffmpeg\bin\ffmpeg_x64 -y -f dshow -s 640x480 -re -framerate 30 
          * -i video="@device_pnp_\\?\usb#vid_04f2&pid_b56b&mi_00#6&25ee911b&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global"
