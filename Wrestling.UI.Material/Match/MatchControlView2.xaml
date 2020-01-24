@@ -138,6 +138,19 @@
             </Viewbox>
         </Grid>
 
+        <Grid 
+            Grid.Row="2" 
+            Grid.Column="0" >
+            <Rectangle
+                Fill="Black" />
+            <Image
+                x:Name="image1"
+                Source="{Binding CurrentFrame}"
+                Stretch="UniformToFill">
+            </Image>
+        </Grid>
+
+
         <Border Grid.Row="2" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="White"></Border>
 
         <Grid Grid.Row="3" Grid.Column="0">

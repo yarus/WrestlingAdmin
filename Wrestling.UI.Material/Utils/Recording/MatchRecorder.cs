@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows.Media.Imaging;
 using Wrestling.Entities;
 using Wrestling.Recorder;
 using Wrestling.UI.Material.ScoreScreen;
@@ -58,7 +59,12 @@ namespace Wrestling.UI.Material.Utils.Recording
             }
         }
 
-        public void StartRecording(string storagePath, RecorderConfiguration config, ScoreScreenViewModel match, Guid? tournamentId)
+        public void StartRecording(
+            string storagePath, 
+            RecorderConfiguration config, 
+            ScoreScreenViewModel match, 
+            Guid? tournamentId,
+            EventHandler<BitmapSource> frameShowHandler)
         {
             if (config == null || match == null) return;
 
@@ -81,7 +87,8 @@ namespace Wrestling.UI.Material.Utils.Recording
                 fileName, 
                 config, 
                 RecorderOnNewFrame, 
-                match.MaxRoundSecond * 1000); // we need ms
+                match.MaxRoundSecond * 1000,
+                frameShowHandler); // we need ms
 
             _currentRecorder.ConcatCompleted += OnConcatCompleted;
             _currentRecorder.ConcatException += OnConcatException;

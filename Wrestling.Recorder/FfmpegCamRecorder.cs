@@ -37,7 +37,7 @@ namespace Wrestling.Recorder
         public event EventHandler RecordFinishing;
         public event EventHandler RecordCompleted;
         public event EventHandler<string> ConcatCompleted;
-        public event EventHandler<BitmapSource> FrameSourceReady;
+        public event EventHandler<BitmapSource> FrameShow;
         public static event EventHandler CaptureStart;
         public static event EventHandler CaptureStop;
 
@@ -131,9 +131,9 @@ namespace Wrestling.Recorder
 
             try
             {
-                if (_frameSource != null && FrameSourceReady != null)
+                if (_frameSource != null && FrameShow != null)
                 {
-                    FrameSourceReady?.Invoke(null, _frameSource.ToImageSource());
+                    FrameShow?.Invoke(null, _frameSource.ToImageSource());
                 }
             }
             finally
@@ -156,6 +156,7 @@ namespace Wrestling.Recorder
             RecorderConfiguration configuration,
             EventHandler<FrameGeneratedEventArgs> _newFrame,
             long halfTime,
+            EventHandler<BitmapSource> _frameShow = null,
             EventHandler<string> _recordProcess = null,
             EventHandler<double> _overlayProcess = null,
             EventHandler _recordFinishing = null,
@@ -170,6 +171,7 @@ namespace Wrestling.Recorder
                 NewFrame = _newFrame
             };
 
+            r.FrameShow += _frameShow;
             r.RecordProcess += _recordProcess;
             r.OverlayProcess += _overlayProcess;
             r.RecordFinishing += _recordFinishing;

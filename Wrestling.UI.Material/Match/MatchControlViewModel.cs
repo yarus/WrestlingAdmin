@@ -6,6 +6,7 @@ using System.Linq;
 using System.Media;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
@@ -288,6 +289,17 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
+        private ImageSource _currentFrame = null;
+        public ImageSource CurrentFrame
+        {
+            get { return _currentFrame; }
+            set
+            {
+                _currentFrame = value;
+                OnPropertyChanged("CurrentFrame");
+            }
+        }
+
         public BitmapImage Action1Image
         {
             get
@@ -496,7 +508,12 @@ namespace Wrestling.UI.Material.Match
                     _settings.VideoStoragePath,
                     _recConfig,
                     ScoreScreenVm,
-                    DataContext.Tournament?.ID);
+                    DataContext.Tournament?.ID,
+                    (sender, bs)=> 
+                    {
+                        CurrentFrame = bs;
+                    });
+
                 _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxRoundSecond);
                 _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
                 _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
