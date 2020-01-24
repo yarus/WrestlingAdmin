@@ -1,4 +1,7 @@
-﻿using System;
+﻿using EmguFFmpeg;
+using EmguFFmpeg.EmguCV;
+using FFmpeg.AutoGen;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -9,6 +12,10 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using Uniso.Helpers.Windows;
+using Uniso.Threading;
 using Wrestling.Recorder.FFMPEG;
 
 namespace Wrestling.Recorder
@@ -30,6 +37,9 @@ namespace Wrestling.Recorder
         public event EventHandler RecordFinishing;
         public event EventHandler RecordCompleted;
         public event EventHandler<string> ConcatCompleted;
+        public event EventHandler<BitmapSource> FrameSourceReady;
+        public static event EventHandler CaptureStart;
+        public static event EventHandler CaptureStop;
 
         #region Fields
 
@@ -105,6 +115,40 @@ namespace Wrestling.Recorder
             _configuration = configuration;
             _halfTime = halfTime;
             _currentTimer = 0;
+
+            _timer = new DispatcherTimer();
+            _timer.Tick += _timer_Tick;
+            _timer.Interval = TimeSpan.FromMilliseconds(40);
+        }
+
+        [DllImport("gdi32.dll")]
+        public static extern bool DeleteObject(IntPtr hObject);
+
+        private void _timer_Tick(object sender, EventArgs e)
+        {
+            if (_framesProcessStage != 1)
+                return;
+
+            try
+            {
+                if (_frameSource != null && FrameSourceReady != null)
+                {
+                    FrameSourceReady?.Invoke(null, _frameSource.ToImageSource());
+                }
+            }
+            finally
+            {
+                _framesProcessStage = 0;
+            }
+        }
+
+        private static void DeleteBitmap(Bitmap bmp)
+        {
+            if (bmp != null)
+            {
+                var hBitmap = bmp.GetHbitmap();
+                DeleteObject(hBitmap);
+            }
         }
 
         public static FfmpegCamRecorder StartRecording(
@@ -141,14 +185,13 @@ namespace Wrestling.Recorder
 
         public void StartRecording()
         {
-            if (IsRecording || string.IsNullOrEmpty(_fileName))
+            if (/*IsRecording || */string.IsNullOrEmpty(_fileName))
             {
                 return;
             }
 
             DirectXDevices.Refresh();
 
-            //"@device_pnp_\\\\?\\usb#vid_04f2&pid_b56b&mi_00#6&25ee911b&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\global"
             var video_name = _configuration.VideoDeviceID.ToUpper();
             var video_guid = "";
 
@@ -162,20 +205,20 @@ namespace Wrestling.Recorder
             if (string.IsNullOrEmpty(video_guid))
                 throw new Exception("Could not find video GUID!");
 
-            var video_stream = DirectXDevices.List.FirstOrDefault(o => o.Name.ToUpper().Contains(video_guid));
+            var video_stream = DirectXDevices.List.FirstOrDefault(o => o.Code.ToUpper().Contains(video_guid));
 
-            MediaStream audio_stream = null;
+            FfprobeStream audio_stream = null;
             if (_configuration.AudioDeviceID != null)
             {
                 var audio_guid = _configuration.AudioDeviceID.ToString().ToUpper();
-                audio_stream = DirectXDevices.List.FirstOrDefault(o => o.Name.ToUpper().Contains(audio_guid));
+                audio_stream = DirectXDevices.List.FirstOrDefault(o => o.Code.ToUpper().Contains(audio_guid));
                 if (audio_stream == null)
                     audio_stream = DirectXDevices.List.FirstOrDefault(o => o.StreamType == StreamTypeEnum.Audio);
             }
 
             var dir = Path.GetDirectoryName(_fileName);
             var name = Path.GetFileNameWithoutExtension(_fileName);
-            var tmp_dir = Path.Combine(dir, "temp", name);
+            /*var tmp_dir = Path.Combine(dir, "temp", name);
             if (!Directory.Exists(tmp_dir))
             {
                 Directory.CreateDirectory(tmp_dir);
@@ -183,11 +226,12 @@ namespace Wrestling.Recorder
             else
             {
                 ClearDir(tmp_dir);
-            }
+            }*/
 
+            cts = new CancellationTokenSource();
             Task.Factory.StartNew(() =>
             {
-                TaskRecordVideoAndCreateOverlay(_fileName, tmp_dir, video_stream, audio_stream);
+                TaskRecordVideoAndCreateOverlay(_fileName, video_stream, audio_stream, cts.Token);
             });
         }
 
@@ -395,280 +439,302 @@ namespace Wrestling.Recorder
             return ret;
         }
 
+        private static DispatcherTimer _timer;
+        private static Bitmap _frameSource;
+        private static int _framesProcessStage = 0; // 0 - можно записать, 1 - можно читать
+
         private void TaskRecordVideoAndCreateOverlay(
             string fileName,
-            string tmpDir,
-            MediaStream video_stream,
-            MediaStream audio_stream)
+            FfprobeStream video_stream,
+            FfprobeStream audio_stream,
+            CancellationToken token)
         {
-            Thread task_over = null;
-            cts = new CancellationTokenSource();
-            var cts_over = new CancellationTokenSource();
-            offset_segment = 0f;
-            scenes = new List<Scene>();
-            var overley_list = new List<Tuple<int, string>>();
-
             try
             {
-                proc_enc = Ffmpeg.CreateRecordProcess(
-                    video_stream.AlterName ?? video_stream.Name,
-                    audio_stream?.AlterName ?? audio_stream?.Name,
-                    _configuration.VideoWidth.Value,
-                    _configuration.VideoHeight.Value,
-                    _configuration.VideoFrameRate.Value,
-                    _configuration.VideoFrameRate.Value,
-                    tmpDir,
-                    _configuration.VBitrate,
-                    _configuration.VQuality,
-                    _configuration.ABitrate,
-                    _configuration.AFrequency,
-                    _configuration.VCodec,
-                    _configuration.ACodec,
-                    _configuration.Preset);
+                var formatInput = new InFormat("dshow"); ;
+                var deviceVInput = $"video={video_stream.Code}";
+                var deviceAInput = $"audio={audio_stream.Code}";
 
-                IsRecording = true;
+                var codecId = AVCodecID.AV_CODEC_ID_H264;//.AV_CODEC_ID_MPEG4;//.AV_CODEC_ID_MPEG1VIDEO;
+                var bitrate = 24L * 1024L * 1024L;
+                var opfmt = AVPixelFormat.AV_PIX_FMT_YUV420P;
 
-                proc_enc.ErrorDataReceived += (object sender, DataReceivedEventArgs e) =>
+                using (var writer = new MediaWriter(fileName, new OutFormat("mp4")))//, options))
+                using (var reader0 = new MediaReader(deviceVInput, formatInput))
+                using (var reader1 = new MediaReader(deviceAInput, formatInput))
                 {
-                    if (!string.IsNullOrEmpty(e.Data))
-                    {
-                        var time = "";
-                        var match = pattern_time.Match(e.Data);
-                        while (match.Success)
-                        {
-                            time = match.Groups[1].Value.ToUpper();
-                            match = match.NextMatch();
+                    var videoStream = reader0.First(_ => _.Codec.Type == AVMediaType.AVMEDIA_TYPE_VIDEO);
 
-                            RecordProcess?.Invoke(this, time);
-                        }
-                        match = pattern_rate.Match(e.Data);
-                        while (match.Success)
-                        {
-                            time += " x" + match.Groups[1].Value.ToUpper();
-                            match = match.NextMatch();
+                    // init filter source
+                    int height = videoStream.Codec.AVCodecContext.height;
+                    int width = videoStream.Codec.AVCodecContext.width;
+                    int format = (int)videoStream.Codec.AVCodecContext.pix_fmt;
+                    var time_base = videoStream.TimeBase;
+                    var sample_aspect_ratio = videoStream.Codec.AVCodecContext.sample_aspect_ratio;
+                    var r = videoStream.Stream.avg_frame_rate;
+                    var fps = Convert.ToDouble(r.num) / Convert.ToDouble(r.den);
+                    var frameDuration = 1000 / fps;
 
-                            Console.WriteLine("Record: " + time);
+                    // add video stream
+                    var streamV = MediaEncode.CreateVideoEncode(
+                        codecId, 0,
+                        //writer.Format,
+                        width,
+                        height,
+                        (int)fps,
+                        bitrate,
+                        opfmt);
 
-                            RecordProcess?.Invoke(this, time);
-                        }
-                        //Console.WriteLine("Record: " + e.Data);
-                    }
-                };
+                    // init video frame format converter by dstcodec
+                    var outStrmV = writer.AddStream(streamV);
+                    var pixelConverter = new PixelConverter(outStrmV.Codec);
 
-                proc_enc.Start();
-                proc_enc.BeginErrorReadLine();
+                    var audioStream = reader1.First(_ => _.Codec.Type == AVMediaType.AVMEDIA_TYPE_AUDIO);
 
-                var bmpIndex = -1;
-                var sw = new Stopwatch();
-                sw.Start();
+                    // add audio stream
+                    var streamA = MediaEncode.CreateAudioEncode(
+                        writer.Format,
+                        audioStream.Codec.AVCodecContext.channels,
+                        audioStream.Codec.AVCodecContext.sample_rate);
 
-                //Читаем плейлист, накладываем оверлей
-                task_over = new Thread(() =>
-                {
+                    writer.AddStream(streamA);
+
+                    var outStrmA = writer[1];
+                    var dstFrameA = AudioFrame.CreateFrameByCodec(outStrmA.Codec);
+                    var converter = new SampleConverter(dstFrameA);
+
+                    // init
+                    writer.Initialize();
+
+                    var capture = false;
+
+                    var timer = new Stopwatch();
+                    _timer.Start();
+
+                    var filterGraph = new MediaFilterGraph();
+                    filterGraph
+                        .AddVideoSrcFilter(
+                            new MediaFilter(MediaFilter.VideoSources.Buffer),
+                            width,
+                            height,
+                            (AVPixelFormat)format,
+                            time_base,
+                            sample_aspect_ratio,
+                            new AVRational())
+                        .LinkTo(0,
+                            filterGraph
+                                .AddFilter(
+                                    new MediaFilter("yadif")))
+                        .LinkTo(0,
+                            filterGraph
+                                .AddVideoSinkFilter(
+                                    new MediaFilter(MediaFilter.VideoSinks.Buffersink)));
+
+                    filterGraph.Initialize();
+
                     try
                     {
-                        bool can_finish = false;
-                        while (true)
+                        var bmpIndex = -1;
+                        var sw = new Stopwatch();
+                        sw.Start();
+
+                        var exec = new TaskParallelExecutor();
+                        exec.Add(() =>
                         {
-                            var overley_list_ = new List<Tuple<int, string>>();
-                            lock (overley_list)
-                            {
-                                overley_list_.AddRange(overley_list);
-                            }
+                            // FPS control
+                            var framesIndex = 0;
+                            var framesCount = 0L;
+                            var th2_started = false;
+                            var lastPts = -1L;
 
-                            lock (scenes)
+                            foreach (var srcPacket in reader0.ReadPacket())
                             {
-                                int count_s = scenes.Count - 1;
-                                int count_s1 = scenes.Count(o => o.Step == 1) - 1;
-                                int count_b = bmpIndex - 1;
-                                int count = Math.Min(count_s, count_b);
-                                //can_finish = count >= count_s1;
-                                can_finish = scenes.Any(o => o.IsLast);
-                            }
+                                if (token.IsCancellationRequested)
+                                    return;
 
-                            if (can_finish)
-                            {
-                                if (cts.Token.IsCancellationRequested
-                                    && proc_enc.HasExited)
+                                foreach (var srcFrame in videoStream.ReadFrame(srcPacket))
                                 {
-                                    break;
-                                }
-                            }
+                                    if (token.IsCancellationRequested)
+                                        return;
 
-                            if (CreateOverlay(
-                                tmpDir,
-                                overley_list_,
-                                audio_stream == null,
-                                proc_enc.HasExited,
-                                cts_over.Token))
-                            {
-                                return;
-                            }
+                                    filterGraph.Inputs.First().WriteFrame(srcFrame);
 
-                            //Task.Delay(100, cts_over.Token).Wait();
-                            Thread.Sleep(100);
-                        }
-                    }
-                    catch (TaskCanceledException)
-                    {
-                        //штатное завершение
-                    }
-                    catch
-                    { }
-                })
-                {
-                    IsBackground = true
-                };
-                task_over.Start();
-
-                int overlay_main_loop = 0;
-                int overlay_running = 0;
-                int overlay_run_index = 0;
-
-                // Ограничиваем обработку
-                var taskList = new List<Thread>();
-                var thOverMain = new Thread(() =>
-                {
-                    Console.WriteLine($"->Started overlay manager!");
-
-                    int max = 1;
-                    while (!cts.Token.IsCancellationRequested && !proc_enc.HasExited && IsRecording)
-                    {
-                        overlay_main_loop++;
-
-                        try
-                        {
-                            int running = overlay_running;
-
-                            // Сколько задач запущено. Если больше max, то ждем еще
-                            if (running >= max)
-                            {
-                                continue;
-                            }
-
-                            Thread task = null;
-                            lock (taskList)
-                            {
-                                // Первая попавшаяся не запущенная задача 
-                                task = taskList.FirstOrDefault(o => (o.ThreadState & System.Threading.ThreadState.Unstarted) > 0);
-                            }
-
-                            // Запускаем ее
-                            if (task != null)
-                            {
-                                overlay_running++;
-                                overlay_run_index++;
-                                //Console.WriteLine($"-->Starting thread index={overlay_run_index}");
-                                task.Start();
-                            }
-
-                        }
-                        finally
-                        {
-                            Thread.Sleep(100);
-                        }
-                    }
-                })
-                {
-                    IsBackground = true
-                };
-                thOverMain.Start();
-
-                var old_time = 0L;
-
-                // Команды на создание оверлея
-                while (!cts.Token.IsCancellationRequested && !proc_enc.HasExited && IsRecording)
-                {
-                    long t1 = sw.ElapsedMilliseconds;
-                    _timeCurrent = t1;
-
-                    long t = t1 - _timeOffset;
-                    if (t >= OverlayPeriod)
-                    {
-                        bmpIndex++;
-                        _timeOffset = t1;
-                        Console.WriteLine($"{_timeCurrent} => {t} => {bmpIndex}");
-
-                        var sw2 = new Stopwatch();
-                        sw2.Start();
-                        int bmpIndex_ = bmpIndex;
-
-                        var clock = _timeCurrent;
-                        var time = _timeCurrent - _timeTimerOffset;
-                        var createOverlay = _createOverlay;
-
-                        if (Math.Abs(time - old_time) > 1000)
-                        {
-                            Console.WriteLine($"### time = {time} {_timeCurrent} {_timeTimerOffset}");
-                            old_time = time;
-                        }
-
-                        var thread = new Thread(() =>
-                        {
-                            try
-                            {
-                                using (var bmp = new Bitmap(
-                                        _configuration.VideoWidth.Value,
-                                        _configuration.VideoHeight.Value))
-                                {
-                                    try
+                                    foreach (var filterFrame in filterGraph.Outputs.First().ReadFrame())
                                     {
-                                        var strike_time = _halfTime - _currentTimer;// time;
-                                        var over_flag = createOverlay && time < _halfTime;
+                                        //var filterFrame = srcFrame;
 
-                                        //if (!over_flag)
-                                            //strike_time = 0;
-
-                                        //strike_time = _currentTimer;
-
-                                        var fgea = new FrameGeneratedEventArgs(bmp, strike_time, bmpIndex_, over_flag);
-
-                                        //if (over_flag)
+                                        if (!capture)
                                         {
-                                            OnNewFrame(fgea);
+                                            // pass event about start capturing
+                                            CaptureStart?.Invoke(null, EventArgs.Empty);
+                                            capture = true;
+                                            timer.Start();
+                                            IsRecording = true;
                                         }
 
-                                        var overlay_fn = Path.Combine(tmpDir, fgea.FileName);
+                                        if (token.IsCancellationRequested)
+                                            return;
 
-                                        bmp.Save(overlay_fn, Scene.ImageOverFmt);
+                                        #region Show frame
 
-                                        lock (overley_list)
+                                        if (_framesProcessStage == 0 && framesIndex > 2 && !th2_started)
                                         {
-                                            overley_list.Add(new Tuple<int, string>(bmpIndex_, overlay_fn));
+                                            framesIndex = 0;
+                                            // Get a source frame image
+                                            var tm = new Stopwatch();
+                                                tm.Start();
+                                                th2_started = true;
+
+                                                var mat = srcFrame.ToMat();
+                                                var t2 = new Thread(() =>
+                                                {
+                                                    try
+                                                    {
+                                                        var bmp = mat.Bitmap;
+                                                        _frameSource = new Bitmap(bmp.Width / 2, bmp.Height / 2);
+                                                        using (var g = Graphics.FromImage(_frameSource))
+                                                        {
+                                                            g.DrawImage(bmp, 0, 0, bmp.Width / 2, bmp.Height / 2);
+                                                        }
+                                                    }
+                                                    finally
+                                                    {
+                                                        mat.Dispose();
+                                                        th2_started = false;
+                                                        tm.Stop();
+                                                        Console.WriteLine(tm.ElapsedMilliseconds + "ms");
+                                                        _framesProcessStage = 1;
+                                                    }
+                                                });
+                                                t2.Start();
                                         }
 
-                                        Console.WriteLine($"-->Created over for {TimeSpan.FromMilliseconds(clock).ToString("m\\:ss")} index={bmpIndex} ({over_flag} = {TimeSpan.FromMilliseconds(strike_time).ToString("m\\:ss")})");
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Console.WriteLine($"Exception: {ex.Message}");
+                                        framesIndex++;
+
+                                        #endregion
+
+                                        // Recording to a video file
+                                        var currPts = (long)(timer.Elapsed.TotalSeconds * fps);
+                                        var ts = new Stopwatch();
+                                        ts.Start();
+
+                                        //var dstMat = filterFrame.ToMat(); 
+                                        //var g2 = Graphics.FromImage(dstMat.Bitmap);
+                                        //foreach (var dstFrame in pixelConverter.Convert(filterFrame))
+                                        try
+                                        {
+                                            using (var dstMat = filterFrame.ToMat())
+                                            //using (var g2 = Graphics.FromImage(dstMat.Bitmap))
+                                            {
+                                                // Рисуем
+                                                var clock = _timeCurrent;
+                                                var time = _timeCurrent - _timeTimerOffset;
+                                                var strike_time = _halfTime - _currentTimer;// time;
+                                                var over_flag = _createOverlay && time < _halfTime;
+
+                                                var fgea = new FrameGeneratedEventArgs(dstMat.Bitmap, strike_time, bmpIndex, over_flag);
+
+                                                OnNewFrame(fgea);
+
+                                                using (var dstFrame = dstMat.ToVideoFrame(opfmt))
+                                                {
+                                                    var fpsr = 0.0;
+                                                    if (timer.Elapsed.TotalSeconds > 0)
+                                                        fpsr = (double)(framesCount + 1) / timer.Elapsed.TotalSeconds;
+
+                                                    if (fpsr >= fps - 1)
+                                                    {
+                                                        dstFrame.Pts = framesCount;
+                                                    }
+                                                    else
+                                                    {
+                                                        if (currPts <= lastPts) continue;
+                                                        dstFrame.Pts = currPts;
+                                                    }
+
+                                                    framesCount++;
+
+                                                    Console.WriteLine(
+                                                        $@"PTS {framesCount} {currPts} {dstFrame.Pts} fps={fpsr}");
+
+                                                    try
+                                                    {
+                                                        foreach (var dstPacket in writer[0].WriteFrame(dstFrame))
+                                                        {
+                                                            writer.WritePacket(dstPacket);
+                                                        }
+                                                    }
+                                                    catch (Exception e)
+                                                    {
+                                                        Console.WriteLine(e);
+                                                        //throw;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        finally
+                                        {
+                                            lastPts = currPts;
+                                        }
+
+                                        Console.WriteLine($@"Write frame duration {ts.ElapsedMilliseconds}ms");
                                     }
                                 }
                             }
-                            finally
+
+                            timer.Stop();
+                        });
+
+                        exec.Add(() =>
+                        {
+                            long pts = 0;
+                            foreach (var packet in reader1.ReadPacket())
                             {
-                                lock (taskList)
+                                if (token.IsCancellationRequested)
+                                    return;
+
+                                foreach (var frame in audioStream.ReadFrame(packet))
                                 {
-                                    taskList.Remove(Thread.CurrentThread);
+                                    if (token.IsCancellationRequested)
+                                        return;
+
+                                    foreach (var dstFrame in converter.Convert(frame))
+                                    {
+                                        if (token.IsCancellationRequested)
+                                            return;
+
+                                        pts += dstFrame.AVFrame.nb_samples;
+                                        dstFrame.Pts = pts;
+
+                                        try
+                                        {
+                                            foreach (var dstpacket in writer[1].WriteFrame(dstFrame))
+                                            {
+                                                writer.WritePacket(dstpacket);
+                                            }
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            Console.WriteLine(e);
+                                            throw;
+                                        }
+
+                                    }
                                 }
-                                overlay_running--;
                             }
-                        })
-                        {
-                            IsBackground = true
-                        };
+                        });
 
-                        lock (taskList)
-                        {
-                            taskList.Add(thread);
-                        }
-
-                        sw2.Stop();
-                        _timeOffset += sw2.ElapsedMilliseconds;
-                        continue;
+                        exec.Start(2, 0);
                     }
+                    finally
+                    {
+                        // flush codec cache
+                        writer.FlushMuxer();
 
-                    Thread.Sleep(50);
+                        GC.SuppressFinalize(reader0);
+                        GC.SuppressFinalize(reader1);
+                        GC.SuppressFinalize(writer);
+                    }
                 }
             }
             catch (TaskCanceledException)
@@ -682,55 +748,7 @@ namespace Wrestling.Recorder
             finally
             {
                 RecordFinishing?.Invoke(this, EventArgs.Empty);
-
-                //Завершаем процесс записи
-                CloseProcess(proc_enc);
-
-                //Ждем завершения оверлея
-                if (task_over != null)
-                {
-                    try
-                    {
-                        if (OverlayPostprocessTime >= 0)
-                        {
-                            var w_res = task_over.Join(OverlayPostprocessTime);
-                            //Если не завершилось за таймаут, то отменяем принудительно и ждем
-                            if (!w_res)
-                            {
-                                cts_over.Cancel();
-                                task_over.Join();
-                            }
-                        }
-                        else
-                        {
-                            task_over.Join();
-                        }
-                    }
-                    catch (AggregateException)
-                    {
-                        //Если задача была уже завершена. Ничего не делаем
-                    }
-                    catch (Exception ex)
-                    {
-                        OverlayException?.Invoke(this, ex);
-                    }
-                }
-
                 RecordCompleted?.Invoke(this, EventArgs.Empty);
-
-                try
-                {
-                    PrepareResult(tmpDir, fileName);
-                }
-                catch (Exception ex)
-                {
-                    ConcatException?.Invoke(this, ex);
-                }
-                finally
-                {
-                    //Чистим
-                    ClearDir(tmpDir);
-                }
 
                 IsRecording = false;
             }
@@ -819,7 +837,6 @@ namespace Wrestling.Recorder
             if (!IsRecording)
                 return;
 
-            IsRecording = false;
             cts.Cancel();
 
             //CleanupInternalResources();

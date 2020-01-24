@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Wrestling.Recorder.FFMPEG
 {
-    public class MediaStream
+    public class FfprobeStream
     {
         public int Index { get; set; }
         public int SubIndex { get; set; }

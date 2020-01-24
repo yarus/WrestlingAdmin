@@ -9,7 +9,7 @@ namespace Wrestling.Recorder
 {
     public class DirectXDevices
     {
-        public static List<MediaStream> List { get; set; } = new List<MediaStream>();
+        public static List<FfprobeStream> List { get; set; } = new List<FfprobeStream>();
 
         public static void Refresh()
         {

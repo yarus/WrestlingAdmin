@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Wrestling.Recorder.FFMPEG.Exceptions;
 
@@ -18,7 +19,7 @@ namespace Wrestling.Recorder.FFMPEG
 
         private Dictionary<String, String> general = new Dictionary<string, string>();
         private List<Dictionary<String, String>> dict = new List<Dictionary<string, string>>();
-        public List<MediaStream> Streams { get; set; } = new List<MediaStream>();
+        public List<FfprobeStream> Streams { get; set; } = new List<FfprobeStream>();
         public String FileName { get; set; }
 
         public List<String> strings = null;
@@ -33,66 +34,93 @@ namespace Wrestling.Recorder.FFMPEG
             ffdev.WaitForExit();
         }
 
-        private int canGetDev = 0;
-        private int canGetDevIndex = 0;
-        private MediaStream mslast;
+        private int _canGetDev = 0;
+        private int _canGetDevIndex = 0;
+        private FfprobeStream mslast;
 
-        private void HandleFfmpegDetectDevicesErrorDataReceived(object sender, System.Diagnostics.DataReceivedEventArgs e)
+        private FfprobeStream _lastStream;
+        private static readonly Regex PatternDeviceName =
+            new Regex("\\ \"(?<val>.*?)\\\"",
+                RegexOptions.Compiled |
+                RegexOptions.Singleline);
+
+        private void HandleFfmpegDetectDevicesErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
             if (e.Data != null)
             {
-                String line = e.Data.ToString();
-
-                if (line.Contains("Alternative name \"") && mslast != null)
-                {
-                    var lan = line.Split(new string[] { "Alternative name \"" }, StringSplitOptions.None);
-                    if (lan.Length != 2)
-                        return;
-
-                    var an = lan[1].Replace("\"", "");
-                    mslast.AlterName = an;
-                }
-
+                var line = e.Data;
                 if (line.Contains("DirectShow video devices"))
                 {
-                    canGetDev = 1;
+                    _canGetDev = 1;
                     return;
                 }
 
                 if (line.Contains("DirectShow audio devices"))
                 {
-                    canGetDev = 2;
+                    _canGetDev = 2;
                     return;
                 }
 
-                if (canGetDev == 1)
+                if (_canGetDev == 1)
                 {
-                    String[] ll = line.Split(new String[] { " \"" }, StringSplitOptions.None);
+                    var ll = line.Split(new[] { " \"" }, StringSplitOptions.None);
                     if (ll.Length == 2)
                     {
-                        mslast = new MediaStream
+                        if (_lastStream == null && !ll[0].Contains("Alternative name"))
                         {
-                            StreamType = StreamTypeEnum.Video,
-                            Name = ll[1].Replace("\"", ""),
-                            Index = canGetDevIndex++,
-                        };
-                        Streams.Add(mslast);
+                            var match = PatternDeviceName.Match(line);
+                            var name = ll[1].Replace("\"", "");
+                            while (match.Success)
+                            {
+                                name = match.Groups[1].Value;
+                                match = match.NextMatch();
+                            }
+                            _lastStream = new FfprobeStream
+                            {
+                                StreamType = StreamTypeEnum.Video,
+                                Name = name,
+                                Index = _canGetDevIndex++,
+                            };
+                            Streams.Add(_lastStream);
+                            return;
+                        }
+                        if (_lastStream != null && ll[0].Contains("Alternative name"))
+                        {
+                            _lastStream.Code = ll[1].Replace("\"", "");
+                            _lastStream = null;
+                        }
                     }
                 }
 
-                if (canGetDev == 2)
+                if (_canGetDev == 2)
                 {
-                    //Alternative name 
-                    String[] ll = line.Split(new String[] { " \"" }, StringSplitOptions.None);
+                    var ll = line.Split(new[] { " \"" }, StringSplitOptions.None);
                     if (ll.Length == 2)
                     {
-                        mslast = new MediaStream
+                        if (_lastStream == null && !ll[0].Contains("Alternative name"))
                         {
-                            StreamType = StreamTypeEnum.Audio,
-                            Name = GetName(ll[1]),
-                            Index = canGetDevIndex++,
-                        };
-                        Streams.Add(mslast);
+                            var match = PatternDeviceName.Match(line);
+                            var name = ll[1];
+                            while (match.Success)
+                            {
+                                name = match.Groups[1].Value;
+                                match = match.NextMatch();
+                            }
+
+                            _lastStream = new FfprobeStream
+                            {
+                                StreamType = StreamTypeEnum.Audio,
+                                Name = name,
+                                Index = _canGetDevIndex++,
+                            };
+                            Streams.Add(_lastStream);
+                            return;
+                        }
+                        if (_lastStream != null && ll[0].Contains("Alternative name"))
+                        {
+                            _lastStream.Code = ll[1].Replace("\"", "");
+                            _lastStream = null;
+                        }
                     }
                 }
             }
@@ -183,7 +211,7 @@ namespace Wrestling.Recorder.FFMPEG
 
             foreach (String s in strings.Where(o => o.Contains(" Stream #0:")))
             {
-                MediaStream stream = CreateStream(s);
+                FfprobeStream stream = CreateStream(s);
                 if (stream == null)
                     continue;
 
@@ -265,15 +293,15 @@ namespace Wrestling.Recorder.FFMPEG
             return String.Empty;
         }
 
-        private MediaStream CreateStream(String s)
+        private FfprobeStream CreateStream(String s)
         {
-            MediaStream stream = null;
+            FfprobeStream stream = null;
             if (s.Contains(": Video: "))
-                stream = new MediaStream() { StreamType = StreamTypeEnum.Video };
+                stream = new FfprobeStream() { StreamType = StreamTypeEnum.Video };
             if (s.Contains(": Audio: "))
-                stream = new MediaStream() { StreamType = StreamTypeEnum.Audio };
+                stream = new FfprobeStream() { StreamType = StreamTypeEnum.Audio };
             if (s.Contains(": Subtitle: "))
-                stream = new MediaStream() { StreamType = StreamTypeEnum.Subtitle };
+                stream = new FfprobeStream() { StreamType = StreamTypeEnum.Subtitle };
 
             if (stream == null)
                 return null;

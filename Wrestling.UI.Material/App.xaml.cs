@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Threading;
 using System.Windows;
 using System.Windows.Markup;
+using EmguFFmpeg;
 using MvvmDialogs;
 using Wrestling.DataAccess;
 using Wrestling.Entities;
@@ -37,6 +38,11 @@ namespace Wrestling.UI.Material
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            FFmpegHelper.RegisterBinaries("x64");
+
+            // register all device
+            MediaDevice.InitializeDevice();
 
             Thread.CurrentThread.CurrentCulture = new CultureInfo("ru-RU");
             Thread.CurrentThread.CurrentUICulture = new CultureInfo("ru-RU");

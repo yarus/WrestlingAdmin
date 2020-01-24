@@ -38,7 +38,7 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -614,6 +614,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\EmguFFmpeg\EmguFFmpeg.csproj">
+      <Project>{31BBAEE7-11BB-43A1-BDE6-FFA482D48DF1}</Project>
+      <Name>EmguFFmpeg</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Wrestling.DataAccess\Wrestling.DataAccess.csproj">
       <Project>{298FEBD9-84AF-4F1D-AC40-1870C40E5E00}</Project>
       <Name>Wrestling.DataAccess</Name>
