@@ -25,7 +25,7 @@ namespace EmguFFmpeg
             return encode;
         }
 
-        public static MediaEncode CreateVideoEncode(OutFormat oformat, int width, int height, int fps, long bitRate = 0, AVPixelFormat format = AVPixelFormat.AV_PIX_FMT_NONE, MediaDictionary md = null)
+        public static MediaEncode CreateVideoEncode(OutFormat oformat, int width, int height, int fps, long bitRate = 0, AVPixelFormat format = AVPixelFormat.AV_PIX_FMT_NONE, Dictionary<string, object> md = null)
         {
             return CreateVideoEncode(oformat.VideoCodec, oformat.Flags, width, height, fps, bitRate, format, md);
         }
@@ -45,7 +45,7 @@ namespace EmguFFmpeg
             AVCodecID videoCodec, 
             int flags, 
             int width,
-            int height, int fps, long bitRate = 0, AVPixelFormat format = AVPixelFormat.AV_PIX_FMT_NONE, MediaDictionary md = null)
+            int height, int fps, long bitRate = 0, AVPixelFormat format = AVPixelFormat.AV_PIX_FMT_NONE, Dictionary<string, object> md = null)
         {
             return CreateEncode(videoCodec, flags, _ =>
             {
@@ -66,19 +66,36 @@ namespace EmguFFmpeg
                 pCodecContext->bit_rate = bitRate;
                 pCodecContext->gop_size = fps;
 
-                ffmpeg.av_opt_set(pCodecContext->priv_data, "preset", "slow", 0);
-                ffmpeg.av_opt_set(pCodecContext->priv_data, "profile", "main", 0);
-                ffmpeg.av_opt_set(pCodecContext->priv_data, "level", "4.0", 0);
-                ffmpeg.av_opt_set(pCodecContext->priv_data, "crf", "26", 0);
-                ffmpeg.av_opt_set(pCodecContext->priv_data, "bufsize", "24000K", 0);
-                ffmpeg.av_opt_set(pCodecContext->priv_data, "g", fps.ToString(), 0);
-                ffmpeg.av_opt_set(pCodecContext->priv_data, "keyint_min", fps.ToString(), 0);
-                ffmpeg.av_opt_set(pCodecContext->priv_data, "sc_threshold", "1", 0);
-                ffmpeg.av_opt_set(pCodecContext->priv_data, "aspect", $"{width}x{height}", 0);
-                ffmpeg.av_opt_set(pCodecContext->priv_data, "refs", "4", 0);
-                ffmpeg.av_opt_set(pCodecContext->priv_data, "r", fps.ToString(), 0);
+                if (md != null && md.Count > 0)
+                {
+                    foreach (var p in md)
+                    {
+                        if (p.Value is int)
+                        {
+                            ffmpeg.av_opt_set_int(pCodecContext->priv_data, p.Key, Convert.ToInt32(p.Value), 0);
+                        }
+                        else
+                        {
+                            ffmpeg.av_opt_set(pCodecContext->priv_data, p.Key, p.Value.ToString(), 0);
+                        }
+                    }
+                }
+                else
+                {
+                    ffmpeg.av_opt_set(pCodecContext->priv_data, "preset", "slow", 0);
+                    ffmpeg.av_opt_set(pCodecContext->priv_data, "profile", "main", 0);
+                    ffmpeg.av_opt_set(pCodecContext->priv_data, "level", "4.0", 0);
+                    ffmpeg.av_opt_set(pCodecContext->priv_data, "refs", "4", 0);
+                    ffmpeg.av_opt_set(pCodecContext->priv_data, "crf", "26", 0);
+                    ffmpeg.av_opt_set(pCodecContext->priv_data, "sc_threshold", "1", 0);
+                    ffmpeg.av_opt_set(pCodecContext->priv_data, "bufsize", "24000K", 0);
+                    ffmpeg.av_opt_set(pCodecContext->priv_data, "g", fps.ToString(), 0);
+                    ffmpeg.av_opt_set(pCodecContext->priv_data, "keyint_min", fps.ToString(), 0);
+                    ffmpeg.av_opt_set(pCodecContext->priv_data, "aspect", $"{width}x{height}", 0);
+                    ffmpeg.av_opt_set(pCodecContext->priv_data, "r", fps.ToString(), 0);
+                }
             },
-            md);
+            null);
         }
 
         public static MediaEncode CreateAudioEncode(OutFormat Oformat, ulong channelLayout, int sampleRate, long bitRate = 0, AVSampleFormat format = AVSampleFormat.AV_SAMPLE_FMT_NONE)
