@@ -265,8 +265,8 @@ namespace Wrestling.Recorder
                     mwriter.Add("r", sourceFps.ToString());
                     mwriter.Add("g", sourceFps.ToString());
 
-                    using (var writer = new MediaWriter(fileName, new OutFormat("mp4"), options))
-                    using (var reader0 = new MediaReader(deviceVInput, formatInput))
+                    using (var writer = new MediaWriter(fileName, new OutFormat("mp4")))
+                    using (var reader0 = new MediaReader(deviceVInput, formatInput, options))
                     using (var reader1 = new MediaReader(deviceAInput, formatInput))
                     {
                         var videoStream = reader0.First(_ => _.Codec.Type == AVMediaType.AVMEDIA_TYPE_VIDEO);
