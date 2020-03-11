@@ -514,9 +514,9 @@ namespace Wrestling.UI.Material.Match
                         CurrentFrame = bs;
                     });
 
-                _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxRoundSecond);
-                _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
-                _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
+                _currentRecorder?.SetMaxSeconds(ScoreScreenVm.MaxRoundSecond);
+                _currentRecorder?.SetMainSecond(ScoreScreenVm.MainSeconds);
+                _currentRecorder?.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
                 _currentRecorder?.CreateOverlay(true);
             }
             catch(Exception ex)

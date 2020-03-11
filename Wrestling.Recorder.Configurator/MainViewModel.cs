@@ -485,9 +485,14 @@ namespace Wrestling.Recorder.Configurator
 
             _outputPath = GetOutputFilename();
 
-            _camRecorder = CamRecorder.StartRecording(GenerateConfig(), _outputPath);
+            _camRecorder = FfmpegCamRecorder.StartRecording(_outputPath, GenerateConfig(), RecorderOnNewFrame, 180000);
 
             IsRecording = true;
+        }
+
+        private void RecorderOnNewFrame(object sender, FrameGeneratedEventArgs e)
+        {
+            
         }
 
         private string GetOutputFilename()

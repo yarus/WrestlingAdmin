@@ -112,7 +112,7 @@ namespace Wrestling.UI.Material.Utils.Recording
 
         private void OnRecordingStarted(object sender, string e)
         {
-
+            RecordingStarted?.Invoke(this, "Запись видео-файла началась");
         }
 
         public IEnumerable<string> GetMatchRecordings(string storagePath, WrestlingMatch match, Guid? tournamentId)
