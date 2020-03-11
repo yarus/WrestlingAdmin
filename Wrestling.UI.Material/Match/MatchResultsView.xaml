@@ -81,9 +81,12 @@
             <Border Grid.Row="2" Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="Black" />
             <Border Grid.Row="2" Grid.Column="1" BorderThickness="0,0,1,0" BorderBrush="Black" />
             
+            <Border Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Background="Yellow" BorderThickness="1" Visibility="{Binding IsWinnerRed, Converter={StaticResource BoolToVis}}"></Border>
+            <Border Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" Background="Yellow" BorderThickness="1" Visibility="{Binding IsWinnerBlue, Converter={StaticResource BoolToVis}}"></Border>
+
             <Border Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Background="{DynamicResource SecondaryAccentBrush}" BorderThickness="1" Visibility="{Binding IsRedSelected, Converter={StaticResource BoolToVis}}"></Border>
             <Border Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" Background="{DynamicResource SecondaryAccentBrush}" BorderThickness="1" Visibility="{Binding IsBlueSelected, Converter={StaticResource BoolToVis}}"></Border>
-            
+
             <!-- Red Team Name -->
             <Viewbox Grid.Row="0" Grid.Column="0" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInRed.TeamName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" />

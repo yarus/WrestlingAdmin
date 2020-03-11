@@ -17,17 +17,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         #region Fields
 
         private IMatchNumbersGenerator _matchNumbersGenerator;
-
-        //private IGroupBracketProcessor _selectedDrawType;
-        //private AgeWeightGroup _selectedGroup;
         
         private ICommand _generateBracketCommand;
         private ICommand _removeBracketCommand;
 
         private List<IGroupBracketProcessor> _drawTypes;
-        //private List<Wrestler> _groupWrestlers;
         private ObservableCollection<AgeWeightGroup> _groups;
-        //private List<GroupRound> _groupRounds;
+
+        private bool IsTeamTournament => true;
 
         #endregion
 

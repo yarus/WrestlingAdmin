@@ -44,6 +44,8 @@ namespace Wrestling.UI.Material
             // register all device
             MediaDevice.InitializeDevice();
 
+            //using (var reader0 = new MediaReader(deviceVInput, formatInput)) { }
+
             Thread.CurrentThread.CurrentCulture = new CultureInfo("ru-RU");
             Thread.CurrentThread.CurrentUICulture = new CultureInfo("ru-RU");
             FrameworkElement.LanguageProperty.OverrideMetadata(typeof(FrameworkElement), new FrameworkPropertyMetadata(

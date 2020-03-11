@@ -90,8 +90,8 @@ namespace Wrestling.UI.Material.Utils.Recording
                 match.MaxRoundSecond * 1000,
                 frameShowHandler); // we need ms
 
-            _currentRecorder.ConcatCompleted += OnConcatCompleted;
-            _currentRecorder.ConcatException += OnConcatException;
+            _currentRecorder.RecordingCompleted += OnRecordingCompleted;
+            _currentRecorder.RecordingException += OnRecordingException;
         }
 
         public void StopRecording()
@@ -99,12 +99,12 @@ namespace Wrestling.UI.Material.Utils.Recording
             _currentRecorder?.StopRecording();
         }
 
-        private void OnConcatException(object sender, Exception e)
+        private void OnRecordingException(object sender, Exception e)
         {
             RecordingCompleted?.Invoke(this, "При сохранении файла произошла ошибка!");
         }
 
-        public void OnConcatCompleted(object sender, string result)
+        public void OnRecordingCompleted(object sender, string result)
         {
             RecordingCompleted?.Invoke(this, "Сохранение файла успешно завершено!");
         }
@@ -147,7 +147,7 @@ namespace Wrestling.UI.Material.Utils.Recording
 
         private string GetAvailableFileName(string storagePath, ScoreScreenViewModel match, Guid? tournamentId)
         {
-            string dirPath = storagePath;// GetFullStoragePath(tournamentId, storagePath);
+            string dirPath = GetFullStoragePath(tournamentId, storagePath); // storagePath
 
             if (!Directory.Exists(dirPath))
             {
@@ -155,11 +155,11 @@ namespace Wrestling.UI.Material.Utils.Recording
             }
 
             int partNumber = 1;
-            var fileName = Path.Combine(dirPath, GetTournamentName(tournamentId) + "\\" + match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
+            var fileName = Path.Combine(dirPath, match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
             while (File.Exists(fileName))
             {
                 partNumber++;
-                fileName = Path.Combine(dirPath, GetTournamentName(tournamentId) + "\\" + match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
+                fileName = Path.Combine(dirPath, match.MatchFullNumber + "_" + partNumber + DEFAULT_EXTENSION);
             }
             return fileName;
         }

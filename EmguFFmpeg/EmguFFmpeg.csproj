@@ -28,6 +28,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|x64'">
     <DocumentationFile>bin/EmguFFmpeg.xml</DocumentationFile>
     <NoWarn>1701;1702;1591</NoWarn>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">

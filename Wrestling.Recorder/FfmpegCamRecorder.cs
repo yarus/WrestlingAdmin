@@ -5,10 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,17 +27,20 @@ namespace Wrestling.Recorder
         private const int DEFAULT_SAMPLE_RATE = 44100;
 
         public event EventHandler<FrameGeneratedEventArgs> NewFrame;
-        public event EventHandler<Exception> RecordException;
-        public event EventHandler<Exception> OverlayException;
-        public event EventHandler<Exception> ConcatException;
+        public event EventHandler<Exception> RecordingException;
+        public event EventHandler<string> RecordingCompleted;
+
         public event EventHandler<string> RecordProcess;
         public event EventHandler<double> OverlayProcess;
-        public event EventHandler RecordFinishing;
-        public event EventHandler RecordCompleted;
-        public event EventHandler<string> ConcatCompleted;
+
         public event EventHandler<BitmapSource> FrameShow;
         public static event EventHandler CaptureStart;
-        public static event EventHandler CaptureStop;
+
+        //public event EventHandler<Exception> OverlayException;
+        //public event EventHandler<Exception> ConcatException;
+        //public event EventHandler RecordingFinishing;
+        //public event EventHandler<string> ConcatCompleted;
+        //public static event EventHandler CaptureStop;
 
         #region Fields
 
@@ -53,11 +54,13 @@ namespace Wrestling.Recorder
                 RegexOptions.Compiled |
                 RegexOptions.Singleline);
 
+        /*
         //drop = 0 speed = 1.04x
         private static Regex pattern_rate =
             new Regex(@"\ speed=(?<val>.*?)\\?x",
                 RegexOptions.Compiled |
                 RegexOptions.Singleline);
+        */
 
         private static Regex pattern_guid =
             new Regex(@"\{(?<val>.*?)\}",
@@ -74,13 +77,13 @@ namespace Wrestling.Recorder
 
         public DateTime RecordingStartTime { get; private set; }
         public bool IsRecording { get; private set; }
-        public int OverlayPeriod { get; set; } = 1000;
-        public int OverlayPostprocessTime { get; set; } = 10000;
+        // public int OverlayPeriod { get; set; } = 1000;
+        // public int OverlayPostprocessTime { get; set; } = 10000;
 
         private long _timeTimerOffset = 0;
         private long _timeCurrent = 0L;
         private bool _createOverlay = false;
-        private long _timeOffset = 0L;
+        //private long _timeOffset = 0L;
         private long _halfTime = 180000L;
         private long _currentTimer = 0;
 
@@ -121,8 +124,10 @@ namespace Wrestling.Recorder
             _timer.Interval = TimeSpan.FromMilliseconds(40);
         }
 
+        /*
         [DllImport("gdi32.dll")]
         public static extern bool DeleteObject(IntPtr hObject);
+        */
 
         private void _timer_Tick(object sender, EventArgs e)
         {
@@ -142,6 +147,7 @@ namespace Wrestling.Recorder
             }
         }
 
+        /*
         private static void DeleteBitmap(Bitmap bmp)
         {
             if (bmp != null)
@@ -150,6 +156,7 @@ namespace Wrestling.Recorder
                 DeleteObject(hBitmap);
             }
         }
+        */
 
         public static FfmpegCamRecorder StartRecording(
             string fileName,
@@ -159,12 +166,8 @@ namespace Wrestling.Recorder
             EventHandler<BitmapSource> _frameShow = null,
             EventHandler<string> _recordProcess = null,
             EventHandler<double> _overlayProcess = null,
-            EventHandler _recordFinishing = null,
-            EventHandler _recordCompleted = null,
-            EventHandler<string> _concatCompleted = null,
-            EventHandler<Exception> _recordException = null,
-            EventHandler<Exception> _overlayException = null,
-            EventHandler<Exception> _concatException = null)
+            EventHandler<string> _recordingCompleted = null,
+            EventHandler<Exception> _recordingException = null)
         {
             var r = new FfmpegCamRecorder(fileName, configuration, halfTime)
             {
@@ -174,12 +177,8 @@ namespace Wrestling.Recorder
             r.FrameShow += _frameShow;
             r.RecordProcess += _recordProcess;
             r.OverlayProcess += _overlayProcess;
-            r.RecordFinishing += _recordFinishing;
-            r.RecordCompleted += _recordCompleted;
-            r.ConcatCompleted += _concatCompleted;
-            r.RecordException += _recordException;
-            r.OverlayException += _overlayException;
-            r.ConcatException += _overlayException;
+            r.RecordingCompleted += _recordingCompleted;
+            r.RecordingException += _recordingException;
 
             r.StartRecording();
             return r;
@@ -237,6 +236,7 @@ namespace Wrestling.Recorder
             });
         }
 
+        /*
         private void ParseM3U8(string dir, List<Scene> list)
         {
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
@@ -295,7 +295,9 @@ namespace Wrestling.Recorder
             catch
             { }
         }
+        */
 
+        /*
         private bool CreateOverlay(
             string tmp_dir,
             List<Tuple<int, string>> overley_list,
@@ -440,6 +442,7 @@ namespace Wrestling.Recorder
 
             return ret;
         }
+        */
 
         private static DispatcherTimer _timer;
         private static Bitmap _frameSource;
@@ -745,12 +748,11 @@ namespace Wrestling.Recorder
             }
             catch (Exception ex)
             {
-                RecordException?.Invoke(this, ex);
+                RecordingException?.Invoke(this, ex);
             }
             finally
-            {
-                RecordFinishing?.Invoke(this, EventArgs.Empty);
-                RecordCompleted?.Invoke(this, EventArgs.Empty);
+            {                
+                RecordingCompleted?.Invoke(this, "SUCCESS!");
 
                 IsRecording = false;
             }
@@ -770,6 +772,7 @@ namespace Wrestling.Recorder
             }
         }
 
+        /*
         public void PrepareResult(String tmp_dir, String fileName)
         {
             List<string> scenes_over = null;
@@ -809,7 +812,9 @@ namespace Wrestling.Recorder
 
             ConcatCompleted?.Invoke(this, fileName);
         }
+        */
 
+        /*
         public void CloseProcess(Process proc)
         {
             if (proc != null && !proc.HasExited)
@@ -822,9 +827,13 @@ namespace Wrestling.Recorder
                 }
             }
         }
-
+        */
+        
+        /*       
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern bool GenerateConsoleCtrlEvent(ConsoleCtrlEvent sigevent, int dwProcessGroupId);
+        */
+
         public enum ConsoleCtrlEvent
         {
             CTRL_C = 0,

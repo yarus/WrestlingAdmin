@@ -31,6 +31,7 @@ MediaFrame and Mat convert to each other</PackageReleaseNotes>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DocumentationFile>bin/EmguFFmpeg.EmguCV.xml</DocumentationFile>
     <NoWarn>1701;1702;1591</NoWarn>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">

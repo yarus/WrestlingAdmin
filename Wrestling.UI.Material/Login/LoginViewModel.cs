@@ -94,7 +94,7 @@ namespace Wrestling.UI.Material.Login
             var api = DiContainer.Resolve<IRosbosApi>();
             var cache = DiContainer.Resolve<ICacheManager>();
 
-            if (false && !CheckPreviousAuth(userName, password))
+            if (!CheckPreviousAuth(userName, password))
             {
                 if (api.CheckConnection())
                 {

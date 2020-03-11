@@ -532,7 +532,7 @@ namespace Wrestling.UI.Material.Match
         {
             if (WrestlingMatch.StartDateTime == null)
             {
-                WrestlingMatch.StartDateTime = Tournament.StartDate ?? DateTime.Now;
+                WrestlingMatch.StartDateTime = Tournament?.StartDate ?? DateTime.Now;
             }
 
             WrestlingMatch.IsRedWon = Winner == WrestlingMatch.WrestlerInRed.ID;
@@ -557,7 +557,7 @@ namespace Wrestling.UI.Material.Match
                 ShowSnackMessage("Подождите, идет запись видео-файла...");
 
                 _recorder.StopRecording();
-            }
+            } 
             else
             {
                 if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
@@ -591,14 +591,14 @@ namespace Wrestling.UI.Material.Match
 
         private void CompleteMatch()
         {
-            var group = DataContext.Tournament.Groups.FirstOrDefault(p => p.ID == WrestlingMatch.GroupID);
-            if (group == null) throw new ApplicationException("Can't find group!");
-
             if (!WrestlingMatch.IsRedWon.HasValue || !WrestlingMatch.WinType.HasValue) throw new ApplicationException("Completed match does not have result provided!");
 
-            _processor.CompleteMatch(WrestlingMatch, WrestlingMatch.IsRedWon.Value, WrestlingMatch.WinType.Value);
+            if (DataContext.Tournament != null)
+            {
+                _processor.CompleteMatch(WrestlingMatch, WrestlingMatch.IsRedWon.Value, WrestlingMatch.WinType.Value);
 
-            _scoreScreenVm.ShowWinner(WrestlingMatch);
+                _scoreScreenVm.ShowWinner(WrestlingMatch);
+            }
         }
 
         private void NavigateToMatches()

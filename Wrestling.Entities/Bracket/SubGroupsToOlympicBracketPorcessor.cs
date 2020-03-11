@@ -8,7 +8,7 @@ namespace Wrestling.Entities.Bracket
     public class SubGroupsToOlympicBracketPorcessor : GroupBracketProcessorBase
     {
         public override int? AthletsMinCount => 6;
-        public override int? AthletsMaxCount => 7;
+        public override int? AthletsMaxCount => 8;
 
         private RoundRobinGroupBracketProcessor _groupAProcessor;
         private RoundRobinGroupBracketProcessor _groupBProcessor;

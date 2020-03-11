@@ -16,7 +16,7 @@ namespace Wrestling.Recorder
         void SetMaxSeconds(int seconds);
 
         event EventHandler<FrameGeneratedEventArgs> NewFrame;
-        event EventHandler<string> ConcatCompleted;
-        event EventHandler<Exception> ConcatException;
+        event EventHandler<string> RecordingCompleted;
+        event EventHandler<Exception> RecordingException;
     }
 }

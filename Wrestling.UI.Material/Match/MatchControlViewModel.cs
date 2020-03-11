@@ -81,8 +81,8 @@ namespace Wrestling.UI.Material.Match
         public bool IsVideoRecording => _currentRecorder?.IsRecording ?? false;
 
         public override bool IsBackButtonAvailable => true;
-        public bool IsStartButtonVisible => IsMatchNotCompleted && !IsRunning && (ScoreScreenVm != null && !ScoreScreenVm.IsTimeout);
-        public bool IsStopButtonVisible => IsMatchNotCompleted && IsRunning && (ScoreScreenVm != null && !ScoreScreenVm.IsTimeout);
+        public bool IsStartButtonVisible => IsMatchNotCompleted && !IsRunning;// && (ScoreScreenVm != null && !ScoreScreenVm.IsTimeout);
+        public bool IsStopButtonVisible => IsMatchNotCompleted && IsRunning;// && (ScoreScreenVm != null && !ScoreScreenVm.IsTimeout);
 
         public override string PageTitle => "Управление Электронным Табло";
 
