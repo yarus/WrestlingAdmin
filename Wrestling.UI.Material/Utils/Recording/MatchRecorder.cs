@@ -16,15 +16,15 @@ namespace Wrestling.UI.Material.Utils.Recording
         private readonly IOverlayDrawer _overlayDrawer;
         private ScoreScreenViewModel _currentMatch;
 
+        public event EventHandler<string> RecordingStarted;
+        public event EventHandler<string> RecordingCompleted;
+
+        bool IMatchRecorder.IsRecording => _currentRecorder?.IsRecording ?? false;
+
         public MatchRecorder(IOverlayDrawer overDrawer)
         {
-            //_recorder = recorder;
             _overlayDrawer = overDrawer;
-
-            //_recorder.NewFrame += RecorderOnNewFrame;
-        }
-
-        bool IMatchRecorder.IsRecording => _currentRecorder?.IsRecording ?? false; 
+        }        
 
         private void RecorderOnNewFrame(object sender, FrameGeneratedEventArgs e)
         {
@@ -64,7 +64,7 @@ namespace Wrestling.UI.Material.Utils.Recording
             RecorderConfiguration config, 
             ScoreScreenViewModel match, 
             Guid? tournamentId,
-            EventHandler<BitmapSource> frameShowHandler)
+            EventHandler<BitmapSource> onFrameShow)
         {
             if (config == null || match == null) return;
 
@@ -87,9 +87,10 @@ namespace Wrestling.UI.Material.Utils.Recording
                 fileName, 
                 config, 
                 RecorderOnNewFrame, 
-                match.MaxRoundSecond * 1000,
-                frameShowHandler); // we need ms
+                match.MaxRoundSecond * 1000);
 
+            _currentRecorder.FrameShow += onFrameShow;
+            _currentRecorder.RecordingStarted += OnRecordingStarted;
             _currentRecorder.RecordingCompleted += OnRecordingCompleted;
             _currentRecorder.RecordingException += OnRecordingException;
         }
@@ -109,6 +110,11 @@ namespace Wrestling.UI.Material.Utils.Recording
             RecordingCompleted?.Invoke(this, "Сохранение файла успешно завершено!");
         }
 
+        private void OnRecordingStarted(object sender, string e)
+        {
+
+        }
+
         public IEnumerable<string> GetMatchRecordings(string storagePath, WrestlingMatch match, Guid? tournamentId)
         {
             var result = new List<string>();
@@ -126,9 +132,7 @@ namespace Wrestling.UI.Material.Utils.Recording
             }
 
             return result;
-        }
-
-        public event EventHandler<string> RecordingCompleted;
+        }        
 
         public static string GetFullStoragePath(Guid? tournamentId, string baseStoragePath)
         {

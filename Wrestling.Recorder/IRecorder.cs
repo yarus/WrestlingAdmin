@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Windows.Media.Imaging;
 
 namespace Wrestling.Recorder
 {
@@ -16,7 +17,9 @@ namespace Wrestling.Recorder
         void SetMaxSeconds(int seconds);
 
         event EventHandler<FrameGeneratedEventArgs> NewFrame;
+        event EventHandler<string> RecordingStarted;
         event EventHandler<string> RecordingCompleted;
         event EventHandler<Exception> RecordingException;
+        event EventHandler<BitmapSource> FrameShow;
     }
 }

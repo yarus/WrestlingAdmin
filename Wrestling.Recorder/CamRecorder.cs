@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Accord.Audio;
 using Accord.DirectSound;
@@ -78,6 +79,8 @@ namespace Wrestling.Recorder
             IsRecording = true;
 
             StartRetryTimer();
+
+            RecordingStarted?.Invoke(this, _fileName);
         }
 
         public void StopRecording()
@@ -96,8 +99,10 @@ namespace Wrestling.Recorder
         }
 
         public event EventHandler<FrameGeneratedEventArgs> NewFrame;
+        public event EventHandler<string> RecordingStarted;
         public event EventHandler<string> RecordingCompleted;
         public event EventHandler<Exception> RecordingException;
+        public event EventHandler<BitmapSource> FrameShow;
 
         protected virtual void OnNewFrame(FrameGeneratedEventArgs e)
         {

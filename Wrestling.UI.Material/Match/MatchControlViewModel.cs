@@ -584,14 +584,6 @@ namespace Wrestling.UI.Material.Match
                 PlaySingleGongSound();
             }
 
-            // If recording was stopped we need to start it again
-            /*if (_settings.IsVideoRecordingEnabled && !_currentRecorder.IsRecording)
-            {
-                StartRecording();
-            }*/
-
-            //_currentRecorder?.CreateOverlay(true);
-
             IsRunning = true;
         }
 
