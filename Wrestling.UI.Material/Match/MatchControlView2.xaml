@@ -138,7 +138,8 @@
             </Viewbox>
         </Grid>
 
-        <Grid 
+        <!-- Preview of recorder video -->
+        <!--Grid 
             Grid.Row="2" 
             Grid.Column="0" >
             <Rectangle
@@ -148,8 +149,7 @@
                 Source="{Binding CurrentFrame}"
                 Stretch="UniformToFill">
             </Image>
-        </Grid>
-
+        </-->
 
         <Border Grid.Row="2" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="White"></Border>
 

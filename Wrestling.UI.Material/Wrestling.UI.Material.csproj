@@ -18,7 +18,7 @@
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <PublishUrl>C:\Users\ank_w\Desktop\WrestlingAdminTool\</PublishUrl>
+    <PublishUrl>C:\Users\akardash.ONTARGET\Desktop\WrestlingAdmin\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>false</UpdateEnabled>
@@ -30,7 +30,7 @@
     <MapFileExtensions>false</MapFileExtensions>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
     <DisallowUrlActivation>true</DisallowUrlActivation>
-    <ApplicationRevision>38</ApplicationRevision>
+    <ApplicationRevision>39</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -676,46 +676,6 @@
     </Content>
     <Content Include="Images\RosbosLogo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Libs\avcodec-57.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\avdevice-57.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\avfilter-6.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\avformat-57.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\avutil-55.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\postproc-54.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\swresample-2.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\swscale-4.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
     </Content>
     <Content Include="Sounds\SingleGongBeep.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
