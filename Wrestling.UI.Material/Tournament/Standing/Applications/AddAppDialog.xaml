@@ -98,8 +98,8 @@
                 </TextBox.Text>
             </TextBox>
 
-            <TextBox Grid.Row="1" Grid.Column="0" materialDesign:HintAssist.Hint="Название команды" TabIndex="3"
-                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
+            <TextBox Grid.Row="1" Grid.Column="0" materialDesign:HintAssist.Hint="Короткое название команды" TabIndex="3"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" MaxLength="12">
                 <TextBox.Text>
                     <Binding Path="Item.ShortName" UpdateSourceTrigger="PropertyChanged">
                         <Binding.ValidationRules>
@@ -109,7 +109,7 @@
                 </TextBox.Text>
             </TextBox>
 
-            <TextBox Grid.Row="1" Grid.Column="1" materialDesign:HintAssist.Hint="Хэштег" TabIndex="4"
+            <TextBox Grid.Row="1" Grid.Column="1" materialDesign:HintAssist.Hint="Хэштег" TabIndex="4" IsReadOnly="True"
                      Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
                 <TextBox.Text>
                     <Binding Path="Item.HashTag" UpdateSourceTrigger="PropertyChanged">

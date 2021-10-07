@@ -53,7 +53,9 @@
     <Compile Include="Converters\HighlightSelectedItemConverter.cs" />
     <Compile Include="Converters\IndexConverter.cs" />
     <Compile Include="Converters\IndexItemsConverter.cs" />
+    <Compile Include="Converters\SecondsToFutureTimeConverter.cs" />
     <Compile Include="Converters\SecondsToTimeSpanConverter.cs" />
+    <Compile Include="Converters\SecondsToTimeStringConverter.cs" />
     <Compile Include="Converters\UpperCaseConverter.cs" />
     <Compile Include="Converters\ValueConverterGroup.cs" />
     <Compile Include="ExtensionMethods.cs" />

@@ -91,7 +91,7 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
-                                        <TextBlock Grid.Column="0" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Grid.Column="0" TextWrapping="NoWrap" FontSize="22" VerticalAlignment="Center" HorizontalAlignment="Center">
                                             <TextBlock.Text>
                                                 <MultiBinding Converter="{StaticResource ItemsIndexConverter}" ConverterParameter="1">
                                                     <Binding RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ItemsControl}}" />
@@ -100,16 +100,16 @@
                                             </TextBlock.Text>
                                         </TextBlock>
 
-                                        <TextBlock Grid.Column="1" TextWrapping="NoWrap" FontSize="16" Margin="20,0,20,0" VerticalAlignment="Center">
+                                        <TextBlock Grid.Column="1" TextWrapping="NoWrap" FontSize="22" Margin="20,0,20,0" VerticalAlignment="Center">
                                             <Run Text="{Binding CarpetLabel}"></Run>
                                         </TextBlock>
 
-                                        <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="22" VerticalAlignment="Center">
                                             <Run Text="Участников:" />
                                             <Run Text="{Binding WrestlersCount, Mode=OneWay}" />
                                         </TextBlock>
 
-                                        <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
+                                        <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="22" VerticalAlignment="Center">
                                             <Run Text="Поединков:" />
                                             <Run Text="{Binding MatchesCount, Mode=OneWay}" />
                                         </TextBlock>
@@ -128,7 +128,7 @@
                                                     <GridViewColumn Header="#" Width="Auto">
                                                         <GridViewColumn.CellTemplate>
                                                             <DataTemplate>
-                                                                <TextBlock Text="{Binding MatchNumber}" Margin="0,20,0,0" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                                <TextBlock Text="{Binding MatchNumber}" Margin="0,20,0,0" TextWrapping="NoWrap" FontSize="22" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
                                                             </DataTemplate>
                                                         </GridViewColumn.CellTemplate>
                                                     </GridViewColumn>
@@ -137,8 +137,8 @@
                                                         <GridViewColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <StackPanel>
-                                                                    <TextBlock Text="{Binding GroupName}" Margin="0,5,0,0" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
-                                                                    <TextBlock Text="{Binding RoundName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
+                                                                    <TextBlock Text="{Binding GroupName}" Margin="0,5,0,0" TextWrapping="Wrap" FontSize="22" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
+                                                                    <TextBlock Text="{Binding RoundName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="22" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
                                                                 </StackPanel>
                                                             </DataTemplate>
                                                         </GridViewColumn.CellTemplate>
@@ -150,11 +150,11 @@
                                                                 <StackPanel>
                                                                     <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                                                                         <materialDesign:PackIcon Foreground="DarkRed" Width="20" Height="20" Margin="0" Padding="0" ToolTip="Спортсмен в красном трико" Kind="CheckboxBlank" />
-                                                                        <TextBlock Text="{Binding WrestlerInRed.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="16" HorizontalAlignment="Left" />
+                                                                        <TextBlock Text="{Binding WrestlerInRed.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="22" HorizontalAlignment="Left" />
                                                                     </StackPanel>
                                                                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                                                         <materialDesign:PackIcon Foreground="Blue" Width="20" Height="20" Margin="0" Padding="0" ToolTip="Спортсмен в синем трико." Kind="CheckboxBlank" />
-                                                                        <TextBlock Text="{Binding WrestlerInBlue.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="16" HorizontalAlignment="Left" />
+                                                                        <TextBlock Text="{Binding WrestlerInBlue.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="22" HorizontalAlignment="Left" />
                                                                     </StackPanel>
                                                                 </StackPanel>
                                                             </DataTemplate>
@@ -165,8 +165,8 @@
                                                         <GridViewColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <StackPanel>
-                                                                    <TextBlock Text="{Binding WrestlerInRed.TeamName}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="16" HorizontalAlignment="Left" />
-                                                                    <TextBlock Text="{Binding WrestlerInBlue.TeamName}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="16" HorizontalAlignment="Left" />
+                                                                    <TextBlock Text="{Binding WrestlerInRed.TeamName}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="22" HorizontalAlignment="Left" />
+                                                                    <TextBlock Text="{Binding WrestlerInBlue.TeamName}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="22" HorizontalAlignment="Left" />
                                                                 </StackPanel>
                                                             </DataTemplate>
                                                         </GridViewColumn.CellTemplate>

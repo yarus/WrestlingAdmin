@@ -71,7 +71,7 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Команды" Width="Auto">
+                        <GridViewColumn Header="Команды" Width="120">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel>

@@ -190,7 +190,7 @@ namespace Wrestling.Entities.Bracket
                 var addFinals = addRounds[addRounds.Count - 1];
 
                 var firstAddFinal = addFinals.RoundMatches[0];
-                if (firstAddFinal != null)
+                if (firstAddFinal != null && firstAddFinal.Status == MatchStatusEnum.Completed)
                 {
                     if (firstAddFinal.WrestlerInRed != null)
                     {
@@ -206,7 +206,7 @@ namespace Wrestling.Entities.Bracket
                 if (addFinals.RoundMatches.Count > 1)
                 {
                     var secondAddFinal = addFinals.RoundMatches[1];
-                    if (secondAddFinal != null)
+                    if (secondAddFinal != null && secondAddFinal.Status == MatchStatusEnum.Completed)
                     {
                         if (secondAddFinal.WrestlerInRed != null)
                         {
@@ -362,6 +362,18 @@ namespace Wrestling.Entities.Bracket
                                 currentPlace++;
                             }
                         }
+                    }
+                }
+            }
+
+            if (Group.IsBracketCompleted)
+            {
+                foreach (var wr in GetGroupWrestlers())
+                {
+                    if (!wr.FinalPlace.HasValue)
+                    {
+                        wr.FinalPlace = currentPlace;
+                        currentPlace++;
                     }
                 }
             }

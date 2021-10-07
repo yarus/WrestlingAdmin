@@ -46,10 +46,11 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
 
             if (_groups.Count == 0) return;
 
-            var matches = _groups.SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches).OrderBy(m => m.MatchNumber).ToList();
+            var matches = _groups.SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches).Where(rm => !rm.IsMatchCompleted).OrderBy(m => m.MatchNumber).ToList();
 
             if (matches.Count == 0) return;
 
+            /*
             var cycleMatches = new List<WrestlingMatch>();
 
             WrestlingMatch previousMatch = null;
@@ -93,6 +94,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
 
                 break;
             }
+            */
 
             Stat = new CarpetStats
             {
@@ -100,7 +102,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
                 CarpetLabel = _carpet.Name,
                 WrestlersCount = _carpet.WrestlersCount,
                 GroupsCount = _carpet.Groups.Count,
-                Matches = new ObservableCollection<WrestlingMatch>(cycleMatches.OrderBy(m => m.MatchNumber))//matches.OrderBy(m => m.MatchNumber))
+                Matches = new ObservableCollection<WrestlingMatch>(matches)//matches.OrderBy(m => m.MatchNumber))
             };
         }
     }

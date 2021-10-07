@@ -31,7 +31,7 @@ namespace Wrestling.Entities
         private decimal? _entryFee;
 
         private ObservableCollection<ScreenSlide> _slides;
-         
+
         private ObservableCollection<AgeWeightGroup> _groups;
 
         private ObservableCollection<TeamApplication> _applications;
@@ -47,7 +47,7 @@ namespace Wrestling.Entities
             _wrestlers = new ObservableCollection<Wrestler>();
             _carpets = new ObservableCollection<Carpet>();
             _slides = new ObservableCollection<ScreenSlide>();
-            
+
             Settings = settings ?? new GlobalSettings();
         }
 
@@ -60,6 +60,75 @@ namespace Wrestling.Entities
         public int PendingMatchesCount => MatchesCount - CompletedMatchesCount;
         public int ApplicationsCount => TeamApplications.Count;
         public int ProgressPercent => MatchesCount == 0 ? 0 : CompletedMatchesCount * 100 / MatchesCount;
+
+        public int ExpectedDurationInSeconds { 
+            get
+            {
+                if (PendingMatchesCount == 0)
+                {
+                    return 0;
+                }
+
+                int fullDurationInSeconds = 0;
+                int totalUncompletedCount = 0;
+                int completedDurationInSeconds = 0;
+                int totalCompletedCount = 0;
+
+                var activeGroups = _groups.Where(x => x.Bracket != null).ToList();
+
+                foreach (var group in activeGroups)
+                {
+                    var notCompletedMatches = group.Bracket.Rounds.SelectMany(r => r.RoundMatches).Where(m => !m.IsMatchCompleted).ToList();
+
+                    var groupFullDuration = 0;
+
+                    foreach (var match in notCompletedMatches)
+                    {
+                        var matchFullDuration = (match.MaxRoundSecond * 2) + match.MaxTimeoutSecond;
+
+                        groupFullDuration += matchFullDuration;
+                    }
+
+                    fullDurationInSeconds += groupFullDuration;
+                    totalUncompletedCount += notCompletedMatches.Count;
+
+                    var completedMatches = group.Bracket.Rounds.SelectMany(r => r.RoundMatches).Where(m => m.IsMatchCompleted && m.WrestlerInRed != null && m.WrestlerInBlue != null && m.LastSecondInMatch > 0).ToList();
+
+                    var completedMatchesDuration = 0;
+
+                    foreach (var match in completedMatches)
+                    {
+                        var actualDuration = match.LastSecondInMatch;
+
+                        if (match.LastSecondInMatch > match.MaxRoundSecond)
+                        {
+                            actualDuration += match.MaxTimeoutSecond;
+                        }
+
+                        completedMatchesDuration += actualDuration;
+                    }
+
+                    totalCompletedCount += completedMatches.Count;
+                    completedDurationInSeconds += completedMatchesDuration;
+                }
+
+                if (totalCompletedCount > 0)
+                {
+                    var averageMatchCompletedDuration = completedDurationInSeconds / totalCompletedCount;
+
+                    if (totalUncompletedCount == 0)
+                    {
+                        return 0;
+                    }
+
+                    var averageMatchFullDuration = fullDurationInSeconds / totalUncompletedCount;
+                    var avgMatchDuration = (averageMatchFullDuration + averageMatchCompletedDuration) / 2;
+                    return totalUncompletedCount * avgMatchDuration;
+                }
+
+                return completedDurationInSeconds;
+            }
+        }
 
         public decimal? FeesCollectedAmount => Wrestlers.Where(w => w.IsEntryFeePaid).Sum(w => w.PaidAmount);
 

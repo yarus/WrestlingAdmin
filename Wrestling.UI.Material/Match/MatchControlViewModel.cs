@@ -55,6 +55,7 @@ namespace Wrestling.UI.Material.Match
         private ICommand _actionStartStopCommand;
         private ICommand _resetCommand;
         private ICommand _changeWarningsCommand;
+        private ICommand _completeMatch;
 
         private IList<CommandButtonItem> _quickButtons;
 
@@ -210,6 +211,20 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
+        public ICommand CompleteMatchCommand
+        {
+            get
+            {
+                if (_completeMatch == null)
+                {
+                    _completeMatch = new RelayCommand(
+                        param => CompleteMatch(),
+                        param => true);
+                }
+                return _completeMatch;
+            }
+        }
+
         public ICommand StartCommand
         {
             get
@@ -356,7 +371,7 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        #endregion    }
+        #endregion    
 
         #region Private Methods
 
@@ -368,7 +383,7 @@ namespace Wrestling.UI.Material.Match
                 return;
             }
 
-            if (!_isSettingsOpen && (e.Key == Key.Space || e.Key == Key.Enter))
+            if (!_isSettingsOpen && (e.Key == Key.Space))
             {
                 if (IsRunning)
                 {
@@ -380,6 +395,76 @@ namespace Wrestling.UI.Material.Match
                 }
                 
                 e.Handled = true;
+                return;
+            }
+
+            if (!_isSettingsOpen && (e.Key == Key.Enter))
+            {
+                if (IsRunning)
+                {
+                    Stop();
+                }
+
+                CompleteMatch();
+
+                e.Handled = true;
+                return;
+            }
+
+            if (!_isSettingsOpen && (e.Key == Key.Q))
+            {
+                AdjustPoints("+1,Red");
+                e.Handled = true;
+                return;
+            }
+
+            if (!_isSettingsOpen && (e.Key == Key.W))
+            {
+                AdjustPoints("+2,Red");
+                e.Handled = true;
+                return;
+            }
+
+            if (!_isSettingsOpen && (e.Key == Key.E))
+            {
+                AdjustPoints("+4,Red");
+                e.Handled = true;
+                return;
+            }
+
+            if (!_isSettingsOpen && (e.Key == Key.R))
+            {
+                AdjustPoints("0,Red");
+                e.Handled = true;
+                return;
+            }
+
+            if (!_isSettingsOpen && (e.Key == Key.U))
+            {
+                AdjustPoints("+1,Blue");
+                e.Handled = true;
+                return;
+            }
+
+            if (!_isSettingsOpen && (e.Key == Key.I))
+            {
+                AdjustPoints("+2,Blue");
+                e.Handled = true;
+                return;
+            }
+
+            if (!_isSettingsOpen && (e.Key == Key.O))
+            {
+                AdjustPoints("+4,Blue");
+                e.Handled = true;
+                return;
+            }
+
+            if (!_isSettingsOpen && (e.Key == Key.P))
+            {
+                AdjustPoints("0,Blue");
+                e.Handled = true;
+                return;
             }
         }
 

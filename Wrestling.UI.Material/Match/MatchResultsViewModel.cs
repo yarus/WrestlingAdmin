@@ -634,6 +634,8 @@ namespace Wrestling.UI.Material.Match
             Note = string.Empty;
             WinType = null;
             Winner = null;
+            IsPlayer1WithAdvantage = false;
+            IsPlayer2WithAdvantage = false;
 
             if (WrestlingMatch.Status == MatchStatusEnum.Completed)
             {
@@ -672,15 +674,15 @@ namespace Wrestling.UI.Material.Match
                     {
                         if (WrestlingMatch.BestActionRed != WrestlingMatch.BestActionBlue)
                         {
-                            IsPlayer1WithAdvantage = true;
-                            IsPlayer2WithAdvantage = false;
+                            IsPlayer1WithAdvantage = WrestlingMatch.BestActionRed > WrestlingMatch.BestActionBlue;
+                            IsPlayer2WithAdvantage = WrestlingMatch.BestActionRed < WrestlingMatch.BestActionBlue;
                             Winner = WrestlingMatch.BestActionRed > WrestlingMatch.BestActionBlue ? WrestlingMatch.WrestlerInRed.ID : WrestlingMatch.WrestlerInBlue.ID;
                             Note = "Победа присуждена по качеству результативного действия.";
                         }
                         else
                         {
-                            IsPlayer1WithAdvantage = false;
-                            IsPlayer2WithAdvantage = true;
+                            IsPlayer1WithAdvantage = WrestlingMatch.IsLastActionRed;
+                            IsPlayer2WithAdvantage = !WrestlingMatch.IsLastActionRed;
                             Winner = WrestlingMatch.IsLastActionRed ? WrestlingMatch.WrestlerInRed.ID : WrestlingMatch.WrestlerInBlue.ID;
                             Note = "При равном счете и равном качестве результативных действий победа присуждена по последнему действию.";
                         }

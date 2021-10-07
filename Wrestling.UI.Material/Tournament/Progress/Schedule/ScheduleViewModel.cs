@@ -50,6 +50,11 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
             _carpets = DataContext.Tournament.Carpets;
 
+            if (_carpets.Count == 0 || (Stats != null && _carpets.Count != Stats.Count))
+            {
+                Stats = null;
+            }
+
             Filter(FilterString);
 
             DataContext.IsBracketView = false;
@@ -150,7 +155,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
             foreach (var carpet in _carpets)
             {
-                var matches = new ObservableCollection<WrestlingMatch>(carpet.Groups
+                var matches = new ObservableCollection<WrestlingMatch>(carpet.Groups.Where(g => g.Bracket != null)
                     .SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches).OrderBy(m => m.MatchNumber));
 
                 var stat = new CarpetStats

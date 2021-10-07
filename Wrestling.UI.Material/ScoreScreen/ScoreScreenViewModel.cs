@@ -258,10 +258,20 @@ namespace Wrestling.UI.Material.ScoreScreen
                 TournamentTitle = DataContext.Tournament.Name;
             }
 
-            Wrestler1 = DataContext.WrestlingMatch.WrestlerInRed.LastFirstNameShort;
-            //Wrestler1 = DataContext.WrestlingMatch.WrestlerInRed.LastFirstName;
-            Wrestler2 = DataContext.WrestlingMatch.WrestlerInBlue.LastFirstNameShort;
-            //Wrestler2 = DataContext.WrestlingMatch.WrestlerInBlue.LastFirstName;
+            //Wrestler1 = DataContext.WrestlingMatch.WrestlerInRed.LastFirstNameShort;
+            Wrestler1 = DataContext.WrestlingMatch.WrestlerInRed.LastFirstName;
+
+            if (Wrestler1.Length > 25)
+            {
+                Wrestler1 = Wrestler1.Substring(0, 25);
+            }
+
+            //Wrestler2 = DataContext.WrestlingMatch.WrestlerInBlue.LastFirstNameShort;
+            Wrestler2 = DataContext.WrestlingMatch.WrestlerInBlue.LastFirstName;
+            if (Wrestler2.Length > 25)
+            {
+                Wrestler2 = Wrestler2.Substring(0, 25);
+            }
         }
 
         public void Reset()

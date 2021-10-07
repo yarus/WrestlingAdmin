@@ -11,10 +11,12 @@
              d:DesignHeight="800" d:DesignWidth="960">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters:SecondsToTimeStringConverter x:Key="SecondsToTimeStringConverter" />
+        <converters:SecondsToFutureTimeConverter x:Key="SecondsToFutureTimeConverter" />
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />        
         <converters:ValueConverterGroup x:Key="InvBoolToVis">
             <converters:BoolInverterConverter />
-            <converters:GroupedBoolToVisConverter />
+            <converters:GroupedBoolToVisConverter />            
         </converters:ValueConverterGroup>
     </UserControl.Resources>
     
@@ -83,6 +85,11 @@
                                     <Run Text="Взносов собрано:"></Run>
                                     <Run Text="{Binding Tournament.FeesCollectedAmount, Mode=OneWay}"></Run>
                                 </TextBlock>
+
+                                <TextBlock TextWrapping="Wrap" FontSize="18" Margin="10,10,10,0">
+                                    <Run Text="Ожидаемая длительность:"></Run>
+                                    <Run Text="{Binding Tournament.ExpectedDurationInSeconds, Mode=OneWay, StringFormat={}{0:mm':'ss}, Converter={StaticResource SecondsToTimeStringConverter}}"></Run>
+                                </TextBlock>
                             </StackPanel>
 
                             <StackPanel Grid.Row="1" Grid.Column="1">
@@ -110,6 +117,11 @@
                                     <Run Text="Прогресс:"></Run>
                                     <Run Text="{Binding Tournament.ProgressPercent, Mode=OneWay}"></Run>
                                     <Run Text="%"></Run>
+                                </TextBlock>
+
+                                <TextBlock TextWrapping="Wrap" FontSize="18" Margin="10,10,10,0">
+                                    <Run Text="Время окончания:"></Run>                                    
+                                    <Run Text="{Binding Tournament.ExpectedDurationInSeconds, Mode=OneWay, StringFormat={}{0:mm':'ss}, Converter={StaticResource SecondsToFutureTimeConverter}}"></Run>
                                 </TextBlock>
                             </StackPanel>
                         </Grid>
