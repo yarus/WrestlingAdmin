@@ -41,6 +41,7 @@ namespace Wrestling.UI.Material.Home
             _tournManager = Resolve<ITournamentsManager>();
         }
 
+        /*
         public override void OnNavigationCompleted()
         {
             base.OnNavigationCompleted();
@@ -50,6 +51,7 @@ namespace Wrestling.UI.Material.Home
                 NavigateToView<LoginViewModel>();
             }
         }
+        */
 
         public override string PageTitle => "Вольная борьба - Администратор турниров";
 

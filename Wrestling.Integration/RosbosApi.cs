@@ -10,6 +10,8 @@ namespace Wrestling.Integration
 {
     public class RosbosApi : IRosbosApi
     {
+        private static string _apiUrl = "https://rosbos.ru";
+
         private string _userName;
         private string _password;
 
@@ -17,13 +19,10 @@ namespace Wrestling.Integration
         {
             try
             {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create($"https://rosbos.ru");
-                request.Timeout = 5000;
-                request.Credentials = CredentialCache.DefaultNetworkCredentials;
-
-                using (HttpWebResponse response = (HttpWebResponse) request.GetResponse())
+                using (var client = new WebClient())
+                using (client.OpenRead(_apiUrl))
                 {
-                    return response.StatusCode == HttpStatusCode.OK;
+                    return true;
                 }
             }
             catch
@@ -42,7 +41,7 @@ namespace Wrestling.Integration
         {
             try
             {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create($"https://rosbos.ru/api/data?handler=Auth&userName={_userName}&password={_password}");
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create($"{_apiUrl}/api/data?handler=Auth&userName={_userName}&password={_password}");
                 request.Timeout = 5000;
                 request.Credentials = CredentialCache.DefaultNetworkCredentials;
                 HttpWebResponse response = (HttpWebResponse)request.GetResponse();
@@ -52,8 +51,9 @@ namespace Wrestling.Integration
                     return true;
                 }
             }
-            catch
+            catch(Exception ex)
             {
+                Console.WriteLine($"Error while accessing Integration Api: {ex}");
                 return false;
             }
 
@@ -64,7 +64,7 @@ namespace Wrestling.Integration
         {
             List<TeamApplication> result = new List<TeamApplication>();
 
-            var url = $"https://rosbos.ru/api/data?handler=Teams&userName={_userName}&password={_password}";
+            var url = $"{_apiUrl}/api/data?handler=Teams&userName={_userName}&password={_password}";
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             //request.Timeout = 5000;
@@ -112,7 +112,7 @@ namespace Wrestling.Integration
         {
             List<Wrestler> result = new List<Wrestler>();
 
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create($"https://rosbos.ru/api/data?handler=Athletes&userName={_userName}&password={_password}");
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create($"{_apiUrl}/api/data?handler=Athletes&userName={_userName}&password={_password}");
             //request.Timeout = 10000;
             //request.Credentials = CredentialCache.DefaultNetworkCredentials;
 

@@ -2,12 +2,17 @@
 using System.Diagnostics;
 using System.IO;
 using System.Media;
+using System.Net;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
+using Wrestling.Integration;
 using Wrestling.Providers;
 using Wrestling.Recorder;
 using Wrestling.Recorder.DataAccess;
@@ -30,6 +35,9 @@ namespace Wrestling.UI.Material.Settings
         private ICommand _playStartGongCommand;
         private ICommand _reloadRecConfigCommand;
         private ICommand _openConfiguratorCommand;
+        private ICommand _loadIntegrationDataCommand;
+
+        private string _validation;
 
         public SettingsViewModel(IDiContainer container) : base(container)
         {
@@ -48,6 +56,17 @@ namespace Wrestling.UI.Material.Settings
 
         public GlobalSettings Item { get; set; }
 
+        public string Validation
+        {
+            get { return _validation; }
+            set
+            {
+                _validation = value;
+
+                OnPropertyChanged("Validation");
+            }
+        }
+
         public bool IsTournamentScoreInternational
         {
             get { return Item.IsTournamentScoreInternational; }
@@ -56,6 +75,22 @@ namespace Wrestling.UI.Material.Settings
                 Item.IsTournamentScoreInternational = value;
                 SetupScoreScreen(value);
                 OnPropertyChanged("IsTournamentScoreInternational");
+            }
+        }
+
+        public bool IsAuthenticated
+        {
+            get { return DataContext.IsAuthenticated; }
+            set
+            {
+                DataContext.IsAuthenticated = value;
+
+                if (value)
+                {
+                    Validation = string.Empty;
+                }
+
+                OnPropertyChanged("IsAuthenticated");
             }
         }
 
@@ -148,6 +183,21 @@ namespace Wrestling.UI.Material.Settings
             }
         }
 
+        public ICommand LoadIntegrationDataCommand
+        {
+            get
+            {
+                if (_loadIntegrationDataCommand == null)
+                {
+                    _loadIntegrationDataCommand = new RelayCommand(
+                        param => LoadIntegrationData((param as PasswordBox)?.Password ?? string.Empty),
+                        param => true
+                    );
+                }
+                return _loadIntegrationDataCommand;
+            }
+        }
+
         public ICommand ReloadRecConfigCommand
         {
             get
@@ -194,6 +244,128 @@ namespace Wrestling.UI.Material.Settings
             }
 
             return false;
+        }
+        
+        public void LoadIntegrationData(string password)
+        {
+            if (string.IsNullOrEmpty(Item.IntegrationUserName))
+            {
+                IsAuthenticated = false;
+                Validation = "Ввведите имя пользователя";
+                return;
+            }            
+
+            if (string.IsNullOrEmpty(password))
+            {
+                IsAuthenticated = false;
+                Validation = "Ввведите пароль";
+                return;
+            }
+
+            Item.IntegrationPassword = password;
+
+            var api = DiContainer.Resolve<IRosbosApi>();
+            var cache = DiContainer.Resolve<ICacheManager>();
+
+            if (!VerifyLogin(api, Item.IntegrationUserName, Item.IntegrationPassword))
+            {
+                IsAuthenticated = false;
+                Validation = "Неправильные данные";
+                return;
+            }
+
+            IsAuthenticated = true;
+
+            UpdateCache(api, cache);
+
+            InitDataContextWithCache(cache);
+        }
+
+        private void InitDataContextWithCache(ICacheManager cache)
+        {
+            if (cache != null && (DataContext.WrestlersCache == null || DataContext.WrestlersCache.Count == 0 || DataContext.TeamsCache == null || DataContext.TeamsCache.Count == 0))
+            {
+                DataContext.WrestlersCache = cache.LoadWrestlers();
+                DataContext.TeamsCache = cache.LoadTeams();
+            }
+        }
+
+        private void UpdateCache(IRosbosApi api, ICacheManager cache)
+        {
+            var teams = api.GetTeams();
+            DataContext.TeamsCache = teams;
+
+            var wrestlers = api.GetWrestlers();
+            DataContext.WrestlersCache = wrestlers;
+
+            CheckTeamLogo();
+
+            if (cache != null)
+            {
+                cache.SaveTeams(teams);
+                cache.SaveWrestlers(wrestlers);
+            }
+        }
+
+        private void CheckTeamLogo()
+        {
+            foreach (var app in DataContext.TeamsCache)
+            {
+                if (!string.IsNullOrEmpty(app.EmblemPath))
+                {
+                    // get file name and check if it exists
+                    var fileNameItems = app.EmblemPath.Split('\\');
+                    var fileName = fileNameItems[fileNameItems.Length - 1];
+
+                    var storagePath = Path.GetFullPath("Images");
+
+                    EnsureUploadFolder(storagePath);
+
+                    var fullPath = $"{storagePath}\\{fileName}";
+
+                    if (!File.Exists(fullPath))
+                    {
+                        using (WebClient client = new WebClient())
+                        {
+                            client.DownloadFile($"https://rosbos.ru/{app.EmblemPath}", fullPath);
+                        }
+                    }
+
+                    app.EmblemPath = fullPath;
+                }
+            }
+        }
+
+        private void EnsureUploadFolder(string folder)
+        {
+            Directory.CreateDirectory(folder);
+
+            DirectoryInfo dInfo = new DirectoryInfo(folder);
+
+            DirectorySecurity dSecurity = dInfo.GetAccessControl();
+
+            dSecurity.AddAccessRule(new FileSystemAccessRule(
+                    new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                    FileSystemRights.FullControl,
+                    InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit,
+                    PropagationFlags.NoPropagateInherit,
+                    AccessControlType.Allow));
+
+            dInfo.SetAccessControl(dSecurity);
+        }
+
+        private bool VerifyLogin(IRosbosApi api, string userName, string password)
+        {
+            api.SetCredentials(userName, password);
+
+            var token = api.LoadToken();
+
+            if (!token)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public void ReloadConfig()
