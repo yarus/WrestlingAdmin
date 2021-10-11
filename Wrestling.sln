@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.539
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wrestling.Entities", "Wrestling.Entities\Wrestling.Entities.csproj", "{0A59304D-5423-40DF-AC74-9FAA5A03828C}"
 EndProject
@@ -30,6 +30,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EmguFFmpeg", "EmguFFmpeg\EmguFFmpeg.csproj", "{31BBAEE7-11BB-43A1-BDE6-FFA482D48DF1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EmguFFmpeg.EmguCV", "EmguFFmpeg.EmguCV\EmguFFmpeg.EmguCV.csproj", "{BD231916-359B-40A9-A27E-B67AA484B36E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wrestling.Recorder.Config", "Wrestling.Recorder.Config\Wrestling.Recorder.Config.csproj", "{8746B813-26F8-4853-B0BE-B3236BBFE608}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -197,6 +199,18 @@ Global
 		{BD231916-359B-40A9-A27E-B67AA484B36E}.Release|x64.Build.0 = Release|x64
 		{BD231916-359B-40A9-A27E-B67AA484B36E}.Release|x86.ActiveCfg = Release|x86
 		{BD231916-359B-40A9-A27E-B67AA484B36E}.Release|x86.Build.0 = Release|x86
+		{8746B813-26F8-4853-B0BE-B3236BBFE608}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8746B813-26F8-4853-B0BE-B3236BBFE608}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8746B813-26F8-4853-B0BE-B3236BBFE608}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8746B813-26F8-4853-B0BE-B3236BBFE608}.Debug|x64.Build.0 = Debug|Any CPU
+		{8746B813-26F8-4853-B0BE-B3236BBFE608}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8746B813-26F8-4853-B0BE-B3236BBFE608}.Debug|x86.Build.0 = Debug|Any CPU
+		{8746B813-26F8-4853-B0BE-B3236BBFE608}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8746B813-26F8-4853-B0BE-B3236BBFE608}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8746B813-26F8-4853-B0BE-B3236BBFE608}.Release|x64.ActiveCfg = Release|Any CPU
+		{8746B813-26F8-4853-B0BE-B3236BBFE608}.Release|x64.Build.0 = Release|Any CPU
+		{8746B813-26F8-4853-B0BE-B3236BBFE608}.Release|x86.ActiveCfg = Release|Any CPU
+		{8746B813-26F8-4853-B0BE-B3236BBFE608}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
