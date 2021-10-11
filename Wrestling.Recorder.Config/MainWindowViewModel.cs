@@ -736,7 +736,7 @@ namespace Wrestling.Recorder.Config
                     AudioCaptureDeviceFormat = SelectedAudioInputFormat,
                     AudioCaptureDeviceFormatUseBest = UseBestAudioInputFormat,
                     AudioOutputDevice = SelectedAudioOutputDevice,
-                    VideoFrameRate = SelectedFrameRate != null ? SelectedFrameRate.GetValueOrDefault(0) : null,
+                    VideoFrameRate = SelectedFrameRate != null ? SelectedFrameRate.GetValueOrDefault(0) : 30,
                     Preview = this.PreviewMode,
                     OutputFileName = this.OutputFileName,
                     OutputFormat = SelectedOutputFormat.Tag,
