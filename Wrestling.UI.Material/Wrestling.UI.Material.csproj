@@ -176,6 +176,10 @@
     <Compile Include="ScoreScreen\WwfScoreScreenView.xaml.cs">
       <DependentUpon>WwfScoreScreenView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Tournament\Print\PrintApplications\PrintApplicationsView.xaml.cs">
+      <DependentUpon>PrintApplicationsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Print\PrintApplications\PrintApplicationsViewModel.cs" />
     <Compile Include="Tournament\Print\PrintResults\PrintAchievementNominantsView.xaml.cs">
       <DependentUpon>PrintAchievementNominantsView.xaml</DependentUpon>
     </Compile>
@@ -480,6 +484,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Tournament\Print\PrintApplications\PrintApplicationsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Tournament\Print\PrintResults\PrintAchievementNominantsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -708,8 +716,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Tournament\Print\PrintApplicaions\" />
-    <Folder Include="Tournament\Print\PrintGroups\" />
     <Folder Include="Tournament\Print\PrintTeamResults\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

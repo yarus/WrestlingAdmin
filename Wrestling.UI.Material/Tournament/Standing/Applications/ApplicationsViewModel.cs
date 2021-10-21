@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
+using Wrestling.UI.Material.Tournament.Print.PrintApplications;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Standing.Applications
@@ -102,6 +103,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         }
 
         #region Command Properties
+
 
         public ICommand AddAppCommand
         {

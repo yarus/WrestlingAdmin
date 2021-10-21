@@ -17,7 +17,7 @@ namespace Wrestling.UI.Material.Tournament.Print
             var dlg = new PrintDialog();
             if ((bool)dlg.ShowDialog())
             {
-                if (!VisualPrinter.PrintAcrossPages(dlg, PrintControl, "Итоги Турнира"))
+                if (!VisualPrinter.PrintAcrossPages(dlg, PrintControl, "Печать"))
                 {
                     MessageBox.Show(this, "Ошибка печати. Попробуйте еще раз.");
                 }

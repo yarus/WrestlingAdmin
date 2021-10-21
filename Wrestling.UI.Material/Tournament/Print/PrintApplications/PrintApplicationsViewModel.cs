@@ -1,23 +1,26 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Wrestling.Entities;
+using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
 
-namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
+namespace Wrestling.UI.Material.Tournament.Print.PrintApplications
 {
-    public class PrintBracketViewModel : TournamentViewModelBase
+    public class PrintApplicationsViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
         private AgeWeightGroup _selectedGroup;
-        private List<GroupRound> _groupMainRounds;
-        private List<GroupRound> _groupAddRounds;
+
         private List<PrintWrestlerApplicationViewModel> _groupWrestlers = new List<PrintWrestlerApplicationViewModel>();
 
-        public override string PageTitle => "Печать Протокола";
+        public string PageName => "Протокол Взвешивания";
+        public override string PageTitle => "Протокол взвешивания участников соревнований";
         
-        public PrintBracketViewModel(IDiContainer container) : base(container)
+        public PrintApplicationsViewModel(IDiContainer container) : base(container)
         {
         }
-        
+
+        public override bool IsBackButtonAvailable => true;
+
         public AgeWeightGroup SelectedGroup
         {
             get { return _selectedGroup; }
@@ -26,28 +29,6 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
                 _selectedGroup = value;
 
                 OnPropertyChanged("SelectedGroup");
-            }
-        }
-
-        public List<GroupRound> GroupMainRounds
-        {
-            get { return _groupMainRounds; }
-            set
-            {
-                _groupMainRounds = value;
-
-                OnPropertyChanged("GroupMainRounds");
-            }
-        }
-
-        public List<GroupRound> GroupAdditoinalRounds
-        {
-            get { return _groupAddRounds; }
-            set
-            {
-                _groupAddRounds = value;
-
-                OnPropertyChanged("GroupAdditoinalRounds");
             }
         }
 
@@ -67,18 +48,18 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
             base.InitData();
 
             SelectedGroup = DataContext.Group;
-            GroupMainRounds = SelectedGroup.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Main).ToList();
-            GroupAdditoinalRounds = SelectedGroup.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Additional).ToList();
 
             var results = new List<PrintWrestlerApplicationViewModel>();
 
-            var wrestlers = SelectedGroup.Wrestlers.OrderBy(x => x.FinalPlace).ThenBy(x => x.SeedNumber).ThenBy(x => x.LastFirstName).ToList();
-            
+            var wrestlers = SelectedGroup.Wrestlers.OrderBy(x => x.LastFirstName).ThenBy(x => x.SeedNumber).ToList();
+
+            var i = 1;
+
             foreach (var wrestler in wrestlers)
             {
                 results.Add(new PrintWrestlerApplicationViewModel
                 {
-                    Order = wrestler.FinalPlace,
+                    Order = i,
                     SeedNumber = wrestler.SeedNumber,
                     AthleteName = wrestler.LastFirstName,
                     BirthYear = wrestler.BirthDate?.Year,
@@ -86,6 +67,8 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
                     TeamName = wrestler.TeamName,
                     Weight = wrestler.Weight
                 });
+
+                i++;
             }
 
             GroupWrestlers = results;

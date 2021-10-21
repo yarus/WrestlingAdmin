@@ -73,6 +73,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="100" />
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Grid.Column="0" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -114,6 +115,21 @@
                                                                  Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}" />
                                         <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="32" Height="32" Margin="0" Padding="0" 
                                                                  ToolTip="Жеребьевка не проведена." Kind="CloseBoxOutline" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource InvBoolToVis}}" />
+                                    </Grid>
+
+                                    <Grid Grid.Column="5" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="1*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button Grid.Column="1" ToolTip="Распечатать протоколы взвешивания" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}"
+                                            VerticalAlignment="Center" HorizontalAlignment="Center"
+                                            Command="{Binding Path=DataContext.PrintProtocolCommand, ElementName=RootControl}" CommandParameter="{Binding }" Margin="0,0,0,0">
+                                            <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0" Padding="0" />
+                                        </Button>
+
                                     </Grid>
                                 </Grid>
                             </Expander.Header>

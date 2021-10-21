@@ -8,6 +8,8 @@ using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.UI.Material.Model;
+using Wrestling.UI.Material.Tournament.Print.PrintApplications;
+using Wrestling.UI.Material.Tournament.Print.PrintBracket;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Standing.Draw
@@ -20,6 +22,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         
         private ICommand _generateBracketCommand;
         private ICommand _removeBracketCommand;
+        private ICommand _printProtocolCommand;
 
         private List<IGroupBracketProcessor> _drawTypes;
         private ObservableCollection<AgeWeightGroup> _groups;
@@ -86,11 +89,23 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                 OnPropertyChanged("Groups");
             }
         }
-        
+
         #endregion
 
         #region Command Properties
         
+        public ICommand PrintProtocolCommand
+        {
+            get
+            {
+                if (_printProtocolCommand == null)
+                {
+                    _printProtocolCommand = new RelayCommand(param => PrintProtocol(param as AgeWeightGroup), param => param != null);
+                }
+                return _printProtocolCommand;
+            }
+        }
+
         public ICommand GenerateBracketCommand
         {
             get
@@ -118,6 +133,15 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         #endregion
 
         #region Private Methods
+
+        private void PrintProtocol(AgeWeightGroup group)
+        {
+            if (group?.Bracket == null) return;
+
+            DataContext.Group = group;
+
+            ShowPrintPreview(new PrintApplicationsViewModel(DiContainer));
+        }
 
         private void RemoveBracket(AgeWeightGroup group)
         {
