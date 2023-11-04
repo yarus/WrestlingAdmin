@@ -13,7 +13,7 @@ namespace Wrestling.Entities
 
             var teamNames = personalResults.Select(r => r.Wrestler.TeamName).Distinct().ToList();
 
-            var teamIds = personalResults.Select(r => r.Wrestler.TeamID).Distinct().ToList();
+            var teamIds = personalResults.Select(r => r.Wrestler.TeamID).Distinct().ToList();            
 
             if (teamNames.Count != teamIds.Count) throw new ApplicationException("Team Ids count not equal to Team names count in TeamResultsCalculator");
 

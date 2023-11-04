@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Media;
@@ -11,14 +10,11 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
-using Wrestling.Recorder;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.ReplayScreen;
 using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
-using Wrestling.UI.Material.Utils.Recording;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Match
@@ -26,8 +22,6 @@ namespace Wrestling.UI.Material.Match
     public class MatchControlViewModel : ViewModelBase
     {
         #region Fields
-
-        private IMatchRecorder _currentRecorder;
         
         private DateTime? _startDateTime;
         private List<MatchAction> _matchActions;
@@ -42,7 +36,6 @@ namespace Wrestling.UI.Material.Match
         private ScoreScreenViewModel _scoreScreen;
 
         private GlobalSettings _settings;
-        private RecorderConfiguration _recConfig;
 
         private BitmapImage _action1Image;
         private BitmapImage _action2Image;
@@ -79,7 +72,7 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        public bool IsVideoRecording => _currentRecorder?.IsRecording ?? false;
+        public bool IsVideoRecording => false;
 
         public override bool IsBackButtonAvailable => true;
         public bool IsStartButtonVisible => IsMatchNotCompleted && !IsRunning;// && (ScoreScreenVm != null && !ScoreScreenVm.IsTimeout);
@@ -123,8 +116,7 @@ namespace Wrestling.UI.Material.Match
 
             _scoreScreenView = Resolve<IPanelView>("ScoreScreen");
             _scoreScreen = Resolve<ScoreScreenViewModel>();
-            _recConfig = Resolve<RecorderConfiguration>();
-
+           
             _quickButtons = null;
 
             if (DataContext.WrestlingMatch == null)
@@ -153,9 +145,6 @@ namespace Wrestling.UI.Material.Match
             {
                 _settings = DataContext.Tournament.Settings;
             }
-
-            _currentRecorder = Resolve<IMatchRecorder>();
-            //_recorderGen = Resolve<App.IMatchRecorderGenerator>();
 
             _scoreScreen.InitData();
 
@@ -542,8 +531,6 @@ namespace Wrestling.UI.Material.Match
             AddAction("Таймер остановлен", 0, null);
 
             CopyDataFromViewToMatch();
-
-            NavigateToView<ReplayScreenViewModel>();
         }
 
         protected override void OnNavigatingOut()
@@ -587,50 +574,14 @@ namespace Wrestling.UI.Material.Match
 
         private void StartRecording()
         {
-            try
-            {
-                _currentRecorder?.StartRecording(
-                    _settings.VideoStoragePath,
-                    _recConfig,
-                    ScoreScreenVm,
-                    DataContext.Tournament?.ID,
-                    (sender, bs)=> 
-                    {
-                        CurrentFrame = bs;
-                    });
-
-                _currentRecorder?.SetMaxSeconds(ScoreScreenVm.MaxRoundSecond);
-                _currentRecorder?.SetMainSecond(ScoreScreenVm.MainSeconds);
-                _currentRecorder?.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
-                _currentRecorder?.CreateOverlay(true);
-            }
-            catch(Exception ex)
-            {
-                ShowSnackMessage($"При попытке начать видеозапись произошла ошибка: {ex.Message}");
-
-                try
-                {
-                    StopRecording();
-                }
-                catch
-                {
-                }
-            }
-
-
-            OnPropertyChanged("IsVideoRecording");
         }
 
         private void StopRecording()
         {
-            _currentRecorder?.StopRecording();
-
-            OnPropertyChanged("IsVideoRecording");
         }
 
         private void DeleteRecording()
         {
-            _currentRecorder?.DeleteRecording(_settings.VideoStoragePath, DataContext.WrestlingMatch.MatchNumber, DataContext.Tournament?.ID);
         }
 
         private void Stop()
@@ -660,9 +611,6 @@ namespace Wrestling.UI.Material.Match
             _timer.Start();            
 
             AddAction("Таймер запущен", 0, null);
-
-            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
-            _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
 
             if (ScoreScreenVm.MainSeconds == 0 && ScoreScreenVm.IsSoundEnabled)
             {
@@ -849,8 +797,6 @@ namespace Wrestling.UI.Material.Match
         {
             //ScoreScreenVm.MainSeconds = Convert.ToInt32(_timerSw.ElapsedMilliseconds / 1000L);
             ScoreScreenVm.MainSeconds++;
-
-            _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
 
             if (ScoreScreenVm.IsAction1TimerEnabled || ScoreScreenVm.IsAction2TimerEnabled)
             {
@@ -1131,10 +1077,6 @@ namespace Wrestling.UI.Material.Match
                 ScoreScreenVm.MainSeconds = 0;
                 ScoreScreenVm.Round = 2;
 
-                _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxRoundSecond);
-                _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
-                _currentRecorder.SetTimerOffset(ScoreScreenVm.MainSeconds * 1000);
-
                 OnPropertyChanged("IsStartButtonVisible");
                 OnPropertyChanged("IsStopButtonVisible");
             }
@@ -1159,9 +1101,6 @@ namespace Wrestling.UI.Material.Match
                 {
                     ScoreScreenVm.IsTimeout = true;
                     ScoreScreenVm.MainSeconds = 0;                    
-
-                    _currentRecorder.SetMaxSeconds(ScoreScreenVm.MaxTimeoutSecond);
-                    _currentRecorder.SetMainSecond(ScoreScreenVm.MainSeconds);
 
                     ScoreScreenVm.Round = 2;
 

@@ -3,7 +3,6 @@ using System.Globalization;
 using System.Threading;
 using System.Windows;
 using System.Windows.Markup;
-using EmguFFmpeg;
 using MvvmDialogs;
 using Wrestling.DataAccess;
 using Wrestling.Entities;
@@ -12,8 +11,6 @@ using Wrestling.Entities.Results;
 using Wrestling.Entities.Results.Achievements;
 using Wrestling.Integration;
 using Wrestling.Providers;
-using Wrestling.Recorder;
-using Wrestling.Recorder.DataAccess;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
@@ -25,8 +22,6 @@ using Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide;
 using Wrestling.UI.Material.Slider.Slides.VideoSlide;
 using Wrestling.UI.Material.Tournament.Print;
 using Wrestling.UI.Material.Utils;
-using Wrestling.UI.Material.Utils.Recording;
-using Wrestling.UI.Material.Utils.Recording.OverlayDrawer;
 using Wrestling.UI.Utils;
 
 using SlideHostView = Wrestling.UI.Material.Slider.SlideHostView;
@@ -39,11 +34,6 @@ namespace Wrestling.UI.Material
         {
             base.OnStartup(e);
 
-            FFmpegHelper.RegisterBinaries("x64");
-
-            // register all device
-            MediaDevice.InitializeDevice();
-
             //using (var reader0 = new MediaReader(deviceVInput, formatInput)) { }
 
             Thread.CurrentThread.CurrentCulture = new CultureInfo("ru-RU");
@@ -52,14 +42,6 @@ namespace Wrestling.UI.Material
                 XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)));
 
             var di = GetContainer();
-            
-            var recConfigDataAccess = di.Resolve<IRecorderConfigurationDataAccess>();
-            var recConfig = recConfigDataAccess?.LoadFromFile("CamConfig.json");
-
-            if (recConfig != null)
-            {
-                di.Add<RecorderConfiguration>(recConfig);
-            }
 
             var navService = LoadNavigation(di);
 
@@ -98,15 +80,11 @@ namespace Wrestling.UI.Material
 
             //di.Add<Utils.Recording.App.ICamRecorderGenerator>(new Utils.Recording.App.FfmpegCamRecorderGenerator());
             //di.Add<IRecorder>(new FfmpegCamRecorder());
-            di.Add<IOverlayDrawer>(new OlympicOverlayDrawer());
-            di.Add<IMatchRecorder>(new MatchRecorder(di.Resolve<IOverlayDrawer>()));
             //di.Add<IMatchRecorderGenerator>(new MatchRecorderGenerator(di.Resolve<Utils.Recording.App.ICamRecorderGenerator>(), di.Resolve<IOverlayDrawer>()));
 
             di.Add<IDialogService>(new DialogService());
 
             di.Add<IStorageDataAccess>(new JsonStorageDataAccess());
-
-            di.Add<IRecorderConfigurationDataAccess>(new RecorderConfigurationDataAccess(new JsonStorageDataAccess()));
 
             di.Add<IWrestlersDataAccess>(new WrestlersDataAccess(di.Resolve<IStorageDataAccess>()));
             di.Add<ITeamsDataAccess>(new TeamsDataAccess(di.Resolve<IStorageDataAccess>()));

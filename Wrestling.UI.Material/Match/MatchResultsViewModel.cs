@@ -8,13 +8,11 @@ using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.ReplayScreen;
 using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Tournament;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
 using Wrestling.UI.Material.Tournament.Results;
-using Wrestling.UI.Material.Utils.Recording;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Match
@@ -26,7 +24,6 @@ namespace Wrestling.UI.Material.Match
         private IList<CommandButtonItem> _quickButtons;
         private ScoreScreenViewModel _scoreScreenVm;
         private GlobalSettings _settings;
-        private readonly IMatchRecorder _recorder;
         private readonly List<IGroupBracketProcessor> _drawTypes;
         private IGroupBracketProcessor _processor;
 
@@ -35,7 +32,6 @@ namespace Wrestling.UI.Material.Match
         public MatchResultsViewModel(IDiContainer container) : base(container)
         {
             _drawTypes = Resolve<List<IGroupBracketProcessor>>();
-            _recorder = Resolve<IMatchRecorder>();
         }
 
         public override string PageTitle => "Результаты поединка";
@@ -420,7 +416,6 @@ namespace Wrestling.UI.Material.Match
 
         private void ShowReplayScreen()
         {
-            NavigateToView<ReplayScreenViewModel>();
         }
 
         private async void SetWinType()
@@ -550,13 +545,7 @@ namespace Wrestling.UI.Material.Match
 
             if (_settings.IsVideoRecordingEnabled)
             {
-                _recorder.RecordingCompleted += OnRecordingCompleted;
-
                 IsFormEnabled = false;
-
-                ShowSnackMessage("Подождите, идет запись видео-файла...");
-
-                _recorder.StopRecording();
             } 
             else
             {
@@ -576,8 +565,6 @@ namespace Wrestling.UI.Material.Match
             IsFormEnabled = true;
 
             ShowSnackMessage(e);
-
-            _recorder.RecordingCompleted -= OnRecordingCompleted;
 
             if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
             {

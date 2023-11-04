@@ -18,7 +18,7 @@
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <PublishUrl>C:\Users\akardash.ONTARGET\Desktop\WrestlingAdmin\</PublishUrl>
+    <PublishUrl>C:\Users\a.kardash\Desktop\WrestlingAdminFinal\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>false</UpdateEnabled>
@@ -30,7 +30,7 @@
     <MapFileExtensions>false</MapFileExtensions>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
     <DisallowUrlActivation>true</DisallowUrlActivation>
-    <ApplicationRevision>39</ApplicationRevision>
+    <ApplicationRevision>40</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -103,8 +103,8 @@
     <Reference Include="MvvmDialogs, Version=5.2.1.0, Culture=neutral, PublicKeyToken=3d3b9708589bc73e, processorArchitecture=MSIL">
       <HintPath>..\packages\MvvmDialogs.5.2.1\lib\net45\MvvmDialogs.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
@@ -185,14 +185,6 @@
     </Compile>
     <Compile Include="Tournament\Print\PrintResults\PrintAchievementNominantsViewModel.cs" />
     <Compile Include="Utils\Converters\FullNameToLastNameConverter.cs" />
-    <Compile Include="Utils\Recording\IMatchRecorder.cs" />
-    <Compile Include="Utils\Recording\OverlayDrawer\BaseOverlayDrawer.cs" />
-    <Compile Include="Utils\Recording\OverlayDrawer\IOverlayDrawer.cs" />
-    <Compile Include="Utils\Recording\MatchRecorder.cs" />
-    <Compile Include="ReplayScreen\ReplayScreenView.xaml.cs">
-      <DependentUpon>ReplayScreenView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="ReplayScreen\ReplayScreenViewModel.cs" />
     <Compile Include="Slider\Slides\GroupBracketSlide\GroupBracketSlide.cs" />
     <Compile Include="Slider\Slides\GroupBracketSlide\GroupBracketSlideSettings.xaml.cs">
       <DependentUpon>GroupBracketSlideSettings.xaml</DependentUpon>
@@ -370,8 +362,6 @@
     <Compile Include="Utils\Converters\WinTypeRadioButtonConverter.cs" />
     <Compile Include="Utils\Converters\WinTypeToStringConverter.cs" />
     <Compile Include="Utils\PrintRequestedEventArgs.cs" />
-    <Compile Include="Utils\Recording\OverlayDrawer\OlympicOverlayDrawer.cs" />
-    <Compile Include="Utils\Recording\OverlayDrawer\SimpleOverlayDrawer.cs" />
     <Page Include="Home\HomeView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -417,10 +407,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ScoreScreen\WwfScoreScreenView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="ReplayScreen\ReplayScreenView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -608,10 +594,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <Content Include="..\Wrestling.Recorder.Configurator\bin\Release\Wrestling.Recorder.Configurator.exe.config">
-      <Link>Wrestling.Recorder.Configurator.exe.config</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -623,10 +605,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\EmguFFmpeg\EmguFFmpeg.csproj">
-      <Project>{31BBAEE7-11BB-43A1-BDE6-FFA482D48DF1}</Project>
-      <Name>EmguFFmpeg</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Wrestling.DataAccess\Wrestling.DataAccess.csproj">
       <Project>{298FEBD9-84AF-4F1D-AC40-1870C40E5E00}</Project>
       <Name>Wrestling.DataAccess</Name>
@@ -642,18 +620,6 @@
     <ProjectReference Include="..\Wrestling.Providers\Wrestling.Providers.csproj">
       <Project>{44BAA51A-7712-46CA-8E4A-502E7167460B}</Project>
       <Name>Wrestling.Providers</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Wrestling.Recorder.Configurator\Wrestling.Recorder.Configurator.csproj">
-      <Project>{fb3ed9dd-a7e4-4e86-b352-95a6b42de772}</Project>
-      <Name>Wrestling.Recorder.Configurator</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Wrestling.Recorder.DataAccess\Wrestling.Recorder.DataAccess.csproj">
-      <Project>{040ea18d-09d8-4cde-bc5d-db4d41ecee14}</Project>
-      <Name>Wrestling.Recorder.DataAccess</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Wrestling.Recorder\Wrestling.Recorder.csproj">
-      <Project>{13f5b335-2cb6-4c38-8e50-5afd33524e65}</Project>
-      <Name>Wrestling.Recorder</Name>
     </ProjectReference>
     <ProjectReference Include="..\Wrestling.UI.Utils\Wrestling.UI.Utils.csproj">
       <Project>{0167d0ac-f1aa-4cdf-bfd3-0f834906b1e4}</Project>

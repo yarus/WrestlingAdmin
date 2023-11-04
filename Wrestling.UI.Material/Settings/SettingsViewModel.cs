@@ -5,7 +5,6 @@ using System.Media;
 using System.Net;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using MvvmDialogs.FrameworkDialogs.FolderBrowser;
@@ -14,13 +13,10 @@ using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
 using Wrestling.Integration;
 using Wrestling.Providers;
-using Wrestling.Recorder;
-using Wrestling.Recorder.DataAccess;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Tournament.Dashboard;
-using Wrestling.UI.Material.Utils.Recording.OverlayDrawer;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Settings
@@ -235,14 +231,6 @@ namespace Wrestling.UI.Material.Settings
 
         public bool IsConfigValid()
         {
-            if (string.IsNullOrEmpty(Item.VideoStoragePath)) return false;
-
-            var config = Resolve<RecorderConfiguration>();
-            if (config != null)
-            {
-                return !string.IsNullOrEmpty(config.VideoDeviceID);
-            }
-
             return false;
         }
         
@@ -370,23 +358,6 @@ namespace Wrestling.UI.Material.Settings
 
         public void ReloadConfig()
         {
-            var data = GetConfig();
-            if (data != null)
-            {
-                DiContainer.Remove<RecorderConfiguration>();
-                DiContainer.Add<RecorderConfiguration>(data);
-                Dialog.ShowMessageBox(this, "Конфигурация видеорегистратора успешно обновлена!", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            else
-            {
-                Dialog.ShowMessageBox(this, "Файл конфигурации видеорегистратора не может быть прочитан!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private RecorderConfiguration GetConfig()
-        {
-            var da = Resolve<IRecorderConfigurationDataAccess>();
-            return da?.LoadFromFile("CamConfig.json");
         }
 
         public ICommand PlayStartGongCommand
@@ -495,16 +466,6 @@ namespace Wrestling.UI.Material.Settings
 
         private void SetupOverlay(bool isOlympic)
         {
-            DiContainer.Remove<IOverlayDrawer>();
-
-            if (isOlympic)
-            {
-                DiContainer.Add<IOverlayDrawer>(new OlympicOverlayDrawer());
-            }
-            else
-            {
-                DiContainer.Add<IOverlayDrawer>(new SimpleOverlayDrawer());
-            }
         }
 
         private void SetSliderBackground()
