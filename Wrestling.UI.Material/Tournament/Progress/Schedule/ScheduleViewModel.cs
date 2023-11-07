@@ -55,6 +55,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
                 Stats = null;
             }
 
+            _filteredStats = GenerateStats();
             Filter(FilterString);
 
             DataContext.IsBracketView = false;

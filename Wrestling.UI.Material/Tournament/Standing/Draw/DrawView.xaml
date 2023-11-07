@@ -39,6 +39,13 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
+            <TextBlock Grid.Row="0" Grid.Column="0" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
+                <Button Content="Пересоздать Все Сетки"
+                        HorizontalAlignment="Left" Margin="5,0,5,0"
+                        Command="{Binding Path=DataContext.RegenerateAllBrackets, ElementName=RootControl}"
+                        CommandParameter="{Binding }" />
+            </TextBlock>
+            
             <TextBlock Grid.Row="0" Grid.Column="1" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
                 <Run Text="Групп:" />
                 <Run Text="{Binding GroupsCount, Mode=OneWay}" />

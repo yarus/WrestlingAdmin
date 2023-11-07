@@ -42,7 +42,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
             base.InitData();
 
             // carpet groups
-            _groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups.Where(g => g.Bracket != null && g.CarpetLabel == _carpet.Name));
+            _groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups.Where(g => g.Bracket != null && g.CarpetID == _carpet.ID));
 
             if (_groups.Count == 0) return;
 

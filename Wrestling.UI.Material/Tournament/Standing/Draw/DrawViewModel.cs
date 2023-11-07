@@ -23,6 +23,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         private ICommand _generateBracketCommand;
         private ICommand _removeBracketCommand;
         private ICommand _printProtocolCommand;
+        private ICommand _regenerateAllBrackets;
 
         private List<IGroupBracketProcessor> _drawTypes;
         private ObservableCollection<AgeWeightGroup> _groups;
@@ -93,6 +94,18 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         #endregion
 
         #region Command Properties
+
+        public ICommand RegenerateAllBrackets
+        {
+            get
+            {
+                if (_regenerateAllBrackets == null)
+                {
+                    _regenerateAllBrackets = new RelayCommand(param => RegenerateBrackets(), param => param != null);
+                }
+                return _regenerateAllBrackets;
+            }
+        }
         
         public ICommand PrintProtocolCommand
         {
@@ -133,6 +146,64 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         #endregion
 
         #region Private Methods
+
+        private void RegenerateBrackets()
+        {
+            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите перегенерировать все сетки! Это приведет к потере текущих результатов турнира!", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+
+            foreach (var ageWeightGroup in Groups)
+            {
+                SeedWrestlers(ageWeightGroup);
+
+                var drawType = GetDrawTypeForGroup(ageWeightGroup);
+
+                if (drawType == null)
+                {
+                    continue;
+                }
+                
+                drawType.Generate(DataContext.Tournament, ageWeightGroup);
+                
+                foreach (var wr in ageWeightGroup.Wrestlers)
+                {
+                    wr.FinalPlace = null;
+                    wr.IsSeedFixed = true;
+                }
+                
+                if (ageWeightGroup.Bracket != null)
+                {
+                    if (DataContext.Tournament.Carpets.FirstOrDefault(c => c.Groups.Contains(ageWeightGroup)) != null)
+                    {
+                        _matchNumbersGenerator.Generate(DataContext.Tournament, _drawTypes);
+                    }
+
+                    // We need to refresh Rounds collection to redraw it on UI
+                    ageWeightGroup.Bracket.Rounds = new List<GroupRound>(ageWeightGroup.Bracket.Rounds);
+
+                    OnPropertyChanged("MatchesCount");
+                }
+            }
+        }
+
+        private IGroupBracketProcessor GetDrawTypeForGroup(AgeWeightGroup group)
+        {
+            IGroupBracketProcessor drawType;
+                
+            if (group.Wrestlers.Count <= 5)
+            {
+                drawType = _drawTypes.First(x => x.Code == BracketTypeEnum.RoundRobin.ToString());
+            } 
+            else if (group.Wrestlers.Count > 5 && group.Wrestlers.Count < 8)
+            {
+                drawType = _drawTypes.First(x => x.Code == BracketTypeEnum.SubGroupsIntoOlympic.ToString());
+            }
+            else
+            {
+                drawType = _drawTypes.First(x => x.Code == BracketTypeEnum.OlympicConsilationFinalists.ToString());
+            }
+
+            return drawType;
+        }
 
         private void PrintProtocol(AgeWeightGroup group)
         {
