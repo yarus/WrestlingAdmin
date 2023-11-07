@@ -11,14 +11,17 @@ namespace Wrestling.Entities
         {
             var teamDict = new Dictionary<Guid, TeamDto>();
 
-            foreach (var result in personalResults.Where(result => result.Wrestler.TeamID.HasValue && teamDict.ContainsKey(result.Wrestler.TeamID.Value)))
+            foreach (var result in personalResults.Where(result => result.Wrestler.TeamID.HasValue))
             {
-                teamDict.Add(result.Wrestler.TeamID.Value, new TeamDto
+                if (!teamDict.ContainsKey(result.Wrestler.TeamID.Value))
                 {
-                    City = result.Wrestler.TeamCity,
-                    Name = result.Wrestler.TeamName,
-                    TeamId = result.Wrestler.TeamID.Value
-                });
+                    teamDict.Add(result.Wrestler.TeamID.Value, new TeamDto
+                    {
+                        City = result.Wrestler.TeamCity,
+                        Name = result.Wrestler.TeamName,
+                        TeamId = result.Wrestler.TeamID.Value
+                    });
+                }
             }
 
             var teamResults = teamDict.Select(teamDto => new TournamentTeamResult(teamDto.Key, teamDto.Value.Name, teamDto.Value.City, personalResults)).ToList();
