@@ -138,19 +138,6 @@
             </Viewbox>
         </Grid>
 
-        <!-- Preview of recorder video -->
-        <!--Grid 
-            Grid.Row="2" 
-            Grid.Column="0" >
-            <Rectangle
-                Fill="Black" />
-            <Image
-                x:Name="image1"
-                Source="{Binding CurrentFrame}"
-                Stretch="UniformToFill">
-            </Image>
-        </-->
-
         <Border Grid.Row="2" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="White"></Border>
 
         <Grid Grid.Row="3" Grid.Column="0">
@@ -237,8 +224,8 @@
             <Border Grid.Row="0" Grid.Column="2" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
 
             <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Button Content="ИТОГИ" Background="LightGray" TabIndex="3" Foreground="Black" FontStretch="Medium"
-                            Command="{Binding CompleteMatchCommand}" ToolTip="Завершить схватку" />
+                <Button Content="ИТОГИ" TabIndex="3" FontStretch="Medium" Margin="2"
+                            Command="{Binding CompleteMatchCommand}" ToolTip="Завершить схватку" Style="{StaticResource MaterialDesignRaisedAccentButton}" />
             </Viewbox>
 
             <Border Grid.Row="0" Grid.Column="3" BorderThickness="0,0,1,0" BorderBrush="White"></Border>

@@ -26,6 +26,7 @@ namespace Wrestling.UI.Material.Match
         private GlobalSettings _settings;
         private readonly List<IGroupBracketProcessor> _drawTypes;
         private IGroupBracketProcessor _processor;
+        private ICommand _completeMatch;
 
         #endregion
 
@@ -44,37 +45,33 @@ namespace Wrestling.UI.Material.Match
                 {
                     _quickButtons = new List<CommandButtonItem>();
 
-                    var settings = DataContext.Tournament != null ? DataContext.Tournament.Settings : GlobalSettings;
-
                     if (WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Completed && CanRejectResult)
                     {
                         _quickButtons.Add(new CommandButtonItem("Анулировать", PackIconKind.BlockHelper,
                             new RelayCommand(param => Reject(),
                                 param => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Completed &&
                                          CanRejectResult)));
-
-                        if (settings.IsVideoRecordingEnabled)
-                        {
-                            _quickButtons.Add(
-                                new CommandButtonItem("Открыть запись", PackIconKind.Camcorder,
-                                    new RelayCommand(param => ShowReplayScreen(),
-                                        param => WrestlingMatch != null &&
-                                                 WrestlingMatch.Status == MatchStatusEnum.Completed)));
-                        }
-                    }
-
-                    if (WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Pending)
-                    {
-                        _quickButtons.Add(new CommandButtonItem("Подтвердить", PackIconKind.CheckAll,
-                            new RelayCommand(param => Approve(),
-                                param => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Pending &&
-                                         Winner.HasValue && WinType.HasValue)));
                     }
                 }
 
                 return _quickButtons;
             }
-        }        
+        }
+        
+        public ICommand CompleteMatchCommand
+        {
+            get
+            {
+                if (_completeMatch == null)
+                {
+                    _completeMatch = new RelayCommand(
+                        param => Approve(),
+                        param => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Pending &&
+                                 Winner.HasValue && WinType.HasValue);
+                }
+                return _completeMatch;
+            }
+        }
 
         public override void InitData()
         {
@@ -414,10 +411,6 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        private void ShowReplayScreen()
-        {
-        }
-
         private async void SetWinType()
         {
             var availableWinTypes = new List<MatchWinTypeEnum>();
@@ -525,6 +518,14 @@ namespace Wrestling.UI.Material.Match
 
         private void Approve()
         {
+            if (WrestlingMatch == null || WrestlingMatch.Status != MatchStatusEnum.Pending || !Winner.HasValue || !WinType.HasValue)
+            {
+                Dialog.ShowMessageBox(this,
+                        "Ошибка завершения мачта! Возможно матч уже завершен.",
+                        "Ошибка", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
             if (WrestlingMatch.StartDateTime == null)
             {
                 WrestlingMatch.StartDateTime = Tournament?.StartDate ?? DateTime.Now;

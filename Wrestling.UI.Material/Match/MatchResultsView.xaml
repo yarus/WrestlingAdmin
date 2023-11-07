@@ -42,6 +42,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="60" />
             <RowDefinition Height="1*" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="1*" />
         </Grid.RowDefinitions>
 
@@ -243,8 +244,14 @@
                 </Viewbox>
             </Grid>
         </Grid>
+        
+        <StackPanel Grid.Row="2" Grid.Column="1">
+            <Button Content="ЗАВЕРШИТЬ" Style="{StaticResource MaterialDesignRaisedAccentButton}" TabIndex="1"  
+                    FontStretch="Medium" Width="200" Height="60" Margin="10" FontSize="20"
+                    Command="{Binding CompleteMatchCommand}" ToolTip="Завершить схватку" />
+        </StackPanel>
 
-        <ScrollViewer Grid.Row="2" Grid.Column="1" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="0,20,0,0">
+        <ScrollViewer Grid.Row="3" Grid.Column="1" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
             <StackPanel>
                 <Expander Padding="0" IsExpanded="{Binding IsNoteExpanded}" Background="LightGray">
                     <Expander.Header>
