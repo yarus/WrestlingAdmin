@@ -9,56 +9,28 @@ namespace Wrestling.Entities
     {
         public List<TournamentTeamResult> GetTeamResults(List<TournamentResult> personalResults, ITeamResultsOrderer orderer)
         {
-            var teamResults = new List<TournamentTeamResult>();
+            var teamDict = new Dictionary<Guid, TeamDto>();
 
-            var teamNames = personalResults.Select(r => r.Wrestler.TeamName).Distinct().ToList();
-
-            var teamIds = personalResults.Select(r => r.Wrestler.TeamID).Distinct().ToList();            
-
-            if (teamNames.Count != teamIds.Count) throw new ApplicationException("Team Ids count not equal to Team names count in TeamResultsCalculator");
-
-            for (int i = 0; i < teamIds.Count; i++)
+            foreach (var result in personalResults.Where(result => result.Wrestler.TeamID.HasValue && teamDict.ContainsKey(result.Wrestler.TeamID.Value)))
             {
-                if (!teamIds[i].HasValue) continue;
-
-                var result = new TournamentTeamResult(teamIds[i].Value, teamNames[i], personalResults);
-
-                teamResults.Add(result);
-            }
-            /*
-            foreach (var result in personalResults)
-            {
-                var team = teamResults.FirstOrDefault(r => r.TeamID == result.Wrestler.TeamID);
-
-                if (team == null)
+                teamDict.Add(result.Wrestler.TeamID.Value, new TeamDto
                 {
-                    team = new TournamentTeamResult { TeamID = result.Wrestler.TeamID, TeamName = result.Wrestler.TeamName };
-                    teamResults.Add(team);
-                }
-
-                if (result.Wrestler.FinalPlace == 1)
-                {
-                    team.GoldMedals++;
-                }
-                else if (result.Wrestler.FinalPlace == 2)
-                {
-                    team.SilverMedals++;
-                }
-                else if (result.Wrestler.FinalPlace == 3)
-                {
-                    team.BronzeMedals++;
-                }
-
-                team.Wrestlers++;
+                    City = result.Wrestler.TeamCity,
+                    Name = result.Wrestler.TeamName,
+                    TeamId = result.Wrestler.TeamID.Value
+                });
             }
 
-            foreach (var result in teamResults)
-            {
-                result.GroupCount = personalResults.Where(r => r.Wrestler.TeamID == result.TeamID).Select(g => g.GroupName).ToList().Distinct().Count();
-            }
-            */
+            var teamResults = teamDict.Select(teamDto => new TournamentTeamResult(teamDto.Key, teamDto.Value.Name, teamDto.Value.City, personalResults)).ToList();
 
             return orderer != null ? orderer.GetOrderedResults(teamResults) : teamResults;
+        }
+
+        private class TeamDto
+        {
+            public Guid TeamId { get; set; }
+            public string Name { get; set; }
+            public string City { get; set; }
         }
     }
 }

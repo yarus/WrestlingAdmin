@@ -49,7 +49,13 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
             _drawTypes = Resolve<List<IGroupBracketProcessor>>();
 
-            Groups = new ObservableCollection<AgeWeightGroup>(DataContext.Tournament.Groups.OrderBy(g => g.IsFemale).ThenByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax));
+            var groups = DataContext.Tournament.Groups.OrderBy(g => g.IsFemale).ThenByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax).ToList();
+            foreach (var group in groups)
+            {
+                SeedWrestlers(group);
+            }
+
+            Groups = new ObservableCollection<AgeWeightGroup>(groups);
 
             // Check groups
             foreach (var wrestler in DataContext.Tournament.Wrestlers)

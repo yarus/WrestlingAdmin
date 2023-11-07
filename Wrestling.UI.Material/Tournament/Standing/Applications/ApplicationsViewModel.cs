@@ -274,6 +274,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                     foreach (var itemWrestler in item.Wrestlers)
                     {
                         itemWrestler.TeamName = item.ShortName;
+                        itemWrestler.TeamCity = item.City;
                     }
                 }
 
@@ -315,7 +316,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 ID = Guid.NewGuid(),
                 TeamID = app.ID,
-                TeamName = app.ShortName
+                TeamName = app.ShortName,
+                TeamCity = app.City
             };
 
             if (!DataContext.Tournament.EntryFee.HasValue || DataContext.Tournament.EntryFee.Value == 0)
@@ -342,6 +344,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 tmpWresler.TeamID = app.ID;
                 tmpWresler.TeamName = app.ShortName;
+                tmpWresler.TeamCity = app.City;
 
                 DataContext.Tournament.Wrestlers.Add(tmpWresler);
 
@@ -394,14 +397,15 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 if (group != null)
                 {
                     var groupWrestler = group.Wrestlers.FirstOrDefault(wr => wr.ID == wrestler.ID);
-                    if (groupWrestler != null)
+                    if (groupWrestler == null)
                     {
                         group.Wrestlers.Add(wrestler);
-                        group.Bracket = null;
-                        group.RefreshState();
-                        
-                        wrestler.GroupName = group.Name;
                     }
+                    
+                    group.Bracket = null;
+                    group.RefreshState();
+                        
+                    wrestler.GroupName = group.Name;
                 }
             }
         }
@@ -428,16 +432,24 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 var teamApp = Items.FirstOrDefault(a => a.ID == wrestler.TeamID);
                 if (teamApp != null && tmpWrestler != null)
                 {
-                    // Remove wrestler from old group
-                    RemoveWrestlerFromGroup(wrestler);
+                    var isGroupChanged = tmpWrestler.GroupID != wrestler.GroupID || (!tmpWrestler.GroupID.HasValue && wrestler.GroupID.HasValue);
+                    
+                    if (isGroupChanged)
+                    {
+                        // Remove wrestler from old group
+                        RemoveWrestlerFromGroup(wrestler);
 
-                    // Remove wrestler from new group if it was already added
-                    RemoveWrestlerFromGroup(tmpWrestler);
+                        // Remove wrestler from new group if it was already added
+                        RemoveWrestlerFromGroup(tmpWrestler);
+                    }
                     
                     wrestler.Sync(tmpWrestler);
 
-                    // Add wrestler to Group if all data is valid
-                    AddWrestlerToHisGroup(tmpWrestler);
+                    if (isGroupChanged)
+                    {
+                        // Add wrestler to Group if all data is valid
+                        AddWrestlerToHisGroup(tmpWrestler);
+                    }
 
                     teamApp.RefreshStats();
                 }

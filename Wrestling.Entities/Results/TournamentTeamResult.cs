@@ -6,10 +6,11 @@ namespace Wrestling.Entities.Results
 {
     public class TournamentTeamResult
     {
-        public TournamentTeamResult(Guid teamID, string teamName, List<TournamentResult> wrestlers)
+        public TournamentTeamResult(Guid teamID, string teamName, string teamCity, List<TournamentResult> wrestlers)
         {
             TeamID = teamID;
             TeamName = teamName;
+            TeamCity = teamCity;
 
             Wrestlers = wrestlers.Where(w => w.Wrestler != null && w.Wrestler.TeamID.HasValue && w.Wrestler.TeamID == teamID).ToList();
         }
@@ -17,6 +18,7 @@ namespace Wrestling.Entities.Results
         public Guid TeamID { get; }
 
         public string TeamName { get; }
+        public string TeamCity { get; }
 
         public List<TournamentResult> Wrestlers { get; }
 

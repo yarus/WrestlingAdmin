@@ -102,6 +102,7 @@ namespace Wrestling.Providers
                     if (teamApp != null)
                     {
                         wrestler.TeamName = teamApp.ShortName;
+                        wrestler.TeamCity = teamApp.City;
                     }
                     else
                     {

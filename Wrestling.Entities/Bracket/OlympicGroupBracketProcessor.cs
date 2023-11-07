@@ -130,43 +130,51 @@ namespace Wrestling.Entities.Bracket
             var mainRounds = Group.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Main).ToList();
             var final = mainRounds[mainRounds.Count - 1].RoundMatches[0];
 
-            int currentPlace = 1;
-
-            var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
-            if (winner != null)
+            if (final.Status == MatchStatusEnum.Completed)
             {
-                winner.FinalPlace = currentPlace;
-                currentPlace++;
-            }
+                var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
+                if (winner != null)
+                {
+                    winner.FinalPlace = 1;
+                }
 
-            var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
-            if (looser != null)
-            {
-                looser.FinalPlace = currentPlace;
-                currentPlace++;
+                var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
+                if (looser != null)
+                {
+                    looser.FinalPlace = 2;
+                }
             }
 
             var addRounds = Group.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Additional).ToList();
             if (addRounds.Count > 0)
             {
                 var addFinal = addRounds[0].RoundMatches[0];
-                var addWinner = addFinal.IsRedWon.Value ? addFinal.WrestlerInRed : addFinal.WrestlerInBlue;
-                if (addWinner != null)
-                {
-                    addWinner.FinalPlace = currentPlace;
-                    currentPlace++;
-                }
 
-                var addLooser = addFinal.IsRedWon.Value ? addFinal.WrestlerInBlue : addFinal.WrestlerInRed;
-                if (addLooser != null)
+                if (addFinal.Status == MatchStatusEnum.Completed)
                 {
-                    addLooser.FinalPlace = currentPlace;
-                    currentPlace++;
+                    var addWinner = addFinal.IsRedWon.Value ? addFinal.WrestlerInRed : addFinal.WrestlerInBlue;
+                    if (addWinner != null)
+                    {
+                        addWinner.FinalPlace = 3;
+                    }
+
+                    var addLooser = addFinal.IsRedWon.Value ? addFinal.WrestlerInBlue : addFinal.WrestlerInRed;
+                    if (addLooser != null)
+                    {
+                        addLooser.FinalPlace = 4;
+                    }                    
                 }
             }
 
+            int currentPlace = 5;
+
             foreach (var match in mainRounds.OrderByDescending(p => p.RoundNumber).SelectMany(x => x.RoundMatches))
             {
+                if (match.Status != MatchStatusEnum.Completed)
+                {
+                    continue;
+                }
+            
                 var matchWinner = match.IsRedWon.Value ? match.WrestlerInRed : match.WrestlerInBlue;
                 if (matchWinner != null && !matchWinner.FinalPlace.HasValue)
                 {

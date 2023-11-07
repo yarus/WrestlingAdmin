@@ -10,6 +10,7 @@ namespace Wrestling.Entities
         private Guid? _teamId;
         private string _hashTag;
         private string _teamName;
+        private string _teamCity;
         private Guid? _groupId;
         private string _groupName;
         private string _firstName;
@@ -77,6 +78,16 @@ namespace Wrestling.Entities
             {
                 _teamName = value;
                 OnPropertyChanged("TeamName");
+            }
+        }
+        
+        public string TeamCity
+        {
+            get { return _teamCity; }
+            set
+            {
+                _teamCity = value;
+                OnPropertyChanged("TeamCity");
             }
         }
 
@@ -269,6 +280,7 @@ namespace Wrestling.Entities
             IsEntryFeePaid = wr.IsEntryFeePaid;
             TeamID = wr.TeamID;
             TeamName = wr.TeamName;
+            TeamCity = wr.TeamCity;
             HashTag = wr.HashTag;
             Level = wr.Level;
             IsWeightApproved = wr.IsWeightApproved;

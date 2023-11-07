@@ -84,6 +84,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
                     BirthYear = wrestler.BirthDate?.Year,
                     Level = wrestler.Level,
                     TeamName = wrestler.TeamName,
+                    TeamCity = wrestler.TeamCity,
                     Weight = wrestler.Weight
                 });
             }
@@ -99,6 +100,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
         public string AthleteName { get; set; }
         public int? BirthYear { get; set; }
         public string TeamName { get; set; }
+        public string TeamCity { get; set; }
         public string Level { get; set; }
         public double? Weight { get; set; }
     }
