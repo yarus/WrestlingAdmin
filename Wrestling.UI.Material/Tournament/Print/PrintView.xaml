@@ -10,6 +10,7 @@
              xmlns:printBracket="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintBracket"
              xmlns:printResults="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintResults"
              xmlns:printApplications="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintApplications"
+             xmlns:printTeamApplication="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintTeamApplication"
              mc:Ignorable="d" Foreground="Black" Background="LightGray"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
              TextElement.FontWeight="Regular"
@@ -53,6 +54,10 @@
 
             <DataTemplate DataType="{x:Type printApplications:PrintApplicationsViewModel}">
                 <printApplications:PrintApplicationsView />
+            </DataTemplate>
+            
+            <DataTemplate DataType="{x:Type printTeamApplication:PrintTeamApplicationViewModel}">
+                <printTeamApplication:PrintTeamApplicationView />
             </DataTemplate>
 
         </ResourceDictionary>

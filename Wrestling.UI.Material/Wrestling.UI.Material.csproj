@@ -184,6 +184,10 @@
       <DependentUpon>PrintAchievementNominantsView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Tournament\Print\PrintResults\PrintAchievementNominantsViewModel.cs" />
+    <Compile Include="Tournament\Print\PrintTeamApplication\PrintTeamApplicationView.xaml.cs">
+      <DependentUpon>PrintTeamApplicationView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Print\PrintTeamApplication\PrintTeamApplicationViewModel.cs" />
     <Compile Include="Utils\Converters\FullNameToLastNameConverter.cs" />
     <Compile Include="Slider\Slides\GroupBracketSlide\GroupBracketSlide.cs" />
     <Compile Include="Slider\Slides\GroupBracketSlide\GroupBracketSlideSettings.xaml.cs">
@@ -477,6 +481,10 @@
     <Page Include="Tournament\Print\PrintResults\PrintAchievementNominantsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Tournament\Print\PrintTeamApplication\PrintTeamApplicationView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Tournament\Standing\Details\AddGroupDialog.xaml">
       <Generator>MSBuild:Compile</Generator>

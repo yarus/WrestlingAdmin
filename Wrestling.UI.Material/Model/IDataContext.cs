@@ -8,6 +8,7 @@ namespace Wrestling.UI.Material.Model
         AgeWeightGroup Group { get; set; }
         WrestlingMatch WrestlingMatch { get; set; }
         Entities.Tournament Tournament { get; set; }
+        TeamApplication Team { get; set; }
         bool IsAuthenticated { get; set; }
         bool IsBracketView { get; set; }
 

@@ -6,7 +6,7 @@ using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
-using Wrestling.UI.Material.Tournament.Print.PrintApplications;
+using Wrestling.UI.Material.Tournament.Print.PrintTeamApplication;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Standing.Applications
@@ -23,6 +23,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         private ICommand _addWrestlerCommand;
         private ICommand _editWrestlerCommand;
         private ICommand _deleteWrestlerCommand;
+        private ICommand _printTeamApplicationCommand;
 
         private string _filterString;
         private bool _isOnlyUnapprovedVisible;
@@ -104,6 +105,18 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         #region Command Properties
 
+        public ICommand PrintTeamApplicationCommand
+        {
+            get
+            {
+                if (_printTeamApplicationCommand == null)
+                {
+                    _printTeamApplicationCommand = new RelayCommand(param => PrintTeamApplication(param as TeamApplication), param => param != null);
+                }
+
+                return _printTeamApplicationCommand;
+            }
+        }
 
         public ICommand AddAppCommand
         {
@@ -229,6 +242,15 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
         }
 
+        private void PrintTeamApplication(TeamApplication teamApplication)
+        {
+            if (teamApplication == null) return;
+
+            DataContext.Team = teamApplication;
+
+            ShowPrintPreview(new PrintTeamApplicationViewModel(DiContainer));            
+        }
+        
         private async void EditApplication(TeamApplication app)
         {
             var tmpApp = app.Clone() as TeamApplication;
