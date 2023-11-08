@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Input;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
@@ -16,6 +18,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         private TeamApplication _selectedItem;
 
         private ObservableCollection<TeamApplication> _cachedTeams;
+        private Dictionary<string, string> _registeredTeams;
 
         private ICommand _setEmblemCommand;
 
@@ -29,6 +32,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             base.InitData();
 
             CachedTeams = new ObservableCollection<TeamApplication>(DataContext.TeamsCache);
+
+            _registeredTeams = DataContext.Tournament.TeamApplications.Where(x => !string.IsNullOrEmpty(x.HashTag)).ToDictionary(x => x.HashTag, y => y.ShortName);
         }
 
         public TeamApplication Item
@@ -86,12 +91,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
                     if (item == null || string.IsNullOrEmpty(searchText) || searchText.Length < 3) return false;
 
+                    if (!string.IsNullOrEmpty(item.HashTag) && _registeredTeams.ContainsKey(item.HashTag)) return false;
+                    
                     return (!string.IsNullOrEmpty(item.HashTag) && item.HashTag.ToLower().Contains(searchText.ToLower()))
-                        || (!string.IsNullOrEmpty(item.ShortName) && item.ShortName.ToLower().Contains(searchText.ToLower()))
-                        || (!string.IsNullOrEmpty(item.FullName) && item.FullName.ToLower().Contains(searchText.ToLower()))
-                        || (!string.IsNullOrEmpty(item.City) && item.City.ToLower().Contains(searchText.ToLower()))
-                        || (!string.IsNullOrEmpty(item.FullAddress) && item.FullAddress.ToLower().Contains(searchText.ToLower()))
-                        || (!string.IsNullOrEmpty(item.MainCoach) && item.MainCoach.ToLower().Contains(searchText.ToLower()));
+                            || (!string.IsNullOrEmpty(item.ShortName) && item.ShortName.ToLower().Contains(searchText.ToLower()))
+                            || (!string.IsNullOrEmpty(item.FullName) && item.FullName.ToLower().Contains(searchText.ToLower()))
+                            || (!string.IsNullOrEmpty(item.City) && item.City.ToLower().Contains(searchText.ToLower()))
+                            || (!string.IsNullOrEmpty(item.FullAddress) && item.FullAddress.ToLower().Contains(searchText.ToLower()))
+                            || (!string.IsNullOrEmpty(item.MainCoach) && item.MainCoach.ToLower().Contains(searchText.ToLower()));
                 };
             }
         }
