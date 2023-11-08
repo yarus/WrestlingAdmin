@@ -6,12 +6,10 @@ using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
 using Wrestling.Providers;
-using Wrestling.UI.Material.Login;
 using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Settings;
 using Wrestling.UI.Material.Tournament.Dashboard;
-using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Home
@@ -39,19 +37,14 @@ namespace Wrestling.UI.Material.Home
             base.InitData();
 
             _tournManager = Resolve<ITournamentsManager>();
-        }
-
-        /*
-        public override void OnNavigationCompleted()
-        {
-            base.OnNavigationCompleted();
-
-            if (!DataContext.IsAuthenticated)
+            
+            var cache = DiContainer.Resolve<ICacheManager>();
+            if (cache != null && (DataContext.WrestlersCache == null || DataContext.WrestlersCache.Count == 0 || DataContext.TeamsCache == null || DataContext.TeamsCache.Count == 0))
             {
-                NavigateToView<LoginViewModel>();
+                DataContext.WrestlersCache = cache.LoadWrestlers();
+                DataContext.TeamsCache = cache.LoadTeams();
             }
         }
-        */
 
         public override string PageTitle => "Вольная борьба - Администратор турниров";
 

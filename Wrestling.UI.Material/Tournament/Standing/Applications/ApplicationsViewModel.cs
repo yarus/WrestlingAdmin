@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
+using Wrestling.Providers;
 using Wrestling.UI.Material.Tournament.Print.PrintTeamApplication;
 using Wrestling.UI.Utils;
 
@@ -239,6 +240,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 }
 
                 OnPropertyChanged("AppsCount");
+
+                if (!DataContext.TeamsCache.Any(x => !string.IsNullOrEmpty(x.HashTag) && x.HashTag == addAppVm.Item.HashTag))
+                {
+                    DataContext.TeamsCache.Add(addAppVm.Item);
+                    
+                    var cache = DiContainer.Resolve<ICacheManager>();
+                    cache.SaveTeams(DataContext.TeamsCache);
+                }
             }
         }
 
@@ -279,6 +288,9 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 }
 
                 OnPropertyChanged("AppsCount");
+                
+                var cache = DiContainer.Resolve<ICacheManager>();
+                cache.SaveTeams(DataContext.TeamsCache);
             }
         }
 
@@ -356,6 +368,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
                 app.RefreshStats();
                 OnPropertyChanged("WrestlersCount");
+                
+                if (!DataContext.WrestlersCache.Any(x => !string.IsNullOrEmpty(x.HashTag) && x.HashTag == tmpWresler.HashTag))
+                {
+                    DataContext.WrestlersCache.Add(tmpWresler);
+                    
+                    var cache = DiContainer.Resolve<ICacheManager>();
+                    cache.SaveWrestlers(DataContext.WrestlersCache);
+                }
             }
         }
 
@@ -452,6 +472,9 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                     }
 
                     teamApp.RefreshStats();
+                    
+                    var cache = DiContainer.Resolve<ICacheManager>();
+                    cache.SaveWrestlers(DataContext.WrestlersCache);
                 }
             }
 

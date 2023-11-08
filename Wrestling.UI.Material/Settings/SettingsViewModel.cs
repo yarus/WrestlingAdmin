@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Media;
 using System.Net;
@@ -7,7 +6,6 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Windows.Controls;
 using System.Windows.Input;
-using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
@@ -23,14 +21,11 @@ namespace Wrestling.UI.Material.Settings
 {
     public class SettingsViewModel : ViewModelBase
     {
-        private ICommand _setVideoStoragePathCommand;
         private ICommand _setSliderBackgroundCommand;
         private ICommand _setStartGongCommand;
         private ICommand _setEndGongCommand;
         private ICommand _playEndGongCommand;
         private ICommand _playStartGongCommand;
-        private ICommand _reloadRecConfigCommand;
-        private ICommand _openConfiguratorCommand;
         private ICommand _loadIntegrationDataCommand;
 
         private string _validation;
@@ -130,43 +125,6 @@ namespace Wrestling.UI.Material.Settings
             }
         }
 
-        public bool IsOverlayOlympic
-        {
-            get { return Item.IsOverlayOlympic; }
-            set
-            {
-                Item.IsOverlayOlympic = value;
-                SetupOverlay(value);
-                OnPropertyChanged("IsOverlayOlympic");
-            }
-        }
-
-        public bool IsVideoRecordingEnabledF
-        {
-            get { return Item.IsVideoRecordingEnabled; }
-            set
-            {
-                if (value)
-                {
-                    if (IsConfigValid())
-                    {
-                        Item.IsVideoRecordingEnabled = true;
-                    }
-                    else
-                    {
-                        Dialog.ShowMessageBox(this, "Некорректно выполнена конфигурация видеорегистратора!");
-                        Item.IsVideoRecordingEnabled = false;
-                    }
-                }
-                else
-                {
-                    Item.IsVideoRecordingEnabled = false;
-                }
-
-                OnPropertyChanged("IsVideoRecordingEnabledF");
-            }
-        }
-
         protected override void OnBackCommand()
         {
             if (DataContext.Tournament == null)
@@ -192,46 +150,6 @@ namespace Wrestling.UI.Material.Settings
                 }
                 return _loadIntegrationDataCommand;
             }
-        }
-
-        public ICommand ReloadRecConfigCommand
-        {
-            get
-            {
-                if (_reloadRecConfigCommand == null)
-                {
-                    _reloadRecConfigCommand = new RelayCommand(
-                        param => ReloadConfig(),
-                        param => true
-                    );
-                }
-                return _reloadRecConfigCommand;
-            }
-        }
-
-        public ICommand OpenConfiguratorCommand
-        {
-            get
-            {
-                if (_openConfiguratorCommand == null)
-                {
-                    _openConfiguratorCommand = new RelayCommand(
-                        param => OpenConfigurator(),
-                        param => true
-                    );
-                }
-                return _openConfiguratorCommand;
-            }
-        }
-
-        private void OpenConfigurator()
-        {
-            Process.Start("Wrestling.Recorder.Configurator.exe");
-        }
-
-        public bool IsConfigValid()
-        {
-            return false;
         }
         
         public void LoadIntegrationData(string password)
@@ -375,21 +293,6 @@ namespace Wrestling.UI.Material.Settings
             }
         }
 
-        public ICommand SetVideoStoragePathCommand
-        {
-            get
-            {
-                if (_setVideoStoragePathCommand == null)
-                {
-                    _setVideoStoragePathCommand = new RelayCommand(
-                        param => SetVideoStoragePath(),
-                        param => true
-                    );
-                }
-                return _setVideoStoragePathCommand;
-            }
-        }
-
         public ICommand PlayEndGongCommand
         {
             get
@@ -464,10 +367,6 @@ namespace Wrestling.UI.Material.Settings
             }
         }
 
-        private void SetupOverlay(bool isOlympic)
-        {
-        }
-
         private void SetSliderBackground()
         {
             var settings = new OpenFileDialogSettings
@@ -531,21 +430,6 @@ namespace Wrestling.UI.Material.Settings
             if (success == true)
             {
                 Item.EndGongSoundPath = settings.FileName;
-            }
-        }
-
-        private void SetVideoStoragePath()
-        {
-            var settings = new FolderBrowserDialogSettings
-            {
-                Description = "Укажите путь к папке для сохранения видео",
-                SelectedPath = string.IsNullOrEmpty(Item.VideoStoragePath) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : Item.VideoStoragePath
-            };
-
-            bool? success = Dialog.ShowFolderBrowserDialog(this, settings);
-            if (success == true)
-            {
-                Item.VideoStoragePath = settings.SelectedPath;
             }
         }
     }
