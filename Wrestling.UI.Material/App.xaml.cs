@@ -34,8 +34,6 @@ namespace Wrestling.UI.Material
         {
             base.OnStartup(e);
 
-            //using (var reader0 = new MediaReader(deviceVInput, formatInput)) { }
-
             Thread.CurrentThread.CurrentCulture = new CultureInfo("ru-RU");
             Thread.CurrentThread.CurrentUICulture = new CultureInfo("ru-RU");
             FrameworkElement.LanguageProperty.OverrideMetadata(typeof(FrameworkElement), new FrameworkPropertyMetadata(
@@ -77,10 +75,6 @@ namespace Wrestling.UI.Material
         private IDiContainer GetContainer()
         {
             var di = DiContainer.Instance;
-
-            //di.Add<Utils.Recording.App.ICamRecorderGenerator>(new Utils.Recording.App.FfmpegCamRecorderGenerator());
-            //di.Add<IRecorder>(new FfmpegCamRecorder());
-            //di.Add<IMatchRecorderGenerator>(new MatchRecorderGenerator(di.Resolve<Utils.Recording.App.ICamRecorderGenerator>(), di.Resolve<IOverlayDrawer>()));
 
             di.Add<IDialogService>(new DialogService());
 

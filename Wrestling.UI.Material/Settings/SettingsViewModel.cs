@@ -199,10 +199,24 @@ namespace Wrestling.UI.Material.Settings
         private void UpdateCache(IRosbosApi api, ICacheManager cache)
         {
             var teams = api.GetTeams();
-            DataContext.TeamsCache = teams;
+
+            foreach (var team in teams)
+            {
+                if (DataContext.TeamsCache.Find(x => team.HashTag == x.HashTag) == null)
+                {
+                    DataContext.TeamsCache.Add(team);
+                }
+            }
 
             var wrestlers = api.GetWrestlers();
-            DataContext.WrestlersCache = wrestlers;
+            
+            foreach (var wrestler in wrestlers)
+            {
+                if (DataContext.WrestlersCache.Find(x => wrestler.HashTag == x.HashTag) == null)
+                {
+                    DataContext.WrestlersCache.Add(wrestler);
+                }
+            }
 
             CheckTeamLogo();
 
