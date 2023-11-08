@@ -35,7 +35,7 @@ namespace Wrestling.UI.Material.Model
                 var sameGroup = target.Groups.FirstOrDefault(p => p.ID == group.ID
                                                                   && p.Bracket != null &&
                                                                   group.Bracket != null &&
-                                                                  p.CarpetLabel == group.CarpetLabel &&
+                                                                  p.CarpetID == group.CarpetID &&
                                                                   p.Bracket.BracketTypeCode == group.Bracket.BracketTypeCode);
                 if (sameGroup == null) continue;
 
