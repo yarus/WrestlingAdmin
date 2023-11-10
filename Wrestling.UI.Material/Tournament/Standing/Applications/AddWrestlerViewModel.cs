@@ -17,6 +17,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         private AgeWeightGroup _selectedGroup;
         private ObservableCollection<AgeWeightGroup> _groups;
         private ObservableCollection<Wrestler> _cachedAthletes;
+        private ObservableCollection<string> _levels;
 
         public AddWrestlerViewModel(IDiContainer container, Wrestler item) : base(container)
         {
@@ -32,12 +33,19 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 throw new ApplicationException("Tournament property is not set!");
             }
 
+            _levels = new ObservableCollection<string>()
+            {
+                "МСМК", "МС", "КМС", "I", "II", "III", "I юн", "II юн", "III юн"
+            };
+            
             _groups = DataContext.Tournament.Groups;
 
             _selectedGroup = _item.GroupID.HasValue ? _groups.FirstOrDefault(g => g.ID == _item.GroupID) : null;
 
             CachedAthletes = new ObservableCollection<Wrestler>(DataContext.WrestlersCache);
         }
+
+        public ObservableCollection<string> Levels => _levels;
 
         public AutoCompleteFilterPredicate<object> AthleteFilter
         {

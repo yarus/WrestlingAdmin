@@ -13,11 +13,19 @@
     <UserControl.Resources>
         <CollectionViewSource x:Key="WrestlersGroup" Source="{Binding Path=PersonalResults}">
             <CollectionViewSource.GroupDescriptions>
-                <PropertyGroupDescription PropertyName="GroupName" />
+                <PropertyGroupDescription PropertyName="GroupLabel" />
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
 
         <converters:IndexConverter x:Key="IndexConverter"/>
+        
+        <Style x:Key="RotatedText" TargetType="TextBlock">
+            <Setter Property="LayoutTransform">
+                <Setter.Value>
+                    <RotateTransform Angle="-90" />
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <ScrollViewer x:Name="RootControl" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -236,17 +244,50 @@
                 <ListView.View>
                     <GridView AllowsColumnReorder="true">
                         <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.FinalPlace}" Header="#" Width="Auto" />
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.FullName}" Header="ФИО" Width="Auto" />
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="Клуб" Width="Auto" />
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=MatchesCount}" Header="Схваток" Width="Auto" />
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=Wins}" Header="Побед" Width="Auto" />
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=Loses}" Header="Поражений" Width="Auto" />
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=TotalPoints}" Header="Баллов" Width="Auto">
-                            <GridViewColumn.HeaderContainerStyle>
-                                <Style>
-                                    <Setter Property="Control.ToolTip" Value="1 (Участие) + (N побед - N автопобед) * 2 + Бонус за место (4/3/2)"/>
-                                </Style>
-                            </GridViewColumn.HeaderContainerStyle>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LastFirstName}" Header="ФИО" Width="Auto" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="Команда" Width="Auto" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamCity}" Header="Регион" Width="Auto" />
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.Level}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Разряд</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=MatchesCount}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Схваток</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Wins}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Побед</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByTushe}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Туше</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByDomination}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Преимуществ</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=TotalPoints}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Баллов</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
                         </GridViewColumn>
                     </GridView>
 

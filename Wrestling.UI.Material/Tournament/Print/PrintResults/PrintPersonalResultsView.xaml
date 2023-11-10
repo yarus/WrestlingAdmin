@@ -12,9 +12,17 @@
 
         <CollectionViewSource x:Key="WrestlersGroup" Source="{Binding Path=Results}">
             <CollectionViewSource.GroupDescriptions>
-                <PropertyGroupDescription PropertyName="GroupName" />
+                <PropertyGroupDescription PropertyName="GroupLabel" />
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
+        
+        <Style x:Key="RotatedText" TargetType="TextBlock">
+            <Setter Property="LayoutTransform">
+                <Setter.Value>
+                    <RotateTransform Angle="-90" />
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <StackPanel Background="White">
@@ -70,11 +78,44 @@
             <ListView.View>
                 <GridView AllowsColumnReorder="true">
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.FinalPlace}" Header="#" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.FullName}" Header="ФИО" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LastFirstName}" Header="ФИО" Width="Auto" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="Команда" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=MatchesCount}" Header="Схваток" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wins}" Header="Побед" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Loses}" Header="Поражений" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamCity}" Header="Регион" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.Level}" Width="Auto">
+                        <GridViewColumn.Header>
+                            <StackPanel VerticalAlignment="Bottom" Orientation="Vertical">
+                                <TextBlock Style="{StaticResource RotatedText}">Разряд</TextBlock>
+                            </StackPanel>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=MatchesCount}" Width="Auto">
+                        <GridViewColumn.Header>
+                            <StackPanel VerticalAlignment="Bottom">
+                                <TextBlock Style="{StaticResource RotatedText}">Схваток</TextBlock>
+                            </StackPanel>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wins}" Width="Auto">
+                        <GridViewColumn.Header>
+                            <StackPanel VerticalAlignment="Bottom">
+                                <TextBlock Style="{StaticResource RotatedText}">Побед</TextBlock>
+                            </StackPanel>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByTushe}" Width="Auto">
+                        <GridViewColumn.Header>
+                            <StackPanel VerticalAlignment="Bottom">
+                                <TextBlock Style="{StaticResource RotatedText}">Туше</TextBlock>
+                            </StackPanel>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByDomination}" Width="Auto">
+                        <GridViewColumn.Header>
+                            <StackPanel VerticalAlignment="Bottom">
+                                <TextBlock Style="{StaticResource RotatedText}">Преимуществ</TextBlock>
+                            </StackPanel>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
                 </GridView>
 
             </ListView.View>
