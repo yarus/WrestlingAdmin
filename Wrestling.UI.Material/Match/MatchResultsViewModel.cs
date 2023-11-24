@@ -104,12 +104,12 @@ namespace Wrestling.UI.Material.Match
 
             _settings = DataContext.Tournament != null ? DataContext.Tournament.Settings : GlobalSettings;
 
-            if (DataContext.WrestlingMatch.WrestlerInRed.TeamID.HasValue && DataContext.Tournament != null)
+            if (DataContext.WrestlingMatch.WrestlerInRed?.TeamID != null && DataContext.Tournament != null)
             {
                 Wrestler1TeamEmblem = GetTeamEmblem(DataContext.WrestlingMatch.WrestlerInRed.TeamID.Value, DataContext.Tournament.TeamApplications);
             }
 
-            if (DataContext.WrestlingMatch.WrestlerInBlue.TeamID.HasValue && DataContext.Tournament != null)
+            if (DataContext.WrestlingMatch.WrestlerInBlue?.TeamID != null && DataContext.Tournament != null)
             {
                 Wrestler2TeamEmblem = GetTeamEmblem(DataContext.WrestlingMatch.WrestlerInBlue.TeamID.Value, DataContext.Tournament.TeamApplications);
             }
@@ -242,13 +242,16 @@ namespace Wrestling.UI.Material.Match
         public bool CanRejectResult { get; private set; }
         public bool IsWinTypeSet => WinType.HasValue;
         private bool IsMatchStarted => WrestlingMatch.LastSecondInMatch > 0;
-        private bool IsMatchCompletedInTime => WrestlingMatch.LastSecondInMatch == WrestlingMatch.MaxRoundSecond * 2;
+        private bool IsMatchCompletedInTime => IsMatchStarted && WrestlingMatch.LastSecondInMatch == WrestlingMatch.MaxRoundSecond * 2;
         public bool IsFreeWinEnabled => WrestlingMatch.WinType == MatchWinTypeEnum.FreeWin;
-        public bool IsPointsWinEnabled => !IsMatchStarted || IsMatchCompletedInTime;
+        public bool IsPointsWinEnabled => IsMatchCompletedInTime;
+        public bool IsNoShowWinEnabled => !IsMatchStarted && !IsFreeWinEnabled;
+
+        public bool IsWarningsLimitWinEnabled => IsMatchStarted && (WrestlingMatch.WarningsNumberRed == 3 || WrestlingMatch.WarningsNumberBlue == 3);
         public bool IsActionWinEnabled => IsMatchCompletedInTime && WrestlingMatch.PointsBlue == WrestlingMatch.PointsRed;
         public bool IsDominationWinEnabled => WrestlingMatch.PointsBlue - WrestlingMatch.PointsRed >= 10 || WrestlingMatch.PointsRed - WrestlingMatch.PointsBlue >= 10;
-        public bool IsTusheWinEnabled => !IsFreeWinEnabled;
-        public bool IsTechWinEnabled => !IsFreeWinEnabled;
+        public bool IsTusheWinEnabled => IsMatchStarted && !IsFreeWinEnabled;
+        public bool IsDisqualifyWinEnabled => !IsFreeWinEnabled;
         public bool IsWinnerRed => Winner.HasValue && WrestlingMatch.WrestlerInRed != null && Winner.Value == WrestlingMatch.WrestlerInRed.ID;
         public bool IsWinnerBlue => Winner.HasValue && WrestlingMatch.WrestlerInBlue != null && Winner.Value == WrestlingMatch.WrestlerInBlue.ID;
 
@@ -414,11 +417,40 @@ namespace Wrestling.UI.Material.Match
         private async void SetWinType()
         {
             var availableWinTypes = new List<MatchWinTypeEnum>();
-
+            
             if (IsTusheWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.Tushe);
-            if (IsDominationWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.DominationWin);
-            if (IsPointsWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.PointsWin);
-            if (IsTechWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.DisqualifyWin);
+            
+            availableWinTypes.Add(MatchWinTypeEnum.Injury);
+            
+            if (IsWarningsLimitWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.WarningsLimit);
+            
+            if (IsNoShowWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.NoShow);
+            if (IsDisqualifyWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.DisqualifyWin);
+
+            if (IsDominationWinEnabled)
+            {
+                if (WrestlingMatch.PointsBlue > 0 && WrestlingMatch.PointsRed > 0)
+                {
+                    availableWinTypes.Add(MatchWinTypeEnum.DominationWinWithPoints);   
+                }
+                else
+                {
+                    availableWinTypes.Add(MatchWinTypeEnum.DominationWin);
+                }
+            }
+
+            if (IsPointsWinEnabled)
+            {
+                if (WrestlingMatch.PointsBlue > 0 && WrestlingMatch.PointsRed > 0)
+                {
+                    availableWinTypes.Add(MatchWinTypeEnum.PointsWinWithPoints);   
+                }
+                else
+                {
+                    availableWinTypes.Add(MatchWinTypeEnum.PointsWin);
+                }
+            }
+            
             if (IsActionWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.ActionWin);
 
             var vm = new SetWinTypeViewModel(DiContainer, WinType, availableWinTypes);
@@ -474,7 +506,6 @@ namespace Wrestling.UI.Material.Match
 
             return team != null ? team.EmblemPath : string.Empty;
         }
-
 
         private void Reject()
         {
@@ -544,29 +575,6 @@ namespace Wrestling.UI.Material.Match
 
             CompleteMatch();
 
-            if (_settings.IsVideoRecordingEnabled)
-            {
-                IsFormEnabled = false;
-            } 
-            else
-            {
-                if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
-                {
-                    NavigateToMatches();
-                }
-                else
-                {
-                    BackToNavigateToHome();
-                }
-            }
-        }
-
-        private void OnRecordingCompleted(object sender, string e)
-        {
-            IsFormEnabled = true;
-
-            ShowSnackMessage(e);
-
             if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
             {
                 NavigateToMatches();
@@ -624,7 +632,8 @@ namespace Wrestling.UI.Material.Match
             Winner = null;
             IsPlayer1WithAdvantage = false;
             IsPlayer2WithAdvantage = false;
-
+            
+            // Match already completed we just need to init binding properties
             if (WrestlingMatch.Status == MatchStatusEnum.Completed)
             {
                 if (!WrestlingMatch.IsRedWon.HasValue || !WrestlingMatch.WinType.HasValue) throw new ApplicationException("Completed match does not have result provided!");
@@ -641,62 +650,117 @@ namespace Wrestling.UI.Material.Match
                 }
 
                 Note = WrestlingMatch.Note;
+                
+                return;
             }
-            else
+            
+            // If match not started select NoShow by default
+            if (!IsMatchStarted)
             {
-                Winner = null;
-
-                if (IsMatchCompletedInTime)
-                {
-                    if (WrestlingMatch.PointsRed > WrestlingMatch.PointsBlue)
-                    {
-                        Winner = WrestlingMatch.WrestlerInRed.ID;
-                        WinType = MatchWinTypeEnum.PointsWin;
-                    }
-                    else if (WrestlingMatch.PointsBlue > WrestlingMatch.PointsRed)
-                    {
-                        Winner = WrestlingMatch.WrestlerInBlue.ID;
-                        WinType = MatchWinTypeEnum.PointsWin;
-                    }
-                    else
-                    {
-                        if (WrestlingMatch.BestActionRed != WrestlingMatch.BestActionBlue)
-                        {
-                            IsPlayer1WithAdvantage = WrestlingMatch.BestActionRed > WrestlingMatch.BestActionBlue;
-                            IsPlayer2WithAdvantage = WrestlingMatch.BestActionRed < WrestlingMatch.BestActionBlue;
-                            Winner = WrestlingMatch.BestActionRed > WrestlingMatch.BestActionBlue ? WrestlingMatch.WrestlerInRed.ID : WrestlingMatch.WrestlerInBlue.ID;
-                            Note = "Победа присуждена по качеству результативного действия.";
-                        }
-                        else
-                        {
-                            IsPlayer1WithAdvantage = WrestlingMatch.IsLastActionRed;
-                            IsPlayer2WithAdvantage = !WrestlingMatch.IsLastActionRed;
-                            Winner = WrestlingMatch.IsLastActionRed ? WrestlingMatch.WrestlerInRed.ID : WrestlingMatch.WrestlerInBlue.ID;
-                            Note = "При равном счете и равном качестве результативных действий победа присуждена по последнему действию.";
-                        }
-
-                        WinType = MatchWinTypeEnum.ActionWin;
-                    }
-                }
-
-                if (Winner == null && WinType == null)
-                {
-                    if (WrestlingMatch.PointsRed - WrestlingMatch.PointsBlue >= 10)
-                    {
-                        Winner = WrestlingMatch.WrestlerInRed.ID;
-                        WinType = MatchWinTypeEnum.DominationWin;
-                    }
-                    else if (WrestlingMatch.PointsBlue - WrestlingMatch.PointsRed >= 10)
-                    {
-                        Winner = WrestlingMatch.WrestlerInBlue.ID;
-                        WinType = MatchWinTypeEnum.DominationWin;
-                    }
-                    else
-                    {
-                        WinType = MatchWinTypeEnum.Tushe;
-                    }
-                }
+                WinType = MatchWinTypeEnum.NoShow;
+                return;
             }
+            
+            // Check if it is 3 warnings win
+            if (WrestlingMatch.WarningsNumberRed == 3)
+            {
+                Winner = WrestlingMatch.WrestlerInBlue.ID;
+                WinType = MatchWinTypeEnum.WarningsLimit;
+                return;
+            }
+            
+            // Check if it is 3 warnings win
+            if (WrestlingMatch.WarningsNumberBlue == 3)
+            {
+                Winner = WrestlingMatch.WrestlerInRed.ID;
+                WinType = MatchWinTypeEnum.WarningsLimit;
+                return;
+            }
+
+            // Match time completed so we should be able to determine win type
+            if (IsMatchCompletedInTime)
+            {
+                if (WrestlingMatch.PointsRed > WrestlingMatch.PointsBlue)
+                {
+                    Winner = WrestlingMatch.WrestlerInRed.ID;
+
+                    if (WrestlingMatch.PointsRed > 0 && WrestlingMatch.PointsBlue > 0)
+                    {
+                        WinType = MatchWinTypeEnum.PointsWinWithPoints;   
+                    }
+                    else
+                    {
+                        WinType = MatchWinTypeEnum.PointsWin;
+                    }
+                }
+                else if (WrestlingMatch.PointsBlue > WrestlingMatch.PointsRed)
+                {
+                    Winner = WrestlingMatch.WrestlerInBlue.ID;
+                    if (WrestlingMatch.PointsRed > 0 && WrestlingMatch.PointsBlue > 0)
+                    {
+                        WinType = MatchWinTypeEnum.PointsWinWithPoints;   
+                    }
+                    else
+                    {
+                        WinType = MatchWinTypeEnum.PointsWin;
+                    }
+                }
+                else
+                {
+                    if (WrestlingMatch.BestActionRed != WrestlingMatch.BestActionBlue)
+                    {
+                        IsPlayer1WithAdvantage = WrestlingMatch.BestActionRed > WrestlingMatch.BestActionBlue;
+                        IsPlayer2WithAdvantage = WrestlingMatch.BestActionRed < WrestlingMatch.BestActionBlue;
+                        Winner = WrestlingMatch.BestActionRed > WrestlingMatch.BestActionBlue ? WrestlingMatch.WrestlerInRed.ID : WrestlingMatch.WrestlerInBlue.ID;
+                        Note = "Победа присуждена по качеству результативного действия.";
+                    }
+                    else
+                    {
+                        IsPlayer1WithAdvantage = WrestlingMatch.IsLastActionRed;
+                        IsPlayer2WithAdvantage = !WrestlingMatch.IsLastActionRed;
+                        Winner = WrestlingMatch.IsLastActionRed ? WrestlingMatch.WrestlerInRed.ID : WrestlingMatch.WrestlerInBlue.ID;
+                        Note = "При равном счете и равном качестве результативных действий победа присуждена по последнему действию.";
+                    }
+
+                    WinType = MatchWinTypeEnum.ActionWin;
+                }
+                
+                return;
+            }
+            
+            // Check if it is a domination win
+            if (WrestlingMatch.PointsRed - WrestlingMatch.PointsBlue >= 10)
+            {
+                Winner = WrestlingMatch.WrestlerInRed.ID;
+                    
+                if (WrestlingMatch.PointsRed > 0 && WrestlingMatch.PointsBlue > 0)
+                {
+                    WinType = MatchWinTypeEnum.DominationWinWithPoints;   
+                }
+                else
+                {
+                    WinType = MatchWinTypeEnum.DominationWin;
+                }
+                return;
+            }
+            
+            // Check if it is a domination win
+            if (WrestlingMatch.PointsBlue - WrestlingMatch.PointsRed >= 10)
+            {
+                Winner = WrestlingMatch.WrestlerInBlue.ID;
+                if (WrestlingMatch.PointsRed > 0 && WrestlingMatch.PointsBlue > 0)
+                {
+                    WinType = MatchWinTypeEnum.DominationWinWithPoints;   
+                }
+                else
+                {
+                    WinType = MatchWinTypeEnum.DominationWin;
+                }
+                return;
+            }
+
+            // Use Tushe in other cases
+            WinType = MatchWinTypeEnum.Tushe;
         }
 
         #endregion

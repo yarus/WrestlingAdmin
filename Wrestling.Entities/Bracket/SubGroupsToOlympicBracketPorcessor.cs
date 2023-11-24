@@ -173,10 +173,8 @@ namespace Wrestling.Entities.Bracket
             };
 
             var upperMatch = GenerateGroupMatch(final.RoundNumber, final.RoundName, null, null, 1, false);
-            //var lowerMatch = GenerateGroupMatch(medalsMatches.RoundNumber, medalsMatches.RoundName, null, null, 2, false);
 
             final.RoundMatches.Add(upperMatch);
-            //medalsMatches.RoundMatches.Add(lowerMatch);
 
             Group.Bracket.Rounds.Add(final);
         }
@@ -209,10 +207,8 @@ namespace Wrestling.Entities.Bracket
             };
 
             var upperMatch = GenerateGroupMatch(semiFinals.RoundNumber, semiFinals.RoundName, null, null, 1, true);
-            //upperMatch.NextMatchBracketFullNumber = $"{upperMatch.RoundNumber + 1}.{1}";
 
             var lowerMatch = GenerateGroupMatch(semiFinals.RoundNumber, semiFinals.RoundName, null, null, 2, true);
-            //lowerMatch.NextMatchBracketFullNumber = $"{upperMatch.RoundNumber + 1}.{2}";
 
             semiFinals.RoundMatches.Add(upperMatch);
             semiFinals.RoundMatches.Add(lowerMatch);
@@ -317,7 +313,14 @@ namespace Wrestling.Entities.Bracket
             comparedResults.AddRange(resultsB.Where(r => !finalists.Contains(r.Wrestler)).Distinct());
 
             var finalOrder = comparedResults
-                .OrderByDescending(x => x.OverallTournamentRating)
+                .OrderByDescending(x => x.Wins)
+                .ThenByDescending(x => x.OverallTournamentClassificationPoints)
+                .ThenByDescending(x => x.WinsByTushe)
+                .ThenByDescending(x => x.WinsByDomination)
+                .ThenByDescending(x => x.WinsByDominationWithPoints)
+                .ThenByDescending(x => x.AllGainedPoints)
+                .ThenBy(x => x.AllLostPoints)
+                .ThenBy(x => x.Wrestler.SeedNumber)
                 .ToList();
 
             foreach (var tournamentResult in finalOrder)

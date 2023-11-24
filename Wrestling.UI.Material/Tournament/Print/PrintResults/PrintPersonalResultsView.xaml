@@ -76,7 +76,7 @@
             </ListView.GroupStyle>
 
             <ListView.View>
-                <GridView AllowsColumnReorder="true">
+                <GridView AllowsColumnReorder="false">
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.FinalPlace}" Header="#" Width="Auto" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LastFirstName}" Header="ФИО" Width="Auto" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="Команда" Width="Auto" />
@@ -102,17 +102,24 @@
                             </StackPanel>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByTushe}" Width="Auto">
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Loses}" Width="Auto">
                         <GridViewColumn.Header>
                             <StackPanel VerticalAlignment="Bottom">
-                                <TextBlock Style="{StaticResource RotatedText}">Туше</TextBlock>
+                                <TextBlock Style="{StaticResource RotatedText}">Поражений</TextBlock>
                             </StackPanel>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByDomination}" Width="Auto">
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=OverallTournamentClassificationPoints}" Width="Auto">
                         <GridViewColumn.Header>
-                            <StackPanel VerticalAlignment="Bottom">
-                                <TextBlock Style="{StaticResource RotatedText}">Преимуществ</TextBlock>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                                <TextBlock Style="{StaticResource RotatedText}">Классиф. баллов</TextBlock>
+                            </StackPanel>
+                        </GridViewColumn.Header>
+                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=TotalPoints}" Width="Auto">
+                        <GridViewColumn.Header>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                                <TextBlock Style="{StaticResource RotatedText}">Командных баллов</TextBlock>
                             </StackPanel>
                         </GridViewColumn.Header>
                     </GridViewColumn>

@@ -2,11 +2,16 @@
 {
     public enum MatchWinTypeEnum
     {
-        PointsWin,
-        DominationWin,
-        DisqualifyWin,
         Tushe,
-        FreeWin,
-        ActionWin
+        Injury,
+        WarningsLimit,
+        NoShow,
+        DisqualifyWin,
+        DominationWin,
+        DominationWinWithPoints,
+        PointsWin,
+        PointsWinWithPoints,
+        ActionWin,
+        FreeWin
     }
 }

@@ -8,7 +8,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              md:DialogServiceViews.IsRegistered="True"
-             d:DesignHeight="800" d:DesignWidth="800">
+             d:DesignHeight="800" d:DesignWidth="1200">
 
     <UserControl.Resources>
         <CollectionViewSource x:Key="WrestlersGroup" Source="{Binding Path=PersonalResults}">
@@ -264,28 +264,98 @@
                         <GridViewColumn DisplayMemberBinding="{Binding Path=Wins}" Width="Auto">
                             <GridViewColumn.Header>
                                 <StackPanel VerticalAlignment="Bottom">
-                                    <TextBlock Style="{StaticResource RotatedText}">Побед</TextBlock>
+                                    <TextBlock Style="{StaticResource RotatedText}">Всего побед</TextBlock>
                                 </StackPanel>
                             </GridViewColumn.Header>
                         </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByTushe}" Width="Auto">
                             <GridViewColumn.Header>
                                 <StackPanel VerticalAlignment="Bottom">
-                                    <TextBlock Style="{StaticResource RotatedText}">Туше</TextBlock>
+                                    <TextBlock Style="{StaticResource RotatedText}">Побед по туше</TextBlock>
                                 </StackPanel>
                             </GridViewColumn.Header>
                         </GridViewColumn>
-                        <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByDomination}" Width="Auto">
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByInjury}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Побед по травме</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByWarningLimit}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Побед по предупр.</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByNoShow}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Побед по неявке</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByDisqual}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Побед по дисквал.</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByDominationTotal}" Width="Auto">
                             <GridViewColumn.Header>
                                 <StackPanel VerticalAlignment="Bottom">
                                     <TextBlock Style="{StaticResource RotatedText}">Преимуществ</TextBlock>
                                 </StackPanel>
                             </GridViewColumn.Header>
                         </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=WinsByPointsTotal}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Побед по баллам</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=Loses}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Всего поражений</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=LosesWithPoints}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Пораж. с очк.</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=AllGainedPoints}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Набрано баллов</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=AllLostPoints}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Проиграно баллов</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
+                        <GridViewColumn DisplayMemberBinding="{Binding Path=OverallTournamentClassificationPoints}" Width="Auto">
+                            <GridViewColumn.Header>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                                    <TextBlock Style="{StaticResource RotatedText}">Классиф. баллов</TextBlock>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                        </GridViewColumn>
                         <GridViewColumn DisplayMemberBinding="{Binding Path=TotalPoints}" Width="Auto">
                             <GridViewColumn.Header>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
-                                    <TextBlock Style="{StaticResource RotatedText}">Баллов</TextBlock>
+                                    <TextBlock Style="{StaticResource RotatedText}">Командных баллов</TextBlock>
                                 </StackPanel>
                             </GridViewColumn.Header>
                         </GridViewColumn>

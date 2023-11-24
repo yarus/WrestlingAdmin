@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using Wrestling.Entities.Results;
 
@@ -103,8 +102,62 @@ namespace Wrestling.Entities.Bracket
             {
                 ProceedToAdditionalBracket(wrestlingMatch);
             }
+            
+            // If wintype is Disqualification or NoShow we should set results of this wrestler matches automatically
+            if (winType == MatchWinTypeEnum.DisqualifyWin || winType == MatchWinTypeEnum.NoShow)
+            {
+                var looser = isRedWon ? wrestlingMatch.WrestlerInBlue : wrestlingMatch.WrestlerInRed;
+
+                CompleteFullLooserMatches(looser, winType);
+                CompleteWinnerMatchesIfOtherWrestlersDisqualOrNoShow(isRedWon
+                    ? wrestlingMatch.WrestlerInRed
+                    : wrestlingMatch.WrestlerInBlue);
+            }
 
             SetMatchesCount();
+        }
+
+        private void CompleteFullLooserMatches(Wrestler looser, MatchWinTypeEnum winType)
+        {
+            var uncompletedMatchesForLooser = Group.Bracket.Rounds.SelectMany(r => r.RoundMatches)
+                .Where(m => !m.IsMatchCompleted && m.WrestlerInRed != null && m.WrestlerInBlue != null &&
+                            (m.WrestlerInRed.ID == looser.ID || m.WrestlerInBlue.ID == looser.ID))
+                .ToList();
+
+            if (uncompletedMatchesForLooser.Count == 0) return;
+            
+            CompleteMatch(uncompletedMatchesForLooser[0], uncompletedMatchesForLooser[0].WrestlerInRed.ID != looser.ID, winType);
+        }
+
+        private void CompleteWinnerMatchesIfOtherWrestlersDisqualOrNoShow(Wrestler winner)
+        {
+            var uncompletedMatchesForWinner = Group.Bracket.Rounds.SelectMany(r => r.RoundMatches)
+                .Where(m => !m.IsMatchCompleted && m.WrestlerInRed != null && m.WrestlerInBlue != null &&
+                            (m.WrestlerInRed.ID == winner.ID || m.WrestlerInBlue.ID == winner.ID))
+                .ToList();
+            
+            if (uncompletedMatchesForWinner.Count == 0) return;
+
+            foreach (var match in uncompletedMatchesForWinner)
+            {
+                var anotherWrestler = match.WrestlerInRed.ID == winner.ID ? match.WrestlerInBlue : match.WrestlerInRed;
+                
+                // Check if another wrestler lost due to disqual or noshow
+                var lostMatches = Group.Bracket.Rounds.SelectMany(r => r.RoundMatches)
+                    .Where(m => m.IsMatchCompleted
+                                && (m.WinType == MatchWinTypeEnum.DisqualifyWin || m.WinType == MatchWinTypeEnum.NoShow)
+                                && ((m.IsRedWon.HasValue && m.IsRedWon.Value &&
+                                     m.WrestlerInBlue.ID == anotherWrestler.ID)
+                                    || (m.IsBlueWon && m.WrestlerInRed.ID == anotherWrestler.ID)))
+                    .ToList();
+
+                if (lostMatches.Count > 0)
+                {
+                    var hasDisqual = lostMatches.Any(x => x.WinType == MatchWinTypeEnum.DisqualifyWin);
+                    
+                    CompleteMatch(match, match.WrestlerInRed.ID == winner.ID, hasDisqual ? MatchWinTypeEnum.DisqualifyWin : MatchWinTypeEnum.NoShow);
+                }
+            }
         }
 
         public virtual bool CanMatchBeReverted(WrestlingMatch wrestlingMatch)
@@ -176,7 +229,6 @@ namespace Wrestling.Entities.Bracket
         protected IEnumerable<Wrestler> GetGroupWrestlers()
         {
             return Group.Wrestlers;
-            //return Tournament.Wrestlers.Where(w => w.GroupID == Group.ID);
         }
 
         protected virtual void RevertAdditionalBracket(WrestlingMatch wrestlingMatch)
@@ -219,7 +271,7 @@ namespace Wrestling.Entities.Bracket
             double roundsCount = Math.Log(wrestlers, 2);
             if (!IsDoubleInteger(roundsCount))
             {
-                roundsCount = roundsCount + 1;
+                roundsCount += 1;
             }
 
             return (int)roundsCount;
@@ -276,13 +328,7 @@ namespace Wrestling.Entities.Bracket
 
         private void Swap(IList<Wrestler> list, int i, int j)
         {
-            Contract.Requires(list != null);
-            Contract.Requires(i >= 0 && i < list.Count);
-            Contract.Requires(j >= 0 && j < list.Count);
-
-            var temp = list[i];
-            list[i] = list[j];
-            list[j] = temp;
+            (list[i], list[j]) = (list[j], list[i]);
         }
 
         public virtual GroupRound GetSemiFinalRound(AgeWeightGroup group)
