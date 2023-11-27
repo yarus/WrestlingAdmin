@@ -21,6 +21,7 @@ using Wrestling.UI.Material.Slider.Slides.ImageSlide;
 using Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide;
 using Wrestling.UI.Material.Slider.Slides.VideoSlide;
 using Wrestling.UI.Material.Tournament.Print;
+using Wrestling.UI.Material.Tournament.Standing.Details;
 using Wrestling.UI.Material.Utils;
 using Wrestling.UI.Utils;
 
@@ -96,6 +97,7 @@ namespace Wrestling.UI.Material
             di.Add<GlobalSettings>(new GlobalSettings { IsSoundEnabled = true, IsTimerBackward = true });
 
             di.Add<IDataContext>(new DataContext());
+            di.Add<IGroupGenerator>(new GroupGenerator());
 
             di.Add<List<IGroupBracketProcessor>>(new List<IGroupBracketProcessor>
             {

@@ -143,7 +143,8 @@ namespace Wrestling.Integration
                             TeamID = null,
                             HashTag = info.HashTag,
                             PaidAmount = null,
-                            IsWeightApproved = false
+                            IsWeightApproved = false,
+                            Timestamp = DateTime.Now
                         };
 
                         result.Add(wrestler);

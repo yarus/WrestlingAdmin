@@ -69,6 +69,16 @@ namespace Wrestling.UI.Material.Model
                     }
                 }
             }
+            
+            // Sync wrestler info (supporting changing of names)
+            foreach (var wrestler in tournament.Wrestlers)
+            {
+                var changedWrestler = target.Wrestlers.FirstOrDefault(x => x.ID == wrestler.ID);
+                
+                if (changedWrestler == null || changedWrestler.Timestamp >= wrestler.Timestamp) continue;
+                
+                changedWrestler.Sync(wrestler);
+            }
 
             return result;
         }

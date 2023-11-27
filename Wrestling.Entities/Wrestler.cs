@@ -26,6 +26,7 @@ namespace Wrestling.Entities
         private decimal? _paidAmount;
         private bool _isWeightApproved;
         private string _level;
+        private DateTime? _timestamp;
         public bool IsApplicationValid => !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(FirstName) && BirthDate.HasValue && GroupID.HasValue;
         public bool IsRegistrationApproved => IsApplicationValid && Weight.HasValue && IsEntryFeePaid && IsWeightApproved;
 
@@ -242,6 +243,16 @@ namespace Wrestling.Entities
                 OnPropertyChanged("FinalPlace");
             }
         }
+        
+        public DateTime? Timestamp
+        {
+            get { return _timestamp; }
+            set
+            {
+                _timestamp = value;
+                OnPropertyChanged("Timestamp");
+            }
+        }
 
         public string FullName => string.Format("{0}{1}{2}", !string.IsNullOrEmpty(LastName) ? LastName : string.Empty,
             !string.IsNullOrEmpty(FirstName) ? " " + FirstName : string.Empty,
@@ -284,6 +295,7 @@ namespace Wrestling.Entities
             HashTag = wr.HashTag;
             Level = wr.Level;
             IsWeightApproved = wr.IsWeightApproved;
+            Timestamp = wr.Timestamp;
         }
 
         public object Clone()

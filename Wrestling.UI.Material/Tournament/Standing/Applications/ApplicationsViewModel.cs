@@ -329,7 +329,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 ID = Guid.NewGuid(),
                 TeamID = app.ID,
                 TeamName = app.ShortName,
-                TeamCity = app.City
+                TeamCity = app.City,
+                Timestamp = DateTime.Now
             };
 
             if (!DataContext.Tournament.EntryFee.HasValue || DataContext.Tournament.EntryFee.Value == 0)
@@ -357,6 +358,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 tmpWresler.TeamID = app.ID;
                 tmpWresler.TeamName = app.ShortName;
                 tmpWresler.TeamCity = app.City;
+                tmpWresler.Timestamp = DateTime.Now;
 
                 DataContext.Tournament.Wrestlers.Add(tmpWresler);
 
@@ -435,6 +437,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             if (_editWrestlerDialogOpened) return;
 
             var tmpWrestler = wrestler.Clone() as Wrestler;
+            tmpWrestler.Timestamp = DateTime.Now;
 
             var vm = new AddWrestlerViewModel(DiContainer, tmpWrestler);
             vm.InitData();
