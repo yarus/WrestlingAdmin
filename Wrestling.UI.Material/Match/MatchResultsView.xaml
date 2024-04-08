@@ -7,156 +7,301 @@
              xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:converters2="clr-namespace:Wrestling.UI.Material.Utils.Converters"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
              md:DialogServiceViews.IsRegistered="True"
-             mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="800">
+             mc:Ignorable="d" d:DesignHeight="1200" d:DesignWidth="1200">
     
     <UserControl.Resources>
         <converters2:WinTypeRadioButtonConverter x:Key="WinTypeRadioConverter" />
         <converters1:SecondsToTimeSpanConverter x:Key="SecondsToTimeSpanConverter" />
         <converters2:WinTypeToStringConverter x:Key="WinTypeToStringConverter" />
+        <converters2:PathToImageConverter x:Key="ClubToIconConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters1:BoolToBrushConverter x:Key="BoolHighlight" />
+        <converters1:UpperCaseConverter x:Key="UpperCaseConverter" />
+        <converters1:BoolInverterConverter x:Key="BoolInverterConverter" />
+
+        <converters1:ValueConverterGroup x:Key="UpperWinType">
+            <converters2:WinTypeToStringConverter />
+            <converters1:UpperCaseConverter />
+        </converters1:ValueConverterGroup>
 
         <converters1:ValueConverterGroup x:Key="InvBoolToVis">
             <converters1:BoolInverterConverter />
             <converters1:GroupedBoolToVisConverter />
         </converters1:ValueConverterGroup>
     </UserControl.Resources>
+    
+    <Grid IsEnabled="{Binding IsFormEnabled}" Margin="0,20,0,0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="5*" />
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
 
-    <Grid x:Name="MainForm">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="60" />
+            <RowDefinition Height="1*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="1*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" TextWrapping="NoWrap" FontSize="18" FontWeight="Normal" Margin="10,20,10,10"> 
-            <Run Text="{Binding WrestlingMatch.RoundName, Mode=OneWay}"></Run>
-            <Run Text="- Матч №"></Run>
-            <Run Text="{Binding WrestlingMatch.MatchNumber, Mode=OneWay}"></Run>
-        </TextBlock>
-        
-        <Grid Grid.Column="0" Grid.Row="1" Margin="10">
-            <Grid.RowDefinitions>
-                <RowDefinition />
-                <RowDefinition />
-                <RowDefinition />
-            </Grid.RowDefinitions>
-            
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" BorderThickness="1,1,1,1" BorderBrush="Black" />
+        <Border Grid.Row="0" Grid.Column="1" BorderThickness="0,0,0,1" BorderBrush="Black" />
 
-            <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="6" BorderThickness="0,1,0,0" BorderBrush="Black" />
-            <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="6" BorderThickness="0,0,0,1" BorderBrush="Black" />
-            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" BorderThickness="0,0,0,1" BorderBrush="Black" />
-            <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="6" BorderThickness="0,0,0,1" BorderBrush="Black" />
-            
-            <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" BorderThickness="1,0,0,0" BorderBrush="Black" />
-            <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" BorderThickness="1,0,1,0" BorderBrush="Black" />
-            <Border Grid.Row="0" Grid.Column="2" Grid.RowSpan="3" BorderThickness="0,0,1,0" BorderBrush="Black" />
-            <Border Grid.Row="0" Grid.Column="3" Grid.RowSpan="3" BorderThickness="0,0,1,0" BorderBrush="Black" />
-            <Border Grid.Row="0" Grid.Column="4" Grid.RowSpan="3" BorderThickness="0,0,1,0" BorderBrush="Black" />
-            <Border Grid.Row="0" Grid.Column="5" Grid.RowSpan="3" BorderThickness="0,0,1,0" BorderBrush="Black" />
+        <Grid Grid.Row="0" Grid.Column="1">
+            <Viewbox Stretch="Uniform">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding WrestlingMatch.GroupName, Mode=OneWay, Converter={StaticResource UpperCaseConverter}}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" HorizontalAlignment="Center">
+                    </TextBlock>
 
-            <TextBlock Grid.Row="0" Grid.Column="1" Text="Борцы" Margin="5" HorizontalAlignment="Center" FontSize="16" />
-            <TextBlock Grid.Row="0" Grid.Column="2" Text="Команды" Margin="5" HorizontalAlignment="Center" FontSize="16" />
-            <TextBlock Grid.Row="0" Grid.Column="3" Text="Баллы" Margin="5" HorizontalAlignment="Center" FontSize="16" />
-            <TextBlock Grid.Row="0" Grid.Column="4" Text="Победил" Margin="5" HorizontalAlignment="Center" FontSize="16" />
-            <TextBlock Grid.Row="0" Grid.Column="5" Text="Тип победы" Margin="5" HorizontalAlignment="Center" FontSize="16" />
+                    <TextBlock Text=":" HorizontalAlignment="Center" Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
 
-            <Rectangle Grid.Row="1" Grid.Column="0" Width="20" Height="20" Fill="Red" Margin="5" />
-            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Path=WrestlingMatch.WrestlerInRed.FullName, Mode=OneWay}" VerticalAlignment="Center" Margin="5" FontSize="16"/>
-            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Path=WrestlingMatch.WrestlerInRed.TeamName, Mode=OneWay}" VerticalAlignment="Center" Margin="5" FontSize="16"/>
-            <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding Path=WrestlingMatch.PointsRed}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16" Margin="5" />
-
-            <StackPanel Grid.Row="1" Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <materialDesign:PackIcon Foreground="Red" Width="32" Height="32" Margin="5" Padding="0" 
-                                         Kind="CheckboxMarkedOutline" Visibility="{Binding IsWinnerRed, Converter={StaticResource BoolToVis}}" 
-                                         ToolTip="Победу одержал борец в красном трико"/>
-                <Button Visibility="{Binding Path=IsSetWinnerRedVisible, Converter={StaticResource BoolToVis}}"
-                        CommandParameter="Red" Margin="5"
-                        Command="{Binding Path=SetWinnerCommand}"
-                        ToolTip="Выбрать победителем борца в красном трико">
-                    <materialDesign:PackIcon Kind="TrophyOutline" Width="22" Height="22" Padding="0"/>
-                </Button>
-            </StackPanel>
-
-            <Rectangle Grid.Row="2" Grid.Column="0" Width="20" Height="20" Fill="Blue" Margin="5" />
-            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Path=WrestlingMatch.WrestlerInBlue.FullName, Mode=OneWay}" VerticalAlignment="Center" Margin="5" FontSize="16"/>
-            <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding Path=WrestlingMatch.WrestlerInBlue.TeamName, Mode=OneWay}" VerticalAlignment="Center" Margin="5" FontSize="16"/>
-            <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding Path=WrestlingMatch.PointsBlue}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="16" Margin="5" />
-            <StackPanel Grid.Row="2" Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <materialDesign:PackIcon Foreground="Blue" Width="32" Height="32" Margin="5" Padding="0" Kind="CheckboxMarkedOutline" 
-                                         Visibility="{Binding IsWinnerBlue, Converter={StaticResource BoolToVis}}" 
-                                         ToolTip="Победу одержал борец в синем трико"/>
-                <Button Visibility="{Binding Path=IsSetWinnerBlueVisible, Converter={StaticResource BoolToVis}}"
-                        CommandParameter="Blue" Margin="5"
-                        Command="{Binding Path=SetWinnerCommand}"
-                        ToolTip="Выбрать победителем борца в синем трико">
-                    <materialDesign:PackIcon Kind="TrophyOutline"  Width="22" Height="22" Padding="0" />
-                </Button>                
-            </StackPanel>
-
-            <StackPanel Grid.Row="1" Grid.RowSpan="2" Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="{Binding WinType, Converter={StaticResource WinTypeToStringConverter}}" Margin="5" FontSize="16" TextWrapping="NoWrap" VerticalAlignment="Center" HorizontalAlignment="Center"
-                           Visibility="{Binding Path=WrestlingMatch.IsMatchCompleted, Converter={StaticResource BoolToVis}}"/>
-
-                <StackPanel Orientation="Horizontal" Visibility="{Binding Path=WrestlingMatch.IsMatchCompleted, Converter={StaticResource InvBoolToVis}}">
-                    <RadioButton Content="Очкам" 
-                                 Visibility="{Binding IsPointsWinEnabled, Converter={StaticResource BoolToVis}}"
-                                 Margin="5" GroupName="WinType" IsChecked="{Binding Path=WinType, Converter={StaticResource WinTypeRadioConverter}, ConverterParameter=PointsWin}"></RadioButton>
-                    <RadioButton Content="Превосходство" 
-                                 Visibility="{Binding IsDominationWinEnabled, Converter={StaticResource BoolToVis}}"
-                                 Margin="5" GroupName="WinType" IsChecked="{Binding Path=WinType, Converter={StaticResource WinTypeRadioConverter}, ConverterParameter=DominationWin}"></RadioButton>
-                    <RadioButton Content="Действие" 
-                                 Visibility="{Binding IsActionWinEnabled, Converter={StaticResource BoolToVis}}"
-                                 Margin="5" GroupName="WinType" IsChecked="{Binding Path=WinType, Converter={StaticResource WinTypeRadioConverter}, ConverterParameter=ActionWin}"></RadioButton>
-                    <RadioButton Content="Туше" 
-                                 Visibility="{Binding IsTusheWinEnabled, Converter={StaticResource BoolToVis}}"
-                                 Margin="5" GroupName="WinType" IsChecked="{Binding Path=WinType, Converter={StaticResource WinTypeRadioConverter}, ConverterParameter=Tushe}"></RadioButton>
-                    <RadioButton Content="Дисквалификация" 
-                                 Visibility="{Binding IsTechWinEnabled, Converter={StaticResource BoolToVis}}"
-                                 Margin="5" GroupName="WinType" IsChecked="{Binding Path=WinType, Converter={StaticResource WinTypeRadioConverter}, ConverterParameter=DisqualifyWin}"></RadioButton>
-                    <RadioButton Content="Автопобеда" 
-                                 Visibility="{Binding IsFreeWinEnabled, Converter={StaticResource BoolToVis}}"
-                                 Margin="5" GroupName="WinType" IsChecked="{Binding Path=WinType, Converter={StaticResource WinTypeRadioConverter}, ConverterParameter=FreeWin}"></RadioButton>
+                    <TextBlock Text="{Binding WrestlingMatch.RoundName, Mode=OneWay, Converter={StaticResource UpperCaseConverter}}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" HorizontalAlignment="Center" />
                 </StackPanel>
-            </StackPanel>
+            </Viewbox>
         </Grid>
 
-        <StackPanel Grid.Row="2" Grid.Column="0" Margin="10,20,10,10">
-            <TextBlock TextWrapping="NoWrap" Text="Заметки" FontWeight="Normal" FontSize="18" Margin="0" />
+        <Grid Grid.Row="1" Grid.Column="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="3*" />
+            </Grid.ColumnDefinitions>
 
-            <TextBox Padding="0" Margin="0,20,0,0"
-                     TextWrapping="Wrap" VerticalAlignment="Top"
-                     AcceptsReturn="True"
-                     VerticalScrollBarVisibility="Auto"
-                     SpellCheck.IsEnabled="True"
-                     materialDesign:HintAssist.Hint="Заметки"
-                     Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}" />
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*" />
+                <RowDefinition Height="4*" />
+                <RowDefinition Height="1*" />
+            </Grid.RowDefinitions>
 
+            <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="Black" />
+            <Border Grid.Row="0" Grid.Column="1" BorderThickness="0,0,1,0" BorderBrush="Black" />
+            <Border Grid.Row="1" Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="Black" />
+            <Border Grid.Row="1" Grid.Column="1" BorderThickness="0,0,1,0" BorderBrush="Black" />
+            <Border Grid.Row="2" Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="Black" />
+            <Border Grid.Row="2" Grid.Column="1" BorderThickness="0,0,1,0" BorderBrush="Black" />
+            
+            <Border Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Background="Yellow" BorderThickness="1" Visibility="{Binding IsWinnerRed, Converter={StaticResource BoolToVis}}"></Border>
+            <Border Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" Background="Yellow" BorderThickness="1" Visibility="{Binding IsWinnerBlue, Converter={StaticResource BoolToVis}}"></Border>
+
+            <Border Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Background="{DynamicResource SecondaryAccentBrush}" BorderThickness="1" Visibility="{Binding IsRedSelected, Converter={StaticResource BoolToVis}}"></Border>
+            <Border Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" Background="{DynamicResource SecondaryAccentBrush}" BorderThickness="1" Visibility="{Binding IsBlueSelected, Converter={StaticResource BoolToVis}}"></Border>
+
+            <!-- Red Team Name -->
+            <Viewbox Grid.Row="0" Grid.Column="0" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInRed.TeamName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+            </Viewbox>
+
+            <!-- Red Team Emblem-->
+            <Grid Grid.Column="0" Grid.Row="1">
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseEnter">
+                        <i:InvokeCommandAction Command="{Binding RedSelectedCommand}"/>
+                    </i:EventTrigger>
+                    <i:EventTrigger EventName="MouseLeave">
+                        <i:InvokeCommandAction Command="{Binding RedDeselectedCommand}"/>
+                    </i:EventTrigger>
+                    <i:EventTrigger EventName="MouseLeftButtonUp">
+                        <i:InvokeCommandAction Command="{Binding SetWinnerCommand}" CommandParameter="Red"/>
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*" />
+                    <RowDefinition Height="60px" />
+                </Grid.RowDefinitions>                
+
+                <Viewbox Grid.Row="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Image Stretch="UniformToFill" Margin="10" Source="{Binding Wrestler1TeamEmblem, Converter={StaticResource ClubToIconConverter}, ConverterParameter=DefaultLogo.png}" />
+                </Viewbox>
+
+                <Viewbox Grid.Row="1" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInRed.FullName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                </Viewbox>
+                
+            </Grid>
+
+            <!-- Red Winner -->
+            <Grid Grid.Column="0" Grid.Row="2" HorizontalAlignment="Center">
+                <Viewbox Stretch="Uniform" Visibility="{Binding IsWinnerRed, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal" Margin="8">
+                        <Grid Background="Yellow">
+                            <Border BorderBrush="Black" BorderThickness="1">
+                                <TextBlock Text="ПОБЕДИТЕЛЬ" Style="{StaticResource MaterialDesignHeadlineTextBlock}" Margin="10,4,10,4" />
+                            </Border>                            
+                        </Grid>
+                    </StackPanel>
+                </Viewbox>
+            </Grid>
+
+            <!-- VS Label -->
+            <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="1">
+                <StackPanel Grid.Row="0" Orientation="Vertical">
+                    <TextBlock Grid.Row="0" Style="{StaticResource MaterialDesignHeadlineTextBlock}" HorizontalAlignment="Center" Margin="10,10,10,10">
+                            <Run Text="СХВАТКА"></Run>
+                            <Run Text="#"></Run>
+                            <Run Text="{Binding Path=WrestlingMatch.MatchNumber}"></Run>
+                    </TextBlock>
+                </StackPanel>
+            </Viewbox>
+            
+            <!-- Points -->
+            <Grid Grid.Row="1" Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Red Points -->
+                <Grid Grid.Column="0" Background="Red">
+                    <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Grid>
+                            <TextBlock Text="{Binding WrestlingMatch.PointsRed}" Foreground="White" />
+                            <Border BorderBrush="{Binding IsPlayer1WithAdvantage, Converter={StaticResource BoolHighlight}, ConverterParameter=Yellow}" BorderThickness="0,0,0,1" Margin="1" />
+                        </Grid>
+                    </Viewbox>
+                </Grid>
+
+                <!-- Blue Points -->
+                <Grid Grid.Column="1" Background="#005BEC">
+                    <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Grid>
+                            <TextBlock Text="{Binding WrestlingMatch.PointsBlue}" Foreground="White"/>
+                            <Border BorderBrush="{Binding IsPlayer2WithAdvantage, Converter={StaticResource BoolHighlight}, ConverterParameter=Yellow}" BorderThickness="0,0,0,1" Margin="1" />
+                        </Grid>
+                    </Viewbox>
+                </Grid>
+
+            </Grid>
+
+            <!-- WinType -->
+            <Grid Grid.Row="2" Grid.Column="1">
+                <Viewbox Stretch="Uniform" Visibility="{Binding Path=WrestlingMatch.IsMatchCompleted, Converter={StaticResource InvBoolToVis}}" Margin="8">
+                    <Grid>
+                        <Button Style="{StaticResource MaterialDesignRaisedButton}" 
+                                HorizontalAlignment="Center" Margin="8,0,8,0"
+                                Command="{Binding Path=SetWinTypeCommand}">
+                            <TextBlock Text="{Binding WinType, Converter={StaticResource UpperWinType}}"
+                                TextWrapping="NoWrap" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="200"
+                                Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                        </Button>
+                    </Grid>
+                </Viewbox>
+
+                <Viewbox Stretch="Uniform" Visibility="{Binding Path=WrestlingMatch.IsMatchCompleted, Converter={StaticResource BoolToVis}}" Margin="8">
+                    <Grid Background="Yellow">
+                        <Border BorderBrush="Black" BorderThickness="1">
+                            <TextBlock Text="{Binding WinType, Converter={StaticResource UpperWinType}}" MinWidth="200"
+                                    TextWrapping="NoWrap" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                    Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                        </Border>
+                    </Grid>
+                </Viewbox>
+            </Grid>
+
+            <Viewbox Grid.Row="0" Grid.Column="2" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInBlue.TeamName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+            </Viewbox>
+
+            <!-- Blue Column -->
+            <Grid Grid.Column="2" Grid.Row="1">
+                <i:Interaction.Triggers>
+                    <i:EventTrigger EventName="MouseEnter">
+                        <i:InvokeCommandAction Command="{Binding BlueSelectedCommand}"/>
+                    </i:EventTrigger>
+                    <i:EventTrigger EventName="MouseLeave">
+                        <i:InvokeCommandAction Command="{Binding BlueDeselectedCommand}"/>
+                    </i:EventTrigger>
+                    <i:EventTrigger EventName="MouseLeftButtonUp">
+                        <i:InvokeCommandAction Command="{Binding SetWinnerCommand}" CommandParameter="Blue"/>
+                    </i:EventTrigger>
+                </i:Interaction.Triggers>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*" />
+                    <RowDefinition Height="60px" />
+                </Grid.RowDefinitions>                
+                
+                <Viewbox Grid.Row="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Image Stretch="UniformToFill" Margin="10" Source="{Binding Wrestler2TeamEmblem, Converter={StaticResource ClubToIconConverter}, ConverterParameter=DefaultLogo.png}" />
+                </Viewbox>
+
+                <Viewbox Grid.Row="1" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInBlue.FullName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                </Viewbox>
+            </Grid>
+
+            <Grid Grid.Row="2" Grid.Column="2" HorizontalAlignment="Center">
+                <Viewbox Stretch="Uniform" Visibility="{Binding IsWinnerBlue, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal" Margin="8">
+                        <Grid Background="Yellow">
+                            <Border BorderBrush="Black" BorderThickness="1">
+                                <TextBlock Text="ПОБЕДИТЕЛЬ" Style="{StaticResource MaterialDesignHeadlineTextBlock}" Margin="10,4,10,4" />
+                            </Border>                            
+                        </Grid>
+                    </StackPanel>
+                </Viewbox>
+            </Grid>
+        </Grid>
+        
+        <StackPanel Grid.Row="2" Grid.Column="1">
+            <Button Content="ЗАВЕРШИТЬ" Style="{StaticResource MaterialDesignRaisedAccentButton}" TabIndex="1"  
+                    FontStretch="Medium" Width="200" Height="60" Margin="10" FontSize="20"
+                    Command="{Binding CompleteMatchCommand}" ToolTip="Завершить схватку" />
         </StackPanel>
 
-        <TextBlock Grid.Row="3" TextWrapping="NoWrap" Text="Протокол" FontSize="18" TextAlignment="Center" FontWeight="Normal" Margin="10,20,10,10" />
+        <ScrollViewer Grid.Row="3" Grid.Column="1" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+            <StackPanel>
+                <Expander Padding="0" IsExpanded="{Binding IsNoteExpanded}" Background="LightGray">
+                    <Expander.Header>
+                        <Grid>
+                            <Viewbox Stretch="Uniform" Height="30">
+                                <TextBlock Text="ЗАМЕТКИ" />
+                            </Viewbox>
+                        </Grid>
+                    </Expander.Header>
 
-        <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-            <ListView ItemsSource="{Binding Path=WrestlingMatch.MatchActions}" Margin="10">
-            <ListView.View>
-                <GridView AllowsColumnReorder="true">
-                    <GridViewColumn DisplayMemberBinding="{Binding DateTime}" Header="#" Width="Auto"/>
-                    <GridViewColumn DisplayMemberBinding="{Binding RoundNumber}" Header="Раунд" Width="Auto"/>
-                    <GridViewColumn DisplayMemberBinding="{Binding SecondInRound, StringFormat={}{0:mm':'ss}, Converter={StaticResource SecondsToTimeSpanConverter}}" Header="Время" Width="Auto"/>
-                    <GridViewColumn DisplayMemberBinding="{Binding Text}" Header="Детали" Width="Auto"/>
-                </GridView>
-            </ListView.View>
-        </ListView>
+                    <Expander.Content>
+                        <Grid Background="White">
+                            <GroupBox Header="Заметки" Padding="5" Margin="10">
+                                <TextBox Padding="0"
+                                    MinHeight="40"
+                                    TextWrapping="Wrap" VerticalAlignment="Top"
+                                    AcceptsReturn="True"
+                                    VerticalScrollBarVisibility="Auto"
+                                    SpellCheck.IsEnabled="True"                                    
+                                    Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}" />
+                            </GroupBox>
+                        </Grid>
+                    </Expander.Content>
+                </Expander>
+
+                <Expander Padding="0" IsExpanded="{Binding IsActionsExpanded}" Margin="0,20,0,0" Background="LightGray">
+                    <Expander.Header>
+                        <Grid>
+                            <Viewbox Stretch="Uniform" Height="30">
+                                <TextBlock Text="ПРОТОКОЛ" />
+                            </Viewbox>
+                        </Grid>
+                    </Expander.Header>
+
+                    <Expander.Content>
+                        <Grid Background="White">
+                            <ListView ItemsSource="{Binding Path=WrestlingMatch.MatchActions}" Margin="10">
+                                <ListView.View>
+                                    <GridView AllowsColumnReorder="true">
+                                        <GridViewColumn DisplayMemberBinding="{Binding DateTime}" Header="#" Width="Auto"/>
+                                        <GridViewColumn DisplayMemberBinding="{Binding RoundNumber}" Header="Раунд" Width="Auto"/>
+                                        <GridViewColumn DisplayMemberBinding="{Binding SecondInRound, StringFormat={}{0:mm':'ss}, Converter={StaticResource SecondsToTimeSpanConverter}}" Header="Время" Width="Auto"/>
+                                        <GridViewColumn DisplayMemberBinding="{Binding Text}" Header="Детали" Width="Auto"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Grid>
+                    </Expander.Content>
+                </Expander>
+            </StackPanel>
         </ScrollViewer>
     </Grid>
 </UserControl>

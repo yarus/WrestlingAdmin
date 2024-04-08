@@ -35,7 +35,7 @@ namespace Wrestling.UI.Material.Model
                 var sameGroup = target.Groups.FirstOrDefault(p => p.ID == group.ID
                                                                   && p.Bracket != null &&
                                                                   group.Bracket != null &&
-                                                                  p.CarpetLabel == group.CarpetLabel &&
+                                                                  p.CarpetID == group.CarpetID &&
                                                                   p.Bracket.BracketTypeCode == group.Bracket.BracketTypeCode);
                 if (sameGroup == null) continue;
 
@@ -68,6 +68,16 @@ namespace Wrestling.UI.Material.Model
                         result++;
                     }
                 }
+            }
+            
+            // Sync wrestler info (supporting changing of names)
+            foreach (var wrestler in tournament.Wrestlers)
+            {
+                var changedWrestler = target.Wrestlers.FirstOrDefault(x => x.ID == wrestler.ID);
+                
+                if (changedWrestler == null || changedWrestler.Timestamp >= wrestler.Timestamp) continue;
+                
+                changedWrestler.Sync(wrestler);
             }
 
             return result;

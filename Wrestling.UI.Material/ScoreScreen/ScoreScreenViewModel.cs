@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
@@ -40,7 +41,9 @@ namespace Wrestling.UI.Material.ScoreScreen
         private int _secondarySeconds;
         private string _matchFullNumber;
         private int _bestActionRed;
+        private int _bestActionRedCount;
         private int _bestActionBlue;
+        private int _bestActionBlueCount;
         private bool _isLastActionRed;
         private bool _isPlayer1WithAdvantage;
         private bool _isPlayer2WithAdvantage;
@@ -51,6 +54,8 @@ namespace Wrestling.UI.Material.ScoreScreen
         private string _winnerTeamEmblem;
         private Wrestler _winner;
         private SolidColorBrush _winnerColorBrush;
+
+        private DispatcherTimer _timer;
 
         private Carpet _lastMatchCarpet;
 
@@ -125,40 +130,51 @@ namespace Wrestling.UI.Material.ScoreScreen
             IsMainScreenVisible = false;
             IsWinnerDialogVisible = true;
 
-            Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith((t, _) =>
+            _timer = new DispatcherTimer(DispatcherPriority.Send);
+            _timer.Tick += OnWinnerShowCompleted;
+            _timer.Interval = new TimeSpan(0, 0, 0, 5);
+            _timer.Start();
+        }
+
+        private void OnWinnerShowCompleted(object sender, EventArgs e)
+        {
+            WinnerColorBrush = null;
+            WinnerTeamEmblem = string.Empty;
+            IsWinnerDialogVisible = false;
+
+            if (LastMatchCarpet != null && DataContext.Tournament != null)
             {
-                WinnerColorBrush = null;
-                WinnerTeamEmblem = string.Empty;
-                IsWinnerDialogVisible = false;
-
-                if (LastMatchCarpet != null && DataContext.Tournament != null)
+                if (!IsMainScreenVisible)
                 {
-                    if (!IsMainScreenVisible)
-                    {
-                        UpcomingMatches = new ObservableCollection<WrestlingMatch>(LastMatchCarpet.Groups
-                            .SelectMany(g => g.Bracket.Rounds)
-                            .SelectMany(r => r.RoundMatches)
-                            .Where(m => m.IsMatchCanStart)
-                            .OrderBy(m => m.MatchNumber).Take(3));
+                    UpcomingMatches = new ObservableCollection<WrestlingMatch>(LastMatchCarpet.Groups
+                        .SelectMany(g => g.Bracket.Rounds)
+                        .SelectMany(r => r.RoundMatches)
+                        .Where(m => m.IsMatchCanStart)
+                        .OrderBy(m => m.MatchNumber).Take(3));
 
-                        if (UpcomingMatches.Count > 0)
-                        {
-                            IsUpcomingMatchesVisible = true;
-                        }
-                        else
-                        {
-                            IsMainScreenVisible = true;
-                        }
+                    if (UpcomingMatches.Count > 0)
+                    {
+                        IsUpcomingMatchesVisible = true;
+                    }
+                    else
+                    {
+                        IsMainScreenVisible = true;
                     }
                 }
-                else
-                {
-                    IsMainScreenVisible = true;
-                }
+            }
+            else
+            {
+                IsMainScreenVisible = true;
+            }
 
-                Winner = null;
+            Winner = null;
 
-            }, null, TaskScheduler.FromCurrentSynchronizationContext());
+            if (_timer != null)
+            {
+                _timer.Stop();
+                _timer.Tick -= OnWinnerShowCompleted;
+                _timer = null;
+            }
         }
 
         public override void InitData()
@@ -242,10 +258,20 @@ namespace Wrestling.UI.Material.ScoreScreen
                 TournamentTitle = DataContext.Tournament.Name;
             }
 
-            Wrestler1 = DataContext.WrestlingMatch.WrestlerInRed.LastFirstNameShort;
-            //Wrestler1 = DataContext.WrestlingMatch.WrestlerInRed.LastFirstName;
-            Wrestler2 = DataContext.WrestlingMatch.WrestlerInBlue.LastFirstNameShort;
-            //Wrestler2 = DataContext.WrestlingMatch.WrestlerInBlue.LastFirstName;
+            //Wrestler1 = DataContext.WrestlingMatch.WrestlerInRed.LastFirstNameShort;
+            Wrestler1 = DataContext.WrestlingMatch.WrestlerInRed.LastFirstName;
+
+            if (Wrestler1.Length > 25)
+            {
+                Wrestler1 = Wrestler1.Substring(0, 25);
+            }
+
+            //Wrestler2 = DataContext.WrestlingMatch.WrestlerInBlue.LastFirstNameShort;
+            Wrestler2 = DataContext.WrestlingMatch.WrestlerInBlue.LastFirstName;
+            if (Wrestler2.Length > 25)
+            {
+                Wrestler2 = Wrestler2.Substring(0, 25);
+            }
         }
 
         public void Reset()
@@ -256,7 +282,9 @@ namespace Wrestling.UI.Material.ScoreScreen
             Points2 = 0;
             Wrestler1WarningsNumber = 0;
             Wrestler2WarningsNumber = 0;
+            _bestActionBlueCount = 0;
             BestActionBlue = 0;
+            BestActionRedCount = 0;
             BestActionRed = 0;
             Round = 1;
             IsAction1TimerEnabled = false;
@@ -443,6 +471,16 @@ namespace Wrestling.UI.Material.ScoreScreen
             }
         }
 
+        public int BestActionRedCount
+        {
+            get { return _bestActionRedCount; }
+            set
+            {
+                _bestActionRedCount = value;
+                OnPropertyChanged("BestActionRedCount");
+            }
+        }
+
         public int BestActionBlue
         {
             get { return _bestActionBlue; }
@@ -450,6 +488,16 @@ namespace Wrestling.UI.Material.ScoreScreen
             {
                 _bestActionBlue = value;
                 OnPropertyChanged("BestActionBlue");
+            }
+        }
+
+        public int BestActionBlueCount
+        {
+            get { return _bestActionBlueCount; }
+            set
+            {
+                _bestActionBlueCount = value;
+                OnPropertyChanged("BestActionBlueCount");
             }
         }
 

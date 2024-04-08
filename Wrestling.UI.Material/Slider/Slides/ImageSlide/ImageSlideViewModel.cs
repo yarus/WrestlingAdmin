@@ -48,7 +48,7 @@ namespace Wrestling.UI.Material.Slider.Slides.ImageSlide
 
             InitData();
             
-            var background = _item.GetNamedValue("SliderBackgroundImagePath");
+            var background = _item.GetNamedValue("ImagePath");
             if (background != null)
             {
                 ImagePath = background.ToString();

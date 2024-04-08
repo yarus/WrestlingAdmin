@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Wrestling.Entities.Results;
 
 namespace Wrestling.Entities.Bracket
 {
@@ -20,8 +18,12 @@ namespace Wrestling.Entities.Bracket
         {
         }
 
-        private Wrestler GetWinnerFromPair(Wrestler first, Wrestler second, List<WrestlingMatch> matches)
+        private Wrestler GetWinnerFromPair(Wrestler first, Wrestler second, GroupBracket bracket)
         {
+            var matches = bracket.Rounds.SelectMany(p => p.RoundMatches).Where(x => x.Status == MatchStatusEnum.Completed).ToList();
+
+            if (matches.Count == 0) return null;
+            
             var pairMatch = matches.FirstOrDefault(m =>
                 (m.WrestlerInBlue == first && m.WrestlerInRed == second)
                 || (m.WrestlerInRed == first && m.WrestlerInBlue == second));
@@ -38,108 +40,49 @@ namespace Wrestling.Entities.Bracket
 
         protected override void CalculateResults()
         {
-            if (Group.Bracket == null) return;
+            if (Group.Bracket == null || !Group.IsBracketCompleted) return;
 
             // 1. First order by wins count
             // 2. Check pair result if wins count equals
-
-            var matches = Group.Bracket.Rounds.SelectMany(p => p.RoundMatches).Where(x => x.Status == MatchStatusEnum.Completed).ToList();
-            if (matches.Count == 0)
-            {
-                return;
-            }
-
-            var stats = GetStats();
-
-            var orderedStats = stats
+            var orderedStats = GetStats()
                 .OrderByDescending(x => x.Wins)
+                .ThenByDescending(x => x.OverallTournamentClassificationPoints)
+                .ThenByDescending(x => x.WinsByTushe)
+                .ThenByDescending(x => x.WinsByDomination)
+                .ThenByDescending(x => x.WinsByDominationWithPoints)
+                .ThenByDescending(x => x.AllGainedPoints)
+                .ThenBy(x => x.AllLostPoints)
+                .ThenBy(x => x.Wrestler.SeedNumber)
                 .ToList();
 
-            int finalPlace = 1;
-            for (int i = 0;i < orderedStats.Count;i++)
+            var finalPlace = 1;
+            foreach (var stat in orderedStats)
             {
-                var sameWins = orderedStats.Where(x => x.Wins == orderedStats[i].Wins && x.Wrestler != orderedStats[i].Wrestler && !x.Wrestler.FinalPlace.HasValue).ToList();
+                var sameWins = orderedStats.Where(x => x.Wins == stat.Wins && x.Wrestler.ID != stat.Wrestler.ID && !x.Wrestler.FinalPlace.HasValue).ToList();
                 if (sameWins.Count == 0)
                 {
-                    orderedStats[i].Wrestler.FinalPlace = finalPlace;
+                    stat.Wrestler.FinalPlace = finalPlace;
                     finalPlace++;
+                    continue;
                 }
+                
                 // If only 1 wrestler with same wins count - check pair result
-                else if (sameWins.Count == 1)
+                if (sameWins.Count == 1)
                 {
-                    var winner = GetWinnerFromPair(orderedStats[i].Wrestler, sameWins[0].Wrestler, matches);
+                    var winner = GetWinnerFromPair(stat.Wrestler, sameWins[0].Wrestler, Group.Bracket);
+                    if (winner == null) continue;
+                    
+                    stat.Wrestler.FinalPlace = winner.ID == stat.Wrestler.ID ? finalPlace : finalPlace + 1;
+                    sameWins[0].Wrestler.FinalPlace = winner.ID == sameWins[0].Wrestler.ID ? finalPlace : finalPlace + 1;
 
-                    orderedStats[i].Wrestler.FinalPlace = winner == orderedStats[i].Wrestler ? finalPlace : finalPlace + 1;
-                    sameWins[0].Wrestler.FinalPlace = winner == sameWins[0].Wrestler ? finalPlace : finalPlace + 1;
-
-                    finalPlace += 2;
+                    finalPlace++;
+                    continue;
                 }
-                // If more than 1 wrestlers with same result - order by stats and pick final places
-                else
-                {
-                    var allSameStats = new List<TournamentResult>();
-                    allSameStats.Add(orderedStats[i]);
-                    allSameStats.AddRange(sameWins);
-
-                    var finalOrder = allSameStats
-                        .OrderByDescending(x => x.OverallTournamentRating)
-                        .ToList();
-
-                    foreach (var t in finalOrder)
-                    {
-                        t.Wrestler.FinalPlace = finalPlace;
-                        finalPlace++;
-                    }
-                }
+                
+                // If more than 1 wrestlers with same result - use the current order
+                stat.Wrestler.FinalPlace = finalPlace;
+                finalPlace++;
             }
-
-            /*
-
-            var groupWrestlers = GetGroupWrestlers().ToList();
-
-            foreach (var wrestler in groupWrestlers)
-            {
-                var wins = matches.Where(p =>
-                        (p.Status == MatchStatusEnum.Completed && p.WrestlerInRed == wrestler && p.IsRedWon.Value)
-                        || (p.Status == MatchStatusEnum.Completed && p.WrestlerInBlue == wrestler && p.IsBlueWon))
-                    .ToList()
-                    .Count;
-                wrestler.FinalPlace = wins * 10;
-            }
-
-            foreach (var wr in groupWrestlers)
-            {
-                var samePoints = groupWrestlers.FirstOrDefault(p => p.FinalPlace == wr.FinalPlace && p != wr);
-                while (samePoints != null && samePoints.FinalPlace != 0)
-                {
-                    var match = matches.FirstOrDefault(p =>
-                        (p.WrestlerInRed == wr && p.WrestlerInBlue == samePoints)
-                        || (p.WrestlerInBlue == wr && p.WrestlerInRed == samePoints));
-
-                    if (match != null)
-                    {
-                        match.WrestlerInRed.FinalPlace = match.IsRedWon.Value
-                            ? match.WrestlerInRed.FinalPlace + 1
-                            : match.WrestlerInRed.FinalPlace - 1;
-                        match.WrestlerInBlue.FinalPlace = match.IsBlueWon
-                            ? match.WrestlerInBlue.FinalPlace + 1
-                            : match.WrestlerInBlue.FinalPlace - 1;
-                    }
-                    else
-                    {
-                        break;
-                    }
-
-                    samePoints = groupWrestlers.FirstOrDefault(p => p.FinalPlace == wr.FinalPlace);
-                }
-            }
-
-            var orderedWrestlers = groupWrestlers.OrderByDescending(p => p.FinalPlace).ToList();
-            for (int i = 0; i < orderedWrestlers.Count; i++)
-            {
-                orderedWrestlers[i].FinalPlace = i + 1;
-            }
-            */
         }
 
         private void GenerateGroupBracket()

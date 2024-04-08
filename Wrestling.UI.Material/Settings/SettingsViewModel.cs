@@ -1,35 +1,34 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Media;
-using System.Windows;
+using System.Net;
+using System.Security.AccessControl;
+using System.Security.Principal;
+using System.Windows.Controls;
 using System.Windows.Input;
-using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
+using Wrestling.Integration;
 using Wrestling.Providers;
-using Wrestling.Recorder;
-using Wrestling.Recorder.DataAccess;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Tournament.Dashboard;
-using Wrestling.UI.Material.Utils.Recording.OverlayDrawer;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Settings
 {
     public class SettingsViewModel : ViewModelBase
     {
-        private ICommand _setVideoStoragePathCommand;
         private ICommand _setSliderBackgroundCommand;
         private ICommand _setStartGongCommand;
         private ICommand _setEndGongCommand;
         private ICommand _playEndGongCommand;
         private ICommand _playStartGongCommand;
-        private ICommand _reloadRecConfigCommand;
-        private ICommand _openConfiguratorCommand;
+        private ICommand _loadIntegrationDataCommand;
+
+        private string _validation;
 
         public SettingsViewModel(IDiContainer container) : base(container)
         {
@@ -48,6 +47,17 @@ namespace Wrestling.UI.Material.Settings
 
         public GlobalSettings Item { get; set; }
 
+        public string Validation
+        {
+            get { return _validation; }
+            set
+            {
+                _validation = value;
+
+                OnPropertyChanged("Validation");
+            }
+        }
+
         public bool IsTournamentScoreInternational
         {
             get { return Item.IsTournamentScoreInternational; }
@@ -56,6 +66,22 @@ namespace Wrestling.UI.Material.Settings
                 Item.IsTournamentScoreInternational = value;
                 SetupScoreScreen(value);
                 OnPropertyChanged("IsTournamentScoreInternational");
+            }
+        }
+
+        public bool IsAuthenticated
+        {
+            get { return DataContext.IsAuthenticated; }
+            set
+            {
+                DataContext.IsAuthenticated = value;
+
+                if (value)
+                {
+                    Validation = string.Empty;
+                }
+
+                OnPropertyChanged("IsAuthenticated");
             }
         }
 
@@ -99,43 +125,6 @@ namespace Wrestling.UI.Material.Settings
             }
         }
 
-        public bool IsOverlayOlympic
-        {
-            get { return Item.IsOverlayOlympic; }
-            set
-            {
-                Item.IsOverlayOlympic = value;
-                SetupOverlay(value);
-                OnPropertyChanged("IsOverlayOlympic");
-            }
-        }
-
-        public bool IsVideoRecordingEnabledF
-        {
-            get { return Item.IsVideoRecordingEnabled; }
-            set
-            {
-                if (value)
-                {
-                    if (IsConfigValid())
-                    {
-                        Item.IsVideoRecordingEnabled = true;
-                    }
-                    else
-                    {
-                        Dialog.ShowMessageBox(this, "Некорректно выполнена конфигурация видеорегистратора!");
-                        Item.IsVideoRecordingEnabled = false;
-                    }
-                }
-                else
-                {
-                    Item.IsVideoRecordingEnabled = false;
-                }
-
-                OnPropertyChanged("IsVideoRecordingEnabledF");
-            }
-        }
-
         protected override void OnBackCommand()
         {
             if (DataContext.Tournament == null)
@@ -148,73 +137,159 @@ namespace Wrestling.UI.Material.Settings
             }
         }
 
-        public ICommand ReloadRecConfigCommand
+        public ICommand LoadIntegrationDataCommand
         {
             get
             {
-                if (_reloadRecConfigCommand == null)
+                if (_loadIntegrationDataCommand == null)
                 {
-                    _reloadRecConfigCommand = new RelayCommand(
-                        param => ReloadConfig(),
+                    _loadIntegrationDataCommand = new RelayCommand(
+                        param => LoadIntegrationData((param as PasswordBox)?.Password ?? string.Empty),
                         param => true
                     );
                 }
-                return _reloadRecConfigCommand;
+                return _loadIntegrationDataCommand;
+            }
+        }
+        
+        public void LoadIntegrationData(string password)
+        {
+            if (string.IsNullOrEmpty(Item.IntegrationUserName))
+            {
+                IsAuthenticated = false;
+                Validation = "Ввведите имя пользователя";
+                return;
+            }            
+
+            if (string.IsNullOrEmpty(password))
+            {
+                IsAuthenticated = false;
+                Validation = "Ввведите пароль";
+                return;
+            }
+
+            Item.IntegrationPassword = password;
+
+            var api = DiContainer.Resolve<IRosbosApi>();
+            var cache = DiContainer.Resolve<ICacheManager>();
+
+            if (!VerifyLogin(api, Item.IntegrationUserName, Item.IntegrationPassword))
+            {
+                IsAuthenticated = false;
+                Validation = "Неправильные данные";
+                return;
+            }
+
+            IsAuthenticated = true;
+
+            UpdateCache(api, cache);
+
+            InitDataContextWithCache(cache);
+        }
+
+        private void InitDataContextWithCache(ICacheManager cache)
+        {
+            if (cache != null && (DataContext.WrestlersCache == null || DataContext.WrestlersCache.Count == 0 || DataContext.TeamsCache == null || DataContext.TeamsCache.Count == 0))
+            {
+                DataContext.WrestlersCache = cache.LoadWrestlers();
+                DataContext.TeamsCache = cache.LoadTeams();
             }
         }
 
-        public ICommand OpenConfiguratorCommand
+        private void UpdateCache(IRosbosApi api, ICacheManager cache)
         {
-            get
+            var teams = api.GetTeams();
+
+            foreach (var team in teams)
             {
-                if (_openConfiguratorCommand == null)
+                if (DataContext.TeamsCache.Find(x => team.HashTag == x.HashTag) == null)
                 {
-                    _openConfiguratorCommand = new RelayCommand(
-                        param => OpenConfigurator(),
-                        param => true
-                    );
+                    DataContext.TeamsCache.Add(team);
                 }
-                return _openConfiguratorCommand;
             }
-        }
 
-        private void OpenConfigurator()
-        {
-            Process.Start("Wrestling.Recorder.Configurator.exe");
-        }
-
-        public bool IsConfigValid()
-        {
-            if (string.IsNullOrEmpty(Item.VideoStoragePath)) return false;
-
-            var config = Resolve<RecorderConfiguration>();
-            if (config != null)
+            var wrestlers = api.GetWrestlers();
+            
+            foreach (var wrestler in wrestlers)
             {
-                return !string.IsNullOrEmpty(config.VideoDeviceID);
+                if (DataContext.WrestlersCache.Find(x => wrestler.HashTag == x.HashTag) == null)
+                {
+                    DataContext.WrestlersCache.Add(wrestler);
+                }
             }
 
-            return false;
+            CheckTeamLogo();
+
+            if (cache != null)
+            {
+                cache.SaveTeams(teams);
+                cache.SaveWrestlers(wrestlers);
+            }
+        }
+
+        private void CheckTeamLogo()
+        {
+            foreach (var app in DataContext.TeamsCache)
+            {
+                if (!string.IsNullOrEmpty(app.EmblemPath))
+                {
+                    // get file name and check if it exists
+                    var fileNameItems = app.EmblemPath.Split('\\');
+                    var fileName = fileNameItems[fileNameItems.Length - 1];
+
+                    var storagePath = Path.GetFullPath("Images");
+
+                    EnsureUploadFolder(storagePath);
+
+                    var fullPath = $"{storagePath}\\{fileName}";
+
+                    if (!File.Exists(fullPath))
+                    {
+                        using (WebClient client = new WebClient())
+                        {
+                            client.DownloadFile($"https://rosbos.ru/{app.EmblemPath}", fullPath);
+                        }
+                    }
+
+                    app.EmblemPath = fullPath;
+                }
+            }
+        }
+
+        private void EnsureUploadFolder(string folder)
+        {
+            Directory.CreateDirectory(folder);
+
+            DirectoryInfo dInfo = new DirectoryInfo(folder);
+
+            DirectorySecurity dSecurity = dInfo.GetAccessControl();
+
+            dSecurity.AddAccessRule(new FileSystemAccessRule(
+                    new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                    FileSystemRights.FullControl,
+                    InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit,
+                    PropagationFlags.NoPropagateInherit,
+                    AccessControlType.Allow));
+
+            dInfo.SetAccessControl(dSecurity);
+        }
+
+        private bool VerifyLogin(IRosbosApi api, string userName, string password)
+        {
+            api.SetCredentials(userName, password);
+
+            var token = api.LoadToken();
+
+            if (!token)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public void ReloadConfig()
         {
-            var data = GetConfig();
-            if (data != null)
-            {
-                DiContainer.Remove<RecorderConfiguration>();
-                DiContainer.Add<RecorderConfiguration>(data);
-                Dialog.ShowMessageBox(this, "Конфигурация видеорегистратора успешно обновлена!", "Информация", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            else
-            {
-                Dialog.ShowMessageBox(this, "Файл конфигурации видеорегистратора не может быть прочитан!", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private RecorderConfiguration GetConfig()
-        {
-            var da = Resolve<IRecorderConfigurationDataAccess>();
-            return da?.LoadFromFile("CamConfig.json");
         }
 
         public ICommand PlayStartGongCommand
@@ -229,21 +304,6 @@ namespace Wrestling.UI.Material.Settings
                     );
                 }
                 return _playStartGongCommand;
-            }
-        }
-
-        public ICommand SetVideoStoragePathCommand
-        {
-            get
-            {
-                if (_setVideoStoragePathCommand == null)
-                {
-                    _setVideoStoragePathCommand = new RelayCommand(
-                        param => SetVideoStoragePath(),
-                        param => true
-                    );
-                }
-                return _setVideoStoragePathCommand;
             }
         }
 
@@ -321,20 +381,6 @@ namespace Wrestling.UI.Material.Settings
             }
         }
 
-        private void SetupOverlay(bool isOlympic)
-        {
-            DiContainer.Remove<IOverlayDrawer>();
-
-            if (isOlympic)
-            {
-                DiContainer.Add<IOverlayDrawer>(new OlympicOverlayDrawer());
-            }
-            else
-            {
-                DiContainer.Add<IOverlayDrawer>(new SimpleOverlayDrawer());
-            }
-        }
-
         private void SetSliderBackground()
         {
             var settings = new OpenFileDialogSettings
@@ -398,21 +444,6 @@ namespace Wrestling.UI.Material.Settings
             if (success == true)
             {
                 Item.EndGongSoundPath = settings.FileName;
-            }
-        }
-
-        private void SetVideoStoragePath()
-        {
-            var settings = new FolderBrowserDialogSettings
-            {
-                Description = "Укажите путь к папке для сохранения видео",
-                SelectedPath = string.IsNullOrEmpty(Item.VideoStoragePath) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : Item.VideoStoragePath
-            };
-
-            bool? success = Dialog.ShowFolderBrowserDialog(this, settings);
-            if (success == true)
-            {
-                Item.VideoStoragePath = settings.SelectedPath;
             }
         }
     }

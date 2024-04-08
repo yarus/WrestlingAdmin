@@ -34,6 +34,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         public int CarpetsCount => DataContext.Tournament.Carpets.Count;
         public int MatchesCount => DataContext.Tournament.Groups.Sum(g => g.Bracket?.MatchesCount ?? 0);
         public int CompletedMatchesCount => DataContext.Tournament.Groups.Sum(g => g.Bracket?.CompletedMatchesCount ?? 0);
+        public int LeftMatchesCount => MatchesCount - CompletedMatchesCount;
 
         public ScheduleViewModel(IDiContainer container) : base(container)
         {
@@ -49,6 +50,12 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
             _carpets = DataContext.Tournament.Carpets;
 
+            if (_carpets.Count == 0 || (Stats != null && _carpets.Count != Stats.Count))
+            {
+                Stats = null;
+            }
+
+            _filteredStats = GenerateStats();
             Filter(FilterString);
 
             DataContext.IsBracketView = false;
@@ -149,7 +156,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
             foreach (var carpet in _carpets)
             {
-                var matches = new ObservableCollection<WrestlingMatch>(carpet.Groups
+                var matches = new ObservableCollection<WrestlingMatch>(carpet.Groups.Where(g => g.Bracket != null)
                     .SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches).OrderBy(m => m.MatchNumber));
 
                 var stat = new CarpetStats

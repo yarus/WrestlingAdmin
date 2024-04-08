@@ -46,7 +46,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
                 throw new ApplicationException("Tournament property is not set!");
             }
 
-            Carpets = Tournament.Carpets;
+            Carpets = DataContext.Tournament.Carpets;
 
             if (Carpets.Count > 0 && _selectedCarpet == null || (Carpets.Count > 0 && !Carpets.Contains(SelectedCarpet))) SelectedCarpet = Carpets[0];
 

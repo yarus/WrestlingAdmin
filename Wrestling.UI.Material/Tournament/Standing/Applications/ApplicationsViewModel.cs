@@ -6,6 +6,8 @@ using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
+using Wrestling.Providers;
+using Wrestling.UI.Material.Tournament.Print.PrintTeamApplication;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Standing.Applications
@@ -22,6 +24,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         private ICommand _addWrestlerCommand;
         private ICommand _editWrestlerCommand;
         private ICommand _deleteWrestlerCommand;
+        private ICommand _printTeamApplicationCommand;
 
         private string _filterString;
         private bool _isOnlyUnapprovedVisible;
@@ -102,6 +105,19 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         }
 
         #region Command Properties
+
+        public ICommand PrintTeamApplicationCommand
+        {
+            get
+            {
+                if (_printTeamApplicationCommand == null)
+                {
+                    _printTeamApplicationCommand = new RelayCommand(param => PrintTeamApplication(param as TeamApplication), param => param != null);
+                }
+
+                return _printTeamApplicationCommand;
+            }
+        }
 
         public ICommand AddAppCommand
         {
@@ -224,9 +240,26 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 }
 
                 OnPropertyChanged("AppsCount");
+
+                if (!DataContext.TeamsCache.Any(x => !string.IsNullOrEmpty(x.HashTag) && x.HashTag == addAppVm.Item.HashTag))
+                {
+                    DataContext.TeamsCache.Add(addAppVm.Item);
+                    
+                    var cache = DiContainer.Resolve<ICacheManager>();
+                    cache.SaveTeams(DataContext.TeamsCache);
+                }
             }
         }
 
+        private void PrintTeamApplication(TeamApplication teamApplication)
+        {
+            if (teamApplication == null) return;
+
+            DataContext.Team = teamApplication;
+
+            ShowPrintPreview(new PrintTeamApplicationViewModel(DiContainer));            
+        }
+        
         private async void EditApplication(TeamApplication app)
         {
             var tmpApp = app.Clone() as TeamApplication;
@@ -250,10 +283,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                     foreach (var itemWrestler in item.Wrestlers)
                     {
                         itemWrestler.TeamName = item.ShortName;
+                        itemWrestler.TeamCity = item.City;
                     }
                 }
 
                 OnPropertyChanged("AppsCount");
+                
+                var cache = DiContainer.Resolve<ICacheManager>();
+                cache.SaveTeams(DataContext.TeamsCache);
             }
         }
 
@@ -291,7 +328,9 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 ID = Guid.NewGuid(),
                 TeamID = app.ID,
-                TeamName = app.ShortName
+                TeamName = app.ShortName,
+                TeamCity = app.City,
+                Timestamp = DateTime.Now
             };
 
             if (!DataContext.Tournament.EntryFee.HasValue || DataContext.Tournament.EntryFee.Value == 0)
@@ -318,6 +357,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 tmpWresler.TeamID = app.ID;
                 tmpWresler.TeamName = app.ShortName;
+                tmpWresler.TeamCity = app.City;
+                tmpWresler.Timestamp = DateTime.Now;
 
                 DataContext.Tournament.Wrestlers.Add(tmpWresler);
 
@@ -329,6 +370,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
                 app.RefreshStats();
                 OnPropertyChanged("WrestlersCount");
+                
+                if (!DataContext.WrestlersCache.Any(x => !string.IsNullOrEmpty(x.HashTag) && x.HashTag == tmpWresler.HashTag))
+                {
+                    DataContext.WrestlersCache.Add(tmpWresler);
+                    
+                    var cache = DiContainer.Resolve<ICacheManager>();
+                    cache.SaveWrestlers(DataContext.WrestlersCache);
+                }
             }
         }
 
@@ -370,14 +419,15 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 if (group != null)
                 {
                     var groupWrestler = group.Wrestlers.FirstOrDefault(wr => wr.ID == wrestler.ID);
-                    if (groupWrestler != null)
+                    if (groupWrestler == null)
                     {
                         group.Wrestlers.Add(wrestler);
-                        group.Bracket = null;
-                        group.RefreshState();
-                        
-                        wrestler.GroupName = group.Name;
                     }
+                    
+                    group.Bracket = null;
+                    group.RefreshState();
+                        
+                    wrestler.GroupName = group.Name;
                 }
             }
         }
@@ -387,6 +437,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             if (_editWrestlerDialogOpened) return;
 
             var tmpWrestler = wrestler.Clone() as Wrestler;
+            tmpWrestler.Timestamp = DateTime.Now;
 
             var vm = new AddWrestlerViewModel(DiContainer, tmpWrestler);
             vm.InitData();
@@ -404,18 +455,29 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 var teamApp = Items.FirstOrDefault(a => a.ID == wrestler.TeamID);
                 if (teamApp != null && tmpWrestler != null)
                 {
-                    // Remove wrestler from old group
-                    RemoveWrestlerFromGroup(wrestler);
+                    var isGroupChanged = tmpWrestler.GroupID != wrestler.GroupID || (!tmpWrestler.GroupID.HasValue && wrestler.GroupID.HasValue);
+                    
+                    if (isGroupChanged)
+                    {
+                        // Remove wrestler from old group
+                        RemoveWrestlerFromGroup(wrestler);
 
-                    // Remove wrestler from new group if it was already added
-                    RemoveWrestlerFromGroup(tmpWrestler);
+                        // Remove wrestler from new group if it was already added
+                        RemoveWrestlerFromGroup(tmpWrestler);
+                    }
                     
                     wrestler.Sync(tmpWrestler);
 
-                    // Add wrestler to Group if all data is valid
-                    AddWrestlerToHisGroup(tmpWrestler);
+                    if (isGroupChanged)
+                    {
+                        // Add wrestler to Group if all data is valid
+                        AddWrestlerToHisGroup(tmpWrestler);
+                    }
 
                     teamApp.RefreshStats();
+                    
+                    var cache = DiContainer.Resolve<ICacheManager>();
+                    cache.SaveWrestlers(DataContext.WrestlersCache);
                 }
             }
 

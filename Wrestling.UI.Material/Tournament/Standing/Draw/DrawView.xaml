@@ -39,6 +39,13 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
+            <TextBlock Grid.Row="0" Grid.Column="0" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
+                <Button Content="Пересоздать Все Сетки"
+                        HorizontalAlignment="Left" Margin="5,0,5,0"
+                        Command="{Binding Path=DataContext.RegenerateAllBrackets, ElementName=RootControl}"
+                        CommandParameter="{Binding }" />
+            </TextBlock>
+            
             <TextBlock Grid.Row="0" Grid.Column="1" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
                 <Run Text="Групп:" />
                 <Run Text="{Binding GroupsCount, Mode=OneWay}" />
@@ -54,273 +61,318 @@
                 <Run Text="{Binding MatchesCount, Mode=OneWay}" />
             </TextBlock>
         </Grid>
+        
+        <ItemsControl Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Groups}" VirtualizingStackPanel.IsVirtualizing="True">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling" Margin="0" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            
+            <ItemsControl.Template>
+                <ControlTemplate TargetType="ItemsControl">
+                    <Border BorderThickness="{TemplateBinding BorderThickness}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            Background="{TemplateBinding Background}">
+                        <ScrollViewer CanContentScroll="True" 
+                                      Padding="{TemplateBinding Padding}"
+                                      Focusable="False">
+                            <ItemsPresenter />
+                        </ScrollViewer>
+                    </Border>
+                </ControlTemplate>
+            </ItemsControl.Template>
+            
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Expander x:Name="GroupControl" Background="LightGray" Margin="0" Padding="0">
+                        <Expander.Header>
+                            <Grid Margin="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="100" />
+                                </Grid.ColumnDefinitions>
 
-        <ScrollViewer Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <ItemsControl ItemsSource="{Binding Groups}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Margin="0" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Expander x:Name="GroupControl" Background="LightGray" Margin="0" Padding="0">
-                            <Expander.Header>
-                                <Grid Margin="0">
+                                <TextBlock Grid.Column="0" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{StaticResource ItemsIndexConverter}" ConverterParameter="1">
+                                            <Binding RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ItemsControl}}" />
+                                            <Binding Path="."/>
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+
+                                <TextBlock Grid.Column="1" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Center" Margin="20,0,0,0" Text="{Binding Name}" />
+
+                                <TextBlock Grid.Column="2" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Center" Margin="20,0,0,0" Text="{Binding Path=Bracket.BracketTypeLabel}" />
+
+                                <StackPanel Grid.Row="0" Grid.Column="3" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}">
+                                    <Button Content="Удалить сетку"
+                                            HorizontalAlignment="Right" Margin="5,0,5,0"
+                                            Command="{Binding Path=DataContext.RemoveBracketCommand, ElementName=RootControl}"
+                                            CommandParameter="{Binding }" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="0" Grid.Column="3" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource InvBoolToVis}}">
+                                    <Button Content="Создать сетку"
+                                            HorizontalAlignment="Right" Margin="5,0,5,0"
+                                            Command="{Binding Path=DataContext.GenerateBracketCommand, ElementName=RootControl}"
+                                            CommandParameter="{Binding }" />
+                                </StackPanel>
+
+                                <Grid Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20,0,20,0">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="40" />
+                                        <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
 
-                                    <TextBlock Grid.Column="0" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        <TextBlock.Text>
-                                            <MultiBinding Converter="{StaticResource ItemsIndexConverter}" ConverterParameter="1">
-                                                <Binding RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ItemsControl}}" />
-                                                <Binding Path="."/>
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-
-                                    <TextBlock Grid.Column="1" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Center" Margin="20,0,0,0" Text="{Binding Name}" />
-
-                                    <TextBlock Grid.Column="2" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Center" Margin="20,0,0,0" Text="{Binding Path=Bracket.BracketTypeLabel}" />
-
-                                    <StackPanel Grid.Row="0" Grid.Column="3" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}">
-                                        <Button Content="Удалить сетку"
-                                                HorizontalAlignment="Right" Margin="5,0,5,0"
-                                                Command="{Binding Path=DataContext.RemoveBracketCommand, ElementName=RootControl}"
-                                                CommandParameter="{Binding }" />
-                                    </StackPanel>
-
-                                    <StackPanel Grid.Row="0" Grid.Column="3" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource InvBoolToVis}}">
-                                        <Button Content="Создать сетку"
-                                                HorizontalAlignment="Right" Margin="5,0,5,0"
-                                                Command="{Binding Path=DataContext.GenerateBracketCommand, ElementName=RootControl}"
-                                                CommandParameter="{Binding }" />
-                                    </StackPanel>
-
-                                    <Grid Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20,0,20,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="1*" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="1*" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="32" Height="32" Margin="0" Padding="0" 
-                                                                 ToolTip="Жеребьевка проведена успешно." Kind="CheckboxMarkedOutline" 
-                                                                 Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}" />
-                                        <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="32" Height="32" Margin="0" Padding="0" 
-                                                                 ToolTip="Жеребьевка не проведена." Kind="CloseBoxOutline" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource InvBoolToVis}}" />
-                                    </Grid>
+                                    <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="32" Height="32" Margin="0" Padding="0" 
+                                                             ToolTip="Жеребьевка проведена успешно." Kind="CheckboxMarkedOutline" 
+                                                             Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}" />
+                                    <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="32" Height="32" Margin="0" Padding="0" 
+                                                             ToolTip="Жеребьевка не проведена." Kind="CloseBoxOutline" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource InvBoolToVis}}" />
                                 </Grid>
-                            </Expander.Header>
-                            <Expander.Content>
-                                <Grid Background="White">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="*" />
-                                    </Grid.RowDefinitions>
 
+                                <Grid Grid.Column="5" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0">
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="5" />
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
 
-                                    <GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Width="5" VerticalAlignment="Stretch" HorizontalAlignment="Center"></GridSplitter>
-                                    
-                                    <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
-                                    <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
-                                    
-                                    <TextBlock Grid.Row="0" Grid.Column="0" TextWrapping="NoWrap" Text="Посев"
-                                               FontSize="18" TextAlignment="Center" FontWeight="Normal" Margin="10" />
+                                    <Button Grid.Column="1" ToolTip="Распечатать протоколы взвешивания" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}"
+                                        VerticalAlignment="Center" HorizontalAlignment="Center"
+                                        Command="{Binding Path=DataContext.PrintProtocolCommand, ElementName=RootControl}" CommandParameter="{Binding }" Margin="0,0,0,0">
+                                        <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0" Padding="0" />
+                                    </Button>
 
-                                    <TextBlock Grid.Row="0" Grid.Column="2" TextWrapping="NoWrap" Text="Результаты Жеребьевки"
-                                               FontSize="18" TextAlignment="Center" FontWeight="Normal" Margin="10" />
-                                    
-                                    <ListView Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Path=Wrestlers}">
-                                        <ListView.View>
-                                            <GridView AllowsColumnReorder="true">
-                                                <GridViewColumn Width="Auto" Header="Фикс.">
-                                                    <GridViewColumn.CellTemplate>
-                                                        <DataTemplate>
-                                                            <CheckBox IsChecked="{Binding IsSeedFixed}" Margin="0,5,0,0" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
-                                                        </DataTemplate>
-                                                    </GridViewColumn.CellTemplate>
-                                                </GridViewColumn>
+                                </Grid>
+                            </Grid>
+                        </Expander.Header>
+                        <Expander.Content>
+                            <Grid Background="White">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
 
-                                                <GridViewColumn Width="Auto" Header="Посев">
-                                                    <GridViewColumn.CellTemplate>
-                                                        <DataTemplate>
-                                                            <TextBox Text="{Binding SeedNumber}" Margin="0" MinWidth="20" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" />
-                                                        </DataTemplate>
-                                                    </GridViewColumn.CellTemplate>
-                                                </GridViewColumn>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="5" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                                                <GridViewColumn Header="ФИО" Width="Auto">
-                                                    <GridViewColumn.CellTemplate>
-                                                        <DataTemplate>
-                                                            <TextBlock Text="{Binding FullNameShort}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                                                        </DataTemplate>
-                                                    </GridViewColumn.CellTemplate>
-                                                </GridViewColumn>
+                                <GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Width="5" VerticalAlignment="Stretch" HorizontalAlignment="Center"></GridSplitter>
+                                
+                                <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
+                                <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
+                                
+                                <TextBlock Grid.Row="0" Grid.Column="0" TextWrapping="NoWrap" Text="Посев"
+                                           FontSize="18" TextAlignment="Center" FontWeight="Normal" Margin="10" />
 
-                                                <GridViewColumn Header="Команда" Width="Auto">
-                                                    <GridViewColumn.CellTemplate>
-                                                        <DataTemplate>
-                                                            <TextBlock Text="{Binding TeamName}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                                                        </DataTemplate>
-                                                    </GridViewColumn.CellTemplate>
-                                                </GridViewColumn>
+                                <TextBlock Grid.Row="0" Grid.Column="2" TextWrapping="NoWrap" Text="Результаты Жеребьевки"
+                                           FontSize="18" TextAlignment="Center" FontWeight="Normal" Margin="10" />
+                                
+                                <ListView Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Path=Wrestlers}">
+                                    <ListView.View>
+                                        <GridView AllowsColumnReorder="true">
+                                            <GridViewColumn Width="Auto" Header="Фикс.">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <CheckBox IsChecked="{Binding IsSeedFixed}" Margin="0,5,0,0" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
 
-                                                <GridViewColumn Header="Г.р." Width="Auto">
-                                                    <GridViewColumn.CellTemplate>
-                                                        <DataTemplate>
-                                                            <TextBlock Text="{Binding BirthDate, StringFormat={}{0:d}}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                                                        </DataTemplate>
-                                                    </GridViewColumn.CellTemplate>
-                                                </GridViewColumn>
+                                            <GridViewColumn Width="Auto" Header="Посев">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBox Text="{Binding SeedNumber}" Margin="0" MinWidth="20" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
 
-                                            </GridView>
+                                            <GridViewColumn Header="ФИО" Width="Auto">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding FullNameShort}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
 
-                                        </ListView.View>
-                                    </ListView>
+                                            <GridViewColumn Header="Команда" Width="Auto">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding TeamName}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
+                                            
+                                            <GridViewColumn Header="Город" Width="Auto">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding TeamCity}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
+                                            
+                                            <GridViewColumn Header="Разряд" Width="Auto">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Level}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
 
-                                    <Viewbox Grid.Row="1" Grid.Column="2" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top">
-                                        <Grid Margin="0,0,10,0">
-                                            <ItemsControl ItemsSource="{Binding Path=Bracket.Rounds}">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal" />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <StackPanel Margin="0">
-                                                        <TextBlock x:Name="RoundLabel" Text="{Binding RoundName}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                            <TextBlock.Margin>
-                                                                <MultiBinding Converter="{StaticResource BracketColTopMargin}">
-                                                                    <Binding Path="." />
-                                                                    <Binding Path="DataContext" ElementName="GroupControl" />
-                                                                </MultiBinding>
-                                                            </TextBlock.Margin>
-                                                        </TextBlock>
+                                            <GridViewColumn Header="Г.р." Width="Auto">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding BirthDate, StringFormat={}{0:d}}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
 
-                                                        <ItemsControl ItemsSource="{Binding RoundMatches}">
-                                                            <ItemsControl.ItemsPanel>
-                                                                <ItemsPanelTemplate>
-                                                                    <StackPanel Orientation="Vertical" />
-                                                                </ItemsPanelTemplate>
-                                                            </ItemsControl.ItemsPanel>
-                                                            <ItemsControl.ItemTemplate>
-                                                                <DataTemplate>
-                                                                    <Grid>
+                                        </GridView>
+
+                                    </ListView.View>
+                                </ListView>
+
+                                <Viewbox Grid.Row="1" Grid.Column="2" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                    <Grid Margin="0,0,10,0">
+                                        <ItemsControl ItemsSource="{Binding Path=Bracket.Rounds}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="0">
+                                                    <TextBlock x:Name="RoundLabel" Text="{Binding RoundName}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <TextBlock.Margin>
+                                                            <MultiBinding Converter="{StaticResource BracketColTopMargin}">
+                                                                <Binding Path="." />
+                                                                <Binding Path="DataContext" ElementName="GroupControl" />
+                                                            </MultiBinding>
+                                                        </TextBlock.Margin>
+                                                    </TextBlock>
+
+                                                    <ItemsControl ItemsSource="{Binding RoundMatches}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <StackPanel Orientation="Vertical" />
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Grid>
+                                                                    <Grid.RowDefinitions>
+                                                                        <RowDefinition Height="40" />
+                                                                        <RowDefinition>
+                                                                            <RowDefinition.Height>
+                                                                                <MultiBinding Converter="{StaticResource BracketCellHeight}">
+                                                                                    <Binding Path="." />
+                                                                                    <Binding Path="DataContext" ElementName="GroupControl" />
+                                                                                </MultiBinding>
+                                                                            </RowDefinition.Height>
+                                                                        </RowDefinition>
+                                                                    </Grid.RowDefinitions>
+
+                                                                    <Grid Grid.Row="0">
+
                                                                         <Grid.RowDefinitions>
-                                                                            <RowDefinition Height="40" />
-                                                                            <RowDefinition>
-                                                                                <RowDefinition.Height>
-                                                                                    <MultiBinding Converter="{StaticResource BracketCellHeight}">
-                                                                                        <Binding Path="." />
-                                                                                        <Binding Path="DataContext" ElementName="GroupControl" />
-                                                                                    </MultiBinding>
-                                                                                </RowDefinition.Height>
-                                                                            </RowDefinition>
+                                                                            <RowDefinition />
+                                                                            <RowDefinition />
                                                                         </Grid.RowDefinitions>
 
-                                                                        <Grid Grid.Row="0">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="20" />
+                                                                            <ColumnDefinition Width="30" />
+                                                                            <ColumnDefinition Width="1*" />
+                                                                        </Grid.ColumnDefinitions>
 
-                                                                            <Grid.RowDefinitions>
-                                                                                <RowDefinition />
-                                                                                <RowDefinition />
-                                                                            </Grid.RowDefinitions>
+                                                                        <Border Grid.Row="0" Grid.Column="0" BorderBrush="Black" BorderThickness="0,0,0,1">
 
-                                                                            <Grid.ColumnDefinitions>
-                                                                                <ColumnDefinition Width="20" />
-                                                                                <ColumnDefinition Width="30" />
-                                                                                <ColumnDefinition Width="1*" />
-                                                                            </Grid.ColumnDefinitions>
+                                                                            <Border.Visibility>
+                                                                                <MultiBinding Converter="{StaticResource LeftLineVis}">
+                                                                                    <Binding Path="." />
+                                                                                    <Binding Path="DataContext" ElementName="GroupControl" />
+                                                                                </MultiBinding>
+                                                                            </Border.Visibility>
 
-                                                                            <Border Grid.Row="0" Grid.Column="0" BorderBrush="Black" BorderThickness="0,0,0,1">
+                                                                        </Border>
 
-                                                                                <Border.Visibility>
-                                                                                    <MultiBinding Converter="{StaticResource LeftLineVis}">
-                                                                                        <Binding Path="." />
-                                                                                        <Binding Path="DataContext" ElementName="GroupControl" />
-                                                                                    </MultiBinding>
-                                                                                </Border.Visibility>
+                                                                        <Border Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Grid.RowSpan="2" BorderBrush="Black" BorderThickness="1" />
+                                                                        <Border Grid.Row="0" Grid.Column="2" BorderBrush="Black" BorderThickness="0,0,0,1" />
+                                                                        <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" BorderBrush="Black" BorderThickness="0,0,1,0" />
 
-                                                                            </Border>
+                                                                        <TextBlock Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" FontSize="14" Text="{Binding BracketFullNumber, Mode=OneWay}"
+                                                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
 
-                                                                            <Border Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Grid.RowSpan="2" BorderBrush="Black" BorderThickness="1" />
-                                                                            <Border Grid.Row="0" Grid.Column="2" BorderBrush="Black" BorderThickness="0,0,0,1" />
-                                                                            <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" BorderBrush="Black" BorderThickness="0,0,1,0" />
+                                                                        <TextBlock Grid.Row="0" Grid.Column="2" FontSize="14" Text="{Binding WrestlerInRed.LastFirstName, Mode=OneWay}"
+                                                                                   HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                                                   MinWidth="60" Margin="5,0,5,0" />
 
-                                                                            <TextBlock Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" FontSize="14" Text="{Binding BracketFullNumber, Mode=OneWay}"
-                                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-
-                                                                            <TextBlock Grid.Row="0" Grid.Column="2" FontSize="14" Text="{Binding WrestlerInRed.LastFirstName, Mode=OneWay}"
-                                                                                       HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                                                       MinWidth="60" Margin="5,0,5,0" />
-
-                                                                            <TextBlock Grid.Row="1" Grid.Column="2" FontSize="14" Text="{Binding WrestlerInBlue.LastFirstName, Mode=OneWay}"
-                                                                                       HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                                                       MinWidth="60" Margin="5,0,5,0" />
-                                                                        </Grid>
-
-                                                                        <Grid Row="1">
-
-                                                                            <Grid.RowDefinitions>
-                                                                                <RowDefinition Height="1*" />
-                                                                                <RowDefinition Height="1*" />
-                                                                            </Grid.RowDefinitions>
-
-                                                                            <Grid.ColumnDefinitions>
-                                                                                <ColumnDefinition Width="2*" />
-                                                                                <ColumnDefinition Width="1*" />
-                                                                            </Grid.ColumnDefinitions>
-
-                                                                            <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" BorderBrush="Black" BorderThickness="0,0,1,0">
-                                                                                <Border.Visibility>
-                                                                                    <MultiBinding Converter="{StaticResource VertVis}">
-                                                                                        <Binding Path="." />
-                                                                                        <Binding Path="DataContext" ElementName="RoundLabel" />
-                                                                                        <Binding Path="DataContext" ElementName="GroupControl" />
-                                                                                    </MultiBinding>
-                                                                                </Border.Visibility>
-                                                                            </Border>
-                                                                            <Border Grid.Row="0" Grid.Column="1" BorderBrush="Black" BorderThickness="0,0,0,1">
-                                                                                <Border.Visibility>
-                                                                                    <MultiBinding Converter="{StaticResource VertVis}">
-                                                                                        <Binding Path="." />
-                                                                                        <Binding Path="DataContext" ElementName="RoundLabel" />
-                                                                                        <Binding Path="DataContext" ElementName="GroupControl" />
-                                                                                    </MultiBinding>
-                                                                                </Border.Visibility>
-                                                                            </Border>
-
-                                                                        </Grid>
+                                                                        <TextBlock Grid.Row="1" Grid.Column="2" FontSize="14" Text="{Binding WrestlerInBlue.LastFirstName, Mode=OneWay}"
+                                                                                   HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                                                   MinWidth="60" Margin="5,0,5,0" />
                                                                     </Grid>
 
-                                                                </DataTemplate>
-                                                            </ItemsControl.ItemTemplate>
-                                                        </ItemsControl>
+                                                                    <Grid Row="1">
 
-                                                    </StackPanel>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                        </Grid>
-                                    </Viewbox>
-                                </Grid>
-                            </Expander.Content>
-                        </Expander>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+                                                                        <Grid.RowDefinitions>
+                                                                            <RowDefinition Height="1*" />
+                                                                            <RowDefinition Height="1*" />
+                                                                        </Grid.RowDefinitions>
+
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="2*" />
+                                                                            <ColumnDefinition Width="1*" />
+                                                                        </Grid.ColumnDefinitions>
+
+                                                                        <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" BorderBrush="Black" BorderThickness="0,0,1,0">
+                                                                            <Border.Visibility>
+                                                                                <MultiBinding Converter="{StaticResource VertVis}">
+                                                                                    <Binding Path="." />
+                                                                                    <Binding Path="DataContext" ElementName="RoundLabel" />
+                                                                                    <Binding Path="DataContext" ElementName="GroupControl" />
+                                                                                </MultiBinding>
+                                                                            </Border.Visibility>
+                                                                        </Border>
+                                                                        <Border Grid.Row="0" Grid.Column="1" BorderBrush="Black" BorderThickness="0,0,0,1">
+                                                                            <Border.Visibility>
+                                                                                <MultiBinding Converter="{StaticResource VertVis}">
+                                                                                    <Binding Path="." />
+                                                                                    <Binding Path="DataContext" ElementName="RoundLabel" />
+                                                                                    <Binding Path="DataContext" ElementName="GroupControl" />
+                                                                                </MultiBinding>
+                                                                            </Border.Visibility>
+                                                                        </Border>
+
+                                                                    </Grid>
+                                                                </Grid>
+
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    </Grid>
+                                </Viewbox>
+                            </Grid>
+                        </Expander.Content>
+                    </Expander>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
 
     </Grid>
 </UserControl>

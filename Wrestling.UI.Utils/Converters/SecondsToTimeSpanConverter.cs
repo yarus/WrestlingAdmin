@@ -8,7 +8,7 @@ namespace Wrestling.UI.Utils.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null) return new TimeSpan(0, 0, 0, 0);
+            if (value == null || (int)value == 0) return new TimeSpan(0, 0, 0, 0);
 
             return new TimeSpan(0, 0, 0, (int)value);
         }

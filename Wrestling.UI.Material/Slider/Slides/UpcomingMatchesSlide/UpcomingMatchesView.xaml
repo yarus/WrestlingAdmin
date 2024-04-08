@@ -19,7 +19,7 @@
     <UserControl.Background>
         <ImageBrush
             ImageSource="{Binding SliderBackgroundImagePath, Converter={StaticResource PathToImage}, ConverterParameter=SliderLogo.jpg}"
-            Stretch="UniformToFill" Opacity="{Binding SliderOpacity}" />
+            Stretch="Uniform" Opacity="{Binding SliderOpacity}" />
     </UserControl.Background>
 
     <Grid x:Name="RootControl">
@@ -35,7 +35,7 @@
 
         <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" Margin="10,0,10,0"
                  VerticalAlignment="Center">
-            <TextBlock Text="{Binding SliderName, Converter={StaticResource converter}}" />
+            <TextBlock Text="БЛИЖАЙШИЕ ПОЕДИНКИ" />
         </Viewbox>
 
         <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="White" />

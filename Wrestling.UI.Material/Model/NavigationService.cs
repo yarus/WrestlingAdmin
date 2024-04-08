@@ -3,7 +3,6 @@ using System.Linq;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Login;
 using Wrestling.UI.Material.Match;
-using Wrestling.UI.Material.ReplayScreen;
 using Wrestling.UI.Material.Settings;
 using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Material.Tournament.Dashboard;
@@ -42,8 +41,7 @@ namespace Wrestling.UI.Material.Model
                 new DashboardViewModel(_container),
                 new ScheduleViewModel(_container),
                 new CompletedMatchesViewModel(_container),
-                new SliderControlViewModel(_container),
-                new ReplayScreenViewModel(_container)
+                new SliderControlViewModel(_container)
             };
         }
 

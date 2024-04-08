@@ -3,6 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Foreground="White">
     <Grid>
-        <MediaElement Source="{Binding VideoPath}" Stretch="UniformToFill" LoadedBehavior="Play" />
+        <MediaElement Source="{Binding VideoPath}" Stretch="Uniform" LoadedBehavior="Play" />
     </Grid>
 </UserControl>

@@ -22,6 +22,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,6 +32,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
@@ -51,7 +53,9 @@
     <Compile Include="Converters\HighlightSelectedItemConverter.cs" />
     <Compile Include="Converters\IndexConverter.cs" />
     <Compile Include="Converters\IndexItemsConverter.cs" />
+    <Compile Include="Converters\SecondsToFutureTimeConverter.cs" />
     <Compile Include="Converters\SecondsToTimeSpanConverter.cs" />
+    <Compile Include="Converters\SecondsToTimeStringConverter.cs" />
     <Compile Include="Converters\UpperCaseConverter.cs" />
     <Compile Include="Converters\ValueConverterGroup.cs" />
     <Compile Include="ExtensionMethods.cs" />

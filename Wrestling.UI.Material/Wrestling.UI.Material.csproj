@@ -18,7 +18,7 @@
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <PublishUrl>C:\Users\akardash.ONTARGET\Desktop\WrestlingAdmin\</PublishUrl>
+    <PublishUrl>C:\Users\a.kardash\Desktop\WrestlingAdminFinal\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>false</UpdateEnabled>
@@ -30,7 +30,7 @@
     <MapFileExtensions>false</MapFileExtensions>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
     <DisallowUrlActivation>true</DisallowUrlActivation>
-    <ApplicationRevision>34</ApplicationRevision>
+    <ApplicationRevision>40</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -38,7 +38,7 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -46,9 +46,10 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -90,6 +91,9 @@
       <HintPath>..\packages\XamlDisplayerPackage.1.0.6\lib\net45\CodeDisplayer.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="FluentResults, Version=3.15.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\FluentResults.3.15.2\lib\netstandard2.0\FluentResults.dll</HintPath>
+    </Reference>
     <Reference Include="MaterialDesignColors, Version=1.1.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MaterialDesignColors.1.1.3\lib\net45\MaterialDesignColors.dll</HintPath>
     </Reference>
@@ -99,14 +103,34 @@
     <Reference Include="Microsoft.Expression.Interactions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Windows.Interactivity.WPF.2.0.20525\lib\net40\Microsoft.Expression.Interactions.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Extensions.Logging.Abstractions, Version=6.0.0.1, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Logging.Abstractions.6.0.1\lib\net461\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="mscorlib" />
     <Reference Include="MvvmDialogs, Version=5.2.1.0, Culture=neutral, PublicKeyToken=3d3b9708589bc73e, processorArchitecture=MSIL">
       <HintPath>..\packages\MvvmDialogs.5.2.1\lib\net45\MvvmDialogs.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.3\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
     <Reference Include="System.Windows.Controls.Input.Toolkit, Version=3.5.40128.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\WPFToolkit.3.5.50211.1\lib\System.Windows.Controls.Input.Toolkit.dll</HintPath>
     </Reference>
@@ -137,6 +161,10 @@
       <DependentUpon>LoginView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Login\LoginViewModel.cs" />
+    <Compile Include="Match\SetWinTypeDialog.xaml.cs">
+      <DependentUpon>SetWinTypeDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Match\SetWinTypeViewModel.cs" />
     <Compile Include="Match\MatchControlView.xaml.cs">
       <DependentUpon>MatchControlView.xaml</DependentUpon>
     </Compile>
@@ -171,15 +199,25 @@
     <Compile Include="ScoreScreen\WwfScoreScreenView.xaml.cs">
       <DependentUpon>WwfScoreScreenView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Utils\Converters\FullNameToLastNameConverter.cs" />
-    <Compile Include="Utils\Recording\IMatchRecorder.cs" />
-    <Compile Include="Utils\Recording\OverlayDrawer\BaseOverlayDrawer.cs" />
-    <Compile Include="Utils\Recording\OverlayDrawer\IOverlayDrawer.cs" />
-    <Compile Include="Utils\Recording\MatchRecorder.cs" />
-    <Compile Include="ReplayScreen\ReplayScreenView.xaml.cs">
-      <DependentUpon>ReplayScreenView.xaml</DependentUpon>
+    <Compile Include="Tournament\Print\PrintApplications\PrintApplicationsView.xaml.cs">
+      <DependentUpon>PrintApplicationsView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ReplayScreen\ReplayScreenViewModel.cs" />
+    <Compile Include="Tournament\Print\PrintApplications\PrintApplicationsViewModel.cs" />
+    <Compile Include="Tournament\Print\PrintResults\PrintAchievementNominantsView.xaml.cs">
+      <DependentUpon>PrintAchievementNominantsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Print\PrintResults\PrintAchievementNominantsViewModel.cs" />
+    <Compile Include="Tournament\Print\PrintTeamApplication\PrintTeamApplicationView.xaml.cs">
+      <DependentUpon>PrintTeamApplicationView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Print\PrintTeamApplication\PrintTeamApplicationViewModel.cs" />
+    <Compile Include="Tournament\Standing\Details\GenerateGroupsDialog.xaml.cs">
+      <DependentUpon>GenerateGroupsDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tournament\Standing\Details\GenerateGroupsDialogViewModel.cs" />
+    <Compile Include="Tournament\Standing\Details\GroupGenerator.cs" />
+    <Compile Include="Tournament\Standing\Details\IGroupGenerator.cs" />
+    <Compile Include="Utils\Converters\FullNameToLastNameConverter.cs" />
     <Compile Include="Slider\Slides\GroupBracketSlide\GroupBracketSlide.cs" />
     <Compile Include="Slider\Slides\GroupBracketSlide\GroupBracketSlideSettings.xaml.cs">
       <DependentUpon>GroupBracketSlideSettings.xaml</DependentUpon>
@@ -357,8 +395,6 @@
     <Compile Include="Utils\Converters\WinTypeRadioButtonConverter.cs" />
     <Compile Include="Utils\Converters\WinTypeToStringConverter.cs" />
     <Compile Include="Utils\PrintRequestedEventArgs.cs" />
-    <Compile Include="Utils\Recording\OverlayDrawer\OlympicOverlayDrawer.cs" />
-    <Compile Include="Utils\Recording\OverlayDrawer\SimpleOverlayDrawer.cs" />
     <Page Include="Home\HomeView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -383,6 +419,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Match\SetWinTypeDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Match\MatchControlView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -400,10 +440,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="ScoreScreen\WwfScoreScreenView.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="ReplayScreen\ReplayScreenView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -467,6 +503,18 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Tournament\Print\PrintApplications\PrintApplicationsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Tournament\Print\PrintResults\PrintAchievementNominantsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Tournament\Print\PrintTeamApplication\PrintTeamApplicationView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Tournament\Standing\Details\AddGroupDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -503,6 +551,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Tournament\Standing\Details\GenerateGroupsDialog.xaml" />
     <Page Include="Tournament\Standing\Draw\AddBracketDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -583,10 +632,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <Content Include="..\Wrestling.Recorder.Configurator\bin\Release\Wrestling.Recorder.Configurator.exe.config">
-      <Link>Wrestling.Recorder.Configurator.exe.config</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -614,18 +659,6 @@
       <Project>{44BAA51A-7712-46CA-8E4A-502E7167460B}</Project>
       <Name>Wrestling.Providers</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Wrestling.Recorder.Configurator\Wrestling.Recorder.Configurator.csproj">
-      <Project>{fb3ed9dd-a7e4-4e86-b352-95a6b42de772}</Project>
-      <Name>Wrestling.Recorder.Configurator</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Wrestling.Recorder.DataAccess\Wrestling.Recorder.DataAccess.csproj">
-      <Project>{040ea18d-09d8-4cde-bc5d-db4d41ecee14}</Project>
-      <Name>Wrestling.Recorder.DataAccess</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Wrestling.Recorder\Wrestling.Recorder.csproj">
-      <Project>{13f5b335-2cb6-4c38-8e50-5afd33524e65}</Project>
-      <Name>Wrestling.Recorder</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Wrestling.UI.Utils\Wrestling.UI.Utils.csproj">
       <Project>{0167d0ac-f1aa-4cdf-bfd3-0f834906b1e4}</Project>
       <Name>Wrestling.UI.Utils</Name>
@@ -650,55 +683,11 @@
     <Resource Include="Resources\scoreboard.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\Wrestling.Recorder\FFMPEG\bin\ffmpeg_x64.exe">
-      <Link>ffmpeg_x64.exe</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="Images\DefaultLogo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Images\RosbosLogo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Libs\avcodec-57.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\avdevice-57.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\avfilter-6.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\avformat-57.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\avutil-55.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\postproc-54.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\swresample-2.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Libs\swscale-4.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <Visible>false</Visible>
     </Content>
     <Content Include="Sounds\SingleGongBeep.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -730,8 +719,14 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\Microsoft.Extensions.Logging.Abstractions.6.0.1\build\Microsoft.Extensions.Logging.Abstractions.targets" Condition="Exists('..\packages\Microsoft.Extensions.Logging.Abstractions.6.0.1\build\Microsoft.Extensions.Logging.Abstractions.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105.The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\Microsoft.Extensions.Logging.Abstractions.6.0.1\build\Microsoft.Extensions.Logging.Abstractions.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Extensions.Logging.Abstractions.6.0.1\build\Microsoft.Extensions.Logging.Abstractions.targets'))" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

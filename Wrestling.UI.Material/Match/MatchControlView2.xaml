@@ -145,6 +145,7 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="6*" />
+                <ColumnDefinition Width="2*" />
                 <ColumnDefinition Width="6*" />
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="Auto" />
@@ -184,56 +185,98 @@
                     <RowDefinition Height="1*"/>
                 </Grid.RowDefinitions>
 
-                <Rectangle Grid.Row="0" Grid.Column="0" Fill="Yellow" Visibility="{Binding ScoreScreenVm.Wrestler1WarningsNumber, Converter={StaticResource WarningVisConverter}, ConverterParameter=1}" />
+                <Rectangle Grid.Row="0" Grid.Column="0" Margin="3" Fill="Yellow" Visibility="{Binding ScoreScreenVm.Wrestler1WarningsNumber, Converter={StaticResource WarningVisConverter}, ConverterParameter=1}" />
 
-                <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="Black"></Border>
+                <!-- <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="Black"></Border> -->
 
-                <Rectangle Grid.Row="1" Grid.Column="0" Fill="Yellow" Visibility="{Binding ScoreScreenVm.Wrestler1WarningsNumber, Converter={StaticResource WarningVisConverter}, ConverterParameter=2}" />
+                <Rectangle Grid.Row="1" Grid.Column="0" Margin="3" Fill="Yellow" Visibility="{Binding ScoreScreenVm.Wrestler1WarningsNumber, Converter={StaticResource WarningVisConverter}, ConverterParameter=2}" />
 
-                <Border Grid.Row="1" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="Black"></Border>
+                <!-- <Border Grid.Row="1" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="Black"></Border> -->
 
-                <Rectangle Grid.Row="2" Grid.Column="0" Fill="Yellow" Visibility="{Binding ScoreScreenVm.Wrestler1WarningsNumber, Converter={StaticResource WarningVisConverter}, ConverterParameter=3}" />
+                <Rectangle Grid.Row="2" Grid.Column="0" Margin="3" Fill="Yellow" Visibility="{Binding ScoreScreenVm.Wrestler1WarningsNumber, Converter={StaticResource WarningVisConverter}, ConverterParameter=3}" />
 
             </Grid>
 
             <Border Grid.Row="0" Grid.Column="1" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
 
-            <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="2" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock ToolTip="Борец в красном трико"
-                    Text="{Binding ScoreScreenVm.Wrestler1, Converter={StaticResource UpperCaseConverter}}"/>
+            <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="2" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                     Visibility="{Binding ScoreScreenVm.IsAction1TimerEnabled, Converter={StaticResource InverseBoolToVisConverter}}">
+                <TextBlock Text="{Binding ScoreScreenVm.Wrestler1, Converter={StaticResource UpperCaseConverter}}"/>
             </Viewbox>
 
+            <Grid Grid.Row="0" Grid.Column="2" Visibility="{Binding ScoreScreenVm.IsAction1TimerEnabled, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="3*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Row="0" Grid.Column="0" Background="Yellow" BorderThickness="0,0,1,0"></Border>
+
+                <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ScoreScreenVm.TickCounterAction1, StringFormat={}{0:ss}}" Foreground="Black" FontWeight="Bold" />
+                </Viewbox>
+
+                <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="1" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="ДЕЙСТВИЕ" Foreground="Yellow"/>
+                </Viewbox>
+            </Grid>            
+            
             <Border Grid.Row="0" Grid.Column="2" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
 
-            <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="3" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock ToolTip="Борец в синем трико"
-                    Text="{Binding ScoreScreenVm.Wrestler2, Converter={StaticResource UpperCaseConverter}}"/>
+            <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Button Content="ИТОГИ" TabIndex="3" FontStretch="Medium" Margin="2"
+                            Command="{Binding CompleteMatchCommand}" ToolTip="Завершить схватку" Style="{StaticResource MaterialDesignRaisedAccentButton}" />
             </Viewbox>
 
             <Border Grid.Row="0" Grid.Column="3" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
+            
+            <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="4" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center"
+                     Visibility="{Binding ScoreScreenVm.IsAction2TimerEnabled, Converter={StaticResource InverseBoolToVisConverter}}">
+                <TextBlock Text="{Binding ScoreScreenVm.Wrestler2, Converter={StaticResource UpperCaseConverter}}"/>
+            </Viewbox>
 
-            <Grid Grid.Row="0" Grid.Column="4">
+            <Border Grid.Row="0" Grid.Column="4" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
+            
+            <Grid Grid.Row="0" Grid.Column="4" Visibility="{Binding ScoreScreenVm.IsAction2TimerEnabled, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="2*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Row="0" Grid.Column="1" Background="Yellow" BorderThickness="0,0,1,0"></Border>
+
+                <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="ДЕЙСТВИЕ" Foreground="Yellow"/>
+                </Viewbox>
+
+                <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ScoreScreenVm.TickCounterAction2, StringFormat={}{0:ss}}" Foreground="Black" FontWeight="Bold" />
+                </Viewbox>
+            </Grid>
+
+            <Border Grid.Row="0" Grid.Column="5" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
+
+            <Grid Grid.Row="0" Grid.Column="5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1*"/>
                     <RowDefinition Height="1*"/>
                     <RowDefinition Height="1*"/>
                 </Grid.RowDefinitions>
 
-                <Rectangle Grid.Row="0" Grid.Column="0" Fill="Yellow" Visibility="{Binding ScoreScreenVm.Wrestler2WarningsNumber, Converter={StaticResource WarningVisConverter}, ConverterParameter=1}" />
+                <Rectangle Grid.Row="0" Grid.Column="0" Margin="3" Fill="Yellow" Visibility="{Binding ScoreScreenVm.Wrestler2WarningsNumber, Converter={StaticResource WarningVisConverter}, ConverterParameter=1}" />
 
-                <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="Black"></Border>
+                <!-- <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="Black"></Border> -->
 
-                <Rectangle Grid.Row="1" Grid.Column="0" Fill="Yellow" Visibility="{Binding ScoreScreenVm.Wrestler2WarningsNumber, Converter={StaticResource WarningVisConverter}, ConverterParameter=2}" />
+                <Rectangle Grid.Row="1" Grid.Column="0" Margin="3" Fill="Yellow" Visibility="{Binding ScoreScreenVm.Wrestler2WarningsNumber, Converter={StaticResource WarningVisConverter}, ConverterParameter=2}" />
 
-                <Border Grid.Row="1" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="Black"></Border>
+                <!-- <Border Grid.Row="1" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="Black"></Border> -->
 
-                <Rectangle Grid.Row="2" Grid.Column="0" Fill="Yellow" Visibility="{Binding ScoreScreenVm.Wrestler2WarningsNumber, Converter={StaticResource WarningVisConverter}, ConverterParameter=3}" />
-
+                <Rectangle Grid.Row="2" Grid.Column="0" Margin="3" Fill="Yellow" Visibility="{Binding ScoreScreenVm.Wrestler2WarningsNumber, Converter={StaticResource WarningVisConverter}, ConverterParameter=3}" />
             </Grid>
 
-            <Border Grid.Row="0" Grid.Column="4" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
+            <Border Grid.Row="0" Grid.Column="6" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
 
-            <Viewbox Grid.Column="5" Grid.Row="0">
+            <Viewbox Grid.Column="6" Grid.Row="0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="1*" />
@@ -318,42 +361,13 @@
 
             <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
 
-            <Grid Grid.Row="0" Grid.Column="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="3*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
-
-                <Viewbox Grid.Column="0" Grid.Row="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2">
-                    <Button Background="LightGray" MinHeight="30"
-                            Command="{Binding Path=ActionStartStopCommand}"
-                            CommandParameter="Red"
-                            Visibility="{Binding Action1Visibility}">
-                        <Image Source="{Binding Action1Image}" ToolTip="Таймер действия борца в красном трико" />
-                    </Button>
-                </Viewbox>
-
-                <Viewbox Stretch="Uniform" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2" Visibility="{Binding IsStartButtonVisible, Converter={StaticResource BoolToVis}}">
-                    <Button Content="СТАРТ" Background="LightGray" TabIndex="3" Foreground="Black" FontStretch="Medium"
-                            Command="{Binding StartCommand}" ToolTip="Основной таймер" />
-                </Viewbox>
-
-                <Viewbox Stretch="Uniform" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2" Visibility="{Binding IsStopButtonVisible, Converter={StaticResource BoolToVis}}">
-                    <Button Content="СТОП" Background="LightGray" TabIndex="3" Foreground="Black" FontStretch="Medium"
-                            Command="{Binding StopCommand}" ToolTip="Основной таймер"/>
-                </Viewbox>
-
-                <Viewbox Grid.Column="2" Stretch="Uniform" HorizontalAlignment="Center"
-                         VerticalAlignment="Center" Margin="2">
-                    <Button Background="LightGray" MinHeight="30"
-                            Command="{Binding Path=ActionStartStopCommand}"
-                            CommandParameter="Blue" FontStretch="Medium"
-                            Visibility="{Binding Action2Visibility}" ToolTip="Таймер действия борца в синем трико">
-                        <Image Source="{Binding Action2Image}" />
-                    </Button>
-                </Viewbox>
-            </Grid>
+            <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                         Visibility="{Binding ScoreScreenVm.IsTimeout, Converter={StaticResource InvBoolToVis}}">
+                <TextBlock Foreground="White">
+                        <Run Text="РАУНД "/>
+                        <Run Text="{Binding ScoreScreenVm.Round}"/>
+                </TextBlock>
+            </Viewbox>
 
             <Border Grid.Row="0" Grid.Column="2" BorderThickness="1,0,0,0" BorderBrush="White"></Border>
 
@@ -425,24 +439,53 @@
             <Grid Grid.Row="0" Grid.Column="1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1*" />
-                    <RowDefinition Height="2*"/>
+                    <RowDefinition Height="3*"/>
                 </Grid.RowDefinitions>
 
                 <Border Grid.Column="0" Grid.Row="0" Background="Black" Visibility="{Binding ScoreScreenVm.IsTimeout, Converter={StaticResource InvBoolToVis}}" />
 
-                <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center"
-                         Visibility="{Binding ScoreScreenVm.IsTimeout, Converter={StaticResource InvBoolToVis}}">
-                    <TextBlock Foreground="White">
-                        <Run Text="РАУНД "/>
-                        <Run Text="{Binding ScoreScreenVm.Round}"/>
-                    </TextBlock>
-                </Viewbox>
+                <Grid Grid.Row="0" Grid.Column="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Viewbox Grid.Column="0" Grid.Row="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2">
+                        <Button Background="LightGray" MinHeight="30"
+                            Command="{Binding Path=ActionStartStopCommand}"
+                            CommandParameter="Red"
+                            Visibility="{Binding Action1Visibility}">
+                            <Image Source="{Binding Action1Image}" ToolTip="Таймер действия борца в красном трико" />
+                        </Button>
+                    </Viewbox>
+
+                    <Viewbox Stretch="Uniform" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2" Visibility="{Binding IsStartButtonVisible, Converter={StaticResource BoolToVis}}">
+                        <Button Content="СТАРТ" Background="LightGray" TabIndex="3" Foreground="Black" FontStretch="Medium"
+                            Command="{Binding StartCommand}" ToolTip="Основной таймер" />
+                    </Viewbox>
+
+                    <Viewbox Stretch="Uniform" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2" Visibility="{Binding IsStopButtonVisible, Converter={StaticResource BoolToVis}}">
+                        <Button Content="СТОП" Background="LightGray" TabIndex="3" Foreground="Black" FontStretch="Medium"
+                            Command="{Binding StopCommand}" ToolTip="Основной таймер"/>
+                    </Viewbox>
+
+                    <Viewbox Grid.Column="2" Stretch="Uniform" HorizontalAlignment="Center"
+                         VerticalAlignment="Center" Margin="2">
+                        <Button Background="LightGray" MinHeight="30"
+                            Command="{Binding Path=ActionStartStopCommand}"
+                            CommandParameter="Blue" FontStretch="Medium"
+                            Visibility="{Binding Action2Visibility}" ToolTip="Таймер действия борца в синем трико">
+                            <Image Source="{Binding Action2Image}" />
+                        </Button>
+                    </Viewbox>
+                </Grid>
 
                 <Border Grid.Column="0" Grid.Row="0" Background="White" Visibility="{Binding ScoreScreenVm.IsTimeout, Converter={StaticResource BoolToVis}}" />
 
                 <Viewbox Stretch="Uniform" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center"
                          Visibility="{Binding ScoreScreenVm.IsTimeout, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="ПЕРЕРЫВ" Foreground="Black" FontWeight="Bold" />
+                    <TextBlock Text="ПЕРЕРЫВ" Foreground="Black" />
                 </Viewbox>
 
                 <Border 
@@ -451,37 +494,10 @@
                     BorderBrush="White" 
                     BorderThickness="0,0,0,1"></Border>
 
-                <Grid Grid.Row="1" Grid.Column="0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
+                <Viewbox Grid.Row="1" Grid.Column="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ScoreScreenVm.TickCounter, StringFormat={}{0:mm':'ss}}" Foreground="White" />
+                </Viewbox>
 
-                    <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" BorderBrush="White" BorderThickness="0,0,0,1"></Border>
-
-                    <Border Grid.Row="0" Grid.Column="0" Background="White"
-                            Visibility="{Binding ScoreScreenVm.IsAction1TimerEnabled, Converter={StaticResource BoolToVis}}" />
-
-                    <Viewbox Grid.Row="0" Grid.Column="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
-                             Visibility="{Binding ScoreScreenVm.IsAction1TimerEnabled, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="{Binding ScoreScreenVm.TickCounterAction1, StringFormat={}{0:ss}}" Foreground="Black" FontWeight="Bold"
-                                   ToolTip="Таймер действия борца в красном трико"/>
-                    </Viewbox>
-
-                    <Viewbox Grid.Row="0" Grid.Column="1" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding ScoreScreenVm.TickCounter, StringFormat={}{0:mm':'ss}}" Foreground="White" />
-                    </Viewbox>
-
-                    <Border Grid.Row="0" Grid.Column="2" Background="White"
-                            Visibility="{Binding ScoreScreenVm.IsAction2TimerEnabled, Converter={StaticResource BoolToVis}}" />
-
-                    <Viewbox Grid.Row="0" Grid.Column="2" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
-                             Visibility="{Binding ScoreScreenVm.IsAction2TimerEnabled, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="{Binding ScoreScreenVm.TickCounterAction2, StringFormat={}{0:ss}}" Foreground="Black" FontWeight="Bold"
-                                   ToolTip="Таймер действия борца в синем трико"/>
-                    </Viewbox>
-                </Grid>
             </Grid>
 
             <Border Grid.Row="0" Grid.Column="2" Background="#005BEC" BorderBrush="White" BorderThickness="1,0,0,0"></Border>

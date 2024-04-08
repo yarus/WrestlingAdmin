@@ -28,7 +28,9 @@ namespace Wrestling.Providers
                 IsAutosaveEnabled = info.IsAutosaveEnabled,
                 AutosaveMaxSecond = info.AutosaveMaxSecond,
                 IsTournamentScoreInternational = info.IsTournamentScoreInternational,
-                IsOverlayOlympic = info.IsOverlayOlympic
+                IsOverlayOlympic = info.IsOverlayOlympic,
+                IsVideoRecordingEnabled = info.IsVideoRecordingEnabled,
+                VideoStoragePath = info.VideStoragePath
             };
 
             return entity;
@@ -53,7 +55,9 @@ namespace Wrestling.Providers
                 IsAutosaveEnabled = entity.IsAutosaveEnabled,
                 AutosaveMaxSecond = entity.AutosaveMaxSecond,
                 IsTournamentScoreInternational = entity.IsTournamentScoreInternational,
-                IsOverlayOlympic = entity.IsOverlayOlympic
+                IsOverlayOlympic = entity.IsOverlayOlympic,
+                IsVideoRecordingEnabled = entity.IsVideoRecordingEnabled,
+                VideStoragePath = entity.VideoStoragePath
             };
 
             return info;
@@ -98,6 +102,7 @@ namespace Wrestling.Providers
                     if (teamApp != null)
                     {
                         wrestler.TeamName = teamApp.ShortName;
+                        wrestler.TeamCity = teamApp.City;
                     }
                     else
                     {
@@ -267,7 +272,8 @@ namespace Wrestling.Providers
                 HashTag = info.HashTag,
                 Level = info.Level,
                 PaidAmount = info.PaidAmount,
-                IsWeightApproved = info.IsWeightApproved
+                IsWeightApproved = info.IsWeightApproved,
+                Timestamp = info.Timestamp
             };
 
             return wrestler;
@@ -483,7 +489,8 @@ namespace Wrestling.Providers
                 PaidAmount = entity.PaidAmount,
                 IsWeightApproved = entity.IsWeightApproved,
                 HashTag = entity.HashTag,
-                Level = entity.Level
+                Level = entity.Level,
+                Timestamp = entity.Timestamp
             };
 
             return info;

@@ -194,7 +194,7 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             bool? success = Dialog.ShowOpenFileDialog(this, settings);
             if (success == true)
             {
-                _item.SetNamedValue("BackgroundImagePath", settings.FileName);
+                _item.SetNamedValue("SliderBackgroundImagePath", settings.FileName);
                 SliderBackgroundImagePath = settings.FileName;
             }
         }

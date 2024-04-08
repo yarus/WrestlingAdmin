@@ -10,6 +10,7 @@ namespace Wrestling.Entities
         private Guid? _teamId;
         private string _hashTag;
         private string _teamName;
+        private string _teamCity;
         private Guid? _groupId;
         private string _groupName;
         private string _firstName;
@@ -25,6 +26,7 @@ namespace Wrestling.Entities
         private decimal? _paidAmount;
         private bool _isWeightApproved;
         private string _level;
+        private DateTime? _timestamp;
         public bool IsApplicationValid => !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(FirstName) && BirthDate.HasValue && GroupID.HasValue;
         public bool IsRegistrationApproved => IsApplicationValid && Weight.HasValue && IsEntryFeePaid && IsWeightApproved;
 
@@ -77,6 +79,16 @@ namespace Wrestling.Entities
             {
                 _teamName = value;
                 OnPropertyChanged("TeamName");
+            }
+        }
+        
+        public string TeamCity
+        {
+            get { return _teamCity; }
+            set
+            {
+                _teamCity = value;
+                OnPropertyChanged("TeamCity");
             }
         }
 
@@ -231,6 +243,16 @@ namespace Wrestling.Entities
                 OnPropertyChanged("FinalPlace");
             }
         }
+        
+        public DateTime? Timestamp
+        {
+            get { return _timestamp; }
+            set
+            {
+                _timestamp = value;
+                OnPropertyChanged("Timestamp");
+            }
+        }
 
         public string FullName => string.Format("{0}{1}{2}", !string.IsNullOrEmpty(LastName) ? LastName : string.Empty,
             !string.IsNullOrEmpty(FirstName) ? " " + FirstName : string.Empty,
@@ -269,9 +291,11 @@ namespace Wrestling.Entities
             IsEntryFeePaid = wr.IsEntryFeePaid;
             TeamID = wr.TeamID;
             TeamName = wr.TeamName;
+            TeamCity = wr.TeamCity;
             HashTag = wr.HashTag;
             Level = wr.Level;
             IsWeightApproved = wr.IsWeightApproved;
+            Timestamp = wr.Timestamp;
         }
 
         public object Clone()

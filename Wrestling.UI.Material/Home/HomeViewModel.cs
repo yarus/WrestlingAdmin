@@ -6,12 +6,10 @@ using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
 using Wrestling.Providers;
-using Wrestling.UI.Material.Login;
 using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Settings;
 using Wrestling.UI.Material.Tournament.Dashboard;
-using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Home
@@ -39,19 +37,16 @@ namespace Wrestling.UI.Material.Home
             base.InitData();
 
             _tournManager = Resolve<ITournamentsManager>();
-        }
-
-        public override void OnNavigationCompleted()
-        {
-            base.OnNavigationCompleted();
-
-            if (!DataContext.IsAuthenticated)
+            
+            var cache = DiContainer.Resolve<ICacheManager>();
+            if (cache != null && (DataContext.WrestlersCache == null || DataContext.WrestlersCache.Count == 0 || DataContext.TeamsCache == null || DataContext.TeamsCache.Count == 0))
             {
-                NavigateToView<LoginViewModel>();
+                DataContext.WrestlersCache = cache.LoadWrestlers();
+                DataContext.TeamsCache = cache.LoadTeams();
             }
         }
 
-        public override string PageTitle => "Вольная борьба - Администратор турниров";
+        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20231127";
 
         public override IList<CommandButtonItem> DrawerItems
         {
@@ -146,12 +141,60 @@ namespace Wrestling.UI.Material.Home
                 var tournament = _tournManager.LoadFromFile(settings.FileName);
                 if (tournament != null)
                 {
+                    VerifyTeamEmblems(tournament);
+
                     VerifySettings(tournament);
 
                     DataContext.Tournament = tournament;
 
                     NavigateToView<DashboardViewModel>();
                 }
+            }
+        }
+
+        private void VerifyTeamEmblems(Entities.Tournament entity)
+        {
+            foreach(var app in entity.TeamApplications)
+            {
+                if (string.IsNullOrEmpty(app.EmblemPath)) continue;                
+                
+                if (!File.Exists(app.EmblemPath))
+                {
+                    var imgPath = $"{AppDomain.CurrentDomain.BaseDirectory}Images\\";
+                    
+                    var fileNameItems = app.EmblemPath.ToString().Split('\\');
+
+                    if (fileNameItems.Length == 0) continue;
+
+                    string fileName = fileNameItems[fileNameItems.Length - 1];
+
+                    var fullFilePath = $"{imgPath}{fileName}";
+
+                    if (!File.Exists(fullFilePath))
+                    {
+                        var fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+
+                        var teamNameItems = fileNameWithoutExt.Split('_');
+
+                        if (teamNameItems.Length == 0) continue;
+
+                        var teamName = teamNameItems[teamNameItems.Length - 1];
+
+                        var existingTeamEmblems = Directory.EnumerateFiles(imgPath, "*.*");
+
+                        foreach (var img in existingTeamEmblems)
+                        {
+                            var loadedLogo = Path.GetFileName(img);
+
+                            if (loadedLogo.Contains(teamName))
+                            {
+                                app.EmblemPath = loadedLogo;
+                                break;
+                            }
+                        }
+                    }
+                }
+
             }
         }
 

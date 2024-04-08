@@ -51,7 +51,7 @@
                     <GridViewColumn DisplayMemberBinding="{Binding GoldMedals}" Header="1-е место" Width="Auto" />
                     <GridViewColumn DisplayMemberBinding="{Binding SilverMedals}" Header="2-е место" Width="Auto" />
                     <GridViewColumn DisplayMemberBinding="{Binding BronzeMedals}" Header="3-е место" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Wrestlers}" Header="Борцов" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Wrestlers.Count}" Header="Борцов" Width="Auto" />
                     <GridViewColumn DisplayMemberBinding="{Binding GroupCount}" Header="Групп" Width="Auto" />
                 </GridView>
             </ListView.View>

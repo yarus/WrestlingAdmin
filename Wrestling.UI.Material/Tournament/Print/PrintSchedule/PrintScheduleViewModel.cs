@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Wrestling.Entities;
+using Wrestling.Entities.Bracket;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
@@ -39,9 +41,60 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
         {
             base.InitData();
 
-            _groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups.Where(g => g.Bracket != null));
+            // carpet groups
+            _groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups.Where(g => g.Bracket != null && g.CarpetID == _carpet.ID));
 
-            var matches = _groups.Where(g => g.CarpetLabel == _carpet.Name).SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches).Where(m => m.IsMatchCanStart);
+            if (_groups.Count == 0) return;
+
+            var matches = _groups.SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches).Where(rm => !rm.IsMatchCompleted).OrderBy(m => m.MatchNumber).ToList();
+
+            if (matches.Count == 0) return;
+
+            /*
+            var cycleMatches = new List<WrestlingMatch>();
+
+            WrestlingMatch previousMatch = null;
+
+            List<Guid> _pathedGroups = new List<Guid>();
+            Guid? currentGroupId = null;
+
+            foreach(var match in matches)
+            {
+                if (previousMatch == null || (match.MatchNumber == (previousMatch.MatchNumber+1)))
+                {
+                    if (match.IsMatchCanStart)
+                    {
+                        if (!currentGroupId.HasValue)
+                        {
+                            currentGroupId = match.GroupID;
+                        }
+
+                        if (match.GroupID != currentGroupId.Value)
+                        {
+                            if (_pathedGroups.Contains(match.GroupID))
+                            {
+                                break;
+                            }
+
+                            _pathedGroups.Add(currentGroupId.Value);
+                            currentGroupId = match.GroupID;
+                        }
+
+
+                        cycleMatches.Add(match);
+                        previousMatch = match;
+                        continue;
+                    }
+                    else if (match.IsMatchCompleted)
+                    {
+                        previousMatch = match;
+                        continue;
+                    }                    
+                }
+
+                break;
+            }
+            */
 
             Stat = new CarpetStats
             {
@@ -49,7 +102,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
                 CarpetLabel = _carpet.Name,
                 WrestlersCount = _carpet.WrestlersCount,
                 GroupsCount = _carpet.Groups.Count,
-                Matches = new ObservableCollection<WrestlingMatch>(matches.OrderBy(m => m.MatchNumber))
+                Matches = new ObservableCollection<WrestlingMatch>(matches)//matches.OrderBy(m => m.MatchNumber))
             };
         }
     }

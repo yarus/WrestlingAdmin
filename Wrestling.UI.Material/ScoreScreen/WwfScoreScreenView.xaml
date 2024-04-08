@@ -177,10 +177,10 @@
 
                     <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
 
-                    <Border Grid.Row="0" Grid.Column="1" Background="DimGray"></Border>
+                    <Border Grid.Row="0" Grid.Column="1" Background="Yellow"></Border>
 
                     <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Foreground="White" FontWeight="Bold" Text="{Binding MatchFullNumber}" />
+                        <TextBlock Foreground="Black" FontWeight="Bold" Text="{Binding MatchFullNumber}" />
                     </Viewbox>
 
                     <Border Grid.Row="0" Grid.Column="1" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
@@ -362,9 +362,8 @@
                             <Border BorderBrush="{Binding IsPlayer1WithAdvantage, Converter={StaticResource BoolHighlight}, ConverterParameter=Yellow}" BorderThickness="0,0,0,1" Margin="1" />
                         </Grid>
                     </Viewbox>
-
-                    <Border Grid.Row="0" Grid.Column="1" Background="DimGray" BorderBrush="White" BorderThickness="0,0,1,0" Visibility="{Binding IsTimeout, Converter={StaticResource InvBoolToVis}}"></Border>
-                    <Border Grid.Row="0" Grid.Column="1" Background="Black" BorderBrush="White" BorderThickness="0,0,1,0" Visibility="{Binding IsTimeout, Converter={StaticResource BoolToVis}}"></Border>
+                    
+                    <Border Grid.Row="0" Grid.Column="1" Background="Black" BorderBrush="White" BorderThickness="0,0,1,0"></Border>
 
                     <Grid Grid.Row="0" Grid.Column="1">
                         <Grid.RowDefinitions>
@@ -372,7 +371,7 @@
                             <RowDefinition Height="2*"/>
                         </Grid.RowDefinitions>
 
-                        <Border Grid.Column="0" Grid.Row="0" Background="DimGray" Visibility="{Binding IsTimeout, Converter={StaticResource InvBoolToVis}}" />
+                        <Border Grid.Column="0" Grid.Row="0" Background="Black" />
 
                         <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                     Visibility="{Binding IsTimeout, Converter={StaticResource InvBoolToVis}}">
@@ -382,11 +381,9 @@
                             </TextBlock>
                         </Viewbox>
 
-                        <Border Grid.Column="0" Grid.Row="0" Background="Black" Visibility="{Binding IsTimeout, Converter={StaticResource BoolToVis}}" />
-
                         <Viewbox Stretch="Uniform" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                     Visibility="{Binding IsTimeout, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="ПЕРЕРЫВ" Foreground="White" FontWeight="Bold" />
+                            <TextBlock Text="ПЕРЕРЫВ" Foreground="White" />
                         </Viewbox>
 
                         <Border Grid.Row="0" Grid.Column="0" BorderBrush="White" BorderThickness="0,0,0,1"></Border>

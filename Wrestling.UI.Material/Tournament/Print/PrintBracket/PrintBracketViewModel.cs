@@ -10,6 +10,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
         private AgeWeightGroup _selectedGroup;
         private List<GroupRound> _groupMainRounds;
         private List<GroupRound> _groupAddRounds;
+        private List<PrintWrestlerApplicationViewModel> _groupWrestlers = new List<PrintWrestlerApplicationViewModel>();
 
         public override string PageTitle => "Печать Протокола";
         
@@ -50,6 +51,17 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
             }
         }
 
+        public List<PrintWrestlerApplicationViewModel> GroupWrestlers
+        {
+            get { return _groupWrestlers; }
+            set
+            {
+                _groupWrestlers = value;
+
+                OnPropertyChanged("GroupWrestlers");
+            }
+        }
+
         public override void InitData()
         {
             base.InitData();
@@ -57,6 +69,39 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
             SelectedGroup = DataContext.Group;
             GroupMainRounds = SelectedGroup.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Main).ToList();
             GroupAdditoinalRounds = SelectedGroup.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Additional).ToList();
+
+            var results = new List<PrintWrestlerApplicationViewModel>();
+
+            var wrestlers = SelectedGroup.Wrestlers.OrderBy(x => x.FinalPlace).ThenBy(x => x.SeedNumber).ThenBy(x => x.LastFirstName).ToList();
+            
+            foreach (var wrestler in wrestlers)
+            {
+                results.Add(new PrintWrestlerApplicationViewModel
+                {
+                    Order = wrestler.FinalPlace,
+                    SeedNumber = wrestler.SeedNumber,
+                    AthleteName = wrestler.LastFirstName,
+                    BirthYear = wrestler.BirthDate?.Year,
+                    Level = wrestler.Level,
+                    TeamName = wrestler.TeamName,
+                    TeamCity = wrestler.TeamCity,
+                    Weight = wrestler.Weight
+                });
+            }
+
+            GroupWrestlers = results;
         }
+    }
+
+    public class PrintWrestlerApplicationViewModel
+    {
+        public int? Order { get; set; }
+        public int? SeedNumber { get; set; }
+        public string AthleteName { get; set; }
+        public int? BirthYear { get; set; }
+        public string TeamName { get; set; }
+        public string TeamCity { get; set; }
+        public string Level { get; set; }
+        public double? Weight { get; set; }
     }
 }

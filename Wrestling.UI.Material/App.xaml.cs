@@ -8,10 +8,9 @@ using Wrestling.DataAccess;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Entities.Results;
+using Wrestling.Entities.Results.Achievements;
 using Wrestling.Integration;
 using Wrestling.Providers;
-using Wrestling.Recorder;
-using Wrestling.Recorder.DataAccess;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
@@ -22,11 +21,10 @@ using Wrestling.UI.Material.Slider.Slides.ImageSlide;
 using Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide;
 using Wrestling.UI.Material.Slider.Slides.VideoSlide;
 using Wrestling.UI.Material.Tournament.Print;
+using Wrestling.UI.Material.Tournament.Standing.Details;
 using Wrestling.UI.Material.Utils;
-using Wrestling.UI.Material.Utils.Recording;
-using Wrestling.UI.Material.Utils.Recording.OverlayDrawer;
 using Wrestling.UI.Utils;
-using InternationalScoreScreenView = Wrestling.UI.Material.ScoreScreen.InternationalScoreScreenView;
+
 using SlideHostView = Wrestling.UI.Material.Slider.SlideHostView;
 
 namespace Wrestling.UI.Material
@@ -43,14 +41,6 @@ namespace Wrestling.UI.Material
                 XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)));
 
             var di = GetContainer();
-            
-            var recConfigDataAccess = di.Resolve<IRecorderConfigurationDataAccess>();
-            var recConfig = recConfigDataAccess?.LoadFromFile("CamConfig.json");
-
-            if (recConfig != null)
-            {
-                di.Add<RecorderConfiguration>(recConfig);
-            }
 
             var navService = LoadNavigation(di);
 
@@ -87,17 +77,9 @@ namespace Wrestling.UI.Material
         {
             var di = DiContainer.Instance;
 
-            //di.Add<Utils.Recording.App.ICamRecorderGenerator>(new Utils.Recording.App.FfmpegCamRecorderGenerator());
-            //di.Add<IRecorder>(new FfmpegCamRecorder());
-            di.Add<IOverlayDrawer>(new OlympicOverlayDrawer());
-            di.Add<IMatchRecorder>(new MatchRecorder(di.Resolve<IOverlayDrawer>()));
-            //di.Add<IMatchRecorderGenerator>(new MatchRecorderGenerator(di.Resolve<Utils.Recording.App.ICamRecorderGenerator>(), di.Resolve<IOverlayDrawer>()));
-
             di.Add<IDialogService>(new DialogService());
 
             di.Add<IStorageDataAccess>(new JsonStorageDataAccess());
-
-            di.Add<IRecorderConfigurationDataAccess>(new RecorderConfigurationDataAccess(new JsonStorageDataAccess()));
 
             di.Add<IWrestlersDataAccess>(new WrestlersDataAccess(di.Resolve<IStorageDataAccess>()));
             di.Add<ITeamsDataAccess>(new TeamsDataAccess(di.Resolve<IStorageDataAccess>()));
@@ -115,6 +97,7 @@ namespace Wrestling.UI.Material
             di.Add<GlobalSettings>(new GlobalSettings { IsSoundEnabled = true, IsTimerBackward = true });
 
             di.Add<IDataContext>(new DataContext());
+            di.Add<IGroupGenerator>(new GroupGenerator());
 
             di.Add<List<IGroupBracketProcessor>>(new List<IGroupBracketProcessor>
             {
@@ -158,6 +141,17 @@ namespace Wrestling.UI.Material
             di.Add(new OlympicTeamResultsOrderer(), "OlympicOrderer");
             di.Add(new MedalsTeamResultsOrderer(), "MedalsOrderer");
             di.Add(new PointsTeamResultsOrderer(), "PointsOrderer");
+
+            di.Add<List<IAchievementCalculator>>(new List<IAchievementCalculator>
+            {
+                new FastestWinAchievementCalculator(),
+                new FastestActionAchievementCalculator(),
+                new MostAmplitudeActionsAchievementCalculator(),
+                new MostPointsCountAchievementCalculator(),
+                new MostTusheWinsAchievementCalculator(),
+                new MostDominationWinsAchievementCalculator(),
+                new WinInLast10SecondsAchievementCalculator()
+            });
 
             di.Add<IRosbosApi>(new RosbosApi());
 

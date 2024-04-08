@@ -53,7 +53,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
             SetupAutoSave();
         }
 
-        public override string PageTitle => "Вольная борьба - Администратор турниров";
+        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20231127";
 
         public override IList<CommandButtonItem> QuickButtons
         {

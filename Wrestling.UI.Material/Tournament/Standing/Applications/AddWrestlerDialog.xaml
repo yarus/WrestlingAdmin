@@ -156,12 +156,19 @@
             </TextBox>
 
             <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding Path=Item.IsWeightApproved, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Margin="10 5 10 5" FontSize="18" TabIndex="10">Вес подтвержден</CheckBox>
-
-            <TextBox Grid.Row="5" Grid.Column="0" materialDesign:HintAssist.Hint="Разряд" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18" TabIndex="11">
-                <TextBox.Text>
+            
+            <ComboBox Grid.Row="5" Grid.Column="0" materialDesign:HintAssist.Hint="Разряд" IsEditable="False" Margin="10 5 10 0" FontSize="18" TabIndex="12"
+                      ItemsSource="{Binding Levels}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Margin="0" Padding="0" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+                
+                <ComboBox.SelectedItem>
                     <Binding Path="Item.Level" UpdateSourceTrigger="PropertyChanged" />
-                </TextBox.Text>
-            </TextBox>
+                </ComboBox.SelectedItem>
+            </ComboBox>
 
             <ComboBox Grid.Row="5" Grid.Column="1" materialDesign:HintAssist.Hint="Весовая категория" IsEditable="False" Margin="10 5 10 0" FontSize="18" TabIndex="12"
                       ItemsSource="{Binding Groups}">

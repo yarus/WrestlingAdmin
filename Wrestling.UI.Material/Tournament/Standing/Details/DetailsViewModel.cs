@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
@@ -14,6 +15,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
         private ICommand _addGroupCommand;
         private ICommand _editGroupCommand;
         private ICommand _deleteGroupCommand;
+        private ICommand _generateGroupsCommand;
 
         private ObservableCollection<AgeWeightGroup> _groups;
 
@@ -49,6 +51,19 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
         #region Command Properties
 
+        public ICommand GenerateGroupsCommand
+        {
+            get
+            {
+                if (_generateGroupsCommand == null)
+                {
+                    _generateGroupsCommand = new RelayCommand(param => GenerateGroups());
+                }
+
+                return _generateGroupsCommand;
+            }
+        }
+        
         public ICommand AddGroupCommand
         {
             get
@@ -95,7 +110,34 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
         #region Private Methods
         
-        private async void AddGroup()
+        private async Task GenerateGroups()
+        {
+            var vm = new GenerateGroupsDialogViewModel(DiContainer);
+        
+            var view = new GenerateGroupsDialog
+            {
+                DataContext = vm
+            };
+        
+            var result = await DialogHost.Show(view, "RootDialog");
+
+            if (result != null && (bool)result)
+            {
+                var response = Resolve<IGroupGenerator>().Generate(vm.GenerateText, Tournament.Settings);
+
+                if (response.IsFailed)
+                {
+                    ShowSnackMessage($"Ошибка генерации групп: {string.Join(",", response.Errors.Select(x => x.Message).ToList())}");
+                    return;
+                }
+
+                Tournament.Groups = new ObservableCollection<AgeWeightGroup>(response.Value);
+                Groups = Tournament.Groups;
+                OnPropertyChanged(nameof(Groups));
+            }
+        }
+        
+        private async Task AddGroup()
         {
             var tmp = new AgeWeightGroup
             {

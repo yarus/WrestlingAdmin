@@ -27,6 +27,9 @@ namespace Wrestling.Entities
         private string _videoStoragePath;
         private bool _isOverlayOlympic;
 
+        private string _integrationUserName;
+        private string _integrationPassword;
+
         public GlobalSettings()
         {
             AutosaveMaxSecond = 30;
@@ -41,6 +44,26 @@ namespace Wrestling.Entities
             IsTournamentScoreInternational = true;
             IsOverlayOlympic = true;
             VideoStoragePath = DefaultVideosPath;
+        }
+
+        public string IntegrationUserName
+        {
+            get { return _integrationUserName; }
+            set
+            {
+                _integrationUserName = value;
+                OnPropertyChanged("IntegrationUserName");
+            }
+        }
+
+        public string IntegrationPassword
+        {
+            get { return _integrationPassword; }
+            set
+            {
+                _integrationPassword = value;
+                OnPropertyChanged("IntegrationPassword");
+            }
         }
 
         public string VideoStoragePath

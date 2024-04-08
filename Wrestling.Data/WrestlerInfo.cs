@@ -53,5 +53,7 @@ namespace Wrestling.Data
         public string HashTag { get; set; }
         [DataMember]
         public string Level { get; set; }
+        [DataMember]
+        public DateTime? Timestamp { get; set; }
     }
 }

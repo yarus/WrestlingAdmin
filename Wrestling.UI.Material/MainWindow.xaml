@@ -19,7 +19,6 @@
         xmlns:schedule1="clr-namespace:Wrestling.UI.Material.Tournament.Progress.Schedule"
         xmlns:printBracket="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintBracket"
         xmlns:slider="clr-namespace:Wrestling.UI.Material.Slider"
-        xmlns:replayScreen="clr-namespace:Wrestling.UI.Material.ReplayScreen"
         xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
@@ -97,10 +96,6 @@
 
             <DataTemplate DataType="{x:Type slider:SliderControlViewModel}">
                 <slider:SliderControlView />
-            </DataTemplate>
-
-            <DataTemplate DataType="{x:Type replayScreen:ReplayScreenViewModel}">
-                <replayScreen:ReplayScreenView />
             </DataTemplate>
 
         </ResourceDictionary>

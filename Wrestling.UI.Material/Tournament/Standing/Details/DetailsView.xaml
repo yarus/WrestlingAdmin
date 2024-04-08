@@ -169,6 +169,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
+                                <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
                             <materialDesign:ColorZone Mode="PrimaryMid" Grid.Row="0" Effect="{DynamicResource MaterialDesignShadowDepth5}">
@@ -232,7 +233,17 @@
                                     </i:EventTrigger>
                                 </i:Interaction.Triggers>
                             </ListView>
+                            
+                            <StackPanel Grid.Row="2" Grid.Column="0">
+                                <Button Content="Сгенерировать"
+                                        ToolTip="Сгенерировать список групп"
+                                        Width="140"
+                                        HorizontalAlignment="Center" 
+                                        Margin="0,20,0,10"
+                                        Command="{Binding GenerateGroupsCommand}" />
+                            </StackPanel>
                         </Grid>
+                        
                     </Border>
                 
                 </StackPanel>
