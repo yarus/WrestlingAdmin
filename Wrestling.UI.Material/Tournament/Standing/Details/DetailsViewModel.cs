@@ -57,7 +57,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             {
                 if (_generateGroupsCommand == null)
                 {
-                    _generateGroupsCommand = new RelayCommand(param => GenerateGroups());
+                    _generateGroupsCommand = new RelayCommand(async (param) => await GenerateGroups());
                 }
 
                 return _generateGroupsCommand;
@@ -70,7 +70,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             {
                 if (_addGroupCommand == null)
                 {
-                    _addGroupCommand = new RelayCommand(param => AddGroup());
+                    _addGroupCommand = new RelayCommand(async (param) => await AddGroup());
                 }
                 return _addGroupCommand;
             }

@@ -69,64 +69,32 @@ namespace Wrestling.Entities
                     return 0;
                 }
 
-                int fullDurationInSeconds = 0;
-                int totalUncompletedCount = 0;
-                int completedDurationInSeconds = 0;
-                int totalCompletedCount = 0;
+                int maxDurationInSeconds = 0;
 
-                var activeGroups = _groups.Where(x => x.Bracket != null).ToList();
-
-                foreach (var group in activeGroups)
+                foreach (var carpet in _carpets)
                 {
-                    var notCompletedMatches = group.Bracket.Rounds.SelectMany(r => r.RoundMatches).Where(m => !m.IsMatchCompleted).ToList();
+                    var carpetMaxDurationInSeconds = 0;
+                    var groupsWithBrackets = carpet.Groups.Where(g => g.IsBracketGenerated).ToList();
 
-                    var groupFullDuration = 0;
-
-                    foreach (var match in notCompletedMatches)
+                    foreach (var group in groupsWithBrackets)
                     {
-                        var matchFullDuration = (match.MaxRoundSecond * 2) + match.MaxTimeoutSecond;
+                        var roundLength = group.MaxRoundSecond;
+                        var timeoutLength = group.MaxTimeoutSecond;
 
-                        groupFullDuration += matchFullDuration;
+                        var uncompleted = group.Bracket.MatchesCount - group.Bracket.CompletedMatchesCount;
+
+                        var groupDuration = uncompleted * (roundLength * 2 + timeoutLength);
+
+                        carpetMaxDurationInSeconds += groupDuration;
                     }
 
-                    fullDurationInSeconds += groupFullDuration;
-                    totalUncompletedCount += notCompletedMatches.Count;
-
-                    var completedMatches = group.Bracket.Rounds.SelectMany(r => r.RoundMatches).Where(m => m.IsMatchCompleted && m.WrestlerInRed != null && m.WrestlerInBlue != null && m.LastSecondInMatch > 0).ToList();
-
-                    var completedMatchesDuration = 0;
-
-                    foreach (var match in completedMatches)
+                    if (carpetMaxDurationInSeconds > maxDurationInSeconds)
                     {
-                        var actualDuration = match.LastSecondInMatch;
-
-                        if (match.LastSecondInMatch > match.MaxRoundSecond)
-                        {
-                            actualDuration += match.MaxTimeoutSecond;
-                        }
-
-                        completedMatchesDuration += actualDuration;
+                        maxDurationInSeconds = carpetMaxDurationInSeconds;
                     }
-
-                    totalCompletedCount += completedMatches.Count;
-                    completedDurationInSeconds += completedMatchesDuration;
                 }
 
-                if (totalCompletedCount > 0)
-                {
-                    var averageMatchCompletedDuration = completedDurationInSeconds / totalCompletedCount;
-
-                    if (totalUncompletedCount == 0)
-                    {
-                        return 0;
-                    }
-
-                    var averageMatchFullDuration = fullDurationInSeconds / totalUncompletedCount;
-                    var avgMatchDuration = (averageMatchFullDuration + averageMatchCompletedDuration) / 2;
-                    return totalUncompletedCount * avgMatchDuration;
-                }
-
-                return completedDurationInSeconds;
+                return maxDurationInSeconds;
             }
         }
 
