@@ -18,7 +18,10 @@ namespace Wrestling.Entities.Results.Achievements
 
             var response = new List<WrestlerAchievement>();
 
-            var allMatches = tournament.Groups.SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches)
+            var allMatches = tournament.Groups
+                .Where(g => g.Bracket != null)
+                .SelectMany(g => g.Bracket.Rounds)
+                .SelectMany(r => r.RoundMatches)
                 .Where(m => m.Status == MatchStatusEnum.Completed && m.WrestlerInRed != null && m.WrestlerInBlue != null)                
                 .ToList();            
 

@@ -131,6 +131,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             set
             {
                 _item.Weight = value;
+
                 OnPropertyChanged("WeightF");
                 OnPropertyChanged("Groups");
             }
@@ -200,12 +201,17 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 var tmp = DataContext.Tournament.Groups.Where(
                         p => p.IsFemale == _item.IsFemale
                              && (!WeightF.HasValue || p.WeightMax >= WeightF.Value)
-                             && (!BirthDateF.HasValue || p.BirthYearMin <= BirthDateF.Value.Year /*&& p.BirthYearMax >= BirthDateF.Value.Year*/))
+                             && (!BirthDateF.HasValue || p.BirthYearMin <= BirthDateF.Value.Year))
                     .OrderBy(g => g.IsFemale).ThenByDescending(p => p.BirthYearMax).ThenBy(x => x.WeightMax).ToList();
 
                 if (SelectedGroup != null && !tmp.Contains(SelectedGroup))
                 {
                     SelectedGroup = null;
+                }
+
+                if (SelectedGroup == null && tmp.Count > 0 && WeightF.HasValue && BirthDateF.HasValue)
+                {
+                    SelectedGroup = tmp[0];
                 }
 
                 return tmp;
