@@ -48,7 +48,7 @@
                         <GridViewColumn Header="№" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Order}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding SeedNumber}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -78,6 +78,14 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
+                        <GridViewColumn Header="Город" Width="150">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding TeamCity}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
                         <GridViewColumn Header="Разряд" Width="80">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -90,14 +98,6 @@
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Weight}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-
-                        <GridViewColumn Header="№ жребия" Width="100">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding SeedNumber}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>

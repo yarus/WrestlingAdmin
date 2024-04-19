@@ -37,6 +37,7 @@
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Row="0" Grid.Column="0">
@@ -74,7 +75,7 @@
 
             <CheckBox Grid.Row="0" Grid.Column="2" HorizontalAlignment="Center"
                       IsChecked="{Binding IsOnlyUnapprovedVisible}">
-                Показать только недопущенных
+                Только недопущенные
             </CheckBox>
 
             <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
@@ -86,6 +87,14 @@
                 <Run Text="Участников:" />
                 <Run Text="{Binding WrestlersCount, Mode=OneWay}" />
             </TextBlock>
+
+            <StackPanel Grid.Row="0" Grid.Column="5">
+                <Button Content="Автодопуск"
+                        ToolTip="Допустить всех участников"
+                        Width="120"
+                        HorizontalAlignment="Right" Margin="10,10,20,10"
+                        Command="{Binding ApproveAllCommand}" />
+            </StackPanel>
 
         </Grid>
 
