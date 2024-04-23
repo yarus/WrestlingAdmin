@@ -98,19 +98,13 @@
 
         </Grid>
 
-        <ItemsControl Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Items}" VirtualizingStackPanel.IsVirtualizing="True">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling" Margin="0" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            
+        <ItemsControl Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Items}">            
             <ItemsControl.Template>
                 <ControlTemplate TargetType="ItemsControl">
                     <Border BorderThickness="{TemplateBinding BorderThickness}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             Background="{TemplateBinding Background}">
-                        <ScrollViewer CanContentScroll="True" 
+                        <ScrollViewer CanContentScroll="False" 
                                       Padding="{TemplateBinding Padding}"
                                       Focusable="False">
                             <ItemsPresenter />
@@ -121,7 +115,7 @@
 
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Expander Background="LightGray" Margin="0" Padding="0"
+                    <Expander Background="LightGray" Margin="0" Padding="0" x:Name="Expander"
                               IsExpanded="{Binding Path=DataContext.IsFilterEnabled, ElementName=RootControl, Mode=OneWay}">
                         <Expander.Header>
                             <Grid Margin="0">
@@ -205,7 +199,7 @@
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
-                            <StackPanel Background="White" Margin="0">
+                            <StackPanel Background="White" Margin="0" Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <Button Content="Новый спортсмен" Width="160" HorizontalAlignment="Left"
                                         Margin="20,10,0,10"
                                         ToolTip="Добавить спортсмена в заявку"
