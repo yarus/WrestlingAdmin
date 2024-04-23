@@ -185,7 +185,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
                 if (carpet == null) continue;
 
-                stat.Matches = new ObservableCollection<WrestlingMatch>(carpet.Groups.SelectMany(g => g.Bracket.Rounds)
+                stat.Matches = new ObservableCollection<WrestlingMatch>(carpet.Groups.Where(x => x.Bracket != null).SelectMany(g => g.Bracket.Rounds)
                     .SelectMany(r => r.RoundMatches)
                     .Where(m => m.IsMatchCanStart && (string.IsNullOrEmpty(filter) ||
                                     (m.WrestlerInRed != null && m.WrestlerInRed.LastName.StartsWith(filter, true, CultureInfo.InvariantCulture)) ||
