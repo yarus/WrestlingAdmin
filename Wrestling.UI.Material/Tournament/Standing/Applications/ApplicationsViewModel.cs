@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
@@ -19,6 +20,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         private ObservableCollection<TeamApplication> _items;
 
         private ICommand _addAppCommand;
+        private ICommand _approveAllCommand;
         private ICommand _editAppCommand;
         private ICommand _deleteAppCommand;
         private ICommand _addWrestlerCommand;
@@ -119,13 +121,25 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
         }
 
+        public ICommand ApproveAllCommand
+        {
+            get
+            {
+                if (_approveAllCommand == null)
+                {
+                    _approveAllCommand = new RelayCommand(param => ApproveAllWrestlers(), param => true);
+                }
+                return _approveAllCommand;
+            }
+        }
+
         public ICommand AddAppCommand
         {
             get
             {
                 if (_addAppCommand == null)
                 {
-                    _addAppCommand = new RelayCommand(param => AddApplication(), param => true);
+                    _addAppCommand = new RelayCommand(async (param) => await AddApplication(), param => true);
                 }
                 return _addAppCommand;
             }
@@ -137,7 +151,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_editAppCommand == null)
                 {
-                    _editAppCommand = new RelayCommand(param => EditApplication(param as TeamApplication), param => param != null);
+                    _editAppCommand = new RelayCommand(async (param) => await EditApplication(param as TeamApplication), param => param != null);
                 }
                 return _editAppCommand;
             }
@@ -161,7 +175,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_addWrestlerCommand == null)
                 {
-                    _addWrestlerCommand = new RelayCommand(param => AddWrestler(param as TeamApplication), param => param != null);
+                    _addWrestlerCommand = new RelayCommand(async (param) => await AddWrestler(param as TeamApplication), param => param != null);
                 }
                 return _addWrestlerCommand;
             }
@@ -173,7 +187,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_editWrestlerCommand == null)
                 {
-                    _editWrestlerCommand = new RelayCommand(param => EditWrestler(param as Wrestler), param => param != null);
+                    _editWrestlerCommand = new RelayCommand(async (param) => await EditWrestler(param as Wrestler), param => param != null);
                 }
                 return _editWrestlerCommand;
             }
@@ -203,7 +217,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
             else
             {
-                var filteredWrestlers = DataContext.Tournament.Wrestlers.Where(w => (!isOnlyUnapprovedVisible || !w.IsApplicationValid) 
+                var filteredWrestlers = DataContext.Tournament.Wrestlers.Where(w => (!isOnlyUnapprovedVisible || !w.IsRegistrationApproved) 
                     && (filter == null || filter.Length <=2 || (filter.Length > 2 && w.LastName.StartsWith(filter, true, CultureInfo.InvariantCulture)))).ToList();
                 var filtered = new ObservableCollection<TeamApplication>(DataContext.Tournament.TeamApplications.Where(a => filteredWrestlers.Select(w => w.TeamID).Contains(a.ID)).Select(a => a.Clone() as TeamApplication));
                 foreach (var teamApplication in filtered)
@@ -214,7 +228,20 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
         }
 
-        private async void AddApplication()
+        private void ApproveAllWrestlers()
+        {
+            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите допустить всех спортсменов?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+
+            foreach (var wrestler in Tournament.Wrestlers)
+            {
+                wrestler.IsEntryFeePaid = true;
+                wrestler.IsWeightApproved = true;
+            }
+
+            OnPropertyChanged("Items");
+        }
+
+        private async Task AddApplication()
         {
             var addAppVm = new AddAppViewModel(DiContainer, new TeamApplication
             {
@@ -260,7 +287,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             ShowPrintPreview(new PrintTeamApplicationViewModel(DiContainer));            
         }
         
-        private async void EditApplication(TeamApplication app)
+        private async Task EditApplication(TeamApplication app)
         {
             var tmpApp = app.Clone() as TeamApplication;
 
@@ -322,7 +349,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             OnPropertyChanged("WrestlersCount");
         }
 
-        private async void AddWrestler(TeamApplication app)
+        private async Task AddWrestler(TeamApplication app)
         {
             var tmpWresler = new Wrestler
             {
@@ -432,7 +459,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
         }
 
-        private async void EditWrestler(Wrestler wrestler)
+        private async Task EditWrestler(Wrestler wrestler)
         {
             if (_editWrestlerDialogOpened) return;
 

@@ -171,6 +171,8 @@ namespace Wrestling.Entities
 
         public bool IsGroupValid => Wrestlers.Count > 0 && Wrestlers.FirstOrDefault(w => !w.IsApplicationValid || !w.IsRegistrationApproved) == null;
 
+        public int WrestlersApprovedCount => Wrestlers.Count(x => x.IsRegistrationApproved);
+
         public void RefreshState()
         {
             OnPropertyChanged("Wrestlers");

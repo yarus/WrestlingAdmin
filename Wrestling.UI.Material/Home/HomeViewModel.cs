@@ -46,7 +46,7 @@ namespace Wrestling.UI.Material.Home
             }
         }
 
-        public override string PageTitle => "Вольная борьба - Администратор турниров v20240415";
+        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20240423";
 
         public override IList<CommandButtonItem> DrawerItems
         {

@@ -13,11 +13,6 @@ namespace Wrestling.UI.Utils.Converters
 
             var finishDateTime = DateTime.Now.AddSeconds((int)value);
 
-            if (finishDateTime.Date != DateTime.Now.Date)
-            {
-                return finishDateTime.ToString(@"dd\.HH\:mm");
-            }
-
             return finishDateTime.ToString(@"HH\:mm");
         }
 

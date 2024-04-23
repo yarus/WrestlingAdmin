@@ -52,7 +52,7 @@ namespace Wrestling.Entities
         }
 
         public int AppliedWrestlersCount => Wrestlers.Count;
-        public int ApprovedWrestlersCount => Groups.Sum(g => g.Wrestlers.Count);
+        public int ApprovedWrestlersCount => Groups.Sum(g => g.WrestlersApprovedCount);
         public int GroupsCount => Groups.Count;
         public int CarpetsCount => Carpets.Count;
         public int MatchesCount => Groups.Where(g => g.Bracket != null).Sum(g => g.Bracket.MatchesCount);

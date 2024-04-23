@@ -62,19 +62,13 @@
             </TextBlock>
         </Grid>
         
-        <ItemsControl Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Groups}" VirtualizingStackPanel.IsVirtualizing="True">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling" Margin="0" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            
+        <ItemsControl Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Groups}">            
             <ItemsControl.Template>
                 <ControlTemplate TargetType="ItemsControl">
                     <Border BorderThickness="{TemplateBinding BorderThickness}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             Background="{TemplateBinding Background}">
-                        <ScrollViewer CanContentScroll="True" 
+                        <ScrollViewer CanContentScroll="False" 
                                       Padding="{TemplateBinding Padding}"
                                       Focusable="False">
                             <ItemsPresenter />
@@ -155,7 +149,7 @@
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
-                            <Grid Background="White">
+                            <Grid Background="White" Visibility="{Binding ElementName=GroupControl, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />

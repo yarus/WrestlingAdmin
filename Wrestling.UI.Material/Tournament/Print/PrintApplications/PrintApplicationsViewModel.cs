@@ -49,36 +49,23 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintApplications
 
             SelectedGroup = DataContext.Group;
 
-            var results = new List<PrintWrestlerApplicationViewModel>();
-
-            var wrestlers = SelectedGroup.Wrestlers.OrderBy(x => x.LastFirstName).ThenBy(x => x.SeedNumber).ToList();
-
-            var i = 1;
-
-            foreach (var wrestler in wrestlers)
+            var wrestlers = SelectedGroup.Wrestlers.OrderBy(x => x.SeedNumber).Select(y => new PrintWrestlerApplicationViewModel
             {
-                results.Add(new PrintWrestlerApplicationViewModel
-                {
-                    Order = i,
-                    SeedNumber = wrestler.SeedNumber,
-                    AthleteName = wrestler.LastFirstName,
-                    BirthYear = wrestler.BirthDate?.Year,
-                    Level = wrestler.Level,
-                    TeamName = wrestler.TeamName,
-                    TeamCity = wrestler.TeamCity,
-                    Weight = wrestler.Weight
-                });
+                SeedNumber = y.SeedNumber,
+                AthleteName = y.LastFirstName,
+                BirthYear = y.BirthDate?.Year,
+                Level = y.Level,
+                TeamName = y.TeamName,
+                TeamCity = y.TeamCity,
+                Weight = y.Weight
+            }).ToList();
 
-                i++;
-            }
-
-            GroupWrestlers = results;
+            GroupWrestlers = wrestlers;
         }
     }
 
     public class PrintWrestlerApplicationViewModel
     {
-        public int? Order { get; set; }
         public int? SeedNumber { get; set; }
         public string AthleteName { get; set; }
         public int? BirthYear { get; set; }

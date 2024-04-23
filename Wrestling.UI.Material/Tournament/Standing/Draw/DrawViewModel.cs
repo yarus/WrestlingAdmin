@@ -62,9 +62,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             {
                 var group = Groups.FirstOrDefault(gr => gr.ID == wrestler.GroupID);
                 if (group != null)
-                {
-                    //if (wrestler.IsRegistrationApproved && group.Wrestlers.FirstOrDefault(wr => wr == wrestler) == null)
-                    if (group.Wrestlers.FirstOrDefault(wr => wr == wrestler) == null)
+                {                    
+                    if (group.Wrestlers.FirstOrDefault(wr => wr.ID == wrestler.ID) == null)
                     {
                         group.Wrestlers.Add(wrestler);
                     }

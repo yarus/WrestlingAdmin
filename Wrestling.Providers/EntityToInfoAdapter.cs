@@ -223,12 +223,6 @@ namespace Wrestling.Providers
             if (info == null) return null;
 
             var groupWrestlers = wrestlers.Where(w => info.Wrestlers.Contains(w.ID)).ToList();
-            // Verify that group wrestlers are approved, if not - they should be removed
-            var wrestlersToRemove = groupWrestlers.Where(w => !w.IsRegistrationApproved).ToList();
-            foreach (var wrestler in wrestlersToRemove)
-            {
-                groupWrestlers.Remove(wrestler);
-            }
 
             var entity = new AgeWeightGroup
             {

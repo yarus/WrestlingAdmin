@@ -37,6 +37,7 @@
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Row="0" Grid.Column="0">
@@ -74,7 +75,7 @@
 
             <CheckBox Grid.Row="0" Grid.Column="2" HorizontalAlignment="Center"
                       IsChecked="{Binding IsOnlyUnapprovedVisible}">
-                Показать только недопущенных
+                Только недопущенные
             </CheckBox>
 
             <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
@@ -87,21 +88,23 @@
                 <Run Text="{Binding WrestlersCount, Mode=OneWay}" />
             </TextBlock>
 
+            <StackPanel Grid.Row="0" Grid.Column="5">
+                <Button Content="Автодопуск"
+                        ToolTip="Допустить всех участников"
+                        Width="120"
+                        HorizontalAlignment="Right" Margin="10,10,20,10"
+                        Command="{Binding ApproveAllCommand}" />
+            </StackPanel>
+
         </Grid>
 
-        <ItemsControl Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Items}" VirtualizingStackPanel.IsVirtualizing="True">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling" Margin="0" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            
+        <ItemsControl Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Items}">            
             <ItemsControl.Template>
                 <ControlTemplate TargetType="ItemsControl">
                     <Border BorderThickness="{TemplateBinding BorderThickness}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             Background="{TemplateBinding Background}">
-                        <ScrollViewer CanContentScroll="True" 
+                        <ScrollViewer CanContentScroll="False" 
                                       Padding="{TemplateBinding Padding}"
                                       Focusable="False">
                             <ItemsPresenter />
@@ -112,7 +115,7 @@
 
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Expander Background="LightGray" Margin="0" Padding="0"
+                    <Expander Background="LightGray" Margin="0" Padding="0" x:Name="Expander"
                               IsExpanded="{Binding Path=DataContext.IsFilterEnabled, ElementName=RootControl, Mode=OneWay}">
                         <Expander.Header>
                             <Grid Margin="0">
@@ -196,7 +199,7 @@
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
-                            <StackPanel Background="White" Margin="0">
+                            <StackPanel Background="White" Margin="0" Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <Button Content="Новый спортсмен" Width="160" HorizontalAlignment="Left"
                                         Margin="20,10,0,10"
                                         ToolTip="Добавить спортсмена в заявку"
