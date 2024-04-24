@@ -42,8 +42,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         public string PageName => "Заявки";
         public override string PageTitle => "Заявки на участие";
 
-        public int AppsCount => Items.Count;
-        public int WrestlersCount => Items?.SelectMany(a => a.Wrestlers).ToList().Count ?? 0;
+        public int AppsCount => DataContext.Tournament?.TeamApplications.Count ?? 0;
+        public int WrestlersCount => DataContext.Tournament?.TeamApplications.SelectMany(a => a.Wrestlers).ToList().Count ?? 0;
 
         public ObservableCollection<TeamApplication> Items
         {
@@ -517,19 +517,21 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
             RemoveWrestlerFromGroup(wrestler);
 
-            DataContext.Tournament.Wrestlers.Remove(wrestler);
+            DataContext.Tournament.Wrestlers.Remove(wrestler);            
 
             if (wrestler.TeamID.HasValue)
             {
-                var teamApp = Items.FirstOrDefault(a => a.ID == wrestler.TeamID);
+                var teamApp = DataContext.Tournament.TeamApplications.FirstOrDefault(a => a.ID == wrestler.TeamID);
                 if (teamApp != null)
                 {
                     teamApp.Wrestlers.Remove(wrestler);
                     teamApp.RefreshStats();
-                }
+
+                    Filter(_filterString, IsOnlyUnapprovedVisible);
+                }                
             }
 
-            OnPropertyChanged("WrestlersCount");
+            OnPropertyChanged("WrestlersCount");            
         }
 
         #endregion
