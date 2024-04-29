@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
              mc:Ignorable="d"
@@ -13,19 +14,45 @@
 
     <UserControl.Resources>
         <converters:IndexItemsConverter x:Key="ItemsIndexConverter" />
+        <converters1:HighlightSelectedItemConverter x:Key="HighlightSelectedItem" />
     </UserControl.Resources>
 
     <Grid x:Name="RootControl">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Grid.Column="0">
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+            <ItemsControl ItemsSource="{Binding Stats}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Margin="0" Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button ToolTip="Выбрать ковер" VerticalAlignment="Center"
+                                HorizontalAlignment="Center" Content="{Binding CarpetLabel}" MinWidth="100"
+                                Command="{Binding Path=DataContext.ChangeCarpetCommand, ElementName=RootControl}"
+                                CommandParameter="{Binding }" Margin="0,0,20,0">
+                            <Button.Background>
+                                <MultiBinding Converter="{StaticResource HighlightSelectedItem}">
+                                    <Binding Path="DataContext.SelectedCarpet" ElementName="RootControl" />
+                                    <Binding Path="." />
+                                </MultiBinding>
+                            </Button.Background>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+
+        <Grid Grid.Row="1" Grid.Column="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
@@ -54,154 +81,93 @@
             </StackPanel>
 
             <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Схваток:" />
-                <Run Text="{Binding MatchesCount, Mode=OneWay}" />
+                <Run Text="Осталось схваток:" />
+                <Run Text="{Binding SelectedCarpet.MatchesLeft, Mode=OneWay}" />
             </TextBlock>
 
-            <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Завершено:" />
-                <Run Text="{Binding CompletedMatchesCount, Mode=OneWay}" />
-            </TextBlock>
+            <Button Grid.Column="3" ToolTip="Распечатать протоколы ближайших схваток" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                Command="{Binding Path=DataContext.PrintProtocolCommand, ElementName=RootControl}" CommandParameter="{Binding SelectedCarpet.CarpetID}" Margin="20,0,20,0">
+                <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0" Padding="0" />
+            </Button>
 
-            <TextBlock Grid.Row="0" Grid.Column="4" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Осталось:" />
-                <Run Text="{Binding LeftMatchesCount, Mode=OneWay}" />
-            </TextBlock>            
-            
         </Grid>
     
-        <ScrollViewer Grid.Row="1" Margin="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="2" Margin="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
             <Grid>
-                <ItemsControl ItemsSource="{Binding Stats}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Margin="0" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Expander Background="LightGray" Margin="0" Padding="0" IsExpanded="{Binding IsExpanded}">
-                                <Expander.Header>
-                                    <Grid Margin="0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="40" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
+                <ListView ItemsSource="{Binding SelectedCarpet.MatchesReady}" Margin="40,0,0,0" x:Name="MatchesSource">
+                    <ListView.View>
+                        <GridView AllowsColumnReorder="true">
+                            <GridViewColumn Header="#" Width="Auto">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding MatchNumber}" Margin="0,20,0,0" TextWrapping="NoWrap" FontSize="22" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
 
-                                        <TextBlock Grid.Column="0" TextWrapping="NoWrap" FontSize="22" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                            <TextBlock.Text>
-                                                <MultiBinding Converter="{StaticResource ItemsIndexConverter}" ConverterParameter="1">
-                                                    <Binding RelativeSource="{RelativeSource FindAncestor, AncestorType={x:Type ItemsControl}}" />
-                                                    <Binding Path="."/>
-                                                </MultiBinding>
-                                            </TextBlock.Text>
-                                        </TextBlock>
+                            <GridViewColumn Header="Группа/Стадия" Width="Auto">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding GroupName}" Margin="0,5,0,0" TextWrapping="Wrap" FontSize="22" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
+                                            <TextBlock Text="{Binding RoundName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="22" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
 
-                                        <TextBlock Grid.Column="1" TextWrapping="NoWrap" FontSize="22" Margin="20,0,20,0" VerticalAlignment="Center">
-                                            <Run Text="{Binding CarpetLabel}"></Run>
-                                        </TextBlock>
+                            <GridViewColumn Header="Спортсмены" Width="Auto">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                                <materialDesign:PackIcon Foreground="DarkRed" Width="20" Height="20" Margin="0" Padding="0" ToolTip="Спортсмен в красном трико" Kind="CheckboxBlank" />
+                                                <TextBlock Text="{Binding WrestlerInRed.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="22" HorizontalAlignment="Left" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                <materialDesign:PackIcon Foreground="Blue" Width="20" Height="20" Margin="0" Padding="0" ToolTip="Спортсмен в синем трико." Kind="CheckboxBlank" />
+                                                <TextBlock Text="{Binding WrestlerInBlue.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="22" HorizontalAlignment="Left" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
 
-                                        <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="22" VerticalAlignment="Center">
-                                            <Run Text="Участников:" />
-                                            <Run Text="{Binding WrestlersCount, Mode=OneWay}" />
-                                        </TextBlock>
+                            <GridViewColumn Header="Команды" Width="Auto">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding WrestlerInRed.TeamName}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="22" HorizontalAlignment="Left" />
+                                            <TextBlock Text="{Binding WrestlerInBlue.TeamName}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="22" HorizontalAlignment="Left" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
 
-                                        <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="22" VerticalAlignment="Center">
-                                            <Run Text="Поединков:" />
-                                            <Run Text="{Binding MatchesCount, Mode=OneWay}" />
-                                        </TextBlock>
+                            <GridViewColumn Width="Auto">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Orientation="Horizontal">
+                                            <Button CommandParameter="{Binding }" Margin="5,10,5,5"
+                                    Command="{Binding ElementName=RootControl, Path=DataContext.OpenMatchCommand}"
+                                    ToolTip="Загрузить поединок">
+                                                <materialDesign:PackIcon Kind="Play" Width="22" Height="22"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
 
-                                        <Button Grid.Column="4" ToolTip="Распечатать протоколы ближайших схваток" VerticalAlignment="Center" HorizontalAlignment="Center"
-                                                Command="{Binding Path=DataContext.PrintProtocolCommand, ElementName=RootControl}" CommandParameter="{Binding CarpetID}" Margin="20,0,0,0">
-                                            <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0" Padding="0" />
-                                        </Button>
-                                    </Grid>
-                                </Expander.Header>
-                                <Expander.Content>
-                                    <StackPanel Background="White" Margin="0">
-                                        <ListView ItemsSource="{Binding Matches}" Margin="40,0,0,0" x:Name="MatchesSource">
-                                            <ListView.View>
-                                                <GridView AllowsColumnReorder="true">
-                                                    <GridViewColumn Header="#" Width="Auto">
-                                                        <GridViewColumn.CellTemplate>
-                                                            <DataTemplate>
-                                                                <TextBlock Text="{Binding MatchNumber}" Margin="0,20,0,0" TextWrapping="NoWrap" FontSize="22" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                                                            </DataTemplate>
-                                                        </GridViewColumn.CellTemplate>
-                                                    </GridViewColumn>
-
-                                                    <GridViewColumn Header="Группа/Стадия" Width="Auto">
-                                                        <GridViewColumn.CellTemplate>
-                                                            <DataTemplate>
-                                                                <StackPanel>
-                                                                    <TextBlock Text="{Binding GroupName}" Margin="0,5,0,0" TextWrapping="Wrap" FontSize="22" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
-                                                                    <TextBlock Text="{Binding RoundName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="22" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
-                                                                </StackPanel>
-                                                            </DataTemplate>
-                                                        </GridViewColumn.CellTemplate>
-                                                    </GridViewColumn>
-
-                                                    <GridViewColumn Header="Спортсмены" Width="Auto">
-                                                        <GridViewColumn.CellTemplate>
-                                                            <DataTemplate>
-                                                                <StackPanel>
-                                                                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                                                        <materialDesign:PackIcon Foreground="DarkRed" Width="20" Height="20" Margin="0" Padding="0" ToolTip="Спортсмен в красном трико" Kind="CheckboxBlank" />
-                                                                        <TextBlock Text="{Binding WrestlerInRed.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="22" HorizontalAlignment="Left" />
-                                                                    </StackPanel>
-                                                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                                                        <materialDesign:PackIcon Foreground="Blue" Width="20" Height="20" Margin="0" Padding="0" ToolTip="Спортсмен в синем трико." Kind="CheckboxBlank" />
-                                                                        <TextBlock Text="{Binding WrestlerInBlue.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="22" HorizontalAlignment="Left" />
-                                                                    </StackPanel>
-                                                                </StackPanel>
-                                                            </DataTemplate>
-                                                        </GridViewColumn.CellTemplate>
-                                                    </GridViewColumn>
-
-                                                    <GridViewColumn Header="Команды" Width="Auto">
-                                                        <GridViewColumn.CellTemplate>
-                                                            <DataTemplate>
-                                                                <StackPanel>
-                                                                    <TextBlock Text="{Binding WrestlerInRed.TeamName}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="22" HorizontalAlignment="Left" />
-                                                                    <TextBlock Text="{Binding WrestlerInBlue.TeamName}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="22" HorizontalAlignment="Left" />
-                                                                </StackPanel>
-                                                            </DataTemplate>
-                                                        </GridViewColumn.CellTemplate>
-                                                    </GridViewColumn>
-
-                                                    <GridViewColumn Width="Auto">
-                                                        <GridViewColumn.CellTemplate>
-                                                            <DataTemplate>
-                                                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Orientation="Horizontal">
-                                                                    <Button CommandParameter="{Binding }" Margin="5,10,5,5"
-                                                                            Command="{Binding ElementName=RootControl, Path=DataContext.OpenMatchCommand}"
-                                                                            ToolTip="Загрузить поединок">
-                                                                        <materialDesign:PackIcon Kind="Play" Width="22" Height="22"/>
-                                                                    </Button>
-                                                                </StackPanel>
-                                                            </DataTemplate>
-                                                        </GridViewColumn.CellTemplate>
-                                                    </GridViewColumn>
-                                                </GridView>
-                                            </ListView.View>
-
-                                            <i:Interaction.Triggers>
-                                                <i:EventTrigger EventName="MouseDoubleClick">
-                                                    <i:InvokeCommandAction
-                                                        Command="{Binding ElementName=RootControl, Path=DataContext.OpenMatchCommand}"
-                                                        CommandParameter="{Binding Path=SelectedItem, ElementName=MatchesSource}" />
-                                                </i:EventTrigger>
-                                            </i:Interaction.Triggers>
-                                        </ListView>
-                                    </StackPanel>
-                                </Expander.Content>
-                            </Expander>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="MouseDoubleClick">
+                            <i:InvokeCommandAction
+                Command="{Binding ElementName=RootControl, Path=DataContext.OpenMatchCommand}"
+                CommandParameter="{Binding Path=SelectedItem, ElementName=MatchesSource}" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </ListView>
             </Grid>
         </ScrollViewer>
 

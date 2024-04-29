@@ -20,9 +20,11 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
     {
         private ObservableCollection<Carpet> _carpets;
         private ObservableCollection<CarpetStats> _filteredStats;
+        private CarpetStats _selectedCarpet;
 
         private ICommand _openMatchCommand;
         private ICommand _printProtocolCommand;
+        private ICommand _changeCarpetCommand;
 
         private IList<CommandButtonItem> _quickButtons;
         
@@ -55,12 +57,45 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
                 Stats = null;
             }
 
+            var expandedCarpets = _filteredStats?.Where(x => x.IsExpanded).ToList();
+
             _filteredStats = GenerateStats();
+
+            if (expandedCarpets?.Count > 0)
+            {
+                foreach (var item in expandedCarpets)
+                {
+                    var newCarpetData = _filteredStats.First(x => x.CarpetID == item.CarpetID);
+                    newCarpetData.IsExpanded = item.IsExpanded;
+                }
+            }
+
             Filter(FilterString);
 
             DataContext.IsBracketView = false;
+
+            if (SelectedCarpet == null && _filteredStats?.Count > 0)
+            {
+                SelectedCarpet = _filteredStats[0];
+            }
+            else if (_filteredStats?.Count > 0)
+            {
+                var newCarpet = _filteredStats.First(x => x.CarpetID == SelectedCarpet.CarpetID);
+                SelectedCarpet = newCarpet;
+            }
         }
-        
+
+        public CarpetStats SelectedCarpet
+        {
+            get { return _selectedCarpet; }
+            set
+            {
+                _selectedCarpet = value;
+
+                OnPropertyChanged("SelectedCarpet");
+            }
+        }
+
         public string FilterString
         {
             get { return _filterString; }
@@ -100,6 +135,18 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
         #region Commands
 
+        public ICommand ChangeCarpetCommand
+        {
+            get
+            {
+                if (_changeCarpetCommand == null)
+                {
+                    _changeCarpetCommand = new RelayCommand(param => ChangeCarpet(param as CarpetStats), param => param != null);
+                }
+                return _changeCarpetCommand;
+            }
+        }
+
         public ICommand OpenMatchCommand
         {
             get
@@ -137,11 +184,28 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             ShowPrintPreview(new PrintScheduleViewModel(DiContainer, _carpets.FirstOrDefault(c => c.ID == carpetID)));
         }
 
+        private void ChangeCarpet(CarpetStats carpet)
+        {
+            SelectedCarpet = carpet;
+        }
+
         private void Filter(string filter)
         {
             if (Stats == null || Stats.Count == 0)
             {
+                var expandedCarpets = _filteredStats?.Where(x => x.IsExpanded).ToList();
+
                 _filteredStats = GenerateStats();
+
+                if (expandedCarpets.Count > 0)
+                {
+                    foreach (var item in expandedCarpets)
+                    {
+                        var newCarpetData = _filteredStats.First(x => x.CarpetID == item.CarpetID);
+                        newCarpetData.IsExpanded = item.IsExpanded;
+                    }
+                }
+
                 FilterStats(filter);
             }
             else
@@ -187,7 +251,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
                 stat.Matches = new ObservableCollection<WrestlingMatch>(carpet.Groups.Where(x => x.Bracket != null).SelectMany(g => g.Bracket.Rounds)
                     .SelectMany(r => r.RoundMatches)
-                    .Where(m => m.IsMatchCanStart && (string.IsNullOrEmpty(filter) ||
+                    .Where(m => (string.IsNullOrEmpty(filter) ||
                                     (m.WrestlerInRed != null && m.WrestlerInRed.LastName.StartsWith(filter, true, CultureInfo.InvariantCulture)) ||
                                     (m.WrestlerInBlue != null && m.WrestlerInBlue.LastName.StartsWith(filter, true, CultureInfo.InvariantCulture))))
                     .OrderBy(m => m.MatchNumber));
@@ -200,7 +264,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         }
 
         private void OpenBrackets()
-        {
+        {            
             NavigateToView<BracketsViewModel>();
         }
 
