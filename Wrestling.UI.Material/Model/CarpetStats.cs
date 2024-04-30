@@ -82,11 +82,16 @@ namespace Wrestling.UI.Material.Model
                 _matches = value;
 
                 OnPropertyChanged("Matches");
+                OnPropertyChanged("MatchesReady");
             }
         }
 
+        public ObservableCollection<WrestlingMatch> MatchesReady => new ObservableCollection<WrestlingMatch>(Matches.Where(x => x.IsMatchCanStart));
+
 
         public int MatchesCount => Matches?.Count ?? 0;
+        public int MatchesLeft => Matches?.Where(m => !m.IsMatchCompleted).Count() ?? 0;
+        public int MatchesReadyCount => MatchesReady?.Count ?? 0;
         public int CompletedMatchesCount => Matches?.Where(m => m.IsMatchCompleted).Count() ?? 0;
     }
 }

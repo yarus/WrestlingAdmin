@@ -27,8 +27,6 @@ namespace Wrestling.UI.Material.Tournament.Import
         private TimeSpan _leftToImport;
 
         private DispatcherTimer _timer;
-
-        private ObservableCollection<string> _importSettings;
         
         private ITournamentImporter _importer;
 
@@ -43,8 +41,7 @@ namespace Wrestling.UI.Material.Tournament.Import
         #endregion
 
         public ImportViewModel(IDiContainer container) : base(container)
-        {
-            _importSettings = new ObservableCollection<string>();
+        {            
         }
 
         public override IList<CommandButtonItem> QuickButtons
@@ -135,13 +132,13 @@ namespace Wrestling.UI.Material.Tournament.Import
             }
         }
 
-        public ObservableCollection<string> ImportSettings
+        public ObservableCollection<string> ImportSources
         {
-            get { return _importSettings; }
+            get { return DataContext.Tournament.ImportSources; }
             set
             {
-                _importSettings = value;
-                OnPropertyChanged("ImportSettings");
+                DataContext.Tournament.ImportSources = value;
+                OnPropertyChanged("ImportSources");
             }
         }
 
@@ -265,7 +262,7 @@ namespace Wrestling.UI.Material.Tournament.Import
 
             if (_currentSecond >= ImportSeconds)
             {
-                foreach (var path in ImportSettings)
+                foreach (var path in ImportSources)
                 {
                     ImportData(path);
                 }
@@ -321,7 +318,7 @@ namespace Wrestling.UI.Material.Tournament.Import
 
         private void AddPath(string path)
         {
-            _importSettings.Add(path);
+            ImportSources.Add(path);
 
             Path = string.Empty;
             IsValid = false;
@@ -329,11 +326,11 @@ namespace Wrestling.UI.Material.Tournament.Import
 
         private void DeletePath(string path)
         {
-            var setting = _importSettings.FirstOrDefault(s => s == path);
+            var setting = ImportSources.FirstOrDefault(s => s == path);
             if (!string.IsNullOrEmpty(setting))
             {
-                _importSettings.Remove(setting);
-                OnPropertyChanged("ImportSettings");
+                ImportSources.Remove(setting);
+                OnPropertyChanged("ImportSources");
             }
         }
 
@@ -349,7 +346,7 @@ namespace Wrestling.UI.Material.Tournament.Import
             bool? success = Dialog.ShowOpenFileDialog(this, settings);
             if (success == true)
             {
-                if (_importSettings.FirstOrDefault(s => s == settings.FileName) != null)
+                if (ImportSources.FirstOrDefault(s => s == settings.FileName) != null)
                 {
                     ShowSnackMessage("Файл с таким именем уже добавлен в список для импорта!");
                     IsValid = false;

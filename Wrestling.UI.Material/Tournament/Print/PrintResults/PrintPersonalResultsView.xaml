@@ -88,13 +88,6 @@
                             </StackPanel>
                         </GridViewColumn.Header>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=MatchesCount}" Width="Auto">
-                        <GridViewColumn.Header>
-                            <StackPanel VerticalAlignment="Bottom">
-                                <TextBlock Style="{StaticResource RotatedText}">Схваток</TextBlock>
-                            </StackPanel>
-                        </GridViewColumn.Header>
-                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wins}" Width="Auto">
                         <GridViewColumn.Header>
                             <StackPanel VerticalAlignment="Bottom">
