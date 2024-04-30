@@ -128,8 +128,9 @@ namespace Wrestling.UI.Material.Tournament.Results
 
             foreach (var carpet in _carpets)
             {
-                var matches = new ObservableCollection<WrestlingMatch>(carpet.Groups
-                    .SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches).OrderBy(m => m.MatchNumber));
+                var groupsWithBrackets = carpet.Groups.Where(x => x.Bracket != null).SelectMany(g => g.Bracket.Rounds);
+
+                var matches = new ObservableCollection<WrestlingMatch>(groupsWithBrackets.SelectMany(r => r.RoundMatches).OrderBy(m => m.MatchNumber));
 
                 var stat = new CarpetStats
                 {
@@ -155,7 +156,9 @@ namespace Wrestling.UI.Material.Tournament.Results
             {
                 var carpet = _carpets.First(c => c.ID == stat.CarpetID);
 
-                stat.Matches = new ObservableCollection<WrestlingMatch>(carpet.Groups.SelectMany(g => g.Bracket.Rounds)
+                var groupsWithBrackets = carpet.Groups.Where(x => x.Bracket != null).SelectMany(g => g.Bracket.Rounds);
+
+                stat.Matches = new ObservableCollection<WrestlingMatch>(groupsWithBrackets
                     .SelectMany(r => r.RoundMatches)
                     .Where(m => (m.IsMatchCompleted)
                                 && (string.IsNullOrEmpty(filter) ||

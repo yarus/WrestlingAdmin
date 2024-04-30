@@ -58,6 +58,11 @@ namespace Wrestling.Entities.Bracket
             var finalPlace = 1;
             foreach (var stat in orderedStats)
             {
+                if (stat.Wrestler.FinalPlace.HasValue)
+                {
+                    continue;
+                }
+
                 var sameWins = orderedStats.Where(x => x.Wins == stat.Wins && x.Wrestler.ID != stat.Wrestler.ID && !x.Wrestler.FinalPlace.HasValue).ToList();
                 if (sameWins.Count == 0)
                 {
@@ -75,7 +80,7 @@ namespace Wrestling.Entities.Bracket
                     stat.Wrestler.FinalPlace = winner.ID == stat.Wrestler.ID ? finalPlace : finalPlace + 1;
                     sameWins[0].Wrestler.FinalPlace = winner.ID == sameWins[0].Wrestler.ID ? finalPlace : finalPlace + 1;
 
-                    finalPlace++;
+                    finalPlace += 2;
                     continue;
                 }
                 
