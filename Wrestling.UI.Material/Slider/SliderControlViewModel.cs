@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
@@ -22,6 +23,7 @@ namespace Wrestling.UI.Material.Slider
         private ICommand _downSlideCommand;
         private ICommand _addSlideCommand;
         private ICommand _editSlideCommand;
+        private ICommand _deleteAllSlidesCommand;
 
         private IPanelView _slider;
         private SlideHostViewModel _slideHostVm;
@@ -96,7 +98,20 @@ namespace Wrestling.UI.Material.Slider
                 OnPropertyChanged("Slides");
             }
         }
-        
+
+        public ICommand DeleteAllSlidesCommand
+        {
+            get
+            {
+                if (_deleteAllSlidesCommand == null)
+                {
+                    _deleteAllSlidesCommand = new RelayCommand(param => DeleteAllSlides(), param => true);
+                }
+                return _deleteAllSlidesCommand;
+            }
+        }
+
+
         public ICommand DeleteSlideCommand
         {
             get
@@ -227,6 +242,15 @@ namespace Wrestling.UI.Material.Slider
             {
                 Slides.Swap(i, j);
             }
+        }
+
+        private void DeleteAllSlides()
+        {
+            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить все слайды?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+
+            Slides = new ObservableCollection<ScreenSlide>();
+            DataContext.Tournament.Slides = Slides;
+
         }
 
         private void DeleteSlide(ScreenSlide slide)

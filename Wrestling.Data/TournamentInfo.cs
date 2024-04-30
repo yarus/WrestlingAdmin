@@ -36,6 +36,8 @@ namespace Wrestling.Data
         [DataMember]
         public IEnumerable<ScreenSlideInfo> Slides { get; set; }
         [DataMember]
+        public IEnumerable<string> ImportSources { get; set; }
+        [DataMember]
         public string ContactTitle { get; set; }
         [DataMember]
         public string ContactAddress { get; set; }

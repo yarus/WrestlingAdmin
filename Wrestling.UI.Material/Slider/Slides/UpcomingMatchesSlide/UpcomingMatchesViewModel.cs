@@ -16,6 +16,7 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
         private int _sliderOpacityValue;
         private int _showMatchesCount;
         private string _sliderBackgroundImagePath;
+        private string _carpetName;
 
         public UpcomingMatchesViewModel(IDiContainer container) : base(container)
         {
@@ -36,6 +37,17 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
         public double SliderOpacity => (double)_sliderOpacityValue / 100;
 
         public string SliderName => Item?.Title;
+
+        public string CarpetName
+        {
+            get { return _carpetName; }
+            set
+            {
+                _carpetName = value;
+                OnPropertyChanged("CarpetName");
+            }
+        }
+
 
         public int SliderOpacityValue
         {
@@ -131,6 +143,7 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
                 if (carpet != null)
                 {
                     Groups = carpet.Groups;
+                    CarpetName = carpet.Name;
                 }
                 else
                 {

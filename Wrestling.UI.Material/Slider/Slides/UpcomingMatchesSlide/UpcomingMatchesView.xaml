@@ -35,7 +35,10 @@
 
         <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" Margin="10,0,10,0"
                  VerticalAlignment="Center">
-            <TextBlock Text="БЛИЖАЙШИЕ ПОЕДИНКИ" />
+            <TextBlock>
+                <Run Text="Ближайшие схватки -" />
+                <Run Text="{Binding CarpetName, Mode=OneWay}" />
+            </TextBlock>
         </Viewbox>
 
         <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="White" />

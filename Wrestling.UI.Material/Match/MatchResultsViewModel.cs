@@ -577,6 +577,8 @@ namespace Wrestling.UI.Material.Match
 
             if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
             {
+                SaveData();
+
                 NavigateToMatches();
             }
             else

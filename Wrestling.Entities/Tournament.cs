@@ -40,6 +40,8 @@ namespace Wrestling.Entities
 
         private ObservableCollection<Carpet> _carpets;
 
+        private ObservableCollection<string> _importSources;
+
         public Tournament(GlobalSettings settings)
         {
             _groups = new ObservableCollection<AgeWeightGroup>();
@@ -47,6 +49,7 @@ namespace Wrestling.Entities
             _wrestlers = new ObservableCollection<Wrestler>();
             _carpets = new ObservableCollection<Carpet>();
             _slides = new ObservableCollection<ScreenSlide>();
+            _importSources = new ObservableCollection<string>();
 
             Settings = settings ?? new GlobalSettings();
         }
@@ -103,6 +106,16 @@ namespace Wrestling.Entities
         public bool IsStandingCompleted => Status == TournamentStatus.InProgress;
 
         public GlobalSettings Settings { get; set; }
+
+        public ObservableCollection<string> ImportSources
+        {
+            get { return _importSources; }
+            set
+            {
+                _importSources = value;
+                OnPropertyChanged();
+            }
+        }
 
         public decimal? EntryFee
         {

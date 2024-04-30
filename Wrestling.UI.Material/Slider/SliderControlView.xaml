@@ -6,7 +6,9 @@
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+             xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              mc:Ignorable="d" 
+             md:DialogServiceViews.IsRegistered="True"
              d:DesignHeight="600" d:DesignWidth="600">
     
     <UserControl.Resources>
@@ -22,6 +24,7 @@
         <Grid Grid.Row="0" Grid.Column="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
@@ -35,12 +38,20 @@
                         Command="{Binding AddSlideCommand}" />
             </StackPanel>
 
-            <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,30,0" FontSize="16" VerticalAlignment="Center">
+            <StackPanel Grid.Row="0" Grid.Column="1">
+                <Button Content="Удалить Все"
+                    ToolTip="Удалить все слайды"
+                    Width="160"
+                    HorizontalAlignment="Left" Margin="20,10,0,10"
+                    Command="{Binding DeleteAllSlidesCommand}" />
+            </StackPanel>
+
+            <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,30,0" FontSize="16" VerticalAlignment="Center">
                 <Run Text="Слайдов:" />
                 <Run Text="{Binding Path=Slides.Count, Mode=OneWay}" />
             </TextBlock>
 
-            <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal" Margin="10,0,20,0">
+            <StackPanel Grid.Row="0" Grid.Column="4" Orientation="Horizontal" Margin="10,0,20,0">
                 <ToggleButton Style="{DynamicResource MaterialDesignSwitchToggleButton}" VerticalAlignment="Center" ToolTip="Вкл/выкл переключание слайдов" IsChecked="{Binding Path=Host.IsTimerEnabled}" />
                 <TextBlock FontSize="16" VerticalAlignment="Center" Text="Таймер:" Margin="10,0,10,0" />
                 <TextBlock FontSize="16" VerticalAlignment="Center" Text="{Binding Path=Host.CurrentSecond, Mode=OneWay}" MinWidth="20" />

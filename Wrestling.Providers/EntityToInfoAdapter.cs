@@ -69,15 +69,17 @@ namespace Wrestling.Providers
 
             var settings = GetEntityFromInfo(info.Settings);
 
-            var wrestlers = info.Wrestlers.Select(GetEntityFromInfo).ToList();
+            var wrestlers = info.Wrestlers?.Select(GetEntityFromInfo).ToList() ?? new List<Wrestler>();
 
-            var applications = info.TeamApplications.Select(a => GetEntityFromInfo(a, wrestlers)).ToList();
+            var applications = info.TeamApplications?.Select(a => GetEntityFromInfo(a, wrestlers)).ToList() ?? new List<TeamApplication>();
 
-            var groups = info.Groups.Select(g => GetEntityFromInfo(g, wrestlers)).ToList();
+            var groups = info.Groups?.Select(g => GetEntityFromInfo(g, wrestlers)).ToList() ?? new List<AgeWeightGroup>();
 
             var carpets = info.Carpets?.Select(c => GetEntityFromInfo(c, groups)).ToList() ?? new List<Carpet>();
 
             var slides = info.Slides?.Select(GetEntityFromInfo).ToList() ?? new List<ScreenSlide>();
+
+            var importSources = info.ImportSources?.ToList() ?? new List<string>();
 
             var wrestlersToDelete = new List<Wrestler>();
 
@@ -152,7 +154,8 @@ namespace Wrestling.Providers
                 MainJudgePhone = info.MainJudgePhone,
                 MainSecretaryEmail = info.MainSecretaryEmail,
                 MainSecretaryPhone = info.MainSecretaryPhone,
-                EntryFee = info.EntryFee
+                EntryFee = info.EntryFee,
+                ImportSources = new ObservableCollection<string>(importSources)
             };
 
             if (!tournEntity.ID.HasValue)
@@ -374,7 +377,8 @@ namespace Wrestling.Providers
                 MainJudgePhone = item.MainJudgePhone,
                 MainSecretaryPhone = item.MainSecretaryPhone,
                 MainSecretaryEmail = item.MainSecretaryEmail,
-                EntryFee = item.EntryFee
+                EntryFee = item.EntryFee,
+                ImportSources = item.ImportSources.ToList()
             };
 
             if (!info.ID.HasValue)
