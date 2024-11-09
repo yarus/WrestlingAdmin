@@ -32,6 +32,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         private IList<CommandButtonItem> _drawerItems;
 
         private readonly CommandButtonItem _saveQuickCommand;
+        private readonly CommandButtonItem _exportQuickCommand;
 
         private IPanelView _scoreScreenView;
         private ScoreScreenViewModel _scoreScreenVm;
@@ -41,6 +42,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         public DashboardViewModel(IDiContainer container) : base(container)
         {
             _saveQuickCommand = new CommandButtonItem("Сохранить турнир", PackIconKind.ContentSave, new RelayCommand(param => SaveData(), param => true));
+            _exportQuickCommand = new CommandButtonItem("Экспортировать участников", PackIconKind.DatabaseExport, new RelayCommand(param => ExportData(), param => true));
         }
 
         public override void InitData()
@@ -53,7 +55,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
             SetupAutoSave();
         }
 
-        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20240430";
+        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20241110";
 
         public override IList<CommandButtonItem> QuickButtons
         {
@@ -63,7 +65,8 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
                 (
                     _quickButtons = new List<CommandButtonItem>
                     {
-                        _saveQuickCommand
+                        _saveQuickCommand,
+                        _exportQuickCommand
                     }
                 );
             }

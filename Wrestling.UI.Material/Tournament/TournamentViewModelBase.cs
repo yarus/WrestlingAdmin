@@ -1,10 +1,15 @@
 ﻿using System;
+using System.Globalization;
+using System.IO;
 using System.Windows;
+using System.Collections.Generic;
+using CsvHelper;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
+using System.Linq;
 
 namespace Wrestling.UI.Material.Tournament
 {
@@ -80,5 +85,66 @@ namespace Wrestling.UI.Material.Tournament
                 }
             }
         }
+
+        protected void ExportData()
+        {
+            if (DataContext.Tournament == null)
+            {
+                return;
+            }
+
+            var settings = new SaveFileDialogSettings
+            {
+                Title = "Экспортировать участников в файл",
+                CheckFileExists = false,
+                OverwritePrompt = true,
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                Filter = "CSV (*.csv)|*.csv|All Files (*.*)|*.*"
+            };
+
+            bool? success = Dialog.ShowSaveFileDialog(this, settings);
+            if (success == true)
+            {
+                try
+                {
+
+                    using (var writer = new StreamWriter(settings.FileName))
+
+                    using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+                    {
+                        var exportData = DataContext.Tournament.Wrestlers.Select(item =>
+                        {
+                            return new ExportedWrestler()
+                            {
+                                FullName = item.FullName,
+                                BirthDate = item.BirthDate.HasValue ? item.BirthDate.Value.ToString("dd/MM/yyyy") : string.Empty,
+                                FinalPlace = item.FinalPlace.HasValue ? item.FinalPlace.Value.ToString() : string.Empty,
+                                GroupName = item.GroupName,
+                                TeamCity = item.TeamCity,
+                                TeamName = item.TeamName
+                            };
+                        }).OrderBy(x => x.GroupName).ThenBy(x => x.FinalPlace);
+
+                        csv.WriteRecords(exportData);
+                    }
+
+                    ShowSnackMessage("Список участников экспортирован!");
+                }
+                catch(Exception ex)
+                {
+                    ShowSnackMessage($"Произошла ошибка экспорта: {ex.Message}");
+                }
+            }
+        }
     }
+}
+
+public class ExportedWrestler
+{
+    public string GroupName { get; set; }
+    public string FullName { get; set; }
+    public string TeamName { get; set; }
+    public string TeamCity { get; set; }
+    public string BirthDate { get; set; }
+    public string FinalPlace { get; set; }
 }

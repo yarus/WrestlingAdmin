@@ -201,6 +201,7 @@
                                     <GridView>
                                         <GridViewColumn Header="#" DisplayMemberBinding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
                                         <GridViewColumn DisplayMemberBinding="{Binding Name}" Header="Название" />
+                                        <GridViewColumn DisplayMemberBinding="{Binding MaxRoundSecond}" Header="с" Width="45" />
                                         <GridViewColumn Width="Auto">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
