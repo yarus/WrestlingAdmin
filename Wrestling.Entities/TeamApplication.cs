@@ -192,7 +192,7 @@ namespace Wrestling.Entities
             PhoneNumber = app.PhoneNumber;
             Representative = app.Representative;
             ShortName = app.ShortName;
-            Wrestlers = new ObservableCollection<Wrestler>(app.Wrestlers);
+            Wrestlers = app.Wrestlers;
         }
 
         public object Clone()

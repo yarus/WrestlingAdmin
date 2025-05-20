@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
@@ -27,22 +29,23 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
 
         private DispatcherTimer _timer;
         private int _currentSecond;
+        private bool _isSaving;
 
         private IList<CommandButtonItem> _quickButtons;
         private IList<CommandButtonItem> _drawerItems;
 
         private readonly CommandButtonItem _saveQuickCommand;
-        private readonly CommandButtonItem _exportQuickCommand;
 
         private IPanelView _scoreScreenView;
         private ScoreScreenViewModel _scoreScreenVm;
 
         #endregion
 
+
         public DashboardViewModel(IDiContainer container) : base(container)
         {
-            _saveQuickCommand = new CommandButtonItem("Сохранить турнир", PackIconKind.ContentSave, new RelayCommand(param => SaveData(), param => true));
-            _exportQuickCommand = new CommandButtonItem("Экспортировать участников", PackIconKind.DatabaseExport, new RelayCommand(param => ExportData(), param => true));
+            _saveQuickCommand = new CommandButtonItem("Сохранить турнир", PackIconKind.ContentSave, 
+                new AsyncRelayCommand(execute: async _ => await SaveDataAsync()));
         }
 
         public override void InitData()
@@ -65,8 +68,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
                 (
                     _quickButtons = new List<CommandButtonItem>
                     {
-                        _saveQuickCommand,
-                        _exportQuickCommand
+                        _saveQuickCommand
                     }
                 );
             }
@@ -203,7 +205,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
 
             if (DataContext.Tournament != null && IsAutosaveEnabled)
             {
-                if (string.IsNullOrEmpty(DataContext.Tournament.FileName)) SaveData();
+                if (string.IsNullOrEmpty(DataContext.Tournament.FileName)) SaveDataSync();
 
                 if (QuickButtons.Contains(_saveQuickCommand)) QuickButtons.Remove(_saveQuickCommand);
 
@@ -237,10 +239,31 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
 
             _currentSecond++;
 
-            if (_currentSecond >= DataContext.Tournament.Settings.AutosaveMaxSecond)
+            if (_currentSecond >= DataContext.Tournament.Settings.AutosaveMaxSecond && !_isSaving)
             {
-                SaveData();
+                _isSaving = true;
                 _currentSecond = 0;
+
+                // Fire and forget the async operation, but capture the task to observe exceptions
+                var _ = SaveDataAsyncWrapper();
+            }
+        }
+
+        private async Task SaveDataAsyncWrapper()
+        {
+            try
+            {
+                await SaveDataAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                // Handle or log the exception appropriately
+                Debug.WriteLine($"Autosave failed: {ex.Message}");
+                // Consider rethrowing or showing a message to the user
+            }
+            finally
+            {
+                _isSaving = false;
             }
         }
 

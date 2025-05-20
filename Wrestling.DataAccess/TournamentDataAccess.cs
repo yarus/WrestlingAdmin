@@ -26,5 +26,10 @@ namespace Wrestling.DataAccess
         {
             return _storageDataAccess.ReadFromFile<TournamentInfo>(fileName);
         }
+
+        public async Task<TournamentInfo> LoadFromFileAsync(string fileName)
+        {
+            return await _storageDataAccess.ReadFromFileAsync<TournamentInfo>(fileName);
+        }
     }
 }

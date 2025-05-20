@@ -1,7 +1,9 @@
-﻿namespace Wrestling.UI.Material.Model
+﻿using System.Threading.Tasks;
+
+namespace Wrestling.UI.Material.Model
 {
     public interface ITournamentImporter
     {
-        int ImportDataFromFile(Entities.Tournament target, string fileName);
+        Task<int> ImportDataFromFileAsync(Entities.Tournament target, string fileName);
     }
 }

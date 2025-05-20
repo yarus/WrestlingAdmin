@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows.Input;
+using CsvHelper;
 using MaterialDesignThemes.Wpf;
+using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Entities.Results;
@@ -122,6 +125,7 @@ namespace Wrestling.UI.Material.Tournament.Results
                        (
                            _quickButtons = new List<CommandButtonItem>
                            {
+                               new CommandButtonItem("Экспортировать результаты в Excel", PackIconKind.DatabaseExport, new RelayCommand(param => ExportResults(), param => true)),
                                new CommandButtonItem("Просмотреть завершенные поединки", PackIconKind.CalendarCheck, new RelayCommand(param => OpenCompleted(), param => true))
                            }
                        );
@@ -251,6 +255,67 @@ namespace Wrestling.UI.Material.Tournament.Results
             NavigateToView<CompletedMatchesViewModel>();
         }
 
+        private void ExportResults()
+        {
+            if (DataContext.Tournament == null)
+            {
+                return;
+            }
+
+            var settings = new SaveFileDialogSettings
+            {
+                Title = "Экспортировать результаты в файл",
+                CheckFileExists = false,
+                OverwritePrompt = true,
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                Filter = "CSV (*.csv)|*.csv|All Files (*.*)|*.*"
+            };
+
+            bool? success = Dialog.ShowSaveFileDialog(this, settings);
+            if (success == true)
+            {
+                try
+                {
+
+                    using (var writer = new StreamWriter(settings.FileName))
+
+                    using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+                    {
+                        var exportData = PersonalResults.Select(item =>
+                        {
+                            return new ExportedResult()
+                            {
+                                FullName = item.Wrestler.FullName,
+                                BirthDate = item.Wrestler.BirthDate.HasValue ? item.Wrestler.BirthDate.Value.ToString("dd/MM/yyyy") : string.Empty,
+                                FinalPlace = item.Wrestler.FinalPlace.HasValue ? item.Wrestler.FinalPlace.Value : (int?)null,
+                                GroupName = item.GroupName,
+                                TeamCity = item.Wrestler.TeamCity,
+                                TeamName = item.Wrestler.TeamName,
+                                WinsCount = item.Wins,
+                                LoseCount = item.Loses,
+                                PointsEarned = item.AllGainedPoints,
+                                PointsLost = item.AllLostPoints,
+                                WinsByTushe = item.WinsByTushe,
+                                WinsByDomination = item.WinsByDomination,
+                                WinsByPoints = item.WinsByPointsTotal,
+                                LoseByTushe = item.LoseByTushe,
+                                LoseByDomination = item.LoseByDomination,
+                                LoseByPoints = item.LoseByPoints
+                            };
+                        }).OrderBy(x => x.GroupName).ThenBy(x => x.FinalPlace);
+
+                        csv.WriteRecords(exportData);
+                    }
+
+                    ShowSnackMessage("Результаты турнира экспортированы!");
+                }
+                catch (Exception ex)
+                {
+                    ShowSnackMessage($"Произошла ошибка экспорта: {ex.Message}");
+                }
+            }
+        }
+
         private void PrintTeamResults(PrintTeamResultsViewModel vm)
         {
             ShowPrintPreview(vm);
@@ -318,4 +383,24 @@ namespace Wrestling.UI.Material.Tournament.Results
 
         #endregion
     }
+}
+
+public class ExportedResult
+{
+    public string GroupName { get; set; }
+    public string FullName { get; set; }
+    public string TeamName { get; set; }
+    public string TeamCity { get; set; }
+    public string BirthDate { get; set; }
+    public int? FinalPlace { get; set; }
+    public int PointsEarned { get; set; }
+    public int PointsLost { get; set; }
+    public int WinsCount { get; set; }
+    public int LoseCount { get; set; }
+    public int WinsByTushe { get; set; }
+    public int WinsByDomination { get; set; }
+    public int WinsByPoints { get; set; }
+    public int LoseByTushe { get; set; }
+    public int LoseByDomination { get; set; }
+    public object LoseByPoints { get; set; }
 }

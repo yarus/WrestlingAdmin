@@ -227,7 +227,7 @@ namespace Wrestling.Entities
             MaxActionSecond = item.MaxActionSecond;
             MaxRoundSecond = item.MaxRoundSecond;
             MaxTimeoutSecond = item.MaxTimeoutSecond;
-            Wrestlers = new List<Wrestler>(item.Wrestlers);
+            Wrestlers = item.Wrestlers;
 
             BirthYearMax = item.BirthYearMax;
             BirthYearMin = item.BirthYearMin;

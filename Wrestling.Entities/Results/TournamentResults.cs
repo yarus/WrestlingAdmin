@@ -45,6 +45,7 @@ namespace Wrestling.Entities.Results
         public int WinsByAction => GetWinsByType(MatchWinTypeEnum.ActionWin);
         public int AutoWinsCount => GetWinsByType(MatchWinTypeEnum.FreeWin);
 
+        public int LoseByTushe => GetLoseByType(MatchWinTypeEnum.Tushe);
         public int LoseByAction => GetLoseByType(MatchWinTypeEnum.ActionWin);
         public int LoseByPoints => GetLoseByType(MatchWinTypeEnum.PointsWinWithPoints);
         public int LoseByDomination => GetLoseByType(MatchWinTypeEnum.DominationWinWithPoints);

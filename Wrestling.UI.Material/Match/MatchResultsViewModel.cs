@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
@@ -64,10 +65,10 @@ namespace Wrestling.UI.Material.Match
             {
                 if (_completeMatch == null)
                 {
-                    _completeMatch = new RelayCommand(
-                        param => Approve(),
-                        param => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Pending &&
-                                 Winner.HasValue && WinType.HasValue);
+                    _completeMatch = new AsyncRelayCommand(
+                        execute: async _ => await ApproveAsync(),
+                        canExecute: _ => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Pending && Winner.HasValue && WinType.HasValue
+                    );
                 }
                 return _completeMatch;
             }
@@ -547,7 +548,7 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        private void Approve()
+        private async Task ApproveAsync()
         {
             if (WrestlingMatch == null || WrestlingMatch.Status != MatchStatusEnum.Pending || !Winner.HasValue || !WinType.HasValue)
             {
@@ -577,7 +578,7 @@ namespace Wrestling.UI.Material.Match
 
             if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
             {
-                SaveData();
+                await SaveDataAsync();
 
                 NavigateToMatches();
             }

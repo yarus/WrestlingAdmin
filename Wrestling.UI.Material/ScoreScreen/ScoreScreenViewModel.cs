@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Wrestling.Entities;
@@ -98,16 +97,6 @@ namespace Wrestling.UI.Material.ScoreScreen
         {
             if (match.Status != MatchStatusEnum.Completed || !match.IsRedWon.HasValue) return;
 
-            /*
-            //var vm = new ShowWinnerViewModel(DiContainer, winner);
-            //vm.InitData();
-
-            var view = new ShowWinnerDialog
-            {
-                DataContext = vm
-            };
-            */
-
             Winner = match.IsRedWon.Value ? match.WrestlerInRed : match.WrestlerInBlue;
 
             if (Winner?.TeamID != null)
@@ -147,6 +136,7 @@ namespace Wrestling.UI.Material.ScoreScreen
                 if (!IsMainScreenVisible)
                 {
                     UpcomingMatches = new ObservableCollection<WrestlingMatch>(LastMatchCarpet.Groups
+                        .Where(g => g.Bracket != null)
                         .SelectMany(g => g.Bracket.Rounds)
                         .SelectMany(r => r.RoundMatches)
                         .Where(m => m.IsMatchCanStart)
@@ -282,7 +272,7 @@ namespace Wrestling.UI.Material.ScoreScreen
             Points2 = 0;
             Wrestler1WarningsNumber = 0;
             Wrestler2WarningsNumber = 0;
-            _bestActionBlueCount = 0;
+            BestActionBlueCount = 0;
             BestActionBlue = 0;
             BestActionRedCount = 0;
             BestActionRed = 0;
