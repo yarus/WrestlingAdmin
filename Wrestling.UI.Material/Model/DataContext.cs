@@ -7,7 +7,7 @@ namespace Wrestling.UI.Material.Model
     {
         public WrestlingMatch WrestlingMatch { get; set; }
         public Entities.Tournament Tournament { get; set; }
-        public TeamApplication Team { get; set; }
+        public TeamApplicationViewModel Team { get; set; }
         public bool IsAuthenticated { get; set; }
         public bool IsBracketView { get; set; }
         public List<Wrestler> WrestlersCache { get; set; }

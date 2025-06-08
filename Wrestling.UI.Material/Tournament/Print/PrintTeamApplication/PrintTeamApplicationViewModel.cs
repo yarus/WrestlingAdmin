@@ -1,4 +1,5 @@
 ﻿using Wrestling.Entities;
+using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
 
@@ -6,7 +7,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintTeamApplication
 {
     public class PrintTeamApplicationViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
-        private TeamApplication _selectedTeam;
+        private TeamApplicationViewModel _selectedTeam;
 
         public string PageName => "Заявка";
         public override string PageTitle => "Заявка от команды";
@@ -17,7 +18,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintTeamApplication
 
         public override bool IsBackButtonAvailable => true;
 
-        public TeamApplication SelectedTeam
+        public TeamApplicationViewModel SelectedTeam
         {
             get { return _selectedTeam; }
             set

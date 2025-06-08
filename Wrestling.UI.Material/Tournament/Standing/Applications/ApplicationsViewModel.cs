@@ -22,7 +22,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
     {
         #region Fields
 
-        private ObservableCollection<TeamApplication> _items;
+        private ObservableCollection<TeamApplicationViewModel> _items;
 
         private ICommand _addAppCommand;
         private ICommand _approveAllCommand;
@@ -63,9 +63,9 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         public override string PageTitle => "Заявки на участие";
 
         public int AppsCount => DataContext.Tournament?.TeamApplications.Count ?? 0;
-        public int WrestlersCount => DataContext.Tournament?.TeamApplications.SelectMany(a => a.Wrestlers).ToList().Count ?? 0;
+        public int WrestlersCount => DataContext.Tournament?.Wrestlers.Count ?? 0;
 
-        public ObservableCollection<TeamApplication> Items
+        public ObservableCollection<TeamApplicationViewModel> Items
         {
             get { return _items; }
             set
@@ -123,7 +123,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 throw new ApplicationException("Tournament property is not set!");
             }
 
-            Items = DataContext.Tournament.TeamApplications;
+            Items = new ObservableCollection<TeamApplicationViewModel>(DataContext.Tournament.TeamApplications.Select(x => new TeamApplicationViewModel(x, DataContext.Tournament)));
         }
 
         #region Command Properties
@@ -134,7 +134,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_printTeamApplicationCommand == null)
                 {
-                    _printTeamApplicationCommand = new RelayCommand(param => PrintTeamApplication(param as TeamApplication), param => param != null);
+                    _printTeamApplicationCommand = new RelayCommand(param => PrintTeamApplication(param as TeamApplicationViewModel), param => param != null);
                 }
 
                 return _printTeamApplicationCommand;
@@ -171,7 +171,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_editAppCommand == null)
                 {
-                    _editAppCommand = new RelayCommand(async (param) => await EditApplication(param as TeamApplication), param => param != null);
+                    _editAppCommand = new RelayCommand(async (param) => await EditApplication(param as TeamApplicationViewModel), param => param != null);
                 }
                 return _editAppCommand;
             }
@@ -183,7 +183,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_deleteAppCommand == null)
                 {
-                    _deleteAppCommand = new RelayCommand(param => DeleteApplication(param as TeamApplication), param => param != null);
+                    _deleteAppCommand = new RelayCommand(param => DeleteApplication(param as TeamApplicationViewModel), param => param != null);
                 }
                 return _deleteAppCommand;
             }
@@ -195,7 +195,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_addWrestlerCommand == null)
                 {
-                    _addWrestlerCommand = new RelayCommand(async (param) => await AddWrestler(param as TeamApplication), param => param != null);
+                    _addWrestlerCommand = new RelayCommand(async (param) => await AddWrestler(param as TeamApplicationViewModel), param => param != null);
                 }
                 return _addWrestlerCommand;
             }
@@ -231,21 +231,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         private void Filter(string filter, bool isOnlyUnapprovedVisible)
         {
-            if (!IsFilterEnabled)
+            var vms = DataContext.Tournament.TeamApplications.Select(x => new TeamApplicationViewModel(x, DataContext.Tournament));
+
+            foreach (var v in vms)
             {
-                Items = DataContext.Tournament.TeamApplications;
+                v.SetFilter(filter, isOnlyUnapprovedVisible);
             }
-            else
-            {
-                var filteredWrestlers = DataContext.Tournament.Wrestlers.Where(w => (!isOnlyUnapprovedVisible || !w.IsRegistrationApproved) 
-                    && (filter == null || filter.Length <=2 || (filter.Length > 2 && w.LastName.StartsWith(filter, true, CultureInfo.InvariantCulture)))).ToList();
-                var filtered = new ObservableCollection<TeamApplication>(DataContext.Tournament.TeamApplications.Where(a => filteredWrestlers.Select(w => w.TeamID).Contains(a.ID)).Select(a => a.Clone() as TeamApplication));
-                foreach (var teamApplication in filtered)
-                {
-                    teamApplication.Wrestlers = new ObservableCollection<Wrestler>(filteredWrestlers.Where(w => w.TeamID == teamApplication.ID).OrderBy(w => w.LastName).ThenBy(w => w.FirstName));
-                }
-                Items = filtered;
-            }
+
+            Items = new ObservableCollection<TeamApplicationViewModel>(vms);
         }
 
         private void ApproveAllWrestlers()
@@ -279,14 +272,11 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
             if (result != null && (bool)result)
             {
-                Items.Add(addAppVm.Item);
-
-                if (Items != DataContext.Tournament.TeamApplications)
-                {
-                    DataContext.Tournament.TeamApplications.Add(addAppVm.Item);
-                }
+                DataContext.Tournament.TeamApplications.Add(addAppVm.Item);
 
                 OnPropertyChanged("AppsCount");
+
+                OnPropertyChanged("Items");
 
                 if (!DataContext.TeamsCache.Any(x => !string.IsNullOrEmpty(x.HashTag) && x.HashTag == addAppVm.Item.HashTag))
                 {
@@ -298,7 +288,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
         }
 
-        private void PrintTeamApplication(TeamApplication teamApplication)
+        private void PrintTeamApplication(TeamApplicationViewModel teamApplication)
         {
             if (teamApplication == null) return;
 
@@ -307,9 +297,9 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             ShowPrintPreview(new PrintTeamApplicationViewModel(DiContainer));            
         }
         
-        private async Task EditApplication(TeamApplication app)
+        private async Task EditApplication(TeamApplicationViewModel app)
         {
-            var tmpApp = app.Clone() as TeamApplication;
+            var tmpApp = app.Team.Clone() as TeamApplication;
 
             var addAppVm = new AddAppViewModel(DiContainer, tmpApp);
             addAppVm.InitData();
@@ -323,25 +313,24 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
             if (result != null && (bool)result)
             {
-                var item = DataContext.Tournament.TeamApplications.FirstOrDefault(t => t.ID == app.ID);
-                if (item != null)
+                app.Team.Sync(tmpApp);
+
+                foreach (var itemWrestler in app.Wrestlers)
                 {
-                    item.Sync(tmpApp);
-                    foreach (var itemWrestler in item.Wrestlers)
-                    {
-                        itemWrestler.TeamName = item.ShortName;
-                        itemWrestler.TeamCity = item.City;
-                    }
+                    itemWrestler.TeamName = tmpApp.ShortName;
+                    itemWrestler.TeamCity = tmpApp.City;
                 }
 
                 OnPropertyChanged("AppsCount");
-                
+
+                OnPropertyChanged("Items");
+
                 var cache = DiContainer.Resolve<ICacheManager>();
                 cache.SaveTeams(DataContext.TeamsCache);
             }
         }
 
-        private void DeleteApplication(TeamApplication app)
+        private void DeleteApplication(TeamApplicationViewModel app)
         {
             if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить заявку?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
 
@@ -361,22 +350,22 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 }
             }
 
-            DataContext.Tournament.TeamApplications.Remove(app);
-
-            Items = new ObservableCollection<TeamApplication>(DataContext.Tournament.TeamApplications);
+            DataContext.Tournament.TeamApplications.Remove(app.Team);
 
             OnPropertyChanged("AppsCount");
             OnPropertyChanged("WrestlersCount");
+
+            OnPropertyChanged("Items");
         }
 
-        private async Task AddWrestler(TeamApplication app)
+        private async Task AddWrestler(TeamApplicationViewModel app)
         {
             var tmpWresler = new Wrestler
             {
                 ID = Guid.NewGuid(),
-                TeamID = app.ID,
-                TeamName = app.ShortName,
-                TeamCity = app.City,
+                TeamID = app.Team.ID,
+                TeamName = app.Team.ShortName,
+                TeamCity = app.Team.City,
                 Timestamp = DateTime.Now
             };
 
@@ -402,20 +391,19 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             var result = await DialogHost.Show(view, "RootDialog");
             if (result != null && (bool)result)
             {
-                tmpWresler.TeamID = app.ID;
-                tmpWresler.TeamName = app.ShortName;
-                tmpWresler.TeamCity = app.City;
+                tmpWresler.TeamID = app.Team.ID;
+                tmpWresler.TeamName = app.Team.ShortName;
+                tmpWresler.TeamCity = app.Team.City;
                 tmpWresler.Timestamp = DateTime.Now;
 
                 DataContext.Tournament.Wrestlers.Add(tmpWresler);
 
-                app.Wrestlers.Add(tmpWresler);
-
-                app.Wrestlers = new ObservableCollection<Wrestler>(app.Wrestlers.OrderBy(w => w.LastName));
-
                 AddWrestlerToHisGroup(tmpWresler);
 
-                app.RefreshStats();
+                var team = Items.First(x => x.Team.ID == tmpWresler.TeamID);
+                team.SetFilter(FilterString, IsOnlyUnapprovedVisible);
+
+                OnPropertyChanged("Items");
                 OnPropertyChanged("WrestlersCount");
                 
                 if (!DataContext.WrestlersCache.Any(x => !string.IsNullOrEmpty(x.HashTag) && x.HashTag == tmpWresler.HashTag))
@@ -499,7 +487,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             var result = await DialogHost.Show(view, "RootDialog");
             if (result != null && (bool)result)
             {
-                var teamApp = Items.FirstOrDefault(a => a.ID == wrestler.TeamID);
+                var teamApp = Items.FirstOrDefault(a => a.Team.ID == wrestler.TeamID);
                 if (teamApp != null && tmpWrestler != null)
                 {
                     var isGroupChanged = tmpWrestler.GroupID != wrestler.GroupID || (!tmpWrestler.GroupID.HasValue && wrestler.GroupID.HasValue);
@@ -520,12 +508,12 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                         // Add wrestler to Group if all data is valid
                         AddWrestlerToHisGroup(tmpWrestler);
                     }
-
-                    teamApp.RefreshStats();
                     
                     var cache = DiContainer.Resolve<ICacheManager>();
                     cache.SaveWrestlers(DataContext.WrestlersCache);
                 }
+
+                OnPropertyChanged("Items");
             }
 
             _editWrestlerDialogOpened = false;
@@ -537,20 +525,12 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
             RemoveWrestlerFromGroup(wrestler);
 
-            DataContext.Tournament.Wrestlers.Remove(wrestler);            
+            DataContext.Tournament.Wrestlers.Remove(wrestler);
 
-            if (wrestler.TeamID.HasValue)
-            {
-                var teamApp = DataContext.Tournament.TeamApplications.FirstOrDefault(a => a.ID == wrestler.TeamID);
-                if (teamApp != null)
-                {
-                    teamApp.Wrestlers.Remove(wrestler);
-                    teamApp.RefreshStats();
+            var team = Items.First(x => x.Team.ID == wrestler.TeamID);
+            team.SetFilter(FilterString, IsOnlyUnapprovedVisible);
 
-                    Filter(_filterString, IsOnlyUnapprovedVisible);
-                }                
-            }
-
+            OnPropertyChanged("Items");
             OnPropertyChanged("WrestlersCount");            
         }
 

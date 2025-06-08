@@ -71,7 +71,7 @@ namespace Wrestling.Providers
 
             var wrestlers = info.Wrestlers?.Select(GetEntityFromInfo).ToList() ?? new List<Wrestler>();
 
-            var applications = info.TeamApplications?.Select(a => GetEntityFromInfo(a, wrestlers)).ToList() ?? new List<TeamApplication>();
+            var applications = info.TeamApplications?.Select(a => GetEntityFromInfo(a)).ToList() ?? new List<TeamApplication>();
 
             var groups = info.Groups?.Select(g => GetEntityFromInfo(g, wrestlers)).ToList() ?? new List<AgeWeightGroup>();
 
@@ -195,11 +195,9 @@ namespace Wrestling.Providers
             return entity;
         }
 
-        public TeamApplication GetEntityFromInfo(TeamApplicationInfo info, IEnumerable<Wrestler> wrestlers)
+        public TeamApplication GetEntityFromInfo(TeamApplicationInfo info)
         {
             if (info == null) return null;
-
-            var appWrestlers = wrestlers.Where(w => info.Wrestlers.Contains(w.ID));
 
             var entity = new TeamApplication
             {
@@ -214,8 +212,7 @@ namespace Wrestling.Providers
                 PhoneNumber = info.PhoneNumber,
                 Representative = info.Representative,
                 ShortName = info.ShortName,
-                HashTag = info.HashTag,
-                Wrestlers = new ObservableCollection<Wrestler>(appWrestlers.OrderBy(w => w.LastName).ThenBy(w => w.FirstName))
+                HashTag = info.HashTag
             };
 
             return entity;
@@ -436,7 +433,6 @@ namespace Wrestling.Providers
                 PhoneNumber = entity.PhoneNumber,
                 Representative = entity.Representative,
                 ShortName = entity.ShortName,
-                Wrestlers = entity.Wrestlers.Select(w => w.ID)
             };
 
             return info;

@@ -38,7 +38,7 @@
         
         <TextBlock TextWrapping="NoWrap" Foreground="Black" FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,5,10,0">
             <Run Text="от команды "/>
-            <Run Text="{Binding SelectedTeam.ShortName}"/>
+            <Run Text="{Binding SelectedTeam.Team.ShortName}"/>
         </TextBlock>
 
         <Border BorderBrush="Black" BorderThickness="0,1,0,0" />

@@ -18,7 +18,7 @@
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <PublishUrl>C:\Users\Aleksey Kardash\Desktop\WrestlingAdmin-20241110\</PublishUrl>
+    <PublishUrl>C:\Users\Aleksey Kardash\Desktop\WrestlingAdmin-20250608\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>false</UpdateEnabled>
@@ -202,6 +202,7 @@
     <Compile Include="Model\ITournamentImporter.cs" />
     <Compile Include="Model\LogoPositionEnum.cs" />
     <Compile Include="Model\NavigationService.cs" />
+    <Compile Include="Model\TeamApplicationViewModel.cs" />
     <Compile Include="Model\UniqueMatchNumbersGenerator.cs" />
     <Compile Include="Model\Validation\NotEmptyValidationRule.cs" />
     <Compile Include="Model\TournamentImporter.cs" />
