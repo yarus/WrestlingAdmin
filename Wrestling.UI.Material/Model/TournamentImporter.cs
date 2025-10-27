@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Providers;
@@ -19,13 +20,13 @@ namespace Wrestling.UI.Material.Model
             _drawTypes = processors;
         }
 
-        public int ImportDataFromFile(Entities.Tournament target, string fileName)
+        public async Task<int> ImportDataFromFileAsync(Entities.Tournament target, string fileName)
         {
             int result = 0;
 
             if (string.IsNullOrEmpty(fileName)) return -1;
 
-            var tournament = _tournService.LoadFromFile(fileName);
+            var tournament = await _tournService.LoadFromFileAsync(fileName);
 
             if (tournament == null || tournament.Name != target.Name ||
                 tournament.Groups.Count != target.Groups.Count || tournament.StartDate != target.StartDate) return -1;

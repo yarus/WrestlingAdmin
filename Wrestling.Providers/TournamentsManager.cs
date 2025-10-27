@@ -27,6 +27,20 @@ namespace Wrestling.Providers
 
             return entity;
         }
+
+        public async Task<Tournament> LoadFromFileAsync(string fileName)
+        {
+            var info = await _dataAccess.LoadFromFileAsync(fileName);
+
+            if (info == null) return null;
+
+            var entity = _adapter.GetEntityFromInfo(info);
+            if (entity == null) return null;
+
+            entity.FileName = fileName;
+
+            return entity;
+        }
         
         public async Task<bool> SaveToFileAsync(Tournament item, string fileName)
         {

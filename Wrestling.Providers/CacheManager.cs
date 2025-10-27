@@ -45,7 +45,7 @@ namespace Wrestling.Providers
             {
                 foreach (var item in info)
                 {
-                    var entity = _adapter.GetEntityFromInfo(item, new List<Wrestler>());
+                    var entity = _adapter.GetEntityFromInfo(item);
                     result.Add(entity);
                 }
             };

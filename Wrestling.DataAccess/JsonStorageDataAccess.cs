@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -108,6 +109,56 @@ namespace Wrestling.DataAccess
             }
 
             return result;
+        }
+
+        public async Task<T> ReadFromFileAsync<T>(string path)
+        {
+            const int maxRetries = 3;
+            const int initialDelayMs = 200;
+            int retryCount = 0;
+            Exception lastException = null;
+
+            while (retryCount < maxRetries)
+            {
+                try
+                {
+                    using (var stream = new FileStream(
+                        path,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.Read,
+                        bufferSize: 4096,
+                        useAsync: true))
+                    using (var reader = new StreamReader(stream))
+                    {
+                        string jsonContent = await reader.ReadToEndAsync().ConfigureAwait(false);
+                        return JsonConvert.DeserializeObject<T>(jsonContent);
+                    }
+                }
+                catch (Exception ex) when (IsRetryableException(ex))
+                {
+                    lastException = ex;
+                    retryCount++;
+
+                    if (retryCount < maxRetries)
+                    {
+                        int delayMs = initialDelayMs * (int)Math.Pow(2, retryCount - 1);
+                        await Task.Delay(delayMs).ConfigureAwait(false);
+                    }
+                }
+            }
+
+            // Log the last exception if needed
+            Debug.WriteLine($"Failed after {maxRetries} attempts. Last error: {lastException?.Message}");
+            return default(T);
+        }
+
+        private bool IsRetryableException(Exception ex)
+        {
+            return ex is IOException
+                   || ex is UnauthorizedAccessException
+                   || ex is JsonException
+                   || ex is TimeoutException;
         }
 
         public IEnumerable<string> GetFileNamesInDirectory(string path, string mask)

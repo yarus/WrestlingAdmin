@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Markup;
 using MvvmDialogs;
@@ -31,6 +34,9 @@ namespace Wrestling.UI.Material
 {
     public partial class App : Application
     {
+        private bool _isShuttingDown = false;
+        private readonly object _persistenceLock = new object();
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -41,6 +47,8 @@ namespace Wrestling.UI.Material
                 XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)));
 
             var di = GetContainer();
+
+            SetupExceptionHandling(di);
 
             var navService = LoadNavigation(di);
 
@@ -60,6 +68,137 @@ namespace Wrestling.UI.Material
         private void LoadSpecialViewModels(IDiContainer di)
         {
             di.Add<ScoreScreenViewModel>(new ScoreScreenViewModel(di));
+        }
+
+        private void SetupExceptionHandling(IDiContainer di)
+        {
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+            {
+                var exception = (Exception)args.ExceptionObject;
+
+                LogException("AppDomain.UnhandledException", exception);
+
+                if (args.IsTerminating)
+                {
+                    CreateBackup(di);                    
+
+                    MessageBox.Show($"Ошибка: {exception.Message}", "Критическая ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            };
+
+            DispatcherUnhandledException += (sender, args) =>
+            {
+                LogException("Application.DispatcherUnhandledException", args.Exception);
+
+                SaveTournament(di);
+
+                args.Handled = true;
+
+                MessageBox.Show($"Ошибка: {args.Exception.Message}", "Критическая ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            };
+
+            TaskScheduler.UnobservedTaskException += (sender, args) =>
+            {
+                LogException("TaskScheduler.UnobservedTaskException", args.Exception);
+                args.SetObserved();
+                CreateBackup(di);
+            };
+        }
+
+        private void CreateBackup(IDiContainer di)
+        {
+            lock (_persistenceLock)
+            {
+                if (_isShuttingDown) return;
+                _isShuttingDown = true;
+
+                try
+                {
+                    var ctx = di.Resolve<IDataContext>();
+                    var mgr = di.Resolve<ITournamentsManager>();
+
+                    if (ctx != null && mgr != null && ctx.Tournament != null)
+                    {
+                        string backupFilePath = GetBackupFilePath();
+
+                        mgr.SaveToFile(ctx.Tournament, backupFilePath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogException("CreateBackup", ex);
+                }
+            }
+        }
+
+        private void SaveTournament(IDiContainer di)
+        {
+            try
+            {
+                var ctx = di.Resolve<IDataContext>();
+                var mgr = di.Resolve<ITournamentsManager>();
+
+                if (ctx != null && mgr != null && ctx.Tournament != null)
+                {
+                    var tournamentFileName = string.IsNullOrEmpty(ctx.Tournament.FileName) ? GetBackupFilePath() : ctx.Tournament.FileName;
+
+                    mgr.SaveToFile(ctx.Tournament, tournamentFileName);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogException("SaveTournament", ex);
+            }            
+        }
+
+        private void LogException(string source, Exception ex)
+        {
+            try
+            {
+                string logEntry = $@"
+[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] - EXCEPTION SOURCE: {source}
+EXCEPTION TYPE: {ex.GetType().FullName}
+MESSAGE: {ex.Message}
+STACK TRACE:
+{ex.StackTrace}
+INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
+
+{new string('=', 80)}
+";
+
+                string logPath = GetLogFilePath();
+
+                File.AppendAllText(logPath, logEntry);
+            }
+            catch(Exception logEx)
+            {
+                System.Diagnostics.Debug.WriteLine(logEx);
+            }
+        }
+
+        private string GetLogFilePath()
+        {
+            var logDirectory = GetAppDirectory("Logs");
+
+            return Path.Combine(logDirectory, $"error_log_{DateTime.Now:yyyyMMdd}.txt");
+        }
+
+        private string GetBackupFilePath()
+        {
+            var logDirectory = GetAppDirectory("Backups");
+
+            return Path.Combine(logDirectory, $"backup_{DateTime.Now:yyyyMMdd_HHmmss.fff}.wrt");
+        }
+
+        private string GetAppDirectory(string folder)
+        {
+            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string appName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+            string logDirectory = Path.Combine(appDataPath, appName, folder);
+
+            Directory.CreateDirectory(logDirectory);
+
+            return logDirectory;
         }
 
         private INavigationService LoadNavigation(IDiContainer di)

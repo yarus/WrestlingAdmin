@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Wrestling.Entities
@@ -21,11 +19,8 @@ namespace Wrestling.Entities
         private string _emblemPath;
         private string _hashTag;
 
-        private ObservableCollection<Wrestler> _wrestlers;
-
         public TeamApplication()
         {
-            _wrestlers = new ObservableCollection<Wrestler>();
         }
 
         public Guid ID
@@ -148,25 +143,6 @@ namespace Wrestling.Entities
             }
         }
 
-        public ObservableCollection<Wrestler> Wrestlers
-        {
-            get { return _wrestlers; }
-            set
-            {
-                _wrestlers = value;
-                OnPropertyChanged();
-                OnPropertyChanged("IsApplicationValid");
-            }
-        }
-
-        public bool IsApplicationValid => Wrestlers.Count > 0 && Wrestlers.FirstOrDefault(w => !w.IsApplicationValid) == null;
-
-        public void RefreshStats()
-        {
-            OnPropertyChanged("IsApplicationValid");
-            OnPropertyChanged("Wrestlers");
-        }
-
         #region INotifyPropertyChanged
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -192,7 +168,6 @@ namespace Wrestling.Entities
             PhoneNumber = app.PhoneNumber;
             Representative = app.Representative;
             ShortName = app.ShortName;
-            Wrestlers = new ObservableCollection<Wrestler>(app.Wrestlers);
         }
 
         public object Clone()

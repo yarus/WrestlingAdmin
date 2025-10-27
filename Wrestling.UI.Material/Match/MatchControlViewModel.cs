@@ -722,16 +722,6 @@ namespace Wrestling.UI.Material.Match
         {
             ScoreScreenVm.MainSeconds++;
 
-            if (ScoreScreenVm.IsAction1TimerEnabled || ScoreScreenVm.IsAction2TimerEnabled)
-            {
-                ScoreScreenVm.SecondarySeconds++;
-                HandleActionTimer();
-            }
-            else
-            {
-                ScoreScreenVm.SecondarySeconds = 0;
-            }
-
             if (ScoreScreenVm.IsTimeout)
             {
                 HandleTimeoutTimer();
@@ -877,15 +867,18 @@ namespace Wrestling.UI.Material.Match
 
             if ((ScoreScreenVm.IsAction1TimerEnabled || ScoreScreenVm.IsAction2TimerEnabled) && value > 0)
             {
-                ScoreScreenVm.SecondarySeconds = 0;
-                ScoreScreenVm.IsAction1TimerEnabled = false;
-                ScoreScreenVm.IsAction2TimerEnabled = false;
+                if (isRed && ScoreScreenVm.IsAction1TimerEnabled || !isRed && ScoreScreenVm.IsAction2TimerEnabled)
+                {
+                    ScoreScreenVm.SecondarySeconds = 0;
+                    ScoreScreenVm.IsAction1TimerEnabled = false;
+                    ScoreScreenVm.IsAction2TimerEnabled = false;
 
-                Action1Image = GetActionPathByEnabled(true);
-                Action2Image = GetActionPathByEnabled(true);
+                    Action1Image = GetActionPathByEnabled(true);
+                    Action2Image = GetActionPathByEnabled(true);
 
-                Action1Visibility = Visibility.Visible;
-                Action2Visibility = Visibility.Visible;
+                    Action1Visibility = Visibility.Visible;
+                    Action2Visibility = Visibility.Visible;
+                }
             }
 
             AddPoints(isRed, value);
@@ -1009,6 +1002,16 @@ namespace Wrestling.UI.Material.Match
         private void HandleRoundTimer()
         {
             DataContext.WrestlingMatch.LastSecondInMatch++;
+
+            if (ScoreScreenVm.IsAction1TimerEnabled || ScoreScreenVm.IsAction2TimerEnabled)
+            {
+                ScoreScreenVm.SecondarySeconds++;
+                HandleActionTimer();
+            }
+            else
+            {
+                ScoreScreenVm.SecondarySeconds = 0;
+            }
 
             if (ScoreScreenVm.MainSeconds >= ScoreScreenVm.MaxRoundSecond)
             {

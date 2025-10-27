@@ -103,6 +103,24 @@ namespace Wrestling.DataAccess
             return result;
         }
 
+        private static async Task<string> GetXmlStringAsync(string strFile)
+        {
+            string result;
+
+            var xmlDoc = await LoadXmlDocumentAsync(strFile);
+
+            using (var writer = new StringWriter())
+            {
+                using (var xmlWriter = new XmlTextWriter(writer))
+                {
+                    xmlDoc.WriteTo(xmlWriter);
+                    result = writer.ToString();
+                }
+            }
+
+            return result;
+        }
+
         private static XmlDocument LoadXmlDocument(string filePath)
         {
             var xmlDoc = new XmlDocument();
@@ -117,6 +135,64 @@ namespace Wrestling.DataAccess
             }
 
             return xmlDoc;
+        }
+
+        private static async Task<XmlDocument> LoadXmlDocumentAsync(string filePath)
+        {
+            var xmlDoc = new XmlDocument();
+
+            try
+            {
+                using (var stream = new FileStream(
+                    filePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.Read,
+                    bufferSize: 4096,
+                    useAsync: true))
+                {
+                    var settings = new XmlReaderSettings
+                    {
+                        Async = true,
+                        IgnoreWhitespace = true,
+                        IgnoreComments = true
+                    };
+
+                    using (var reader = XmlReader.Create(stream, settings))
+                    {
+                        // This will load the document asynchronously
+                        await Task.Run(() => xmlDoc.Load(reader)).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                return null;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                return null;
+            }
+            catch (XmlException e)
+            {
+                Console.WriteLine(e.Message);
+                return null;
+            }
+            catch (IOException e)
+            {
+                Console.WriteLine(e.Message);
+                return null;
+            }
+
+            return xmlDoc;
+        }
+
+        public async Task<T> ReadFromFileAsync<T>(string path)
+        {
+            var fullPath = path.Contains(".xml") ? path : path + ".xml";
+
+            var content = await GetXmlStringAsync(fullPath);
+            return Deserialize<T>(content);
         }
 
         #endregion

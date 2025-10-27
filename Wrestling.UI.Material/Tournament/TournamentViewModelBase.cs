@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Providers;
@@ -31,7 +32,7 @@ namespace Wrestling.UI.Material.Tournament
 
         public bool IsAutosaveEnabled => DataContext.Tournament?.Settings.IsAutosaveEnabled ?? false;
         
-        protected void CloseTournament()
+        protected async Task CloseTournament()
         {
             bool saveRequired = true;
 
@@ -42,7 +43,7 @@ namespace Wrestling.UI.Material.Tournament
                         "Требуется подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Information) != MessageBoxResult.Yes) saveRequired = false;
             }
 
-            if(saveRequired) SaveData();
+            if(saveRequired) await SaveDataAsync();
 
             DataContext.Tournament = null;
             DataContext.Group = null;
@@ -51,7 +52,7 @@ namespace Wrestling.UI.Material.Tournament
             NavigateToView<HomeViewModel>();
         }
 
-        protected async void SaveData()
+        protected async Task SaveDataAsync()
         {
             if (!string.IsNullOrEmpty(DataContext.Tournament.FileName))
             {
@@ -75,9 +76,25 @@ namespace Wrestling.UI.Material.Tournament
                     DataContext.Tournament.Settings.IsAutosaveEnabled = true;
                     DataContext.Tournament.Settings.AutosaveMaxSecond = GlobalSettings.AutosaveMaxSecond;
 
-                    var result = TournamentManager.SaveToFile(DataContext.Tournament, settings.FileName);
+                    var result = await TournamentManager.SaveToFileAsync(DataContext.Tournament, settings.FileName);
                     ShowSnackMessage(result ? "Турнир сохранен! Автосохранение включено." : "При сохранении произошла ошибка!");
                 }
+            }
+        }
+
+        protected void SaveDataSync()
+        {
+            // For WPF applications, we need to use Dispatcher to avoid deadlocks
+            if (Application.Current.Dispatcher.CheckAccess())
+            {
+                // We're on UI thread - must not block it
+                // Run async method synchronously on a background thread
+                Task.Run(() => SaveDataAsync().GetAwaiter().GetResult()).Wait();
+            }
+            else
+            {
+                // We're not on UI thread - can block safely
+                SaveDataAsync().GetAwaiter().GetResult();
             }
         }
     }

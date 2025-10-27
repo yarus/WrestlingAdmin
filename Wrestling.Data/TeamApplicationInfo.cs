@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace Wrestling.Data
@@ -31,7 +30,5 @@ namespace Wrestling.Data
         public string Email { get; set; }
         [DataMember]
         public string EmblemPath { get; set; }
-        [DataMember]
-        public IEnumerable<Guid> Wrestlers { get; set; }
     }
 }

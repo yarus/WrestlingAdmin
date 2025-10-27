@@ -143,15 +143,15 @@
 
                                 <Viewbox Grid.Column="1" Stretch="Uniform" VerticalAlignment="Center">
                                     <Image
-                                        Source="{Binding Path=EmblemPath, Converter={StaticResource PathToImageConverter}}"
+                                        Source="{Binding Path=Team.EmblemPath, Converter={StaticResource PathToImageConverter}}"
                                         Stretch="UniformToFill" />
                                 </Viewbox>
 
                                 <TextBlock Grid.Column="2" TextWrapping="NoWrap" FontSize="16"
                                            VerticalAlignment="Center" Margin="20,0,0,0">
-                                    <Run Text="{Binding ShortName}" />
+                                    <Run Text="{Binding Team.ShortName}" />
                                     <Run Text="-" />
-                                    <Run Text="{Binding City}" />
+                                    <Run Text="{Binding Team.City}" />
                                 </TextBlock>
 
                                 <Grid Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center"

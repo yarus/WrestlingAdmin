@@ -18,7 +18,7 @@
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <PublishUrl>C:\Users\Aleksey Kardash\Desktop\WrestlingAdmin-20240501\</PublishUrl>
+    <PublishUrl>C:\Users\Aleksey Kardash\Desktop\WrestlingAdmin-20251027\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
     <UpdateEnabled>false</UpdateEnabled>
@@ -30,7 +30,7 @@
     <MapFileExtensions>false</MapFileExtensions>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
     <DisallowUrlActivation>true</DisallowUrlActivation>
-    <ApplicationRevision>44</ApplicationRevision>
+    <ApplicationRevision>50</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
@@ -91,6 +91,9 @@
       <HintPath>..\packages\XamlDisplayerPackage.1.0.6\lib\net45\CodeDisplayer.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="CsvHelper, Version=33.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823, processorArchitecture=MSIL">
+      <HintPath>..\packages\CsvHelper.33.0.1\lib\net47\CsvHelper.dll</HintPath>
+    </Reference>
     <Reference Include="FluentResults, Version=3.15.2.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\FluentResults.3.15.2\lib\netstandard2.0\FluentResults.dll</HintPath>
     </Reference>
@@ -100,6 +103,13 @@
     <Reference Include="MaterialDesignThemes.Wpf, Version=2.5.1.1224, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MaterialDesignThemes.2.5.1-ci1224\lib\net45\MaterialDesignThemes.Wpf.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.8.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.HashCode, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.HashCode.1.1.1\lib\net461\Microsoft.Bcl.HashCode.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Expression.Interactions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Windows.Interactivity.WPF.2.0.20525\lib\net40\Microsoft.Expression.Interactions.dll</HintPath>
     </Reference>
@@ -192,6 +202,7 @@
     <Compile Include="Model\ITournamentImporter.cs" />
     <Compile Include="Model\LogoPositionEnum.cs" />
     <Compile Include="Model\NavigationService.cs" />
+    <Compile Include="Model\TeamApplicationViewModel.cs" />
     <Compile Include="Model\UniqueMatchNumbersGenerator.cs" />
     <Compile Include="Model\Validation\NotEmptyValidationRule.cs" />
     <Compile Include="Model\TournamentImporter.cs" />

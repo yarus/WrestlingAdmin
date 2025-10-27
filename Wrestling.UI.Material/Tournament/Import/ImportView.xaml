@@ -103,6 +103,35 @@
 
                 <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Text="{Binding LeftToImport, StringFormat={}{0:mm':'ss}}" Margin="20,0,0,0" />
 
+                <materialDesign:PackIcon 
+                    Kind="Refresh"
+                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
+                    Width="24" Height="24" Foreground="Blue" Margin="20,0,0,0">
+                    <materialDesign:PackIcon.Style>
+                        <Style TargetType="materialDesign:PackIcon">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation
+                                    Storyboard.TargetProperty="(RenderTransform).(RotateTransform.Angle)"
+                                    From="0" To="360" Duration="0:0:1"
+                                    RepeatBehavior="Forever"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                            <Setter Property="RenderTransform">
+                                <Setter.Value>
+                                    <RotateTransform CenterX="12" CenterY="12"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </materialDesign:PackIcon.Style>
+                </materialDesign:PackIcon>
+
             </StackPanel>
 
         </Grid>

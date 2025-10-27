@@ -144,6 +144,17 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
+                            <GridViewColumn Header="Города" Width="Auto">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding WrestlerInRed.TeamCity}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="22" HorizontalAlignment="Left" />
+                                            <TextBlock Text="{Binding WrestlerInBlue.TeamCity}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="22" HorizontalAlignment="Left" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+
                             <GridViewColumn Width="Auto">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>

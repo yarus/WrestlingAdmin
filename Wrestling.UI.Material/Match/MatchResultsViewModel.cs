@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
@@ -64,10 +65,10 @@ namespace Wrestling.UI.Material.Match
             {
                 if (_completeMatch == null)
                 {
-                    _completeMatch = new RelayCommand(
-                        param => Approve(),
-                        param => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Pending &&
-                                 Winner.HasValue && WinType.HasValue);
+                    _completeMatch = new AsyncRelayCommand(
+                        execute: async _ => await ApproveAsync(),
+                        canExecute: _ => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Pending && Winner.HasValue && WinType.HasValue
+                    );
                 }
                 return _completeMatch;
             }
@@ -247,10 +248,10 @@ namespace Wrestling.UI.Material.Match
         public bool IsPointsWinEnabled => IsMatchCompletedInTime;
         public bool IsNoShowWinEnabled => !IsMatchStarted && !IsFreeWinEnabled;
 
-        public bool IsWarningsLimitWinEnabled => IsMatchStarted && (WrestlingMatch.WarningsNumberRed == 3 || WrestlingMatch.WarningsNumberBlue == 3);
+        public bool IsWarningsLimitWinEnabled => WrestlingMatch.WarningsNumberRed == 3 || WrestlingMatch.WarningsNumberBlue == 3;
         public bool IsActionWinEnabled => IsMatchCompletedInTime && WrestlingMatch.PointsBlue == WrestlingMatch.PointsRed;
         public bool IsDominationWinEnabled => WrestlingMatch.PointsBlue - WrestlingMatch.PointsRed >= 10 || WrestlingMatch.PointsRed - WrestlingMatch.PointsBlue >= 10;
-        public bool IsTusheWinEnabled => IsMatchStarted && !IsFreeWinEnabled;
+        public bool IsTusheWinEnabled => !IsFreeWinEnabled;
         public bool IsDisqualifyWinEnabled => !IsFreeWinEnabled;
         public bool IsWinnerRed => Winner.HasValue && WrestlingMatch.WrestlerInRed != null && Winner.Value == WrestlingMatch.WrestlerInRed.ID;
         public bool IsWinnerBlue => Winner.HasValue && WrestlingMatch.WrestlerInBlue != null && Winner.Value == WrestlingMatch.WrestlerInBlue.ID;
@@ -463,7 +464,7 @@ namespace Wrestling.UI.Material.Match
 
             var result = await DialogHost.Show(view, "RootDialog");
 
-            if (result != null && (bool)result)
+            if (result != null && Convert.ToBoolean(result))
             {
                 WinType = vm.SelectedItem;
             }
@@ -547,7 +548,7 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        private void Approve()
+        private async Task ApproveAsync()
         {
             if (WrestlingMatch == null || WrestlingMatch.Status != MatchStatusEnum.Pending || !Winner.HasValue || !WinType.HasValue)
             {
@@ -577,7 +578,7 @@ namespace Wrestling.UI.Material.Match
 
             if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
             {
-                SaveData();
+                await SaveDataAsync();
 
                 NavigateToMatches();
             }
@@ -656,10 +657,10 @@ namespace Wrestling.UI.Material.Match
                 return;
             }
             
-            // If match not started select NoShow by default
+            // If match not started select Tushe by default
             if (!IsMatchStarted)
             {
-                WinType = MatchWinTypeEnum.NoShow;
+                WinType = MatchWinTypeEnum.Tushe;
                 return;
             }
             

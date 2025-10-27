@@ -4,7 +4,6 @@ using System.Media;
 using System.Net;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using System.Windows.Controls;
 using System.Windows.Input;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
@@ -26,7 +25,6 @@ namespace Wrestling.UI.Material.Settings
         private ICommand _setEndGongCommand;
         private ICommand _playEndGongCommand;
         private ICommand _playStartGongCommand;
-        private ICommand _loadIntegrationDataCommand;
 
         private string _validation;
 
@@ -134,96 +132,6 @@ namespace Wrestling.UI.Material.Settings
             else
             {
                 NavigateToView<DashboardViewModel>();
-            }
-        }
-
-        public ICommand LoadIntegrationDataCommand
-        {
-            get
-            {
-                if (_loadIntegrationDataCommand == null)
-                {
-                    _loadIntegrationDataCommand = new RelayCommand(
-                        param => LoadIntegrationData((param as PasswordBox)?.Password ?? string.Empty),
-                        param => true
-                    );
-                }
-                return _loadIntegrationDataCommand;
-            }
-        }
-        
-        public void LoadIntegrationData(string password)
-        {
-            if (string.IsNullOrEmpty(Item.IntegrationUserName))
-            {
-                IsAuthenticated = false;
-                Validation = "Ввведите имя пользователя";
-                return;
-            }            
-
-            if (string.IsNullOrEmpty(password))
-            {
-                IsAuthenticated = false;
-                Validation = "Ввведите пароль";
-                return;
-            }
-
-            Item.IntegrationPassword = password;
-
-            var api = DiContainer.Resolve<IRosbosApi>();
-            var cache = DiContainer.Resolve<ICacheManager>();
-
-            if (!VerifyLogin(api, Item.IntegrationUserName, Item.IntegrationPassword))
-            {
-                IsAuthenticated = false;
-                Validation = "Неправильные данные";
-                return;
-            }
-
-            IsAuthenticated = true;
-
-            UpdateCache(api, cache);
-
-            InitDataContextWithCache(cache);
-        }
-
-        private void InitDataContextWithCache(ICacheManager cache)
-        {
-            if (cache != null && (DataContext.WrestlersCache == null || DataContext.WrestlersCache.Count == 0 || DataContext.TeamsCache == null || DataContext.TeamsCache.Count == 0))
-            {
-                DataContext.WrestlersCache = cache.LoadWrestlers();
-                DataContext.TeamsCache = cache.LoadTeams();
-            }
-        }
-
-        private void UpdateCache(IRosbosApi api, ICacheManager cache)
-        {
-            var teams = api.GetTeams();
-
-            foreach (var team in teams)
-            {
-                if (DataContext.TeamsCache.Find(x => team.HashTag == x.HashTag) == null)
-                {
-                    DataContext.TeamsCache.Add(team);
-                }
-            }
-
-            var wrestlers = api.GetWrestlers();
-            
-            foreach (var wrestler in wrestlers)
-            {
-                if (DataContext.WrestlersCache.Find(x => wrestler.HashTag == x.HashTag) == null)
-                {
-                    DataContext.WrestlersCache.Add(wrestler);
-                }
-            }
-
-            CheckTeamLogo();
-
-            if (cache != null)
-            {
-                cache.SaveTeams(teams);
-                cache.SaveWrestlers(wrestlers);
             }
         }
 

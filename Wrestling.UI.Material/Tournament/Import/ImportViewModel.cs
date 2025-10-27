@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
@@ -9,6 +11,7 @@ using MvvmDialogs.FrameworkDialogs.OpenFile;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Tournament.Dashboard;
 using Wrestling.UI.Utils;
+using static System.Windows.Forms.DataFormats;
 
 namespace Wrestling.UI.Material.Tournament.Import
 {
@@ -22,6 +25,7 @@ namespace Wrestling.UI.Material.Tournament.Import
         private bool _isValid;
 
         private bool _isImportJobStarted;
+        private bool _isLoading;
         private int _importSeconds;
         private int _currentSecond;
         private TimeSpan _leftToImport;
@@ -50,7 +54,20 @@ namespace Wrestling.UI.Material.Tournament.Import
             {
                 return _quickButtons ?? (_quickButtons = new List<CommandButtonItem>
                 {
-                    new CommandButtonItem("Импортировать результаты из файла", PackIconKind.FileImport, new RelayCommand(param => RunManualImport(), param => true))
+                    new CommandButtonItem("Импортировать результаты из файла", PackIconKind.FileImport,
+                    new AsyncRelayCommand(
+                        execute: async _ => {
+                            IsLoading = true;
+                            try
+                            {
+                                await RunManualImportAsync();
+                            }
+                            finally
+                            {
+                                IsLoading = false;
+                            }
+                        }
+                    ))
                 });
             }
         }
@@ -70,6 +87,16 @@ namespace Wrestling.UI.Material.Tournament.Import
 
                 OnPropertyChanged("IsImportJobStarted");
                 OnPropertyChanged("IsImportJobStoped");
+            }
+        }
+
+        public bool IsLoading
+        {
+            get { return _isLoading; }
+            set
+            {
+                _isLoading = value;
+                OnPropertyChanged("IsLoading");
             }
         }
 
@@ -178,8 +205,8 @@ namespace Wrestling.UI.Material.Tournament.Import
             {
                 if (_selectPathCommand == null)
                 {
-                    _selectPathCommand = new RelayCommand(
-                        param => SelectPath()
+                    _selectPathCommand = new AsyncRelayCommand(
+                        execute: async _ => await SelectPathAsync()
                     );
                 }
                 return _selectPathCommand;
@@ -249,7 +276,7 @@ namespace Wrestling.UI.Material.Tournament.Import
 
         #region Private Methods
         
-        private void OnTimerTick(object sender, EventArgs e)
+        private async Task OnTimerTickAsync()
         {
             if (DataContext.Tournament == null)
             {
@@ -262,15 +289,44 @@ namespace Wrestling.UI.Material.Tournament.Import
 
             if (_currentSecond >= ImportSeconds)
             {
-                foreach (var path in ImportSources)
+                try
                 {
-                    ImportData(path);
+                    IsLoading = true;
+
+                    foreach (var path in ImportSources)
+                    {
+                        await ImportDataAsync(path);
+                    }
                 }
+                finally
+                {
+                    IsLoading = false;
+                }                
 
                 _currentSecond = 0;
             }
 
             _currentSecond++;
+        }
+
+        private async void OnTimerTick(object sender, EventArgs e)
+        {
+            _timer.Stop(); // Pause timer during execution
+
+            try
+            {
+                await OnTimerTickAsync().ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                // Handle errors
+                Debug.WriteLine($"Import failed: {ex.Message}");
+            }
+            finally
+            {
+                if (IsImportJobStarted) // Only restart if still enabled
+                    _timer.Start();
+            }
         }
 
         private void StartImportJob()
@@ -292,7 +348,7 @@ namespace Wrestling.UI.Material.Tournament.Import
             LeftToImport = new TimeSpan(0, 0, 0, ImportSeconds);
         }
 
-        private void RunManualImport()
+        private async Task RunManualImportAsync()
         {
             var settings = new OpenFileDialogSettings
             {
@@ -304,10 +360,10 @@ namespace Wrestling.UI.Material.Tournament.Import
             bool? success = Dialog.ShowOpenFileDialog(this, settings);
             if (success == true)
             {
-                var tournament = TournamentManager.LoadFromFile(settings.FileName);
+                var tournament = await TournamentManager.LoadFromFileAsync(settings.FileName);
                 if (tournament != null && tournament.Name == DataContext.Tournament.Name)
                 {
-                    ImportData(settings.FileName);
+                    await ImportDataAsync(settings.FileName);
                 }
                 else
                 {
@@ -334,7 +390,7 @@ namespace Wrestling.UI.Material.Tournament.Import
             }
         }
 
-        private void SelectPath()
+        private async Task SelectPathAsync()
         {
             var settings = new OpenFileDialogSettings
             {
@@ -354,24 +410,36 @@ namespace Wrestling.UI.Material.Tournament.Import
                     return;
                 }
 
-                var tournament = TournamentManager.LoadFromFile(settings.FileName);
-                if (tournament != null && tournament.Name == DataContext.Tournament.Name)
+                try
                 {
-                    Path = settings.FileName;
-                    IsValid = true;
+                    var tournament = await TournamentManager.LoadFromFileAsync(settings.FileName)
+                        .ConfigureAwait(true);  // Continue on UI context for property updates
+
+                    if (tournament != null && tournament.Name == DataContext.Tournament.Name)
+                    {
+                        Path = settings.FileName;
+                        IsValid = true;
+                    }
+                    else
+                    {
+                        Path = string.Empty;
+                        IsValid = false;
+                        ShowSnackMessage("Выбран файл, не соответствующий открытому турниру!");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
+                    // Handle any errors
                     Path = string.Empty;
                     IsValid = false;
-                    ShowSnackMessage("Выбран файл, не соответствующий открытому турниру!");
+                    ShowSnackMessage($"Ошибка загрузки файла: {ex.Message}");
                 }
             }
         }
 
-        private void ImportData(string path)
+        private async Task ImportDataAsync(string path)
         {
-            int importedRecords = _importer.ImportDataFromFile(DataContext.Tournament, path);
+            int importedRecords = await _importer.ImportDataFromFileAsync(DataContext.Tournament, path);
 
             if (importedRecords > 0)
             {

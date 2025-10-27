@@ -45,6 +45,7 @@ namespace Wrestling.Entities.Results
         public int WinsByAction => GetWinsByType(MatchWinTypeEnum.ActionWin);
         public int AutoWinsCount => GetWinsByType(MatchWinTypeEnum.FreeWin);
 
+        public int LoseByTushe => GetLoseByType(MatchWinTypeEnum.Tushe);
         public int LoseByAction => GetLoseByType(MatchWinTypeEnum.ActionWin);
         public int LoseByPoints => GetLoseByType(MatchWinTypeEnum.PointsWinWithPoints);
         public int LoseByDomination => GetLoseByType(MatchWinTypeEnum.DominationWinWithPoints);
@@ -112,14 +113,14 @@ namespace Wrestling.Entities.Results
                 if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
 
                 var redActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed == _wrestler) && x.LastSecondInMatch > 3)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed == _wrestler) && x.LastSecondInMatch > 0)
                     .SelectMany(m => m.MatchActions)
                     .Where(a => a.Points > 0 && a.IsForRed.HasValue && a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
                     .OrderBy(a => a.SecondInRound)
                     .ToList();
 
                 var blueActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue == _wrestler) && x.LastSecondInMatch > 3)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue == _wrestler) && x.LastSecondInMatch > 0)
                     .SelectMany(m => m.MatchActions)
                     .Where(a => a.Points > 0 && a.IsForRed.HasValue && !a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
                     .OrderBy(a => a.SecondInRound)
