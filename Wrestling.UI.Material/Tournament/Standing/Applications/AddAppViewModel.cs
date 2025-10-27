@@ -120,7 +120,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 Title = "Открыть файл с изображением",
                 InitialDirectory = string.IsNullOrEmpty(Item.EmblemPath) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : Item.EmblemPath,
-                Filter = "Изображения (*.png)|*.png|All Files (*.*)|*.*"
+                Filter = "Изображение (*.png)|*.png|Изображение (*.jpeg)|*.jpeg|Изображение (*.bmp)|*.bmp|Изображение (*.gif)|*.gif"
             };
 
             bool? success = Dialog.ShowOpenFileDialog(this, settings);

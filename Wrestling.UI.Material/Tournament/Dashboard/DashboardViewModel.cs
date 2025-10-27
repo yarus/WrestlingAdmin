@@ -58,7 +58,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
             SetupAutoSave();
         }
 
-        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20250527";
+        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20251027";
 
         public override IList<CommandButtonItem> QuickButtons
         {
@@ -83,7 +83,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
                     new CommandButtonItem("Импорт", new RelayCommand(param => OpenImport(), param => true)),
                     new CommandButtonItem("Табло", new RelayCommand(param => OpenMonitor(), param => true)),
                     new CommandButtonItem("Настройки", new RelayCommand(param => OpenSettings(), param => true)),
-                    new CommandButtonItem("Закрыть", new RelayCommand(param => CloseTournament(), param => true))
+                    new CommandButtonItem("Закрыть", new AsyncRelayCommand(param => CloseTournament(), param => true))
                 });
             }
         }

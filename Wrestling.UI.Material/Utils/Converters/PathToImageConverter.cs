@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
 
@@ -12,7 +13,7 @@ namespace Wrestling.UI.Material.Utils.Converters
         {
             var imgPath = $"{AppDomain.CurrentDomain.BaseDirectory}Images\\";
 
-            string defaultImageName = string.Empty;
+            string defaultImageName;
             if (parameter != null)
             {
                 defaultImageName = parameter.ToString();
@@ -38,7 +39,14 @@ namespace Wrestling.UI.Material.Utils.Converters
                 fullFilePath = $"{imgPath}{fileName}";
             }
 
-            return File.Exists(fullFilePath)
+            var supportedFormats = new[]
+            {
+                ".png",".jpeg",".bmp",".gif"
+            };
+
+            var targetExtension = Path.GetExtension(fullFilePath).ToLower();
+
+            return File.Exists(fullFilePath) && supportedFormats.Contains(targetExtension)
                 ? new BitmapImage(new Uri(fullFilePath, UriKind.Absolute))
                 : defaultEmblem;
         }

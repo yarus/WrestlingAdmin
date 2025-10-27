@@ -37,7 +37,7 @@ namespace Wrestling.UI.Material.Model
                     return new ObservableCollection<Wrestler>(_tournament.Wrestlers.Where(x => x.TeamID == _teamApplication.ID).OrderBy(x => x.LastFirstName));
                 }
 
-                var result = _tournament.Wrestlers.Where(w => (!_isOnlyUnapprovedVisible || !w.IsRegistrationApproved)
+                var result = _tournament.Wrestlers.Where(w => w.TeamID == _teamApplication.ID && (!_isOnlyUnapprovedVisible || !w.IsRegistrationApproved)
                    && (_filter == null || _filter.Length <= 2 || (_filter.Length > 2 && w.LastName.StartsWith(_filter, true, CultureInfo.InvariantCulture)))).ToList();
 
                 return new ObservableCollection<Wrestler>(result.OrderBy(x => x.LastFirstName));

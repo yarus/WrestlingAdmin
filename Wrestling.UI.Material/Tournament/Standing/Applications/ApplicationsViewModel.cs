@@ -231,14 +231,21 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         private void Filter(string filter, bool isOnlyUnapprovedVisible)
         {
-            var vms = DataContext.Tournament.TeamApplications.Select(x => new TeamApplicationViewModel(x, DataContext.Tournament));
-
-            foreach (var v in vms)
+            if (!IsFilterEnabled)
             {
-                v.SetFilter(filter, isOnlyUnapprovedVisible);
+                Items = new ObservableCollection<TeamApplicationViewModel>(DataContext.Tournament.TeamApplications.Select(x => new TeamApplicationViewModel(x, DataContext.Tournament)));
+                return;
             }
 
-            Items = new ObservableCollection<TeamApplicationViewModel>(vms);
+            var filteredWrestlers = DataContext.Tournament.Wrestlers.Where(w => (!isOnlyUnapprovedVisible || !w.IsRegistrationApproved)
+                    && (filter == null || filter.Length <= 2 || (filter.Length > 2 && w.LastName.StartsWith(filter, true, CultureInfo.InvariantCulture)))).ToList();
+            var filtered = new ObservableCollection<TeamApplicationViewModel>(DataContext.Tournament.TeamApplications.Where(a => filteredWrestlers.Select(w => w.TeamID).Contains(a.ID)).Select(a => new TeamApplicationViewModel(a.Clone() as TeamApplication, DataContext.Tournament)));
+            foreach (var teamApplication in filtered)
+            {
+                teamApplication.SetFilter(filter, isOnlyUnapprovedVisible);
+            }
+
+            Items = filtered;
         }
 
         private void ApproveAllWrestlers()
@@ -275,6 +282,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 DataContext.Tournament.TeamApplications.Add(addAppVm.Item);
 
                 OnPropertyChanged("AppsCount");
+
+                Items = new ObservableCollection<TeamApplicationViewModel>(DataContext.Tournament.TeamApplications.Select(x => new TeamApplicationViewModel(x, DataContext.Tournament)));
 
                 OnPropertyChanged("Items");
 
