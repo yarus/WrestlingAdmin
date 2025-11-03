@@ -5,7 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:system="clr-namespace:System;assembly=mscorlib"
-             xmlns:codeDisplayer="clr-namespace:CodeDisplayer;assembly=CodeDisplayer"
              xmlns:validation="clr-namespace:Wrestling.UI.Material.Model.Validation"
              xmlns:groupBracketSlide1="clr-namespace:Wrestling.UI.Material.Slider.Slides.GroupBracketSlide"
              xmlns:imageSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.ImageSlide"
@@ -72,17 +71,19 @@
             </ComboBox.ItemTemplate>
         </ComboBox>
 
-        <codeDisplayer:XamlDisplayerHost Grid.Row="3" Margin="10 5 10 5" Padding="0" Content="{Binding SelectedSlideType.SettingsControl}" x:Name="ContentControl" />
+        <ContentControl Grid.Row="3" 
+                Grid.Column="0"
+                Margin="10 5 10 5" Padding="0" Content="{Binding SelectedSlideType.SettingsControl}" x:Name="ContentControl" />
 
         <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0 10 0 0">
-            <Button IsDefault="True" Style="{DynamicResource MaterialDesignFlatButton}"
+            <Button IsDefault="True"
                     Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
                 <Button.CommandParameter>
                     <system:Boolean>True</system:Boolean>
                 </Button.CommandParameter>
                 СОХРАНИТЬ
             </Button>
-            <Button IsCancel="True" Margin="8 0 0 0" Style="{DynamicResource MaterialDesignFlatButton}"
+            <Button IsCancel="True" Margin="8 0 0 0"
                     Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
                 <Button.CommandParameter>
                     <system:Boolean>False</system:Boolean>

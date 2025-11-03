@@ -7,7 +7,7 @@
              xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:converters2="clr-namespace:Wrestling.UI.Material.Utils.Converters"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              md:DialogServiceViews.IsRegistered="True"
              mc:Ignorable="d" d:DesignHeight="1200" d:DesignWidth="1200">
     
@@ -52,12 +52,12 @@
         <Grid Grid.Row="0" Grid.Column="1">
             <Viewbox Stretch="Uniform">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="{Binding WrestlingMatch.GroupName, Mode=OneWay, Converter={StaticResource UpperCaseConverter}}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding WrestlingMatch.GroupName, Mode=OneWay, Converter={StaticResource UpperCaseConverter}}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" HorizontalAlignment="Center">
                     </TextBlock>
 
-                    <TextBlock Text=":" HorizontalAlignment="Center" Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                    <TextBlock Text=":" HorizontalAlignment="Center" Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
 
-                    <TextBlock Text="{Binding WrestlingMatch.RoundName, Mode=OneWay, Converter={StaticResource UpperCaseConverter}}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding WrestlingMatch.RoundName, Mode=OneWay, Converter={StaticResource UpperCaseConverter}}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" HorizontalAlignment="Center" />
                 </StackPanel>
             </Viewbox>
         </Grid>
@@ -90,7 +90,7 @@
 
             <!-- Red Team Name -->
             <Viewbox Grid.Row="0" Grid.Column="0" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInRed.TeamName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInRed.TeamName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
             </Viewbox>
 
             <!-- Red Team Emblem-->
@@ -117,7 +117,7 @@
                 </Viewbox>
 
                 <Viewbox Grid.Row="1" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInRed.FullName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInRed.FullName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
                 </Viewbox>
                 
             </Grid>
@@ -128,7 +128,7 @@
                     <StackPanel Orientation="Horizontal" Margin="8">
                         <Grid Background="Yellow">
                             <Border BorderBrush="Black" BorderThickness="1">
-                                <TextBlock Text="ПОБЕДИТЕЛЬ" Style="{StaticResource MaterialDesignHeadlineTextBlock}" Margin="10,4,10,4" />
+                                <TextBlock Text="ПОБЕДИТЕЛЬ" Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="10,4,10,4" />
                             </Border>                            
                         </Grid>
                     </StackPanel>
@@ -138,7 +138,7 @@
             <!-- VS Label -->
             <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="1">
                 <StackPanel Grid.Row="0" Orientation="Vertical">
-                    <TextBlock Grid.Row="0" Style="{StaticResource MaterialDesignHeadlineTextBlock}" HorizontalAlignment="Center" Margin="10,10,10,10">
+                    <TextBlock Grid.Row="0" Style="{StaticResource MaterialDesignHeadline5TextBlock}" HorizontalAlignment="Center" Margin="10,10,10,10">
                             <Run Text="СХВАТКА"></Run>
                             <Run Text="#"></Run>
                             <Run Text="{Binding Path=WrestlingMatch.MatchNumber}"></Run>
@@ -184,7 +184,7 @@
                                 Command="{Binding Path=SetWinTypeCommand}">
                             <TextBlock Text="{Binding WinType, Converter={StaticResource UpperWinType}}"
                                 TextWrapping="NoWrap" VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="200"
-                                Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                                Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
                         </Button>
                     </Grid>
                 </Viewbox>
@@ -194,14 +194,14 @@
                         <Border BorderBrush="Black" BorderThickness="1">
                             <TextBlock Text="{Binding WinType, Converter={StaticResource UpperWinType}}" MinWidth="200"
                                     TextWrapping="NoWrap" VerticalAlignment="Center" HorizontalAlignment="Center"
-                                    Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                                    Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
                         </Border>
                     </Grid>
                 </Viewbox>
             </Grid>
 
             <Viewbox Grid.Row="0" Grid.Column="2" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInBlue.TeamName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInBlue.TeamName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
             </Viewbox>
 
             <!-- Blue Column -->
@@ -228,7 +228,7 @@
                 </Viewbox>
 
                 <Viewbox Grid.Row="1" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInBlue.FullName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadlineTextBlock}" />
+                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInBlue.FullName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
                 </Viewbox>
             </Grid>
 
@@ -237,7 +237,7 @@
                     <StackPanel Orientation="Horizontal" Margin="8">
                         <Grid Background="Yellow">
                             <Border BorderBrush="Black" BorderThickness="1">
-                                <TextBlock Text="ПОБЕДИТЕЛЬ" Style="{StaticResource MaterialDesignHeadlineTextBlock}" Margin="10,4,10,4" />
+                                <TextBlock Text="ПОБЕДИТЕЛЬ" Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="10,4,10,4" />
                             </Border>                            
                         </Grid>
                     </StackPanel>
@@ -246,7 +246,7 @@
         </Grid>
         
         <StackPanel Grid.Row="2" Grid.Column="1">
-            <Button Content="ЗАВЕРШИТЬ" Style="{StaticResource MaterialDesignRaisedAccentButton}" TabIndex="1"  
+            <Button Content="ЗАВЕРШИТЬ" Style="{StaticResource MaterialDesignRaisedButton}" TabIndex="1"  
                     FontStretch="Medium" Width="200" Height="60" Margin="10" FontSize="20"
                     Command="{Binding CompleteMatchCommand}" ToolTip="Завершить схватку" />
         </StackPanel>

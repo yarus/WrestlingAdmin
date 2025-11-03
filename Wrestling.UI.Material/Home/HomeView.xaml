@@ -33,10 +33,10 @@
                             </Grid.ColumnDefinitions>
 
                             <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="TrophyOutline" Width="160" Height="160" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            
+
                             <StackPanel Grid.Row="0" Grid.Column="1">
-                                <TextBlock Style="{StaticResource MaterialDesignHeadlineTextBlock}" Margin="16 16 16 8">Турниры</TextBlock>
-                                
+                                <TextBlock Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="16 16 16 8">Турниры</TextBlock>
+
                                 <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
                                     Вы можете начать подготовку к новому турниру или открыть ранее сохраненный файл для продолжения работы.
                                 </TextBlock>
@@ -44,10 +44,10 @@
                             
                             <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
                                 <DockPanel>
-                                    <Button DockPanel.Dock="Left" Style="{StaticResource MaterialDesignFlatButton}" HorizontalAlignment="Left" Margin="8 4 8 8"
+                                    <Button DockPanel.Dock="Left" HorizontalAlignment="Left" Margin="8 4 8 8"
                                             Command="{Binding Path=OpenTournamentCommand}">ОТКРЫТЬ</Button>
 
-                                    <Button DockPanel.Dock="Right" Style="{StaticResource MaterialDesignFlatButton}" HorizontalAlignment="Right" Margin="8 4 8 8"
+                                    <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Margin="8 4 8 8"
                                             Command="{Binding Path=NewTournamentCommand}">НОВЫЙ</Button>
                                 </DockPanel>
                             </Border>
@@ -69,7 +69,7 @@
                             <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="AccountMultipleOutline" Width="160" Height="160" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                             <StackPanel Grid.Row="0" Grid.Column="1">
-                                <TextBlock Style="{StaticResource MaterialDesignHeadlineTextBlock}" Margin="16 16 16 8">Поединок</TextBlock>
+                                <TextBlock Margin="16 16 16 8" Style="{StaticResource MaterialDesignHeadline5TextBlock}">Поединок</TextBlock>
 
                                 <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
                                     Используйте этот модуль для проведения быстрой схватки вне рамок какого-либо турнира.
@@ -78,8 +78,7 @@
 
                             <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
                                 <DockPanel>
-                                    <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Margin="8 4 8 8"
-                                            Style="{StaticResource MaterialDesignFlatButton}"
+                                    <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Margin="8 4 8 8"                                            
                                             Command="{Binding Path=NewQuickMatchCommand}">НОВЫЙ</Button>
                                 </DockPanel>
                             </Border>

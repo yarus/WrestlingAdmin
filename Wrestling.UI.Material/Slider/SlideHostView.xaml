@@ -4,7 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
-             xmlns:codeDisplayer="clr-namespace:CodeDisplayer;assembly=CodeDisplayer"
              xmlns:model="clr-namespace:Wrestling.UI.Material.Model"
              xmlns:groupBracketSlide1="clr-namespace:Wrestling.UI.Material.Slider.Slides.GroupBracketSlide"
              xmlns:imageSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.ImageSlide"
@@ -47,7 +46,12 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <codeDisplayer:XamlDisplayerHost Grid.Row="0" Grid.Column="0" Content="{Binding CurrentView}" x:Name="ContentControl" Margin="0" Padding="0" />
+        <ContentControl Grid.Row="0" 
+                Grid.Column="0" 
+                Content="{Binding CurrentView}" 
+                x:Name="ContentControl" 
+                Margin="0" 
+                Padding="0" />
 
     </Grid>
 </model:PanelViewBase>

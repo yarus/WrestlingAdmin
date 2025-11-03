@@ -100,7 +100,7 @@ namespace Wrestling.Entities.Bracket
                 {
                     RoundNumber = i + 1,
                     RoundType = GroupRoundTypeEnum.Main,
-                    RoundName = "Раунд " + (i + 1),
+                    RoundName = "Круг " + (i + 1),
                     RoundMatches = new List<WrestlingMatch>()
                 };
 

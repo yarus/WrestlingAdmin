@@ -130,11 +130,6 @@ namespace Wrestling.Providers
             var tournEntity = new Tournament(settings)
             {
                 ID = info.ID,
-                ContactEmail = info.ContactEmail,
-                ContactPhone = info.ContactPhone,
-                ContactPerson = info.ContactPerson,
-                ContactTitle = info.ContactTitle,
-                ContactAddress = info.ContactAddress,
                 StartDate = info.StartDate,
                 Name = info.Name,
                 Status = !string.IsNullOrEmpty(info.Status) ? (TournamentStatus)Enum.Parse(typeof(TournamentStatus), info.Status) : TournamentStatus.Fake,
@@ -350,11 +345,6 @@ namespace Wrestling.Providers
             var info = new TournamentInfo
             {
                 ID = item.ID.Value,
-                ContactEmail = item.ContactEmail,
-                ContactPhone = item.ContactPhone,
-                ContactPerson = item.ContactPerson,
-                ContactAddress = item.ContactAddress,
-                ContactTitle = item.ContactTitle,
                 Name = item.Name,
                 StartDate = item.StartDate,
                 Status = item.Status.ToString(),

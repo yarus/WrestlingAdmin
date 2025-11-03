@@ -24,7 +24,6 @@ namespace Wrestling.UI.Material.Match
 
         private IList<CommandButtonItem> _quickButtons;
         private ScoreScreenViewModel _scoreScreenVm;
-        private GlobalSettings _settings;
         private readonly List<IGroupBracketProcessor> _drawTypes;
         private IGroupBracketProcessor _processor;
         private ICommand _completeMatch;
@@ -102,8 +101,6 @@ namespace Wrestling.UI.Material.Match
                 _processor.Load(DataContext.Tournament, DataContext.Group);
                 CanRejectResult = _processor.CanMatchBeReverted(WrestlingMatch);
             }
-
-            _settings = DataContext.Tournament != null ? DataContext.Tournament.Settings : GlobalSettings;
 
             if (DataContext.WrestlingMatch.WrestlerInRed?.TeamID != null && DataContext.Tournament != null)
             {
@@ -358,6 +355,30 @@ namespace Wrestling.UI.Material.Match
                 _isFormEnabled = value;
 
                 OnPropertyChanged("IsFormEnabled");
+            }
+        }
+
+        private bool _isNoteExpanded;
+        public bool IsNoteExpanded
+        {
+            get { return _isNoteExpanded; }
+            set
+            {
+                _isNoteExpanded = value;
+
+                OnPropertyChanged("IsNoteExpanded");
+            }
+        }
+
+        private bool _isActionsExpanded;
+        public bool IsActionsExpanded
+        {
+            get { return _isActionsExpanded; }
+            set
+            {
+                _isActionsExpanded = value;
+
+                OnPropertyChanged("IsActionsExpanded");
             }
         }
 

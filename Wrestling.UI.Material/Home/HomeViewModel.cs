@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Windows.Input;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
@@ -19,6 +20,7 @@ namespace Wrestling.UI.Material.Home
         #region Fields
 
         private ITournamentsManager _tournManager;
+        private ICacheManager _cacheManager;
         private IList<CommandButtonItem> _drawerItems;
 
         private ICommand _newTournamentCommand;
@@ -37,16 +39,10 @@ namespace Wrestling.UI.Material.Home
             base.InitData();
 
             _tournManager = Resolve<ITournamentsManager>();
-            
-            var cache = DiContainer.Resolve<ICacheManager>();
-            if (cache != null && (DataContext.WrestlersCache == null || DataContext.WrestlersCache.Count == 0 || DataContext.TeamsCache == null || DataContext.TeamsCache.Count == 0))
-            {
-                DataContext.WrestlersCache = cache.LoadWrestlers();
-                DataContext.TeamsCache = cache.LoadTeams();
-            }
+            _cacheManager = Resolve<ICacheManager>();
         }
 
-        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20251027";
+        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20251101";
 
         public override IList<CommandButtonItem> DrawerItems
         {
@@ -147,9 +143,32 @@ namespace Wrestling.UI.Material.Home
 
                     DataContext.Tournament = tournament;
 
+                    UpdateCache();
+
                     NavigateToView<DashboardViewModel>();
                 }
             }
+        }
+
+        private void UpdateCache()
+        {
+            foreach (var teamApp in DataContext.Tournament.TeamApplications)
+            {
+                if (DataContext.TeamsCache.FirstOrDefault(x => x.ID == teamApp.ID || x.HashTag == teamApp.HashTag || x.FullName == teamApp.FullName) == null)
+                {
+                    DataContext.TeamsCache.Add(teamApp);
+                }
+            }
+            _cacheManager.SaveTeams(DataContext.TeamsCache);
+
+            foreach (var wrestler in DataContext.Tournament.Wrestlers)
+            {
+                if (DataContext.WrestlersCache.FirstOrDefault(x => x.ID == wrestler.ID || x.HashTag == wrestler.HashTag) == null)
+                {
+                    DataContext.WrestlersCache.Add(wrestler);
+                }
+            }
+            _cacheManager.SaveWrestlers(DataContext.WrestlersCache);
         }
 
         private void VerifyTeamEmblems(Entities.Tournament entity)

@@ -54,7 +54,10 @@
 
         <ListView Grid.Row="4" Grid.Column="0" Margin="10"
                       DataContext="{StaticResource WrestlersGroup}"
-                      ItemsSource="{Binding IsAsync=True}">
+                      ItemsSource="{Binding IsAsync=True}"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                      ScrollViewer.CanContentScroll="True" 
+                      HorizontalContentAlignment="Stretch">
             <ListView.GroupStyle>
                 <GroupStyle>
                     <GroupStyle.ContainerStyle>
@@ -77,13 +80,13 @@
 
             <ListView.View>
                 <GridView AllowsColumnReorder="false">
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.FinalPlace}" Header="#" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.FinalPlace}" Header="#" Width="50" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LastFirstName}" Header="ФИО" Width="Auto" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="Команда" Width="Auto" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamCity}" Header="Регион" Width="Auto" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.Level}" Width="Auto">
                         <GridViewColumn.Header>
-                            <StackPanel VerticalAlignment="Bottom" Orientation="Vertical">
+                            <StackPanel VerticalAlignment="Bottom" Orientation="Vertical" Margin="0">
                                 <TextBlock Style="{StaticResource RotatedText}">Разряд</TextBlock>
                             </StackPanel>
                         </GridViewColumn.Header>

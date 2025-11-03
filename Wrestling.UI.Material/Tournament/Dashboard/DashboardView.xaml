@@ -44,7 +44,7 @@
                         <materialDesign:PackIcon Grid.Row="1" Grid.Column="0" Kind="ClipboardText" Width="140" Height="140" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                         <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0" VerticalAlignment="Top" HorizontalAlignment="Center">
-                            <TextBlock TextWrapping="Wrap" Style="{DynamicResource MaterialDesignHeadlineTextBlock}">Информация о турнире</TextBlock>
+                            <TextBlock TextWrapping="Wrap" Style="{DynamicResource MaterialDesignHeadline5TextBlock}">Информация о турнире</TextBlock>
                         </StackPanel>
 
                         <Grid Grid.Row="1" Grid.Column="1">
@@ -144,7 +144,7 @@
                             <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="BookVariant" Width="160" Height="160" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                             <StackPanel Grid.Row="0" Grid.Column="1">
-                                <TextBlock Style="{StaticResource MaterialDesignHeadlineTextBlock}" Margin="16 16 16 8">Положение</TextBlock>
+                                <TextBlock Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="16 16 16 8">Положение</TextBlock>
 
                                 <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
                                     Данный модуль отвечает за подготовку всей необходимой информации для начала соревнований.
@@ -154,7 +154,7 @@
                             <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Left" HorizontalAlignment="Left" Margin="8 4 8 8"
-                                            Style="{StaticResource MaterialDesignFlatButton}"
+                                            
                                             Command="{Binding Path=OpenStandingCommand}">ОТКРЫТЬ</Button>
                                 </DockPanel>
                             </Border>
@@ -176,7 +176,7 @@
                             <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="CalendarCheck" Width="160" Height="160" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                             <StackPanel Grid.Row="0" Grid.Column="1">
-                                <TextBlock Style="{StaticResource MaterialDesignHeadlineTextBlock}" Margin="16 16 16 8">Проведение</TextBlock>
+                                <TextBlock Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="16 16 16 8">Проведение</TextBlock>
 
                                 <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
                                     С помощью данного модуля можно просмотреть турнирные сетки для каждой весовой категории.
@@ -186,7 +186,7 @@
                             <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Left" HorizontalAlignment="Left" Margin="8 4 8 8"
-                                            Style="{StaticResource MaterialDesignFlatButton}"
+                                            
                                             Command="{Binding Path=OpenBracketCommand}">ОТКРЫТЬ</Button>
                                 </DockPanel>
                             </Border>
@@ -208,7 +208,7 @@
                             <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="TrophyOutline" Width="160" Height="160" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                             <StackPanel Grid.Row="0" Grid.Column="1">
-                                <TextBlock Style="{StaticResource MaterialDesignHeadlineTextBlock}" Margin="16 16 16 8">Результаты</TextBlock>
+                                <TextBlock Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="16 16 16 8">Результаты</TextBlock>
 
                                 <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
                                     С помощью данного модуля можно просмотреть итоги соревнований: командный зачет и личные результаты по группам.
@@ -218,7 +218,7 @@
                             <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Left" HorizontalAlignment="Left" Margin="8 4 8 8"
-                                            Style="{StaticResource MaterialDesignFlatButton}"
+                                            
                                             Command="{Binding Path=OpenResultsCommand}">ОТКРЫТЬ</Button>
                                 </DockPanel>
                             </Border>
@@ -240,7 +240,7 @@
                             <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="ImageFilter" Width="160" Height="160" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                             <StackPanel Grid.Row="0" Grid.Column="1">
-                                <TextBlock Style="{StaticResource MaterialDesignHeadlineTextBlock}" Margin="16 16 16 8">Слайдер</TextBlock>
+                                <TextBlock Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="16 16 16 8">Слайдер</TextBlock>
 
                                 <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
                                     С помощью данного модуля можно отображать различные слайды на информационном табло.
@@ -250,7 +250,7 @@
                             <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Left" HorizontalAlignment="Left" Margin="8 4 8 8"
-                                            Style="{StaticResource MaterialDesignFlatButton}"
+                                            
                                             Command="{Binding Path=OpenSliderControlCommand}">ОТКРЫТЬ</Button>
                                 </DockPanel>
                             </Border>

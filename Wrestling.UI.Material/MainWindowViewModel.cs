@@ -10,6 +10,18 @@ namespace Wrestling.UI.Material
         private ViewModelBase _currentViewModel;
         private readonly ISnackbarMessageQueue _snackbarMessageQueue;
 
+
+        private bool _isDrawerOpen;
+        public bool IsDrawerOpen
+        {
+            get => _isDrawerOpen;
+            set
+            {
+                _isDrawerOpen = value;
+                OnPropertyChanged("IsDrawerOpen");
+            }
+        }
+
         public MainWindowViewModel(ISnackbarMessageQueue snackbarMessageQueue, IDiContainer di) : base(di)
         {
             if (snackbarMessageQueue == null) throw new ArgumentNullException(nameof(snackbarMessageQueue));

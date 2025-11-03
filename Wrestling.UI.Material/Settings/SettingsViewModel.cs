@@ -1,14 +1,12 @@
 ﻿using System;
 using System.IO;
 using System.Media;
-using System.Net;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Windows.Input;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
-using Wrestling.Integration;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
@@ -139,26 +137,20 @@ namespace Wrestling.UI.Material.Settings
         {
             foreach (var app in DataContext.TeamsCache)
             {
-                if (!string.IsNullOrEmpty(app.EmblemPath))
+                if (string.IsNullOrEmpty(app.EmblemPath)) continue;
+                
+                // get file name and check if it exists
+                var fileNameItems = app.EmblemPath.Split('\\');
+                var fileName = fileNameItems[fileNameItems.Length - 1];
+
+                var storagePath = Path.GetFullPath("Images");
+
+                EnsureUploadFolder(storagePath);
+
+                var fullPath = $"{storagePath}\\{fileName}";
+
+                if (File.Exists(fullPath))
                 {
-                    // get file name and check if it exists
-                    var fileNameItems = app.EmblemPath.Split('\\');
-                    var fileName = fileNameItems[fileNameItems.Length - 1];
-
-                    var storagePath = Path.GetFullPath("Images");
-
-                    EnsureUploadFolder(storagePath);
-
-                    var fullPath = $"{storagePath}\\{fileName}";
-
-                    if (!File.Exists(fullPath))
-                    {
-                        using (WebClient client = new WebClient())
-                        {
-                            client.DownloadFile($"https://rosbos.ru/{app.EmblemPath}", fullPath);
-                        }
-                    }
-
                     app.EmblemPath = fullPath;
                 }
             }
@@ -180,24 +172,6 @@ namespace Wrestling.UI.Material.Settings
                     AccessControlType.Allow));
 
             dInfo.SetAccessControl(dSecurity);
-        }
-
-        private bool VerifyLogin(IRosbosApi api, string userName, string password)
-        {
-            api.SetCredentials(userName, password);
-
-            var token = api.LoadToken();
-
-            if (!token)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        public void ReloadConfig()
-        {
         }
 
         public ICommand PlayStartGongCommand

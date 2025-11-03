@@ -5,7 +5,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:model="clr-namespace:Wrestling.UI.Material.Model"
-             xmlns:codeDisplayer="clr-namespace:CodeDisplayer;assembly=CodeDisplayer"
              xmlns:schedule="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintSchedule"
              xmlns:printBracket="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintBracket"
              xmlns:printResults="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintResults"
@@ -75,7 +74,7 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <materialDesign:ColorZone Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Padding="16" materialDesign:ShadowAssist.ShadowDepth="Depth2" Mode="PrimaryMid">
+        <materialDesign:ColorZone Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Padding="16" Mode="PrimaryMid">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -94,7 +93,10 @@
 
         <ScrollViewer Grid.Row="1" Grid.Column="1" Width="22cm" Margin="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="PrintControl" Background="White">
-                <codeDisplayer:XamlDisplayerHost Content="{Binding }" x:Name="ContentControl" Margin="10" />
+                <ContentControl
+                Content="{Binding }" 
+                x:Name="ContentControl" 
+                Margin="10" />
             </StackPanel>
         </ScrollViewer>
         

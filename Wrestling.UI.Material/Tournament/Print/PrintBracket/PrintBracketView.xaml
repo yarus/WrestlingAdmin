@@ -367,62 +367,113 @@
         </Grid>
 
         <Grid Margin="0, 20, 0, 0">
-            <ListView ItemsSource="{Binding Path=GroupWrestlers}">
+            <ListView ItemsSource="{Binding Path=GroupWrestlers}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+              ScrollViewer.CanContentScroll="True" HorizontalContentAlignment="Stretch">
                 <ListView.View>
                     <GridView AllowsColumnReorder="true">
-                        <GridViewColumn Header="Результат" Width="80">
+                        <GridViewColumn Width="60">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="Место" HorizontalContentAlignment="Center" Padding="0"/>
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Order}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding Order}" 
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      FontSize="14"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-
-                        <GridViewColumn Header="ФИО" Width="Auto">
+                        <GridViewColumn Width="250">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="ФИО" HorizontalContentAlignment="Center" Padding="0"/>
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding AthleteName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
+                                    <TextBlock Text="{Binding AthleteName}" 
+                                      HorizontalAlignment="Left"
+                                      VerticalAlignment="Bottom"
+                                      Margin="8,8,0,0"
+                                      TextWrapping="Wrap"
+                                      FontSize="14"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Команда" Width="150">
+                        <GridViewColumn Width="120">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="Команда" HorizontalContentAlignment="Center" Padding="0"/>
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding TeamName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding TeamName}" 
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      TextWrapping="Wrap"
+                                      FontSize="14"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Г.р." Width="Auto">
+                        <GridViewColumn Width="60">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="Г.р." HorizontalContentAlignment="Center" Padding="0"/>
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding BirthYear}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding BirthYear}" 
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      FontSize="14"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Разряд" Width="80">
+                        <GridViewColumn Width="60">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="Разряд" HorizontalContentAlignment="Center" Padding="0"/>
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Level}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding Level}" 
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      FontSize="14"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Вес" Width="80">
+                        <GridViewColumn Width="60">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="Вес" HorizontalContentAlignment="Center" Padding="0"/>
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Weight}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding Weight}" 
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,8,0"
+                                      FontSize="14"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="№ жребия" Width="100">
+                        <GridViewColumn Width="60">
+                            <GridViewColumn.Header>
+                                <GridViewColumnHeader Content="Жребий" HorizontalContentAlignment="Center" Padding="0"/>
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding SeedNumber}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding SeedNumber}" 
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      FontSize="14"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>

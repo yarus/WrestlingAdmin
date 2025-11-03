@@ -47,7 +47,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         public ObservableCollection<string> Levels => _levels;
 
-        public AutoCompleteFilterPredicate<object> AthleteFilter
+        public Func<string, object, bool> AthleteFilter
         {
             get
             {
@@ -57,10 +57,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
                     if (item == null || string.IsNullOrEmpty(searchText) || searchText.Length < 3) return false;
 
-                    return (!string.IsNullOrEmpty(item.HashTag) && item.HashTag.ToLower().Contains(searchText.ToLower()))
-                           || (!string.IsNullOrEmpty(item.LastName) && item.LastName.ToLower().Contains(searchText.ToLower()))
-                           || (!string.IsNullOrEmpty(item.FirstName) && item.FirstName.ToLower().Contains(searchText.ToLower()))
-                           || (!string.IsNullOrEmpty(item.MiddleName) && item.MiddleName.ToLower().Contains(searchText.ToLower()));
+                    return (!string.IsNullOrEmpty(item.HashTag) && item.HashTag.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                           || (!string.IsNullOrEmpty(item.LastName) && item.LastName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                           || (!string.IsNullOrEmpty(item.FirstName) && item.FirstName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                           || (!string.IsNullOrEmpty(item.MiddleName) && item.MiddleName.Contains(searchText, StringComparison.OrdinalIgnoreCase));
                 };
             }
         }
