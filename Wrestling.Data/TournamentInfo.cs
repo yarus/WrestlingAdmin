@@ -38,16 +38,6 @@ namespace Wrestling.Data
         [DataMember]
         public IEnumerable<string> ImportSources { get; set; }
         [DataMember]
-        public string ContactTitle { get; set; }
-        [DataMember]
-        public string ContactAddress { get; set; }
-        [DataMember]
-        public string ContactPerson { get; set; }
-        [DataMember]
-        public string ContactPhone { get; set; }
-        [DataMember]
-        public string ContactEmail { get; set; }
-        [DataMember]
         public string MainJudgeEmail { get; set; }
         [DataMember]
         public string MainJudgePhone { get; set; }

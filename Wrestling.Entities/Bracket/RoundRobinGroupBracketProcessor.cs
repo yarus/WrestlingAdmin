@@ -5,6 +5,7 @@ namespace Wrestling.Entities.Bracket
 {
     public class RoundRobinGroupBracketProcessor : GroupBracketProcessorBase
     {
+        private static string FakeRound = "Bye";
         public override string Title => "Круговая";
         public override string Code => BracketTypeEnum.RoundRobin.ToString();
         public override int? AthletsMaxCount => 5;
@@ -100,7 +101,7 @@ namespace Wrestling.Entities.Bracket
             {
                 shuffledList.Add(new Wrestler
                 {
-                    LastName = "Bye"
+                    LastName = FakeRound
                 });
             }
 
@@ -120,7 +121,7 @@ namespace Wrestling.Entities.Bracket
                 {
                     RoundNumber = day + 1,
                     RoundType = GroupRoundTypeEnum.Main,
-                    RoundName = "Раунд " + (day + 1)
+                    RoundName = "Круг " + (day + 1)
                 };
 
                 int teamIdx = day % teamSize;
@@ -150,8 +151,8 @@ namespace Wrestling.Entities.Bracket
             foreach (var round in Group.Bracket.Rounds)
             {
                 var byeMatch = round.RoundMatches.FirstOrDefault(p =>
-                    (p.WrestlerInRed != null && p.WrestlerInRed.LastName == "Bye")
-                    || (p.WrestlerInBlue != null && p.WrestlerInBlue.LastName == "Bye"));
+                    (p.WrestlerInRed != null && p.WrestlerInRed.LastName == FakeRound)
+                    || (p.WrestlerInBlue != null && p.WrestlerInBlue.LastName == FakeRound));
 
                 if (byeMatch != null) round.RoundMatches.Remove(byeMatch);
             }

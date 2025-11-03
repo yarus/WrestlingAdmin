@@ -81,7 +81,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
         }
 
-        public AutoCompleteFilterPredicate<object> TeamFilter
+        public Func<string, object, bool> TeamFilter
         {
             get
             {
@@ -92,13 +92,13 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                     if (item == null || string.IsNullOrEmpty(searchText) || searchText.Length < 3) return false;
 
                     if (!string.IsNullOrEmpty(item.HashTag) && _registeredTeams.ContainsKey(item.HashTag)) return false;
-                    
-                    return (!string.IsNullOrEmpty(item.HashTag) && item.HashTag.ToLower().Contains(searchText.ToLower()))
-                            || (!string.IsNullOrEmpty(item.ShortName) && item.ShortName.ToLower().Contains(searchText.ToLower()))
-                            || (!string.IsNullOrEmpty(item.FullName) && item.FullName.ToLower().Contains(searchText.ToLower()))
-                            || (!string.IsNullOrEmpty(item.City) && item.City.ToLower().Contains(searchText.ToLower()))
-                            || (!string.IsNullOrEmpty(item.FullAddress) && item.FullAddress.ToLower().Contains(searchText.ToLower()))
-                            || (!string.IsNullOrEmpty(item.MainCoach) && item.MainCoach.ToLower().Contains(searchText.ToLower()));
+
+                    return (!string.IsNullOrEmpty(item.HashTag) && item.HashTag.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                            || (!string.IsNullOrEmpty(item.ShortName) && item.ShortName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                            || (!string.IsNullOrEmpty(item.FullName) && item.FullName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                            || (!string.IsNullOrEmpty(item.City) && item.City.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                            || (!string.IsNullOrEmpty(item.FullAddress) && item.FullAddress.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                            || (!string.IsNullOrEmpty(item.MainCoach) && item.MainCoach.Contains(searchText, StringComparison.OrdinalIgnoreCase));
                 };
             }
         }

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Wrestling.UI.Material.Home;
-using Wrestling.UI.Material.Login;
 using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Settings;
 using Wrestling.UI.Material.Slider;
@@ -37,7 +36,6 @@ namespace Wrestling.UI.Material.Model
                 new ImportViewModel(_container),
                 new BracketsViewModel(_container),
                 new ResultsViewModel(_container),
-                new LoginViewModel(_container),
                 new DashboardViewModel(_container),
                 new ScheduleViewModel(_container),
                 new CompletedMatchesViewModel(_container),

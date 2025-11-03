@@ -200,7 +200,7 @@
             <Border Grid.Row="0" Grid.Column="1" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
 
             <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="2" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center" 
-                     Visibility="{Binding ScoreScreenVm.IsAction1TimerEnabled, Converter={StaticResource InverseBoolToVisConverter}}">
+                     Visibility="{Binding ScoreScreenVm.IsAction1TimerEnabled, Converter={StaticResource InvBoolToVis}}">
                 <TextBlock Text="{Binding ScoreScreenVm.Wrestler1, Converter={StaticResource UpperCaseConverter}}"/>
             </Viewbox>
 
@@ -225,13 +225,13 @@
 
             <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Button Content="ИТОГИ" TabIndex="3" FontStretch="Medium" Margin="2"
-                            Command="{Binding CompleteMatchCommand}" ToolTip="Завершить схватку" Style="{StaticResource MaterialDesignRaisedAccentButton}" />
+                            Command="{Binding CompleteMatchCommand}" ToolTip="Завершить схватку" Style="{StaticResource MaterialDesignRaisedButton}" />
             </Viewbox>
 
             <Border Grid.Row="0" Grid.Column="3" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
             
             <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="4" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center"
-                     Visibility="{Binding ScoreScreenVm.IsAction2TimerEnabled, Converter={StaticResource InverseBoolToVisConverter}}">
+                     Visibility="{Binding ScoreScreenVm.IsAction2TimerEnabled, Converter={StaticResource InvBoolToVis}}">
                 <TextBlock Text="{Binding ScoreScreenVm.Wrestler2, Converter={StaticResource UpperCaseConverter}}"/>
             </Viewbox>
 

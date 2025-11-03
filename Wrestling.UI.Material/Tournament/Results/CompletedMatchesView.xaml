@@ -7,7 +7,7 @@
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:converters1="clr-namespace:Wrestling.UI.Material.Utils.Converters"
-             xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              mc:Ignorable="d"
              md:DialogServiceViews.IsRegistered="True"
              d:DesignHeight="400" d:DesignWidth="600">

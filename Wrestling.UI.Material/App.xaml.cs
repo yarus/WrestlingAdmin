@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MaterialDesignThemes.Wpf;
+using MvvmDialogs;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -6,13 +8,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Markup;
-using MvvmDialogs;
+using System.Windows.Media;
 using Wrestling.DataAccess;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Entities.Results;
 using Wrestling.Entities.Results.Achievements;
-using Wrestling.Integration;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
@@ -27,7 +28,6 @@ using Wrestling.UI.Material.Tournament.Print;
 using Wrestling.UI.Material.Tournament.Standing.Details;
 using Wrestling.UI.Material.Utils;
 using Wrestling.UI.Utils;
-
 using SlideHostView = Wrestling.UI.Material.Slider.SlideHostView;
 
 namespace Wrestling.UI.Material
@@ -231,11 +231,17 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
 
             di.Add<ITournamentsManager>(new TournamentsManager(di.Resolve<ITournamentDataAccess>(), di.Resolve<IEntityToInfoAdapter>()));
 
-            di.Add<ICacheManager>(new CacheManager(di.Resolve<ITeamsDataAccess>(), di.Resolve<IWrestlersDataAccess>(), di.Resolve<IEntityToInfoAdapter>()));
 
             di.Add<GlobalSettings>(new GlobalSettings { IsSoundEnabled = true, IsTimerBackward = true });
 
-            di.Add<IDataContext>(new DataContext());
+            var dc = new DataContext();
+            di.Add<IDataContext>(dc);
+
+            var cacheMgr = new CacheManager(di.Resolve<ITeamsDataAccess>(), di.Resolve<IWrestlersDataAccess>(), di.Resolve<IEntityToInfoAdapter>());
+            dc.TeamsCache = cacheMgr.LoadTeams();
+            dc.WrestlersCache = cacheMgr.LoadWrestlers();
+            di.Add<ICacheManager>(cacheMgr);
+
             di.Add<IGroupGenerator>(new GroupGenerator());
 
             di.Add<List<IGroupBracketProcessor>>(new List<IGroupBracketProcessor>
@@ -265,7 +271,6 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
 
             di.Add<ITournamentImporter>(new TournamentImporter(di.Resolve<ITournamentsManager>(), di.Resolve<List<IGroupBracketProcessor>>()));
 
-            //di.Add(new InternationalScoreScreenView(), "ScoreScreen");
             di.Add(new WwfScoreScreenView(), "ScoreScreen");
 
             di.Add(new SlideHostView(), "SlideHost");
@@ -291,8 +296,6 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
                 new MostDominationWinsAchievementCalculator(),
                 new WinInLast10SecondsAchievementCalculator()
             });
-
-            di.Add<IRosbosApi>(new RosbosApi());
 
             di.Add<IKeyHandler>(new KeyHandler());
 

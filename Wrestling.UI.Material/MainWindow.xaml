@@ -5,14 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        xmlns:codeDisplayer="clr-namespace:CodeDisplayer;assembly=CodeDisplayer"
         xmlns:home="clr-namespace:Wrestling.UI.Material.Home"
         xmlns:settings="clr-namespace:Wrestling.UI.Material.Settings"
         xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
         xmlns:import="clr-namespace:Wrestling.UI.Material.Tournament.Import"
         xmlns:results="clr-namespace:Wrestling.UI.Material.Tournament.Results"
         xmlns:match="clr-namespace:Wrestling.UI.Material.Match"
-        xmlns:login="clr-namespace:Wrestling.UI.Material.Login"
         xmlns:standing="clr-namespace:Wrestling.UI.Material.Tournament.Standing"
         xmlns:dashboard="clr-namespace:Wrestling.UI.Material.Tournament.Dashboard"
         xmlns:brackets1="clr-namespace:Wrestling.UI.Material.Tournament.Progress.Brackets"
@@ -32,18 +30,11 @@
         md:DialogServiceViews.IsRegistered="True" 
         Height="800" 
         Width="1100" 
+        Style="{StaticResource MaterialDesignWindow}"
         WindowStartupLocation="CenterScreen">
-    
+
     <Window.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Button.xaml" />
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.PopupBox.xaml" />
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.TextBlock.xaml" />
-                <!-- throw in some extra colour for our floating action button -->
-                <ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/MaterialDesignColor.Green.Named.Primary.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-
             <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
             <converters:BoolInverterConverter x:Key="BoolInverter" />
@@ -80,9 +71,6 @@
             <DataTemplate DataType="{x:Type brackets1:BracketsViewModel}">
                 <brackets1:BracketsView />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type login:LoginViewModel}">
-                <login:LoginView />
-            </DataTemplate>
             <DataTemplate DataType="{x:Type dashboard:DashboardViewModel}">
                 <dashboard:DashboardView />
             </DataTemplate>
@@ -100,17 +88,20 @@
 
         </ResourceDictionary>
     </Window.Resources>
-    
+
     <materialDesign:DialogHost Identifier="RootDialog" SnackbarMessageQueue="{Binding ElementName=MainSnackbar, Path=MessageQueue}">
-        <materialDesign:DrawerHost IsLeftDrawerOpen="{Binding ElementName=MenuToggleButton, Path=IsChecked}">
+        <materialDesign:DrawerHost IsLeftDrawerOpen="{Binding IsDrawerOpen}">
             <materialDesign:DrawerHost.LeftDrawerContent>
                 <DockPanel MinWidth="212">
-                    <ToggleButton Style="{StaticResource MaterialDesignHamburgerToggleButton}"
-                                    DockPanel.Dock="Top"
-                                    HorizontalAlignment="Right" Margin="16"
-                                    IsChecked="{Binding ElementName=MenuToggleButton, Path=IsChecked, Mode=TwoWay}" />
+                    <ToggleButton DockPanel.Dock="Top"
+                        Style="{StaticResource MaterialDesignHamburgerToggleButton}"
+                        HorizontalAlignment="Right" 
+                        Margin="16"
+                        IsChecked="{Binding IsDrawerOpen, Mode=TwoWay}">
+                        <materialDesign:PackIcon Kind="Close" Width="24" Height="24"/>
+                    </ToggleButton>
                     <ListBox x:Name="DrawerItemListBox" Margin="0 16 0 16" SelectedIndex="0" ItemsSource="{Binding CurrentViewModel.DrawerItems}"
-                                PreviewMouseLeftButtonUp="UIElement_OnPreviewMouseLeftButtonUp">
+                         PreviewMouseLeftButtonUp="UIElement_OnPreviewMouseLeftButtonUp">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Button Command="{Binding Open}" Margin="32 0 32 0" Padding="0" Background="Transparent" BorderThickness="0" Foreground="Black">
@@ -122,29 +113,48 @@
                 </DockPanel>
             </materialDesign:DrawerHost.LeftDrawerContent>
             <DockPanel>
-                <materialDesign:ColorZone Padding="16" materialDesign:ShadowAssist.ShadowDepth="Depth2" Mode="PrimaryMid" DockPanel.Dock="Top">
+                <materialDesign:ColorZone Padding="16" Mode="PrimaryMid" DockPanel.Dock="Top">
                     <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        
-                        <Button Grid.Row="0" Grid.Column="0" 
-                                Command="{Binding CurrentViewModel.BackCommand}" Padding="0" Margin="0" Background="Transparent" BorderThickness="0"
+
+                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                            <Button Command="{Binding CurrentViewModel.BackCommand}" 
+                                Padding="0" 
+                                Margin="0" 
+                                Background="Transparent" 
+                                BorderThickness="0"
                                 Visibility="{Binding Path=CurrentViewModel.IsBackButtonAvailable, Converter={StaticResource BoolToVis}}">
-                            <Viewbox Stretch="Uniform">
-                                <materialDesign:PackIcon Kind="ArrowLeft" />
-                            </Viewbox>
-                        </Button>
+                                <Viewbox Stretch="Uniform">
+                                    <materialDesign:PackIcon Kind="ArrowLeft" />
+                                </Viewbox>
+                            </Button>
 
-                        <ToggleButton Grid.Row="0" Grid.Column="0" 
-                                        Style="{StaticResource MaterialDesignHamburgerToggleButton}" IsChecked="False" x:Name="MenuToggleButton" 
-                                        Visibility="{Binding Path=CurrentViewModel.IsBackButtonAvailable, Converter={StaticResource InvBoolToVis}}"/>
+                            <ToggleButton x:Name="MenuToggleButton" 
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      Padding="8"
+                                      IsChecked="{Binding IsDrawerOpen, Mode=TwoWay}"
+                                      Style="{StaticResource MaterialDesignHamburgerToggleButton}"
+                                      Visibility="{Binding Path=CurrentViewModel.IsBackButtonAvailable, Converter={StaticResource InvBoolToVis}}">
+                                <materialDesign:PackIcon Kind="Menu" Width="24" Height="24"/>
+                            </ToggleButton>
+                        </StackPanel>
 
-                        <TextBlock Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" Text="{Binding CurrentViewModel.PageTitle}" />
+                        <TextBlock Grid.Column="1" 
+                               HorizontalAlignment="Center" 
+                               VerticalAlignment="Center" 
+                               FontSize="22" 
+                               Text="{Binding CurrentViewModel.PageTitle}" />
 
-                        <ItemsControl Grid.Row="0" Grid.Column="2" ItemsSource="{Binding CurrentViewModel.QuickButtons}">
+                        <ItemsControl Grid.Column="2" 
+                                  ItemsSource="{Binding CurrentViewModel.QuickButtons}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <StackPanel Orientation="Horizontal" Margin="0" />
@@ -153,10 +163,18 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <DockPanel ToolTip="{Binding TooltipText}" Background="Transparent" Margin="0">
-                                        <Button Margin="0,0,20,0" Command="{Binding Open}" 
-                                                CommandParameter="{Binding ElementName=ContentControl}"
-                                                Padding="0" Background="Transparent" BorderThickness="0" Foreground="White">
-                                            <materialDesign:PackIcon Kind="{Binding IconKind}" VerticalAlignment="Center" HorizontalAlignment="Center" Width="32" Height="32"/>
+                                        <Button Margin="0,0,20,0" 
+                                            Command="{Binding Open}" 
+                                            CommandParameter="{Binding ElementName=ContentControl}"
+                                            Padding="0" 
+                                            Background="Transparent" 
+                                            BorderThickness="0" 
+                                            Foreground="White">
+                                            <materialDesign:PackIcon Kind="{Binding IconKind}" 
+                                                                 VerticalAlignment="Center" 
+                                                                 HorizontalAlignment="Center" 
+                                                                 Width="32" 
+                                                                 Height="32"/>
                                         </Button>
                                     </DockPanel>
                                 </DataTemplate>
@@ -169,13 +187,21 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    
-                    <codeDisplayer:XamlDisplayerHost Grid.Row="1" Content="{Binding CurrentViewModel}" x:Name="ContentControl" />
 
-                    <materialDesign:Snackbar MessageQueue="{materialDesign:MessageQueue}" x:Name="MainSnackbar" Grid.Row="1" HorizontalAlignment="Center" />
+                    <ContentControl Grid.Row="1" 
+                                Grid.Column="0" 
+                                Content="{Binding CurrentViewModel}" 
+                                x:Name="ContentControl" 
+                                Margin="0" 
+                                Padding="0" />
+
+                    <materialDesign:Snackbar MessageQueue="{materialDesign:MessageQueue}" 
+                                         x:Name="MainSnackbar" 
+                                         Grid.Row="1" 
+                                         HorizontalAlignment="Center" />
                 </Grid>
             </DockPanel>
         </materialDesign:DrawerHost>
     </materialDesign:DialogHost>
-    
+
 </Window>

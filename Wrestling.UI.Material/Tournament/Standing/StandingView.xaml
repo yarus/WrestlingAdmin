@@ -4,7 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
-             xmlns:codeDisplayer="clr-namespace:CodeDisplayer;assembly=CodeDisplayer"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:draw1="clr-namespace:Wrestling.UI.Material.Tournament.Standing.Draw"
@@ -93,8 +92,13 @@
                 </Button>
             </StackPanel>
         </Grid>
-        
-        <codeDisplayer:XamlDisplayerHost Grid.Row="1" Grid.Column="0" Content="{Binding CurrentPage}" x:Name="ContentControl" Margin="0" Padding="0" />
+
+        <ContentControl Grid.Row="1" 
+                Grid.Column="0" 
+                Content="{Binding CurrentPage}" 
+                x:Name="ContentControl" 
+                Margin="0" 
+                Padding="0" />
 
     </Grid>
 </UserControl>

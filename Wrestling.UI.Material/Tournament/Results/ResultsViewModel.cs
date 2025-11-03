@@ -283,6 +283,8 @@ namespace Wrestling.UI.Material.Tournament.Results
                     {
                         var exportData = PersonalResults.Select(item =>
                         {
+                            var team = DataContext.Tournament.TeamApplications.FirstOrDefault(x => x.ID == item.Wrestler.TeamID);
+
                             return new ExportedResult()
                             {
                                 FullName = item.Wrestler.FullName,
@@ -291,6 +293,7 @@ namespace Wrestling.UI.Material.Tournament.Results
                                 GroupName = item.GroupName,
                                 TeamCity = item.Wrestler.TeamCity,
                                 TeamName = item.Wrestler.TeamName,
+                                TeamCoach = team?.MainCoach,
                                 WinsCount = item.Wins,
                                 LoseCount = item.Loses,
                                 PointsEarned = item.AllGainedPoints,
@@ -391,6 +394,7 @@ public class ExportedResult
     public string FullName { get; set; }
     public string TeamName { get; set; }
     public string TeamCity { get; set; }
+    public string TeamCoach { get; set; }
     public string BirthDate { get; set; }
     public int? FinalPlace { get; set; }
     public int PointsEarned { get; set; }

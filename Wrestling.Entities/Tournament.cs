@@ -22,12 +22,6 @@ namespace Wrestling.Entities
         private string _mainSecretary;
         private string _mainSecretaryEmail;
         private string _mainSecretaryPhone;
-        private string _contactTitle;
-        private string _contactAddress;
-        private string _contactPerson;
-        private string _contactPhone;
-        private string _contactEmail;
-        private string _contactStamp;
         private decimal? _entryFee;
 
         private ObservableCollection<ScreenSlide> _slides;
@@ -183,66 +177,6 @@ namespace Wrestling.Entities
             set
             {
                 _mainSecretaryPhone = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public string ContactStamp
-        {
-            get { return _contactStamp; }
-            set
-            {
-                _contactStamp = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public string ContactEmail
-        {
-            get { return _contactEmail; }
-            set
-            {
-                _contactEmail = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public string ContactPhone
-        {
-            get { return _contactPhone; }
-            set
-            {
-                _contactPhone = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public string ContactPerson
-        {
-            get { return _contactPerson; }
-            set
-            {
-                _contactPerson = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public string ContactTitle
-        {
-            get { return _contactTitle; }
-            set
-            {
-                _contactTitle = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public string ContactAddress
-        {
-            get { return _contactAddress; }
-            set
-            {
-                _contactAddress = value;
                 OnPropertyChanged();
             }
         }

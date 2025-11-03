@@ -24,7 +24,7 @@ namespace Wrestling.Entities.Bracket
                 var additionalRound = new GroupRound
                 {
                     RoundNumber = roundNumber,
-                    RoundName = i < additionalRoundsCount ? "Утешение Раунд " + i : "3-е место",
+                    RoundName = i < additionalRoundsCount ? "Утешение Круг " + i : "3-е место",
                     RoundType = GroupRoundTypeEnum.Additional,
                 };
 
