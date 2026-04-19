@@ -64,7 +64,7 @@
                                     Обратный отсчет времени в поединке.
                             </TextBlock>
 
-                            <materialDesign:PackIcon Grid.Row="1" Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{Binding ElementName=AutosaveTimer, Path=BorderBrush}" />
+                            <materialDesign:PackIcon Grid.Row="1" Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
                             <TextBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center"
                                          Text="{Binding Path=Item.MaxRoundSecond, UpdateSourceTrigger=PropertyChanged}" 
                                          materialDesign:HintAssist.Hint="секунд" />
@@ -72,7 +72,7 @@
                                     Продолжительность раунда.
                             </TextBlock>
 
-                            <materialDesign:PackIcon Grid.Row="2" Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{Binding ElementName=AutosaveTimer, Path=BorderBrush}" />
+                            <materialDesign:PackIcon Grid.Row="2" Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
                             <TextBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center"
                                          Text="{Binding Path=Item.MaxTimeoutSecond, UpdateSourceTrigger=PropertyChanged}" 
                                          materialDesign:HintAssist.Hint="секунд" />
@@ -80,7 +80,7 @@
                                     Продолжительность перерыва.
                             </TextBlock>
 
-                            <materialDesign:PackIcon Grid.Row="3" Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{Binding ElementName=AutosaveTimer, Path=BorderBrush}" />
+                            <materialDesign:PackIcon Grid.Row="3" Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
                             <TextBox Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"
                                          Text="{Binding Path=Item.MaxActionSecond, UpdateSourceTrigger=PropertyChanged}" 
                                          materialDesign:HintAssist.Hint="секунд" />
@@ -337,46 +337,18 @@
                         <TextBlock Margin="16 16 16 8">Автосохранение</TextBlock>
 
                         <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
-                                При включенном автосохранении, изменения в турнире будут сохраняться автоматически через определенные промежутки времени.
+                                При включенном автосохранении турнир сохраняется автоматически после завершения каждого поединка и после успешного импорта результатов.
                         </TextBlock>
                     </StackPanel>
 
                     <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-
-                            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
-                                <ToggleButton VerticalAlignment="Center" ToolTip="Вкл/выкл автосохранение" 
-                                                  IsChecked="{Binding Path=IsAutosaveEnabled, UpdateSourceTrigger=PropertyChanged}" x:Name="AutosaveEnabledCb" />
-                                <TextBlock TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
-                                        Вкл/Выкл. автосохранение
-                                </TextBlock>
-                            </StackPanel>
-
-                            <Grid Row="1" Grid.Column="0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-
-                                <materialDesign:PackIcon Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{Binding ElementName=AutosaveTimer, Path=BorderBrush}" />
-
-                                <TextBox Grid.Column="1" VerticalAlignment="Center" Margin="10,5,0,5"
-                                             IsEnabled="{Binding Path=IsChecked, ElementName=AutosaveEnabledCb}"
-                                             Text="{Binding Path=Item.AutosaveMaxSecond, UpdateSourceTrigger=PropertyChanged}"
-                                             x:Name="AutosaveTimer" materialDesign:HintAssist.Hint="секунд" />
-
-                                <TextBlock Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
-                                        Таймер срабатывания автосохранения.
-                                </TextBlock>
-
-                            </Grid>
-
-                        </Grid>
+                        <StackPanel Orientation="Horizontal">
+                            <ToggleButton VerticalAlignment="Center" ToolTip="Вкл/выкл автосохранение"
+                                              IsChecked="{Binding Path=IsAutosaveEnabled, UpdateSourceTrigger=PropertyChanged}" x:Name="AutosaveEnabledCb" />
+                            <TextBlock TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
+                                    Вкл/Выкл. автосохранение
+                            </TextBlock>
+                        </StackPanel>
                     </Border>
                 </Grid>
             </materialDesign:Card>

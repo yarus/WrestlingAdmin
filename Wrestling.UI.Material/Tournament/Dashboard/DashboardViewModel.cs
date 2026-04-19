@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
@@ -26,10 +23,6 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         private ICommand _openStandingCommand;
         private ICommand _openResultsCommand;
         private ICommand _openSliderControlCommand;
-
-        private DispatcherTimer _timer;
-        private int _currentSecond;
-        private bool _isSaving;
 
         private IList<CommandButtonItem> _quickButtons;
         private IList<CommandButtonItem> _drawerItems;
@@ -91,8 +84,6 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         protected override void OnBackCommand()
         {
             base.OnBackCommand();
-
-            _timer.Stop();
         }
 
         #region Commands
@@ -199,79 +190,25 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
             NavigateToView<SettingsViewModel>();
         }
 
+        // Event-driven autosave: no timer. When autosave is enabled and the
+        // tournament has no FileName yet (fresh session), prompt once so the
+        // first match-complete or import event can save without a dialog
+        // interrupting mid-match. When autosave is off, expose the manual
+        // save button on the dashboard toolbar.
         private async Task SetupAutoSaveAsync()
         {
-            _timer?.Stop();
-
             if (DataContext.Tournament != null && IsAutosaveEnabled)
             {
                 if (string.IsNullOrEmpty(DataContext.Tournament.FileName))
                 {
-                    // Prompt for a save path before the autosave timer spins up.
-                    // Guard against re-entry from the timer with the same flag
-                    // the timer-driven save uses.
-                    _isSaving = true;
-                    try { await SaveDataAsync(); }
-                    finally { _isSaving = false; }
+                    await SaveDataAsync();
                 }
 
                 if (QuickButtons.Contains(_saveQuickCommand)) QuickButtons.Remove(_saveQuickCommand);
-
-                SetupTimer();
             }
             else
             {
                 if (!QuickButtons.Contains(_saveQuickCommand)) QuickButtons.Add(_saveQuickCommand);
-            }
-        }
-
-        private void SetupTimer()
-        {
-            _timer?.Stop();
-
-            _timer = new DispatcherTimer();
-            _timer.Tick += OnTimerTick;
-            _timer.Interval = new TimeSpan(0, 0, 0, 1);
-
-            _timer.Start();
-        }
-
-        private void OnTimerTick(object sender, EventArgs e)
-        {
-            if (DataContext.Tournament == null)
-            {
-                _currentSecond = 0;
-                _timer.Stop();
-                return;
-            }
-
-            _currentSecond++;
-
-            if (_currentSecond >= DataContext.Tournament.Settings.AutosaveMaxSecond && !_isSaving)
-            {
-                _isSaving = true;
-                _currentSecond = 0;
-
-                // Fire and forget the async operation, but capture the task to observe exceptions
-                var _ = SaveDataAsyncWrapper();
-            }
-        }
-
-        private async Task SaveDataAsyncWrapper()
-        {
-            try
-            {
-                await SaveDataAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                // Handle or log the exception appropriately
-                Debug.WriteLine($"Autosave failed: {ex.Message}");
-                // Consider rethrowing or showing a message to the user
-            }
-            finally
-            {
-                _isSaving = false;
             }
         }
 

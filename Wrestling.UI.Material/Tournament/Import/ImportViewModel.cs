@@ -437,7 +437,9 @@ namespace Wrestling.UI.Material.Tournament.Import
             }
         }
 
-        private async Task ImportDataAsync(string path)
+        // internal for test access — verifies the autosave gate fires only on
+        // a successful Imported outcome.
+        internal async Task ImportDataAsync(string path)
         {
             var result = await _importer.ImportDataFromFileAsync(DataContext.Tournament, path);
 
@@ -446,6 +448,7 @@ namespace Wrestling.UI.Material.Tournament.Import
                 case ImportOutcome.Imported:
                     AddLog(path, $"Успешно загружено {result.ImportedCount} результатов!");
                     ShowSnackMessage($"Успешно импортировано {result.ImportedCount} результатов!");
+                    await SaveIfAutosaveEnabledAsync();
                     break;
                 case ImportOutcome.NoNewData:
                     AddLog(path, "Новые данные отсутствуют!");

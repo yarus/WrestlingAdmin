@@ -599,7 +599,7 @@ namespace Wrestling.UI.Material.Match
 
             if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
             {
-                await SaveDataAsync();
+                await SaveIfAutosaveEnabledAsync();
 
                 NavigateToMatches();
             }

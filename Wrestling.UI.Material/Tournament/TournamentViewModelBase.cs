@@ -82,5 +82,16 @@ namespace Wrestling.UI.Material.Tournament
             }
         }
 
+        // Event-driven autosave hook. Call after any in-memory state change
+        // that should be persisted (match completion, successful import).
+        // No-op when autosave is disabled — users in manual-save mode rely on
+        // the "Сохранить турнир" quick button on the dashboard instead.
+        public async Task SaveIfAutosaveEnabledAsync()
+        {
+            if (IsAutosaveEnabled && DataContext.Tournament != null)
+            {
+                await SaveDataAsync();
+            }
+        }
     }
 }
