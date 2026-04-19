@@ -272,6 +272,7 @@ namespace Wrestling.Entities
             {
                 _isRedWon = !value;
                 OnPropertyChanged("IsBlueWon");
+                OnPropertyChanged("IsRedWon");
             }
         }
 

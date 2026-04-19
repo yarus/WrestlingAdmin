@@ -9,6 +9,19 @@ namespace Wrestling.Providers
 {
     public class EntityToInfoAdapter : IEntityToInfoAdapter
     {
+        private static T ParseEnumOrDefault<T>(string value, T fallback) where T : struct
+        {
+            if (string.IsNullOrEmpty(value)) return fallback;
+            return Enum.TryParse<T>(value, ignoreCase: false, out var parsed) ? parsed : fallback;
+        }
+
+        private static T? ParseNullableEnum<T>(string value) where T : struct
+        {
+            if (string.IsNullOrEmpty(value)) return null;
+            return Enum.TryParse<T>(value, ignoreCase: false, out var parsed) ? parsed : (T?)null;
+        }
+
+
         public GlobalSettings GetEntityFromInfo(GlobalSettingsInfo info)
         {
             if (info == null) return null;
@@ -81,8 +94,6 @@ namespace Wrestling.Providers
 
             var importSources = info.ImportSources?.ToList() ?? new List<string>();
 
-            var wrestlersToDelete = new List<Wrestler>();
-
             foreach (var wrestler in wrestlers)
             {
                 if (wrestler.GroupID.HasValue)
@@ -108,12 +119,15 @@ namespace Wrestling.Providers
                     }
                     else
                     {
-                        wrestlersToDelete.Add(wrestler);
+                        // Team reference couldn't be resolved (file mismatch, deleted team).
+                        // Keep the wrestler and clear the dangling link rather than dropping
+                        // registration data.
+                        wrestler.TeamID = null;
+                        wrestler.TeamName = null;
+                        wrestler.TeamCity = null;
                     }
                 }
             }
-
-            wrestlers.RemoveAll(p => wrestlersToDelete.Contains(p));
 
             foreach (var ageWeightGroup in groups)
             {
@@ -132,7 +146,7 @@ namespace Wrestling.Providers
                 ID = info.ID,
                 StartDate = info.StartDate,
                 Name = info.Name,
-                Status = !string.IsNullOrEmpty(info.Status) ? (TournamentStatus)Enum.Parse(typeof(TournamentStatus), info.Status) : TournamentStatus.Fake,
+                Status = ParseEnumOrDefault(info.Status, TournamentStatus.Fake),
                 MainSecretary = info.MainSecretary,
                 MainJudge = info.MainJudge,
                 Country = info.Country,
@@ -283,7 +297,7 @@ namespace Wrestling.Providers
                 {
                     RoundNumber = p.RoundNumber,
                     RoundName = p.RoundName,
-                    RoundType = !string.IsNullOrEmpty(p.RoundType) ? (GroupRoundTypeEnum)Enum.Parse(typeof(GroupRoundTypeEnum), p.RoundType) : GroupRoundTypeEnum.Main,
+                    RoundType = ParseEnumOrDefault(p.RoundType, GroupRoundTypeEnum.Main),
                     RoundMatches = p.RoundMatches.Select(m => GetEntityFromInfo(m, group, wrestlers)).ToList()
                 }).ToList()
             };
@@ -297,7 +311,7 @@ namespace Wrestling.Providers
 
             return new WrestlingMatch
             {
-                Status = (MatchStatusEnum)Enum.Parse(typeof(MatchStatusEnum), info.Status),
+                Status = ParseEnumOrDefault(info.Status, MatchStatusEnum.Pending),
                 WrestlerInBlue = info.WrestlerInBlue.HasValue ? wrestlers.FirstOrDefault(w => w.ID == info.WrestlerInBlue.Value) : null,
                 WrestlerInRed = info.WrestlerInRed.HasValue ? wrestlers.FirstOrDefault(w => w.ID == info.WrestlerInRed.Value) : null,
                 MatchNumber = info.MatchNumber,
@@ -314,7 +328,7 @@ namespace Wrestling.Providers
                 MaxTimeoutSecond = info.MaxTimeoutSecond,
                 MaxActionSecond = info.MaxActionSecond,
                 GroupName = group.Name,
-                WinType = !string.IsNullOrEmpty(info.WinType) ? (MatchWinTypeEnum)Enum.Parse(typeof(MatchWinTypeEnum), info.WinType) : (MatchWinTypeEnum?)null,
+                WinType = ParseNullableEnum<MatchWinTypeEnum>(info.WinType),
                 RoundName = info.RoundName,
                 MatchActions = info.MatchActions == null ? new List<MatchAction>() : info.MatchActions?.Select(m => new MatchAction
                 {

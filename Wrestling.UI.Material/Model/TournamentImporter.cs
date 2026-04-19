@@ -60,7 +60,7 @@ namespace Wrestling.UI.Material.Model
                         baseMatch.Note = importedMatch.Note;
                         baseMatch.MatchActions = new List<MatchAction>(importedMatch.MatchActions);
 
-                        var processor = GetProcessoryForGroup(sameGroup.Bracket.BracketTypeCode);
+                        var processor = GetProcessorForGroup(sameGroup.Bracket.BracketTypeCode);
                         if (processor == null) throw new ApplicationException("Can't find processor!");
 
                         processor.Load(target, sameGroup);
@@ -84,7 +84,7 @@ namespace Wrestling.UI.Material.Model
             return result;
         }
 
-        private IGroupBracketProcessor GetProcessoryForGroup(string processorType)
+        private IGroupBracketProcessor GetProcessorForGroup(string processorType)
         {
             return _drawTypes.FirstOrDefault(p => p.Code == processorType);
         }

@@ -10,8 +10,8 @@ namespace Wrestling.Entities.Bracket
         protected Tournament Tournament { get; set; }
         public abstract string Title { get; }
         public abstract string Code { get; }
-        public virtual int? AthletsMinCount => 2;
-        public virtual int? AthletsMaxCount => null;
+        public virtual int? AthletesMinCount => 2;
+        public virtual int? AthletesMaxCount => null;
 
         protected AgeWeightGroup Group { get; set; }
 
@@ -189,22 +189,22 @@ namespace Wrestling.Entities.Bracket
 
                 if (wrestlingMatch.IsRedWon.Value)
                 {
-                    if (nextMatch.WrestlerInRed == wrestlingMatch.WrestlerInRed)
+                    if (nextMatch.WrestlerInRed.SameAs(wrestlingMatch.WrestlerInRed))
                     {
                         nextMatch.WrestlerInRed = null;
                     }
-                    else if (nextMatch.WrestlerInBlue == wrestlingMatch.WrestlerInRed)
+                    else if (nextMatch.WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInRed))
                     {
                         nextMatch.WrestlerInBlue = null;
                     }
                 }
                 else
                 {
-                    if (nextMatch.WrestlerInRed == wrestlingMatch.WrestlerInBlue)
+                    if (nextMatch.WrestlerInRed.SameAs(wrestlingMatch.WrestlerInBlue))
                     {
                         nextMatch.WrestlerInRed = null;
                     }
-                    else if (nextMatch.WrestlerInBlue == wrestlingMatch.WrestlerInBlue)
+                    else if (nextMatch.WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInBlue))
                     {
                         nextMatch.WrestlerInBlue = null;
                     }

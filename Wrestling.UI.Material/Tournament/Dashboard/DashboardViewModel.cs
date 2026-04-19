@@ -55,7 +55,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
             _scoreScreenView = Resolve<IPanelView>("ScoreScreen");
             _scoreScreenVm = Resolve<ScoreScreenViewModel>();
 
-            SetupAutoSave();
+            _ = SetupAutoSaveAsync();
         }
 
         public override string PageTitle => "Вольная борьба - Администратор турниров версия 20251101";
@@ -199,13 +199,21 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
             NavigateToView<SettingsViewModel>();
         }
 
-        private void SetupAutoSave()
+        private async Task SetupAutoSaveAsync()
         {
             _timer?.Stop();
 
             if (DataContext.Tournament != null && IsAutosaveEnabled)
             {
-                if (string.IsNullOrEmpty(DataContext.Tournament.FileName)) SaveDataSync();
+                if (string.IsNullOrEmpty(DataContext.Tournament.FileName))
+                {
+                    // Prompt for a save path before the autosave timer spins up.
+                    // Guard against re-entry from the timer with the same flag
+                    // the timer-driven save uses.
+                    _isSaving = true;
+                    try { await SaveDataAsync(); }
+                    finally { _isSaving = false; }
+                }
 
                 if (QuickButtons.Contains(_saveQuickCommand)) QuickButtons.Remove(_saveQuickCommand);
 

@@ -5,10 +5,10 @@ using Wrestling.Entities.Results;
 
 namespace Wrestling.Entities.Bracket
 {
-    public class SubGroupsToOlympicBracketPorcessor : GroupBracketProcessorBase
+    public class SubGroupsToOlympicBracketProcessor : GroupBracketProcessorBase
     {
-        public override int? AthletsMinCount => 6;
-        public override int? AthletsMaxCount => 8;
+        public override int? AthletesMinCount => 6;
+        public override int? AthletesMaxCount => 8;
 
         private RoundRobinGroupBracketProcessor _groupAProcessor;
         private RoundRobinGroupBracketProcessor _groupBProcessor;
@@ -407,38 +407,38 @@ namespace Wrestling.Entities.Bracket
 
                     if (wrestlingMatch.IsRedWon.HasValue && wrestlingMatch.IsRedWon.Value)
                     {
-                        if (finalRound.RoundMatches[0].WrestlerInRed == wrestlingMatch.WrestlerInRed)
+                        if (finalRound.RoundMatches[0].WrestlerInRed.SameAs(wrestlingMatch.WrestlerInRed))
                         {
                             finalRound.RoundMatches[0].WrestlerInRed = null;
-                        } else if (finalRound.RoundMatches[0].WrestlerInBlue == wrestlingMatch.WrestlerInRed)
+                        } else if (finalRound.RoundMatches[0].WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInRed))
                         {
                             finalRound.RoundMatches[0].WrestlerInBlue = null;
                         }
 
-                        if (thirdPlaceRound.RoundMatches[0].WrestlerInRed == wrestlingMatch.WrestlerInBlue)
+                        if (thirdPlaceRound.RoundMatches[0].WrestlerInRed.SameAs(wrestlingMatch.WrestlerInBlue))
                         {
                             thirdPlaceRound.RoundMatches[0].WrestlerInRed = null;
-                        } else if (thirdPlaceRound.RoundMatches[0].WrestlerInBlue == wrestlingMatch.WrestlerInBlue)
+                        } else if (thirdPlaceRound.RoundMatches[0].WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInBlue))
                         {
                             thirdPlaceRound.RoundMatches[0].WrestlerInBlue = null;
                         }
                     }
                     else
                     {
-                        if (finalRound.RoundMatches[0].WrestlerInRed == wrestlingMatch.WrestlerInBlue)
+                        if (finalRound.RoundMatches[0].WrestlerInRed.SameAs(wrestlingMatch.WrestlerInBlue))
                         {
                             finalRound.RoundMatches[0].WrestlerInRed = null;
                         }
-                        else if (finalRound.RoundMatches[0].WrestlerInBlue == wrestlingMatch.WrestlerInBlue)
+                        else if (finalRound.RoundMatches[0].WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInBlue))
                         {
                             finalRound.RoundMatches[0].WrestlerInBlue = null;
                         }
 
-                        if (thirdPlaceRound.RoundMatches[0].WrestlerInRed == wrestlingMatch.WrestlerInRed)
+                        if (thirdPlaceRound.RoundMatches[0].WrestlerInRed.SameAs(wrestlingMatch.WrestlerInRed))
                         {
                             thirdPlaceRound.RoundMatches[0].WrestlerInRed = null;
                         }
-                        else if (thirdPlaceRound.RoundMatches[0].WrestlerInBlue == wrestlingMatch.WrestlerInRed)
+                        else if (thirdPlaceRound.RoundMatches[0].WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInRed))
                         {
                             thirdPlaceRound.RoundMatches[0].WrestlerInBlue = null;
                         }

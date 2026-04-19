@@ -7,8 +7,8 @@ namespace Wrestling.Entities.Bracket
     {
         string Title { get; }
         string Code { get; }
-        int? AthletsMinCount { get; }
-        int? AthletsMaxCount { get; }        
+        int? AthletesMinCount { get; }
+        int? AthletesMaxCount { get; }        
         void LoadTournamentGroup(Tournament tournament, AgeWeightGroup group);
         void Generate(Tournament tournament, AgeWeightGroup group);
         IEnumerable<TournamentResult> GetResults();

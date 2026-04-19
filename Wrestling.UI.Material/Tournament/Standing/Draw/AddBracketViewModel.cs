@@ -43,10 +43,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
             foreach (var groupBracketProcessor in allProcessors)
             {
-                if ((!groupBracketProcessor.AthletsMinCount.HasValue ||
-                     groupBracketProcessor.AthletsMinCount.Value <= group.Wrestlers.Count) &&
-                    (!groupBracketProcessor.AthletsMaxCount.HasValue ||
-                     groupBracketProcessor.AthletsMaxCount >= group.Wrestlers.Count))
+                if ((!groupBracketProcessor.AthletesMinCount.HasValue ||
+                     groupBracketProcessor.AthletesMinCount.Value <= group.Wrestlers.Count) &&
+                    (!groupBracketProcessor.AthletesMaxCount.HasValue ||
+                     groupBracketProcessor.AthletesMaxCount >= group.Wrestlers.Count))
                 {
                     result.Add(groupBracketProcessor);
                 }

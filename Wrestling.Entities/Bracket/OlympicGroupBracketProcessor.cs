@@ -7,13 +7,13 @@ namespace Wrestling.Entities.Bracket
     {
         public override string Title => "Олимпийская с матчем за 3-е место";
         public override string Code => BracketTypeEnum.Olympic.ToString();
-        public override int? AthletsMinCount => 4;
-        public override int? AthletsMaxCount => 64;
+        public override int? AthletesMinCount => 4;
+        public override int? AthletesMaxCount => 64;
 
         protected override void GenerateMainRounds()
         {
             GenerateFirstRound();
-            FeelBracketWithEmptyMatches();
+            FillBracketWithEmptyMatches();
             CollectFreeWinsForFirstRound();
         }
 
@@ -46,13 +46,13 @@ namespace Wrestling.Entities.Bracket
 
                 if (wrestlingMatch.IsRedWon.HasValue && wrestlingMatch.IsRedWon.Value)
                 {
-                    if (thirdPlaceMatch.WrestlerInRed == wrestlingMatch.WrestlerInBlue) thirdPlaceMatch.WrestlerInRed = null;
-                    else if (thirdPlaceMatch.WrestlerInBlue == wrestlingMatch.WrestlerInBlue) thirdPlaceMatch.WrestlerInBlue = null;
+                    if (thirdPlaceMatch.WrestlerInRed.SameAs(wrestlingMatch.WrestlerInBlue)) thirdPlaceMatch.WrestlerInRed = null;
+                    else if (thirdPlaceMatch.WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInBlue)) thirdPlaceMatch.WrestlerInBlue = null;
                 }
                 else if (wrestlingMatch.IsRedWon.HasValue && !wrestlingMatch.IsRedWon.Value)
                 {
-                    if (thirdPlaceMatch.WrestlerInRed == wrestlingMatch.WrestlerInRed) thirdPlaceMatch.WrestlerInRed = null;
-                    else if (thirdPlaceMatch.WrestlerInBlue == wrestlingMatch.WrestlerInRed) thirdPlaceMatch.WrestlerInBlue = null;
+                    if (thirdPlaceMatch.WrestlerInRed.SameAs(wrestlingMatch.WrestlerInRed)) thirdPlaceMatch.WrestlerInRed = null;
+                    else if (thirdPlaceMatch.WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInRed)) thirdPlaceMatch.WrestlerInBlue = null;
                 }
 
                 thirdPlaceMatch.Status = MatchStatusEnum.Pending;
@@ -96,7 +96,11 @@ namespace Wrestling.Entities.Bracket
             var looser = wrestlingMatch.IsRedWon.Value ? wrestlingMatch.WrestlerInBlue : wrestlingMatch.WrestlerInRed;
             if (looser != null)
             {
-                if (wrestlingMatch.MatchNumber % 2 == 0)
+                // BracketNumber of the semifinal (1 or 2) drives 3rd-place slot.
+                // MatchNumber is only populated after IMatchNumbersGenerator runs,
+                // so relying on it here corrupted the additional round when matches
+                // completed before scheduling numbers were assigned.
+                if (wrestlingMatch.BracketNumber % 2 == 0)
                 {
                     addMatch.WrestlerInBlue = looser;
                 }
@@ -240,7 +244,7 @@ namespace Wrestling.Entities.Bracket
 
             Group.Bracket.Rounds.Add(round);
         }
-        private void FeelBracketWithEmptyMatches()
+        private void FillBracketWithEmptyMatches()
         {
             var firstRound = Group.Bracket.Rounds[0];
             int totalRounds = GetRoundsCount(Group.Bracket.WrestlersCount);

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Wrestling.DataAccess
@@ -35,54 +36,82 @@ namespace Wrestling.DataAccess
 
         public async Task<bool> SaveToFileAsync<T>(T item, string fileName)
         {
-            try
+            // Atomic write: serialize to a sibling tmp file, then swap into place.
+            // Keeps the prior-good .wrt intact if serialization or I/O throws
+            // mid-stream, which matters for tournaments synced across carpets.
+            var tmpPath = GetTempSiblingPath(fileName);
+
+            using (var stream = new MemoryStream())
             {
-                using (var file = File.Open(fileName, FileMode.Create))
+                using (var writer = new StreamWriter(stream, new UTF8Encoding(false), 4096, leaveOpen: true))
                 {
-                    using (var stream = new MemoryStream())
-                    {
-                        using (var writer = new StreamWriter(stream))
-                        {
-                            var serizlizer = JsonSerializer.CreateDefault();
-                            serizlizer.Serialize(writer, item);
-
-                            await writer.FlushAsync().ConfigureAwait(false);
-
-                            stream.Seek(0, SeekOrigin.Begin);
-
-                            await stream.CopyToAsync(file).ConfigureAwait(false);
-                        }
-                    }
-
-                    await file.FlushAsync().ConfigureAwait(false);
+                    var serializer = JsonSerializer.CreateDefault();
+                    serializer.Serialize(writer, item);
+                    await writer.FlushAsync().ConfigureAwait(false);
                 }
 
-                return true;
+                stream.Seek(0, SeekOrigin.Begin);
+
+                using (var file = new FileStream(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                {
+                    await stream.CopyToAsync(file).ConfigureAwait(false);
+                    await file.FlushAsync().ConfigureAwait(false);
+                }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                return false;
-            }
+
+            AtomicReplace(tmpPath, fileName);
+            return true;
         }
 
         public bool SaveToFile<T>(T item, string fileName)
         {
+            // Atomic write: serialize fully to a tmp file first so a failure mid-write
+            // cannot truncate the previous save.
+            var tmpPath = GetTempSiblingPath(fileName);
+
+            using (var writeFileStream = new StreamWriter(tmpPath, append: false, new UTF8Encoding(false)))
+            {
+                var jsonWriter = new JsonTextWriter(writeFileStream);
+                var ser = new JsonSerializer();
+                ser.Serialize(jsonWriter, item);
+                jsonWriter.Flush();
+            }
+
+            AtomicReplace(tmpPath, fileName);
+            return true;
+        }
+
+        private static string GetTempSiblingPath(string fileName)
+        {
+            var dir = Path.GetDirectoryName(fileName);
+            var name = Path.GetFileName(fileName);
+            var tmp = name + ".tmp." + Guid.NewGuid().ToString("N");
+            return string.IsNullOrEmpty(dir) ? tmp : Path.Combine(dir, tmp);
+        }
+
+        private static void AtomicReplace(string source, string destination)
+        {
             try
             {
-                using (var writeFileStream = new StreamWriter(fileName))
+                if (File.Exists(destination))
                 {
-                    var jsonWriter = new JsonTextWriter(writeFileStream);
-                    var ser = new JsonSerializer();
-                    ser.Serialize(jsonWriter, item);
-                    jsonWriter.Flush();
+                    File.Replace(source, destination, destinationBackupFileName: null, ignoreMetadataErrors: true);
+                }
+                else
+                {
+                    File.Move(source, destination);
                 }
             }
-            catch (Exception)
+            catch
             {
-                return false;
+                TryDelete(source);
+                throw;
             }
-            return true;
+        }
+
+        private static void TryDelete(string path)
+        {
+            try { if (File.Exists(path)) File.Delete(path); } catch { /* best effort cleanup */ }
         }
 
         public T ReadFromFile<T>(string path)

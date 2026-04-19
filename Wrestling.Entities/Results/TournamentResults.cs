@@ -77,11 +77,11 @@ namespace Wrestling.Entities.Results
                 if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
 
                 var redPoints = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed == _wrestler))
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed.SameAs(_wrestler)))
                     .Sum(x => x.PointsRed);
 
                 var bluePoints = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue == _wrestler))
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue.SameAs(_wrestler)))
                     .Sum(x => x.PointsBlue);
 
                 return redPoints + bluePoints;
@@ -95,11 +95,11 @@ namespace Wrestling.Entities.Results
                 if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
 
                 var redPoints = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed == _wrestler))
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed.SameAs(_wrestler)))
                     .Sum(x => x.PointsBlue);
 
                 var bluePoints = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue == _wrestler))
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue.SameAs(_wrestler)))
                     .Sum(x => x.PointsRed);
 
                 return redPoints + bluePoints;
@@ -113,14 +113,14 @@ namespace Wrestling.Entities.Results
                 if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
 
                 var redActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed == _wrestler) && x.LastSecondInMatch > 0)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed.SameAs(_wrestler)) && x.LastSecondInMatch > 0)
                     .SelectMany(m => m.MatchActions)
                     .Where(a => a.Points > 0 && a.IsForRed.HasValue && a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
                     .OrderBy(a => a.SecondInRound)
                     .ToList();
 
                 var blueActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue == _wrestler) && x.LastSecondInMatch > 0)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue.SameAs(_wrestler)) && x.LastSecondInMatch > 0)
                     .SelectMany(m => m.MatchActions)
                     .Where(a => a.Points > 0 && a.IsForRed.HasValue && !a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
                     .OrderBy(a => a.SecondInRound)
@@ -149,11 +149,11 @@ namespace Wrestling.Entities.Results
                 if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
 
                 var redFastestWinSecond = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                        .Where(x => x.Status == MatchStatusEnum.Completed && x.WrestlerInRed == _wrestler && x.IsRedWon.Value && x.LastSecondInMatch > 3) // 3 because some matches can be completed manually
+                        .Where(x => x.Status == MatchStatusEnum.Completed && x.WrestlerInRed.SameAs(_wrestler) && x.IsRedWon.Value && x.LastSecondInMatch > 3) // 3 because some matches can be completed manually
                         .ToList();
 
                 var blueFastestWinSecond = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                    .Where(x => x.Status == MatchStatusEnum.Completed && x.WrestlerInBlue == _wrestler && !x.IsRedWon.Value && x.LastSecondInMatch > 3)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && x.WrestlerInBlue.SameAs(_wrestler) && !x.IsRedWon.Value && x.LastSecondInMatch > 3)
                     .ToList();
 
                 var redSecond = _group.MaxRoundSecond * 2;
@@ -179,12 +179,12 @@ namespace Wrestling.Entities.Results
                 if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
 
                 var redActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed == _wrestler))
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed.SameAs(_wrestler)))
                     .SelectMany(m => m.MatchActions)
                     .Count(a => a.Points == 4 && a.IsForRed.HasValue && a.IsForRed.Value);
 
                 var blueActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue == _wrestler))
+                    .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue.SameAs(_wrestler)))
                     .SelectMany(m => m.MatchActions)
                     .Count(a => a.Points == 4 && a.IsForRed.HasValue && !a.IsForRed.Value);
 
@@ -199,7 +199,7 @@ namespace Wrestling.Entities.Results
                 return _group != null && _group.Bracket != null && _wrestler != null
                     ? _group.Bracket.Rounds.SelectMany(p => p.RoundMatches).Where(x =>
                         x.Status == MatchStatusEnum.Completed
-                        && (x.WrestlerInRed == _wrestler || x.WrestlerInBlue == _wrestler)).ToList().Count
+                        && (x.WrestlerInRed.SameAs(_wrestler) || x.WrestlerInBlue.SameAs(_wrestler))).ToList().Count
                     : 0;
             }
         }
@@ -213,7 +213,7 @@ namespace Wrestling.Entities.Results
                     .SelectMany(p => p.RoundMatches)
                     .Where(x =>
                         x.Status == MatchStatusEnum.Completed
-                        && (x.IsRedWon.Value && x.WrestlerInRed == _wrestler || x.IsBlueWon && x.WrestlerInBlue == _wrestler)
+                        && (x.IsRedWon.Value && x.WrestlerInRed.SameAs(_wrestler) || x.IsBlueWon && x.WrestlerInBlue.SameAs(_wrestler))
                         && (winType == null || x.WinType == winType))
                     .ToList().Count
                 : 0;
@@ -224,7 +224,7 @@ namespace Wrestling.Entities.Results
             return _group != null && _group.Bracket != null && _wrestler != null
                 ? _group.Bracket.Rounds.SelectMany(p => p.RoundMatches).Where(x =>
                     x.Status == MatchStatusEnum.Completed
-                    && (x.IsRedWon.Value && x.WrestlerInBlue == _wrestler || x.IsBlueWon && x.WrestlerInRed == _wrestler)
+                    && (x.IsRedWon.Value && x.WrestlerInBlue.SameAs(_wrestler) || x.IsBlueWon && x.WrestlerInRed.SameAs(_wrestler))
                     && (loseType == null || x.WinType == loseType)).ToList().Count
                 : 0;
 

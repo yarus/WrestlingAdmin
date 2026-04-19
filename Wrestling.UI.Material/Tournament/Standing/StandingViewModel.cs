@@ -124,7 +124,7 @@ namespace Wrestling.UI.Material.Tournament.Standing
                 if (_prevPageCommand == null)
                 {
                     _prevPageCommand = new RelayCommand(
-                        p => PreviusViewModel(),
+                        p => PreviousViewModel(),
                         p => true);
                 }
 
@@ -150,7 +150,7 @@ namespace Wrestling.UI.Material.Tournament.Standing
             }
         }
         
-        private void PreviusViewModel()
+        private void PreviousViewModel()
         {
             var index = PageViewModels.IndexOf(CurrentPage);
             if (index > 0)
