@@ -34,8 +34,9 @@ namespace Wrestling.UI.Material
 {
     public partial class App : Application
     {
-        private bool _isShuttingDown = false;
+        private int _shuttingDown; // 0 = normal, 1 = currently handling a crash-path save
         private readonly object _persistenceLock = new object();
+        private readonly object _logLock = new object();
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -90,7 +91,11 @@ namespace Wrestling.UI.Material
             {
                 LogException("Application.DispatcherUnhandledException", args.Exception);
 
-                SaveTournament(di);
+                // Always write a dated backup instead of overwriting the active
+                // save — a UI-thread exception can leave the in-memory tournament
+                // in a half-mutated state, and persisting it onto FileName would
+                // destroy a previously-good save.
+                CreateBackup(di);
 
                 args.Handled = true;
 
@@ -107,11 +112,13 @@ namespace Wrestling.UI.Material
 
         private void CreateBackup(IDiContainer di)
         {
+            // Re-entrancy guard so two concurrent crash handlers don't both spawn
+            // a backup write. Reset on exit so a later unobserved exception can
+            // still trigger its own backup.
+            if (Interlocked.Exchange(ref _shuttingDown, 1) == 1) return;
+
             lock (_persistenceLock)
             {
-                if (_isShuttingDown) return;
-                _isShuttingDown = true;
-
                 try
                 {
                     var ctx = di.Resolve<IDataContext>();
@@ -128,27 +135,11 @@ namespace Wrestling.UI.Material
                 {
                     LogException("CreateBackup", ex);
                 }
-            }
-        }
-
-        private void SaveTournament(IDiContainer di)
-        {
-            try
-            {
-                var ctx = di.Resolve<IDataContext>();
-                var mgr = di.Resolve<ITournamentsManager>();
-
-                if (ctx != null && mgr != null && ctx.Tournament != null)
+                finally
                 {
-                    var tournamentFileName = string.IsNullOrEmpty(ctx.Tournament.FileName) ? GetBackupFilePath() : ctx.Tournament.FileName;
-
-                    mgr.SaveToFile(ctx.Tournament, tournamentFileName);
+                    Interlocked.Exchange(ref _shuttingDown, 0);
                 }
             }
-            catch (Exception ex)
-            {
-                LogException("SaveTournament", ex);
-            }            
         }
 
         private void LogException(string source, Exception ex)
@@ -168,7 +159,12 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
 
                 string logPath = GetLogFilePath();
 
-                File.AppendAllText(logPath, logEntry);
+                // Concurrent crash handlers (AppDomain, Dispatcher, TaskScheduler) can
+                // fire simultaneously; AppendAllText is not thread safe.
+                lock (_logLock)
+                {
+                    File.AppendAllText(logPath, logEntry);
+                }
             }
             catch(Exception logEx)
             {
@@ -246,10 +242,10 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
 
             di.Add<List<IGroupBracketProcessor>>(new List<IGroupBracketProcessor>
             {
-                new OlympicWithConsilationFromFinalistsGroupBracketProcessor(),
+                new OlympicWithConsolationFromFinalistsGroupBracketProcessor(),
                 new OlympicGroupBracketProcessor(),
                 new RoundRobinGroupBracketProcessor(),
-                new SubGroupsToOlympicBracketPorcessor()
+                new SubGroupsToOlympicBracketProcessor()
             });
 
             di.Add<GroupBracketViewModel>(new GroupBracketViewModel(di));

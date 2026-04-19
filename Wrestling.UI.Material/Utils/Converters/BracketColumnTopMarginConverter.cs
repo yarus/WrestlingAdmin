@@ -23,8 +23,8 @@ namespace Wrestling.UI.Material.Utils.Converters
             var supportedBrackets = new List<IGroupBracketProcessor>
             {
                 new OlympicGroupBracketProcessor(),
-                new OlympicWithConsilationFromFinalistsGroupBracketProcessor(),
-                new SubGroupsToOlympicBracketPorcessor()
+                new OlympicWithConsolationFromFinalistsGroupBracketProcessor(),
+                new SubGroupsToOlympicBracketProcessor()
             };
 
             if (supportedBrackets.FirstOrDefault(g => g.Code == group.Bracket.BracketTypeCode) == null) return new Thickness(10, 0, 10, 0);

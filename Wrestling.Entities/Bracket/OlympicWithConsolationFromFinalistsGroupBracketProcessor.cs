@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Wrestling.Entities.Bracket
 {
-    public class OlympicWithConsilationFromFinalistsGroupBracketProcessor : OlympicGroupBracketProcessor
+    public class OlympicWithConsolationFromFinalistsGroupBracketProcessor : OlympicGroupBracketProcessor
     {
         public override string Title => "Олимпийская с утешением от финалистов";
         public override string Code => BracketTypeEnum.OlympicConsilationFinalists.ToString();
@@ -70,7 +70,7 @@ namespace Wrestling.Entities.Bracket
                 .Where(p => p.RoundType == GroupRoundTypeEnum.Main)
                 .SelectMany(x => x.RoundMatches)
                 .Where(o => o.Status == MatchStatusEnum.Completed 
-                    && (o.IsRedWon.Value && o.WrestlerInRed == winner || o.IsBlueWon && o.WrestlerInBlue == winner))
+                    && (o.IsRedWon.Value && o.WrestlerInRed.SameAs(winner) || o.IsBlueWon && o.WrestlerInBlue.SameAs(winner)))
                 .Where(m => m.WrestlerInRed?.ID != looser.ID && m.WrestlerInBlue?.ID != looser.ID)
                 .OrderByDescending(a => a.RoundNumber)
                 .ToList();

@@ -1,10 +1,10 @@
-﻿using System.ComponentModel;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using MvvmDialogs;
 using Wrestling.UI.Utils;
 
@@ -23,15 +23,18 @@ namespace Wrestling.UI.Material
 
             _di = di;
 
-            Task.Factory.StartNew(() =>
+            // Show the welcome snackbar a short moment after the shell appears,
+            // without burning a threadpool thread on Thread.Sleep.
+            var welcome = new DispatcherTimer(DispatcherPriority.ApplicationIdle)
             {
-                Thread.Sleep(2500);
-            }).ContinueWith(t =>
+                Interval = TimeSpan.FromMilliseconds(2500)
+            };
+            welcome.Tick += (_, _) =>
             {
-                //note you can use the message queue from any thread, but just for the demo here we 
-                //need to get the message queue from the snackbar, so need to be on the dispatcher
+                welcome.Stop();
                 MainSnackbar.MessageQueue.Enqueue("Добро пожаловать в Администратор турниров по вольной борьбе!");
-            }, TaskScheduler.FromCurrentSynchronizationContext());
+            };
+            welcome.Start();
 
             var vm = new MainWindowViewModel(MainSnackbar.MessageQueue, _di);
             vm.OnRequestClose += ViewModelRequestClose;

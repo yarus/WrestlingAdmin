@@ -82,20 +82,5 @@ namespace Wrestling.UI.Material.Tournament
             }
         }
 
-        protected void SaveDataSync()
-        {
-            // For WPF applications, we need to use Dispatcher to avoid deadlocks
-            if (Application.Current.Dispatcher.CheckAccess())
-            {
-                // We're on UI thread - must not block it
-                // Run async method synchronously on a background thread
-                Task.Run(() => SaveDataAsync().GetAwaiter().GetResult()).Wait();
-            }
-            else
-            {
-                // We're not on UI thread - can block safely
-                SaveDataAsync().GetAwaiter().GetResult();
-            }
-        }
     }
 }

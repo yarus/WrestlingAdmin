@@ -203,7 +203,7 @@ namespace Wrestling.UI.Material.Slider
                 if (_prevPageCommand == null)
                 {
                     _prevPageCommand = new RelayCommand(
-                        p => PreviusViewModel(),
+                        p => PreviousViewModel(),
                         p => true);
                 }
 
@@ -229,7 +229,7 @@ namespace Wrestling.UI.Material.Slider
             }
         }
         
-        private void PreviusViewModel()
+        private void PreviousViewModel()
         {
             var index = Slides.IndexOf(CurrentSlide);
             if (index > 0)

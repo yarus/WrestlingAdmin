@@ -1,57 +1,33 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
     <AssemblyName>WrestlingAdmin</AssemblyName>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <PublishUrl>C:\Users\Aleksey Kardash\Desktop\WrestlingAdmin-20251101\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>false</MapFileExtensions>
-    <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
-    <DisallowUrlActivation>true</DisallowUrlActivation>
-    <ApplicationRevision>50</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <CreateDesktopShortcut>true</CreateDesktopShortcut>
-    <PublishWizardCompleted>true</PublishWizardCompleted>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
     <UseWPF>true</UseWPF>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <PlatformTarget>x64</PlatformTarget>
     <ApplicationIcon>Resources\scoreboard.ico</ApplicationIcon>
-    <ManifestCertificateThumbprint>0E81F0A8555C8AD356E57EB3BDE9B7009DF20717</ManifestCertificateThumbprint>
-    <ManifestKeyFile>Wrestling.UI.Material_TemporaryKey.pfx</ManifestKeyFile>
-    <GenerateManifests>true</GenerateManifests>
-    <SignManifests>false</SignManifests>
-    <AssemblyOriginatorKeyFile />
     <NoWin32Manifest>true</NoWin32Manifest>
     <StartupObject>Wrestling.UI.Material.App</StartupObject>
-	<SupportedOSPlatforms>windows</SupportedOSPlatforms>
-	<NoWarn>$(NoWarn);CA1416</NoWarn>
+    <SupportedOSPlatforms>windows</SupportedOSPlatforms>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <AppDesigner Include="Properties\" />
     <PackageReference Include="CsvHelper" Version="33.1.0" />
     <PackageReference Include="FluentResults" Version="4.0.0" />
-	<PackageReference Include="MaterialDesignThemes" Version="5.3.0" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.0-rc.2.25502.107" />
+    <PackageReference Include="MaterialDesignThemes" Version="5.3.0" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.0" />
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0-rc.2.25502.107" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <PackageReference Include="MvvmDialogs" Version="9.1.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
-	<PackageReference Include="System.Windows.Extensions" Version="9.0.10" />
+    <PackageReference Include="System.Windows.Extensions" Version="9.0.10" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Wrestling.DataAccess\Wrestling.DataAccess.csproj" />
@@ -61,20 +37,10 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\30sec.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\30sec_cancel.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\Confirm.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\logo_img.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\MainLogo.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Resources\scoreboard.ico" />
   </ItemGroup>
   <ItemGroup>
@@ -84,29 +50,20 @@
     <Content Include="Images\RosbosLogo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Sounds\SingleGongBeep.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Sounds\TripleGongBeep.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Images\SliderLogo.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Sounds\SingleGong.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Sounds\SingleGongBeep.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Sounds\TripleGong.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.7.1">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.7.1 %28x86 and x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
+    <Content Include="Sounds\TripleGongBeep.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

@@ -18,8 +18,8 @@ namespace Wrestling.UI.Material.Utils.Converters
             var supportedBrackets = new List<IGroupBracketProcessor>
             {
                 new OlympicGroupBracketProcessor(),
-                new OlympicWithConsilationFromFinalistsGroupBracketProcessor(),
-                new SubGroupsToOlympicBracketPorcessor()
+                new OlympicWithConsolationFromFinalistsGroupBracketProcessor(),
+                new SubGroupsToOlympicBracketProcessor()
             };
 
             var match = values[0] as WrestlingMatch;

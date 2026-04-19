@@ -8,7 +8,7 @@ namespace Wrestling.Entities.Bracket
         private static string FakeRound = "Bye";
         public override string Title => "Круговая";
         public override string Code => BracketTypeEnum.RoundRobin.ToString();
-        public override int? AthletsMaxCount => 5;
+        public override int? AthletesMaxCount => 5;
         protected override void GenerateMainRounds()
         {
             GenerateGroupBracket();
@@ -26,14 +26,14 @@ namespace Wrestling.Entities.Bracket
             if (matches.Count == 0) return null;
             
             var pairMatch = matches.FirstOrDefault(m =>
-                (m.WrestlerInBlue == first && m.WrestlerInRed == second)
-                || (m.WrestlerInRed == first && m.WrestlerInBlue == second));
+                (m.WrestlerInBlue.SameAs(first) && m.WrestlerInRed.SameAs(second))
+                || (m.WrestlerInRed.SameAs(first) && m.WrestlerInBlue.SameAs(second)));
 
             if (pairMatch != null)
             {
                 return pairMatch.IsRedWon.HasValue && pairMatch.IsRedWon.Value
-                    ? (pairMatch.WrestlerInRed == first ? first : second)
-                    : (pairMatch.WrestlerInBlue == first ? first : second);
+                    ? (pairMatch.WrestlerInRed.SameAs(first) ? first : second)
+                    : (pairMatch.WrestlerInBlue.SameAs(first) ? first : second);
             }
 
             return null;

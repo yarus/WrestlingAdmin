@@ -95,7 +95,7 @@ namespace Wrestling.UI.Material.Match
 
             if (DataContext.Group?.Bracket != null)
             {
-                _processor = GetProcessoryForGroup(DataContext.Group.Bracket.BracketTypeCode);
+                _processor = GetProcessorForGroup(DataContext.Group.Bracket.BracketTypeCode);
                 if (_processor == null) throw new ApplicationException("Can't find processor!");
 
                 _processor.Load(DataContext.Tournament, DataContext.Group);
@@ -644,7 +644,7 @@ namespace Wrestling.UI.Material.Match
             NavigateToView<HomeViewModel>();
         }
 
-        private IGroupBracketProcessor GetProcessoryForGroup(string processorType)
+        private IGroupBracketProcessor GetProcessorForGroup(string processorType)
         {
             return _drawTypes.FirstOrDefault(p => p.Code == processorType);
         }
