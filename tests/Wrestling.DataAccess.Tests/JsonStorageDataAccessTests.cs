@@ -116,4 +116,42 @@ public sealed class JsonStorageDataAccessTests : IDisposable
         File.ReadAllText(path).Should().Be(originalContent,
             "atomic-write contract: partial writes go to a temp file, never the live one");
     }
+
+    // Load contract: import polls flaky network paths on a timer during live
+    // matches, so Read paths must NEVER throw for expected I/O / parse errors.
+    [Fact]
+    public void ReadFromFile_returns_default_when_file_is_corrupt_and_does_not_throw()
+    {
+        var path = Path_("corrupt.json");
+        File.WriteAllText(path, "{\"Name\":\"partial...");
+
+        Payload result = default;
+        Action act = () => result = _storage.ReadFromFile<Payload>(path);
+
+        act.Should().NotThrow("load must tolerate malformed JSON without crashing the app");
+        result.Should().BeNull("corrupt content yields default(T), not a partial object");
+    }
+
+    [Fact]
+    public async Task ReadFromFileAsync_returns_default_when_file_is_corrupt_and_does_not_throw()
+    {
+        var path = Path_("corrupt-async.json");
+        File.WriteAllText(path, "]}{ not json");
+
+        Payload result = default;
+        Func<Task> act = async () => result = await _storage.ReadFromFileAsync<Payload>(path);
+
+        await act.Should().NotThrowAsync("async load must tolerate malformed JSON");
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public void ReadFromFile_returns_default_when_path_is_invalid_and_does_not_throw()
+    {
+        Payload result = default;
+        Action act = () => result = _storage.ReadFromFile<Payload>("\0:/\\invalid");
+
+        act.Should().NotThrow("invalid paths (e.g. from stale ImportSources) must not crash");
+        result.Should().BeNull();
+    }
 }

@@ -1,8 +1,9 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
+using System.Net.Sockets;
+using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -116,38 +117,65 @@ namespace Wrestling.DataAccess
 
         public T ReadFromFile<T>(string path)
         {
-            T result;
+            // Load paths must never crash the app — import polls network/UNC paths
+            // on a timer during live matches, where WiFi drops and peer-laptop
+            // mid-write truncations are expected. Return default(T) for every
+            // expected I/O / parse failure, logging the cause to
+            // %LocalAppData%/<app>/Logs/ so the secretary can diagnose later.
+            // Network paths get the same retry+backoff treatment as the async path.
 
             if (!File.Exists(path))
             {
                 return default(T);
             }
 
-            try
+            int maxRetries = IsNetworkPath(path) ? 3 : 1;
+            const int initialDelayMs = 200;
+
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
-                using (var reader = new StreamReader(path))
+                try
                 {
-                    var jsonReader = new JsonTextReader(reader);
-                    var ser = new JsonSerializer();
-                    result = ser.Deserialize<T>(jsonReader);
+                    using (var reader = new StreamReader(path))
+                    {
+                        var jsonReader = new JsonTextReader(reader);
+                        var ser = new JsonSerializer();
+                        return ser.Deserialize<T>(jsonReader);
+                    }
+                }
+                catch (Exception ex) when (IsRetryableException(ex))
+                {
+                    if (attempt < maxRetries)
+                    {
+                        var delayMs = initialDelayMs * (int)Math.Pow(2, attempt - 1);
+                        try { System.Threading.Thread.Sleep(delayMs); } catch { }
+                        continue;
+                    }
+
+                    FileLogger.Log(BuildSource("ReadFromFile", ex, attempt, maxRetries), path, ex);
+                    return default(T);
+                }
+                catch (Exception ex) when (IsExpectedLoadException(ex))
+                {
+                    FileLogger.Log(BuildSource("ReadFromFile", ex, attempt, maxRetries), path, ex);
+                    return default(T);
                 }
             }
-            catch
-            {
-                return default(T);
-            }
 
-            return result;
+            return default(T);
         }
 
         public async Task<T> ReadFromFileAsync<T>(string path)
         {
-            const int maxRetries = 3;
-            const int initialDelayMs = 200;
-            int retryCount = 0;
-            Exception lastException = null;
+            if (!File.Exists(path))
+            {
+                return default(T);
+            }
 
-            while (retryCount < maxRetries)
+            int maxRetries = IsNetworkPath(path) ? 5 : 3;
+            const int initialDelayMs = 200;
+
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
                 try
                 {
@@ -166,28 +194,94 @@ namespace Wrestling.DataAccess
                 }
                 catch (Exception ex) when (IsRetryableException(ex))
                 {
-                    lastException = ex;
-                    retryCount++;
-
-                    if (retryCount < maxRetries)
+                    if (attempt < maxRetries)
                     {
-                        int delayMs = initialDelayMs * (int)Math.Pow(2, retryCount - 1);
+                        var delayMs = initialDelayMs * (int)Math.Pow(2, attempt - 1);
                         await Task.Delay(delayMs).ConfigureAwait(false);
+                        continue;
                     }
+
+                    FileLogger.Log(BuildSource("ReadFromFileAsync", ex, attempt, maxRetries), path, ex);
+                    return default(T);
+                }
+                catch (Exception ex) when (IsExpectedLoadException(ex))
+                {
+                    FileLogger.Log(BuildSource("ReadFromFileAsync", ex, attempt, maxRetries), path, ex);
+                    return default(T);
                 }
             }
 
-            // Log the last exception if needed
-            Debug.WriteLine($"Failed after {maxRetries} attempts. Last error: {lastException?.Message}");
             return default(T);
         }
 
-        private bool IsRetryableException(Exception ex)
+        private static bool IsRetryableException(Exception ex)
         {
+            // Transient I/O that is worth retrying with a short backoff. JsonException
+            // is included because a peer carpet mid-write can leave the file briefly
+            // unparseable before File.Replace completes.
             return ex is IOException
                    || ex is UnauthorizedAccessException
                    || ex is JsonException
+                   || ex is SocketException
                    || ex is TimeoutException;
+        }
+
+        private static bool IsExpectedLoadException(Exception ex)
+        {
+            // Non-transient failures we still tolerate: argument/path validation,
+            // security denials, encoding issues inside Json. Anything outside this
+            // set (OOM, AccessViolation, NullReference from a bug) is allowed to
+            // propagate to the global crash handler which saves a backup.
+            return ex is ArgumentException
+                   || ex is NotSupportedException
+                   || ex is SecurityException
+                   || ex is PathTooLongException
+                   || ex is DirectoryNotFoundException
+                   || ex is FileNotFoundException
+                   || ex is FormatException;
+        }
+
+        private static bool IsNetworkPath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return false;
+            if (path.StartsWith(@"\\", StringComparison.Ordinal)) return true;
+            try
+            {
+                var root = Path.GetPathRoot(path);
+                if (string.IsNullOrEmpty(root) || root.Length < 2) return false;
+                var driveInfo = new DriveInfo(root);
+                return driveInfo.DriveType == DriveType.Network;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string BuildSource(string method, Exception ex, int attempt, int maxRetries)
+        {
+            var category = Classify(ex);
+            return string.Format("{0} [{1}] attempt {2}/{3}", method, category, attempt, maxRetries);
+        }
+
+        private static string Classify(Exception ex)
+        {
+            switch (ex)
+            {
+                case JsonException _: return "Corrupt";
+                case UnauthorizedAccessException _:
+                case SecurityException _: return "AccessDenied";
+                case SocketException _:
+                case TimeoutException _: return "Transient";
+                case PathTooLongException _:
+                case ArgumentException _:
+                case NotSupportedException _:
+                case FormatException _: return "InvalidPath";
+                case DirectoryNotFoundException _:
+                case FileNotFoundException _: return "NotFound";
+                case IOException _: return "IO";
+                default: return "Other";
+            }
         }
 
         public IEnumerable<string> GetFileNamesInDirectory(string path, string mask)

@@ -439,20 +439,26 @@ namespace Wrestling.UI.Material.Tournament.Import
 
         private async Task ImportDataAsync(string path)
         {
-            int importedRecords = await _importer.ImportDataFromFileAsync(DataContext.Tournament, path);
+            var result = await _importer.ImportDataFromFileAsync(DataContext.Tournament, path);
 
-            if (importedRecords > 0)
+            switch (result.Outcome)
             {
-                AddLog(path, $"Успешно загружено {importedRecords} результатов!");
-                ShowSnackMessage($"Успешно импортировано {importedRecords} результатов!");
-            }
-            else if (importedRecords == 0)
-            {
-                AddLog(path, "Новые данные отсутствуют!");
-            }
-            else
-            {
-                AddLog(path, "Ошибка импорта!");
+                case ImportOutcome.Imported:
+                    AddLog(path, $"Успешно загружено {result.ImportedCount} результатов!");
+                    ShowSnackMessage($"Успешно импортировано {result.ImportedCount} результатов!");
+                    break;
+                case ImportOutcome.NoNewData:
+                    AddLog(path, "Новые данные отсутствуют!");
+                    break;
+                case ImportOutcome.FileUnavailable:
+                    AddLog(path, "Файл недоступен (сеть или путь). Подробности в журнале.");
+                    break;
+                case ImportOutcome.TournamentMismatch:
+                    AddLog(path, "Файл не соответствует текущему турниру.");
+                    break;
+                default:
+                    AddLog(path, "Ошибка импорта. Подробности в журнале.");
+                    break;
             }
         }
 

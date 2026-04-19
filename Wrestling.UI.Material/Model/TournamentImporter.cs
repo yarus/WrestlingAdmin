@@ -20,16 +20,21 @@ namespace Wrestling.UI.Material.Model
             _drawTypes = processors;
         }
 
-        public async Task<int> ImportDataFromFileAsync(Entities.Tournament target, string fileName)
+        public async Task<ImportResult> ImportDataFromFileAsync(Entities.Tournament target, string fileName)
         {
             int result = 0;
 
-            if (string.IsNullOrEmpty(fileName)) return -1;
+            if (string.IsNullOrEmpty(fileName)) return ImportResult.FileUnavailable();
 
             var tournament = await _tournService.LoadFromFileAsync(fileName);
 
-            if (tournament == null || tournament.Name != target.Name ||
-                tournament.Groups.Count != target.Groups.Count || tournament.StartDate != target.StartDate) return -1;
+            if (tournament == null) return ImportResult.FileUnavailable();
+
+            if (tournament.Name != target.Name ||
+                tournament.Groups.Count != target.Groups.Count || tournament.StartDate != target.StartDate)
+            {
+                return ImportResult.TournamentMismatch();
+            }
 
             foreach (var group in tournament.Groups)
             {
@@ -81,7 +86,7 @@ namespace Wrestling.UI.Material.Model
                 changedWrestler.Sync(wrestler);
             }
 
-            return result;
+            return result > 0 ? ImportResult.Imported(result) : ImportResult.NoNewData();
         }
 
         private IGroupBracketProcessor GetProcessorForGroup(string processorType)
