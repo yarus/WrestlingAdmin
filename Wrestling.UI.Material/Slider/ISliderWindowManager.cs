@@ -21,5 +21,14 @@ namespace Wrestling.UI.Material.Slider
         void CloseChannel(SlideChannel channel);
 
         void CloseAll();
+
+        // Pauses slide rotation on every open window without closing them —
+        // windows stay on their current slide.
+        void StopAllTimers();
+
+        // True when any open window VM currently has its rotation timer
+        // enabled. Used to gate the "stop all" quick button so it's disabled
+        // when there's nothing to stop.
+        bool HasAnyRunningTimer();
     }
 }

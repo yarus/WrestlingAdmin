@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
@@ -91,6 +92,7 @@ namespace Wrestling.UI.Material.Slider
                     _quickButtons = new List<CommandButtonItem>
                     {
                         new CommandButtonItem("Новый канал", PackIconKind.PlaylistPlus, new RelayCommand(param => AddChannel(), param => true)),
+                        new CommandButtonItem("Остановить все таймеры", PackIconKind.TimerOff, new RelayCommand(param => StopAllTimers(), param => HasAnyRunningTimer())),
                         new CommandButtonItem("Закрыть все слайдеры", PackIconKind.CloseCircleOutline, new RelayCommand(param => CloseAllSliders(), param => _windowManager?.OpenCount > 0))
                     }
                 );
@@ -124,6 +126,10 @@ namespace Wrestling.UI.Material.Slider
                 if (_selectedChannel != null)
                 {
                     _selectedChannel.PropertyChanged -= OnSelectedChannelPropertyChanged;
+                    if (_selectedChannel.Slides != null)
+                    {
+                        _selectedChannel.Slides.CollectionChanged -= OnSelectedChannelSlidesChanged;
+                    }
                 }
 
                 _selectedChannel = value;
@@ -131,14 +137,32 @@ namespace Wrestling.UI.Material.Slider
                 if (_selectedChannel != null)
                 {
                     _selectedChannel.PropertyChanged += OnSelectedChannelPropertyChanged;
+                    if (_selectedChannel.Slides != null)
+                    {
+                        _selectedChannel.Slides.CollectionChanged += OnSelectedChannelSlidesChanged;
+                    }
                 }
 
                 OnPropertyChanged("SelectedChannel");
                 OnPropertyChanged("Slides");
                 OnPropertyChanged("Host");
                 OnPropertyChanged("HasSelectedChannel");
+                OnPropertyChanged("CanToggleTimer");
             }
         }
+
+        // Refresh CanToggleTimer whenever the selected channel gains or loses
+        // slides — the Прев toggle greys out the moment the list empties and
+        // re-enables when the first slide appears.
+        private void OnSelectedChannelSlidesChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            OnPropertyChanged("CanToggleTimer");
+        }
+
+        // Bound to the Прев ToggleButton's IsEnabled. A channel with no slides
+        // has nothing to rotate, so the switch is locked off until at least
+        // one slide is added.
+        public bool CanToggleTimer => _selectedChannel?.Slides?.Count > 0;
 
         // When the selected channel's window opens or closes, Host flips
         // between the live window VM and the local preview VM — refresh the
@@ -330,6 +354,26 @@ namespace Wrestling.UI.Material.Slider
         private void CloseAllSliders()
         {
             _windowManager.CloseAll();
+        }
+
+        // Turns off rotation timers across every channel — cached preview VMs
+        // and any open monitor-window VMs. Windows remain open on their current
+        // slide; the user can re-enable rotation per channel via the Прев
+        // toggle on the detail pane.
+        private void StopAllTimers()
+        {
+            foreach (var vm in _previewVms.Values)
+            {
+                vm.IsTimerEnabled = false;
+            }
+
+            _windowManager.StopAllTimers();
+        }
+
+        private bool HasAnyRunningTimer()
+        {
+            if (_previewVms.Values.Any(vm => vm.IsTimerEnabled)) return true;
+            return _windowManager?.HasAnyRunningTimer() ?? false;
         }
 
         private async void AddChannel()

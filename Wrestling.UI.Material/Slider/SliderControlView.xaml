@@ -137,7 +137,7 @@
                 </TextBlock>
 
                 <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="10,0,20,0">
-                    <ToggleButton Style="{DynamicResource MaterialDesignSwitchToggleButton}" VerticalAlignment="Center" ToolTip="Вкл/выкл переключение слайдов в превью" IsChecked="{Binding Path=Host.IsTimerEnabled}" />
+                    <ToggleButton Style="{DynamicResource MaterialDesignSwitchToggleButton}" VerticalAlignment="Center" ToolTip="Вкл/выкл переключение слайдов в превью" IsChecked="{Binding Path=Host.IsTimerEnabled}" IsEnabled="{Binding CanToggleTimer}" />
                     <TextBlock FontSize="14" VerticalAlignment="Center" Text="Превью:" Margin="10,0,10,0" />
                     <TextBlock FontSize="14" VerticalAlignment="Center" Text="{Binding Path=Host.CurrentSecond, Mode=OneWay}" MinWidth="20" />
                 </StackPanel>

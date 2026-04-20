@@ -89,5 +89,15 @@ namespace Wrestling.UI.Material.Slider
                 entry.View.Close();
             }
         }
+
+        public void StopAllTimers()
+        {
+            foreach (var entry in _entries)
+            {
+                entry.ViewModel.IsTimerEnabled = false;
+            }
+        }
+
+        public bool HasAnyRunningTimer() => _entries.Any(e => e.ViewModel.IsTimerEnabled);
     }
 }

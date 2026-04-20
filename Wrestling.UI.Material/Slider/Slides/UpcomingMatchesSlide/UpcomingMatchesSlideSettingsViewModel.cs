@@ -22,6 +22,12 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
 
         private ICommand _setSliderBackgroundCommand;
 
+        // Auto-title state — see GroupBracketSlideSettingsViewModel for the full
+        // rationale. Title auto-fills from the slide type + carpet name when
+        // the user hasn't typed a custom title.
+        private bool _isInitializing;
+        private string _lastAutoTitle;
+
         public UpcomingMatchesSlideSettingsViewModel(IDiContainer container) : base(container)
         {
         }
@@ -66,7 +72,26 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
                     Groups = _selectedCarpet.Groups;
                 }
 
+                if (!_isInitializing)
+                {
+                    UpdateAutoTitle(BuildAutoTitle(_selectedCarpet?.Name));
+                }
+
                 OnPropertyChanged("SelectedCarpet");
+            }
+        }
+
+        private static string BuildAutoTitle(string carpetName)
+            => string.IsNullOrEmpty(carpetName) ? null : $"Ближайшие Поединки - {carpetName}";
+
+        private void UpdateAutoTitle(string newAutoTitle)
+        {
+            if (_item == null || string.IsNullOrEmpty(newAutoTitle)) return;
+
+            if (string.IsNullOrWhiteSpace(_item.Title) || _item.Title == _lastAutoTitle)
+            {
+                _item.Title = newAutoTitle;
+                _lastAutoTitle = newAutoTitle;
             }
         }
 
@@ -131,6 +156,20 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
         }
 
         public void InitContext(ScreenSlide slide)
+        {
+            _isInitializing = true;
+            try
+            {
+                InitContextCore(slide);
+            }
+            finally
+            {
+                _lastAutoTitle = BuildAutoTitle(_selectedCarpet?.Name);
+                _isInitializing = false;
+            }
+        }
+
+        private void InitContextCore(ScreenSlide slide)
         {
             InitData();
 

@@ -22,6 +22,15 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
 
         private ICommand _setSliderBackgroundCommand;
 
+        // Auto-title state. When the user picks a group we default the slide
+        // Title to the group name, but a manual edit in the dialog's TextBox
+        // must stick across subsequent selections. _lastAutoTitle is the last
+        // value we wrote — the setter only overwrites Title if it still equals
+        // that value (or is empty). _isInitializing suppresses auto-fill while
+        // InitContext is populating selections from saved NamedValues.
+        private bool _isInitializing;
+        private string _lastAutoTitle;
+
         public GroupBracketSlideSettingsViewModel(IDiContainer container) : base(container)
         {
         }
@@ -87,8 +96,24 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
                 _selectedGroup = value;
 
                 _item.SetNamedValue("GroupID", _selectedGroup?.ID);
-                
+
+                if (!_isInitializing)
+                {
+                    UpdateAutoTitle(_selectedGroup?.Name);
+                }
+
                 OnPropertyChanged("SelectedGroup");
+            }
+        }
+
+        private void UpdateAutoTitle(string newAutoTitle)
+        {
+            if (_item == null || string.IsNullOrEmpty(newAutoTitle)) return;
+
+            if (string.IsNullOrWhiteSpace(_item.Title) || _item.Title == _lastAutoTitle)
+            {
+                _item.Title = newAutoTitle;
+                _lastAutoTitle = newAutoTitle;
             }
         }
 
@@ -135,6 +160,23 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
         }
 
         public void InitContext(ScreenSlide slide)
+        {
+            _isInitializing = true;
+            try
+            {
+                InitContextCore(slide);
+            }
+            finally
+            {
+                // Seed _lastAutoTitle from the loaded selection so re-picking
+                // another group still auto-fills when the user hadn't typed a
+                // custom title on this slide before.
+                _lastAutoTitle = _selectedGroup?.Name;
+                _isInitializing = false;
+            }
+        }
+
+        private void InitContextCore(ScreenSlide slide)
         {
             InitData();
 

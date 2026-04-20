@@ -42,17 +42,20 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBox Grid.Row="0" Grid.Column="0" materialDesign:HintAssist.Hint="Название слайда" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
-            <TextBox.Text>
-                <Binding Path="Item.Title" UpdateSourceTrigger="PropertyChanged">
-                    <Binding.ValidationRules>
-                        <validation:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
-                    </Binding.ValidationRules>
-                </Binding>
-            </TextBox.Text>
-        </TextBox>
+        <ComboBox Grid.Row="0" Grid.Column="0" materialDesign:HintAssist.Hint="Тип слайда" Style="{DynamicResource MaterialDesignFloatingHintComboBox}" IsEditable="False" Margin="10 5 10 5" FontSize="18"
+                  ItemsSource="{Binding SlideTypes}" SelectedItem="{Binding SelectedSlideType}">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Margin="0" Padding="0" Text="{Binding SlideType}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
 
-        <TextBox Grid.Row="1" Grid.Column="0" materialDesign:HintAssist.Hint="Длительность" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
+        <ContentControl Grid.Row="1"
+                Grid.Column="0"
+                Margin="10 5 10 5" Padding="0" Content="{Binding SelectedSlideType.SettingsControl}" x:Name="ContentControl" />
+
+        <TextBox Grid.Row="2" Grid.Column="0" materialDesign:HintAssist.Hint="Длительность" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
             <TextBox.Text>
                 <Binding Path="Item.Duration" UpdateSourceTrigger="PropertyChanged">
                     <Binding.ValidationRules>
@@ -62,18 +65,15 @@
             </TextBox.Text>
         </TextBox>
 
-        <ComboBox Grid.Row="2" Grid.Column="0" materialDesign:HintAssist.Hint="Тип слайда" Style="{DynamicResource MaterialDesignFloatingHintComboBox}" IsEditable="False" Margin="10 5 10 5" FontSize="18"
-                  ItemsSource="{Binding SlideTypes}" SelectedItem="{Binding SelectedSlideType}">
-            <ComboBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Margin="0" Padding="0" Text="{Binding SlideType}" />
-                </DataTemplate>
-            </ComboBox.ItemTemplate>
-        </ComboBox>
-
-        <ContentControl Grid.Row="3" 
-                Grid.Column="0"
-                Margin="10 5 10 5" Padding="0" Content="{Binding SelectedSlideType.SettingsControl}" x:Name="ContentControl" />
+        <TextBox Grid.Row="3" Grid.Column="0" materialDesign:HintAssist.Hint="Название слайда" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
+            <TextBox.Text>
+                <Binding Path="Item.Title" UpdateSourceTrigger="PropertyChanged">
+                    <Binding.ValidationRules>
+                        <validation:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                    </Binding.ValidationRules>
+                </Binding>
+            </TextBox.Text>
+        </TextBox>
 
         <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0 10 0 0">
             <Button IsDefault="True"
