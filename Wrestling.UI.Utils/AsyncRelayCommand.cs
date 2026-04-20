@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace Wrestling.UI.Utils
@@ -40,20 +43,36 @@ namespace Wrestling.UI.Utils
 
         public async void Execute(object parameter)
         {
-            if (CanExecute(parameter))
-            {
-                try
-                {
-                    _isExecuting = true;
-                    RaiseCanExecuteChanged();
+            if (!CanExecute(parameter)) return;
 
-                    await _execute(parameter).ConfigureAwait(true); // Return to UI context
-                }
-                finally
+            _isExecuting = true;
+            RaiseCanExecuteChanged();
+            try
+            {
+                await _execute(parameter).ConfigureAwait(true); // Return to UI context
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"AsyncRelayCommand execution failed: {ex}");
+
+                // Re-post to the Dispatcher so Application.DispatcherUnhandledException
+                // sees it synchronously, instead of the GC-delayed TaskScheduler.UnobservedTaskException
+                // path that kicks in if the command was started without a captured SynchronizationContext.
+                var dispatcher = Application.Current?.Dispatcher;
+                if (dispatcher != null)
                 {
-                    _isExecuting = false;
-                    RaiseCanExecuteChanged();
+                    var capture = ExceptionDispatchInfo.Capture(ex);
+                    _ = dispatcher.BeginInvoke(new Action(() => capture.Throw()));
                 }
+                else
+                {
+                    throw;
+                }
+            }
+            finally
+            {
+                _isExecuting = false;
+                RaiseCanExecuteChanged();
             }
         }
 

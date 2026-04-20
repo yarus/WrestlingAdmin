@@ -331,11 +331,16 @@ namespace Wrestling.UI.Material.Tournament.Import
 
         private void StartImportJob()
         {
-            _timer?.Stop();
+            if (_timer == null)
+            {
+                _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+                _timer.Tick += OnTimerTick;
+            }
+            else
+            {
+                _timer.Stop();
+            }
 
-            _timer = new DispatcherTimer();
-            _timer.Tick += OnTimerTick;
-            _timer.Interval = new TimeSpan(0, 0, 0, 1);
             _timer.Start();
             IsImportJobStarted = true;
         }

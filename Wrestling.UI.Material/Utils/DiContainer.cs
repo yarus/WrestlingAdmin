@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Utils
@@ -8,11 +8,11 @@ namespace Wrestling.UI.Material.Utils
     {
         private static volatile DiContainer _instance;
         private static readonly object SyncRoot = new Object();
-        private readonly Dictionary<string, object> _container;
+        private readonly ConcurrentDictionary<string, object> _container;
 
         private DiContainer()
         {
-            _container = new Dictionary<string, object>();
+            _container = new ConcurrentDictionary<string, object>();
         }
 
         public void Add<T>(object item) where T : class
@@ -24,12 +24,10 @@ namespace Wrestling.UI.Material.Utils
         {
             if (string.IsNullOrEmpty(key)) throw new ApplicationException("Key for IoC container should not be empty!");
 
-            if (_container.ContainsKey(key))
+            if (!_container.TryAdd(key, item))
             {
                 throw new ApplicationException("Cant add item to container since such type already exists.");
             }
-
-            _container.Add(key, item);
         }
 
         public void Remove<T>() where T : class
@@ -43,10 +41,7 @@ namespace Wrestling.UI.Material.Utils
 
         public void Remove(string key)
         {
-            if (_container.ContainsKey(key))
-            {
-                _container.Remove(key);
-            }
+            _container.TryRemove(key, out _);
         }
 
         public T Resolve<T>() where T : class
@@ -60,9 +55,9 @@ namespace Wrestling.UI.Material.Utils
 
         public object Resolve(string key)
         {
-            if (string.IsNullOrEmpty(key) || !_container.ContainsKey(key)) return null;
+            if (string.IsNullOrEmpty(key)) return null;
 
-            return _container[key];
+            return _container.TryGetValue(key, out var value) ? value : null;
         }
 
         public static DiContainer Instance
