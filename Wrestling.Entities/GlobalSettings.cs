@@ -30,6 +30,10 @@ namespace Wrestling.Entities
         private string _integrationUserName;
         private string _integrationPassword;
 
+        private bool _isBackupEnabled;
+        private int _maxBackupCount;
+        private string _backupFolderPath;
+
         public GlobalSettings()
         {
             AutosaveMaxSecond = 30;
@@ -44,6 +48,9 @@ namespace Wrestling.Entities
             IsTournamentScoreInternational = true;
             IsOverlayOlympic = true;
             VideoStoragePath = DefaultVideosPath;
+            IsBackupEnabled = true;
+            MaxBackupCount = 10;
+            BackupFolderPath = string.Empty;
         }
 
         public string IntegrationUserName
@@ -226,6 +233,36 @@ namespace Wrestling.Entities
             {
                 _isOverlayOlympic = value;
                 OnPropertyChanged("IsOverlayOlympic");
+            }
+        }
+
+        public bool IsBackupEnabled
+        {
+            get { return _isBackupEnabled; }
+            set
+            {
+                _isBackupEnabled = value;
+                OnPropertyChanged("IsBackupEnabled");
+            }
+        }
+
+        public int MaxBackupCount
+        {
+            get { return _maxBackupCount; }
+            set
+            {
+                _maxBackupCount = value;
+                OnPropertyChanged("MaxBackupCount");
+            }
+        }
+
+        public string BackupFolderPath
+        {
+            get { return _backupFolderPath; }
+            set
+            {
+                _backupFolderPath = value;
+                OnPropertyChanged("BackupFolderPath");
             }
         }
     }

@@ -353,6 +353,87 @@
                 </Grid>
             </materialDesign:Card>
 
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="320">
+                <Grid VerticalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="DatabaseArrowDown" Width="80" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                    <StackPanel Grid.Row="0" Grid.Column="1">
+                        <TextBlock Margin="16 16 16 8">Резервные копии</TextBlock>
+
+                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
+                                Перед каждым сохранением создаётся резервная копия предыдущей версии файла турнира. Хранится не более указанного количества копий.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                <ToggleButton VerticalAlignment="Center" ToolTip="Вкл/выкл резервные копии"
+                                              IsChecked="{Binding Path=Item.IsBackupEnabled, UpdateSourceTrigger=PropertyChanged}" x:Name="BackupEnabledCb" />
+                                <TextBlock TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
+                                        Вкл/Выкл. резервное копирование
+                                </TextBlock>
+                            </StackPanel>
+
+                            <Grid Grid.Row="1" Margin="0 4 0 4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="80" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <materialDesign:PackIcon Grid.Column="0" Kind="Counter" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
+
+                                <TextBox Grid.Column="1" VerticalAlignment="Center" Margin="10,5,0,5"
+                                         IsEnabled="{Binding Path=IsChecked, ElementName=BackupEnabledCb}"
+                                         Text="{Binding Path=Item.MaxBackupCount, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="шт." />
+
+                                <TextBlock Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
+                                        Максимум резервных копий.
+                                </TextBlock>
+                            </Grid>
+
+                            <Grid Grid.Row="2" Margin="0 4 0 4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <materialDesign:PackIcon Grid.Column="0" Kind="FolderOutline" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
+
+                                <TextBox Grid.Column="1" VerticalAlignment="Center" Margin="10,5,0,5"
+                                         IsEnabled="{Binding Path=IsChecked, ElementName=BackupEnabledCb}"
+                                         Text="{Binding Path=Item.BackupFolderPath, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="Путь (пусто = по умолчанию)" />
+
+                                <Button Grid.Column="2" VerticalAlignment="Center" Margin="8 5 8 5"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        IsEnabled="{Binding Path=IsChecked, ElementName=BackupEnabledCb}"
+                                        Command="{Binding BrowseBackupFolderCommand}"
+                                        Content="Обзор..." />
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </materialDesign:Card>
+
         </WrapPanel>
     </ScrollViewer>
 

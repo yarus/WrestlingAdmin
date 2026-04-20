@@ -5,6 +5,16 @@ namespace Wrestling.Data
     [DataContract]
     public class GlobalSettingsInfo
     {
+        public GlobalSettingsInfo()
+        {
+            // Safe defaults so old .wrt files (missing these fields) deserialize
+            // into sensible values. Newtonsoft.Json invokes this constructor
+            // before overlaying JSON properties, so explicit "IsBackupEnabled":
+            // false in a saved file still wins.
+            IsBackupEnabled = true;
+            MaxBackupCount = 10;
+        }
+
         [DataMember]
         public bool IsTimerBackward { get; set; }
         [DataMember]
@@ -37,5 +47,11 @@ namespace Wrestling.Data
         public bool IsVideoRecordingEnabled { get; set; }
         [DataMember]
         public string VideStoragePath { get; set; }
+        [DataMember]
+        public bool IsBackupEnabled { get; set; }
+        [DataMember]
+        public int MaxBackupCount { get; set; }
+        [DataMember]
+        public string BackupFolderPath { get; set; }
     }
 }

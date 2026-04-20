@@ -69,7 +69,10 @@ public class AdapterRoundTripTests
             IsTournamentScoreInternational = false,
             IsOverlayOlympic = false,
             IsVideoRecordingEnabled = true,
-            VideoStoragePath = @"C:\videos"
+            VideoStoragePath = @"C:\videos",
+            IsBackupEnabled = false,
+            MaxBackupCount = 7,
+            BackupFolderPath = @"D:\shared-backups"
         };
         var t = new Tournament(settings) { ID = Guid.NewGuid(), Name = "N" };
 
@@ -85,6 +88,29 @@ public class AdapterRoundTripTests
         restored.Settings.IsTournamentScoreInternational.Should().BeFalse();
         restored.Settings.IsVideoRecordingEnabled.Should().BeTrue();
         restored.Settings.VideoStoragePath.Should().Be(@"C:\videos");
+        restored.Settings.IsBackupEnabled.Should().BeFalse();
+        restored.Settings.MaxBackupCount.Should().Be(7);
+        restored.Settings.BackupFolderPath.Should().Be(@"D:\shared-backups");
+    }
+
+    [Fact]
+    public void Legacy_info_without_backup_fields_applies_safe_defaults()
+    {
+        // Simulates a .wrt saved before the backup feature: the persisted
+        // MaxBackupCount is missing (0) and IsBackupEnabled is missing.
+        // The info constructor seeds safe defaults so Newtonsoft loads the
+        // pre-feature JSON with backups enabled.
+        var legacyInfo = new Wrestling.Data.TournamentInfo
+        {
+            ID = Guid.NewGuid(),
+            Name = "legacy",
+            Settings = new Wrestling.Data.GlobalSettingsInfo { MaxBackupCount = 0 }
+        };
+
+        var restored = _adapter.GetEntityFromInfo(legacyInfo);
+
+        restored.Settings.IsBackupEnabled.Should().BeTrue("safe default must enable backups for legacy files");
+        restored.Settings.MaxBackupCount.Should().Be(10, "zero is normalized to the default retention");
     }
 
     [Fact]

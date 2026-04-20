@@ -43,8 +43,18 @@ namespace Wrestling.Providers
                 IsTournamentScoreInternational = info.IsTournamentScoreInternational,
                 IsOverlayOlympic = info.IsOverlayOlympic,
                 IsVideoRecordingEnabled = info.IsVideoRecordingEnabled,
-                VideoStoragePath = info.VideStoragePath
+                VideoStoragePath = info.VideStoragePath,
+                IsBackupEnabled = info.IsBackupEnabled,
+                MaxBackupCount = info.MaxBackupCount,
+                BackupFolderPath = info.BackupFolderPath
             };
+
+            // Legacy .wrt files saved before the backup feature shipped don't
+            // carry MaxBackupCount. The GlobalSettingsInfo constructor seeds
+            // 10 for newly-constructed instances, but pre-feature JSON that
+            // explicitly serialized MaxBackupCount = 0 is indistinguishable
+            // from "missing". Treat 0 as "use default" to be safe.
+            if (entity.MaxBackupCount <= 0) entity.MaxBackupCount = 10;
 
             return entity;
         }
@@ -70,7 +80,10 @@ namespace Wrestling.Providers
                 IsTournamentScoreInternational = entity.IsTournamentScoreInternational,
                 IsOverlayOlympic = entity.IsOverlayOlympic,
                 IsVideoRecordingEnabled = entity.IsVideoRecordingEnabled,
-                VideStoragePath = entity.VideoStoragePath
+                VideStoragePath = entity.VideoStoragePath,
+                IsBackupEnabled = entity.IsBackupEnabled,
+                MaxBackupCount = entity.MaxBackupCount,
+                BackupFolderPath = entity.BackupFolderPath
             };
 
             return info;

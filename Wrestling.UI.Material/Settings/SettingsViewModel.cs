@@ -4,6 +4,7 @@ using System.Media;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Windows.Input;
+using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
@@ -23,6 +24,7 @@ namespace Wrestling.UI.Material.Settings
         private ICommand _setEndGongCommand;
         private ICommand _playEndGongCommand;
         private ICommand _playStartGongCommand;
+        private ICommand _browseBackupFolderCommand;
 
         private string _validation;
 
@@ -326,6 +328,40 @@ namespace Wrestling.UI.Material.Settings
             if (success == true)
             {
                 Item.EndGongSoundPath = settings.FileName;
+            }
+        }
+
+        public ICommand BrowseBackupFolderCommand
+        {
+            get
+            {
+                if (_browseBackupFolderCommand == null)
+                {
+                    _browseBackupFolderCommand = new RelayCommand(
+                        param => BrowseBackupFolder(),
+                        param => true
+                    );
+                }
+                return _browseBackupFolderCommand;
+            }
+        }
+
+        private void BrowseBackupFolder()
+        {
+            var settings = new FolderBrowserDialogSettings
+            {
+                Description = "Выберите папку для резервных копий",
+                ShowNewFolderButton = true,
+                SelectedPath = string.IsNullOrWhiteSpace(Item.BackupFolderPath)
+                    ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                    : Item.BackupFolderPath
+            };
+
+            bool? success = Dialog.ShowFolderBrowserDialog(this, settings);
+            if (success == true)
+            {
+                Item.BackupFolderPath = settings.SelectedPath;
+                OnPropertyChanged("Item");
             }
         }
     }
