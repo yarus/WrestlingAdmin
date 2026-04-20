@@ -28,7 +28,6 @@ using Wrestling.UI.Material.Tournament.Print;
 using Wrestling.UI.Material.Tournament.Standing.Details;
 using Wrestling.UI.Material.Utils;
 using Wrestling.UI.Utils;
-using SlideHostView = Wrestling.UI.Material.Slider.SlideHostView;
 
 namespace Wrestling.UI.Material
 {
@@ -260,13 +259,13 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
                 new SubGroupsToOlympicBracketProcessor()
             });
 
-            di.Add<GroupBracketViewModel>(new GroupBracketViewModel(di));
+            // Per-host ISliderViewControl instances are now constructed via
+            // ISlideType.CreateViewControl(), so these view-model types are no
+            // longer DI singletons. Only the settings VMs (which back the one
+            // AddSlide dialog) stay singletons.
             di.Add<GroupBracketSlideSettingsViewModel>(new GroupBracketSlideSettingsViewModel(di));
-            di.Add<ImageSlideViewModel>(new ImageSlideViewModel(di));
             di.Add<ImageSlideSettingsViewModel>(new ImageSlideSettingsViewModel(di));
-            di.Add<VideoSlideViewModel>(new VideoSlideViewModel(di));
             di.Add<VideoSlideSettingsViewModel>(new VideoSlideSettingsViewModel(di));
-            di.Add<UpcomingMatchesViewModel>(new UpcomingMatchesViewModel(di));
             di.Add<UpcomingMatchesSlideSettingsViewModel>(new UpcomingMatchesSlideSettingsViewModel(di));
 
             di.Add<List<ISlideType>>(new List<ISlideType>
@@ -281,8 +280,7 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
 
             di.Add(new WwfScoreScreenView(), "ScoreScreen");
 
-            di.Add(new SlideHostView(), "SlideHost");
-            di.Add<SlideHostViewModel>(new SlideHostViewModel(di));
+            di.Add<ISliderWindowManager>(new SliderWindowManager(di));
 
             di.Add(new PrintView(), "PrintHost");
 

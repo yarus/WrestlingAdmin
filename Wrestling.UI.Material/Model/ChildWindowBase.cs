@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Windows;
 using Wrestling.Entities;
 
@@ -6,8 +6,8 @@ namespace Wrestling.UI.Material.Model
 {
     public class ChildWindowBase : Window, IPanelView
     {
-        protected bool WasShown { get; private set; }
-        
+        public bool WasShown { get; protected set; }
+
         protected override void OnClosing(CancelEventArgs e)
         {
             e.Cancel = true;
@@ -40,7 +40,7 @@ namespace Wrestling.UI.Material.Model
 
         protected virtual void AdjustScreenOnShow()
         {
-            
+
         }
     }
 }

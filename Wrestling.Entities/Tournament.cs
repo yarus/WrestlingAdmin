@@ -24,7 +24,7 @@ namespace Wrestling.Entities
         private string _mainSecretaryPhone;
         private decimal? _entryFee;
 
-        private ObservableCollection<ScreenSlide> _slides;
+        private ObservableCollection<SlideChannel> _slideChannels;
 
         private ObservableCollection<AgeWeightGroup> _groups;
 
@@ -42,7 +42,7 @@ namespace Wrestling.Entities
             _applications = new ObservableCollection<TeamApplication>();
             _wrestlers = new ObservableCollection<Wrestler>();
             _carpets = new ObservableCollection<Carpet>();
-            _slides = new ObservableCollection<ScreenSlide>();
+            _slideChannels = new ObservableCollection<SlideChannel>();
             _importSources = new ObservableCollection<string>();
 
             Settings = settings ?? new GlobalSettings();
@@ -261,12 +261,12 @@ namespace Wrestling.Entities
             }
         }
 
-        public ObservableCollection<ScreenSlide> Slides
+        public ObservableCollection<SlideChannel> SlideChannels
         {
-            get { return _slides; }
+            get { return _slideChannels; }
             set
             {
-                _slides = value;
+                _slideChannels = value;
                 OnPropertyChanged();
             }
         }

@@ -495,8 +495,19 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        private void ShowScreen()
+        private async void ShowScreen()
         {
+            if (!_scoreScreenView.WasShown)
+            {
+                var monitor = await MonitorPicker.PickAsync();
+                if (monitor == null) return;
+
+                if (_scoreScreenView is PanelViewBase panel)
+                {
+                    panel.TargetMonitor = monitor;
+                }
+            }
+
             _scoreScreenView.ShowScreen(_scoreScreen);
         }
 

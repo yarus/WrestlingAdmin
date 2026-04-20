@@ -97,7 +97,23 @@ namespace Wrestling.Providers
 
             var carpets = info.Carpets?.Select(c => GetEntityFromInfo(c, groups)).ToList() ?? new List<Carpet>();
 
-            var slides = info.Slides?.Select(GetEntityFromInfo).ToList() ?? new List<ScreenSlide>();
+            var slideChannels = info.SlideChannels?.Select(GetEntityFromInfo).ToList() ?? new List<SlideChannel>();
+
+            // Legacy .wrt files serialize a flat `Slides` list instead of channels.
+            // When SlideChannels is empty and Slides is not, migrate into one
+            // default channel so old tournaments keep their slides on load.
+            if (slideChannels.Count == 0 && info.Slides != null)
+            {
+                var legacy = info.Slides.Select(GetEntityFromInfo).ToList();
+                if (legacy.Count > 0)
+                {
+                    slideChannels.Add(new SlideChannel
+                    {
+                        Name = "Основной",
+                        Slides = new ObservableCollection<ScreenSlide>(legacy)
+                    });
+                }
+            }
 
             var importSources = info.ImportSources?.ToList() ?? new List<string>();
 
@@ -164,7 +180,7 @@ namespace Wrestling.Providers
                 Wrestlers = new ObservableCollection<Wrestler>(wrestlers),
                 Settings = settings,
                 Carpets = new ObservableCollection<Carpet>(carpets),
-                Slides = new ObservableCollection<ScreenSlide>(slides),
+                SlideChannels = new ObservableCollection<SlideChannel>(slideChannels),
                 HashTag = info.HashTag,
                 MainJudgeEmail = info.MainJudgeEmail,
                 MainJudgePhone = info.MainJudgePhone,
@@ -195,6 +211,20 @@ namespace Wrestling.Providers
             };
 
             return entity;
+        }
+
+        private SlideChannel GetEntityFromInfo(SlideChannelInfo info)
+        {
+            if (info == null) return null;
+
+            var slides = info.Slides?.Select(GetEntityFromInfo).ToList() ?? new List<ScreenSlide>();
+
+            return new SlideChannel
+            {
+                Name = info.Name,
+                SliderMaxSecond = info.SliderMaxSecond,
+                Slides = new ObservableCollection<ScreenSlide>(slides)
+            };
         }
 
         private Carpet GetEntityFromInfo(CarpetInfo info, IEnumerable<AgeWeightGroup> groups)
@@ -379,7 +409,7 @@ namespace Wrestling.Providers
                 TeamApplications = item.TeamApplications.Select(GetInfoFromEntity),
                 Wrestlers = item.Wrestlers.Select(GetInfoFromEntity),
                 Carpets = item.Carpets.Select(GetInfoFromEntity),
-                Slides = item.Slides.Select(GetInfoFromEntity),
+                SlideChannels = item.SlideChannels.Select(GetInfoFromEntity),
                 HashTag = item.HashTag,
                 MainJudgeEmail = item.MainJudgeEmail,
                 MainJudgePhone = item.MainJudgePhone,
@@ -410,6 +440,18 @@ namespace Wrestling.Providers
             };
 
             return info;
+        }
+
+        private SlideChannelInfo GetInfoFromEntity(SlideChannel entity)
+        {
+            if (entity == null) return null;
+
+            return new SlideChannelInfo
+            {
+                Name = entity.Name,
+                SliderMaxSecond = entity.SliderMaxSecond,
+                Slides = entity.Slides?.Select(GetInfoFromEntity).ToList()
+            };
         }
 
         private CarpetInfo GetInfoFromEntity(Carpet entity)

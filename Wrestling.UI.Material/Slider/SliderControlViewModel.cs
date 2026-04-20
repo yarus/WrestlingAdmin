@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
@@ -14,9 +16,9 @@ namespace Wrestling.UI.Material.Slider
 {
     public class SliderControlViewModel : TournamentViewModelBase
     {
-        //private ObservableCollection<Carpet> _carpets;
         private ObservableCollection<AgeWeightGroup> _groups;
-        private ObservableCollection<ScreenSlide> _slides;
+        private ObservableCollection<SlideChannel> _channels;
+        private SlideChannel _selectedChannel;
 
         private ICommand _deleteSlideCommand;
         private ICommand _upSlideCommand;
@@ -25,8 +27,18 @@ namespace Wrestling.UI.Material.Slider
         private ICommand _editSlideCommand;
         private ICommand _deleteAllSlidesCommand;
 
-        private IPanelView _slider;
-        private SlideHostViewModel _slideHostVm;
+        private ICommand _addChannelCommand;
+        private ICommand _renameChannelCommand;
+        private ICommand _deleteChannelCommand;
+        private ICommand _toggleChannelCommand;
+
+        private ISliderWindowManager _windowManager;
+
+        // One preview VM per channel so the preview timer keeps running across
+        // channel toggles. Also lets users park multiple previews (e.g. channel
+        // A rotating, channel B rotating) without losing state when switching.
+        private readonly Dictionary<SlideChannel, SlideHostViewModel> _previewVms = new Dictionary<SlideChannel, SlideHostViewModel>();
+        private Entities.Tournament _cachedTournament;
 
         private IList<CommandButtonItem> _quickButtons;
 
@@ -40,31 +52,48 @@ namespace Wrestling.UI.Material.Slider
         {
             base.InitData();
 
-            _slider = Resolve<IPanelView>("SlideHost");
-            _slideHostVm = Resolve<SlideHostViewModel>();
+            _windowManager = Resolve<ISliderWindowManager>();
 
-            //_carpets = DataContext.Tournament.Carpets;
+            // Entering the page with a different tournament than last time means
+            // cached preview VMs are bound to orphaned channels. Tear them down
+            // so we don't leak timers into the new session.
+            if (!ReferenceEquals(_cachedTournament, DataContext.Tournament))
+            {
+                foreach (var vm in _previewVms.Values) vm.Shutdown();
+                _previewVms.Clear();
+                _cachedTournament = DataContext.Tournament;
+            }
+
             _groups = DataContext.Tournament.Groups;
 
-            _slides = DataContext.Tournament.Slides;
+            Channels = DataContext.Tournament.SlideChannels;
 
-            if (_slides.Count == 0)
+            if (Channels.Count == 0)
             {
-                InitDefaultSlides();
+                CreateDefaultChannel();
             }
+
+            SelectedChannel = Channels.FirstOrDefault();
         }
+
+        // Intentionally no OnNavigatingOut cleanup: users expect a preview
+        // they started to keep rotating while they step away to the dashboard
+        // and come back. The cache is only torn down when the tournament
+        // reference changes (handled in InitData) or the owning channel is
+        // deleted (handled in DeleteChannel).
 
         public override IList<CommandButtonItem> QuickButtons
         {
             get
             {
                 return _quickButtons ??
-                       (
-                           _quickButtons = new List<CommandButtonItem>
-                           {
-                               new CommandButtonItem("Открыть слайдер", PackIconKind.ImageFilter, new RelayCommand(param => OpenSlider(), param => true))
-                           }
-                       );
+                (
+                    _quickButtons = new List<CommandButtonItem>
+                    {
+                        new CommandButtonItem("Новый канал", PackIconKind.PlaylistPlus, new RelayCommand(param => AddChannel(), param => true)),
+                        new CommandButtonItem("Закрыть все слайдеры", PackIconKind.CloseCircleOutline, new RelayCommand(param => CloseAllSliders(), param => _windowManager?.OpenCount > 0))
+                    }
+                );
             }
         }
 
@@ -77,27 +106,81 @@ namespace Wrestling.UI.Material.Slider
             NavigateToView<DashboardViewModel>();
         }
 
-        public SlideHostViewModel Host
+        public ObservableCollection<SlideChannel> Channels
         {
-            get { return _slideHostVm; }
+            get { return _channels; }
             set
             {
-                _slideHostVm = value;
+                _channels = value;
+                OnPropertyChanged("Channels");
+            }
+        }
 
+        public SlideChannel SelectedChannel
+        {
+            get { return _selectedChannel; }
+            set
+            {
+                if (_selectedChannel != null)
+                {
+                    _selectedChannel.PropertyChanged -= OnSelectedChannelPropertyChanged;
+                }
+
+                _selectedChannel = value;
+
+                if (_selectedChannel != null)
+                {
+                    _selectedChannel.PropertyChanged += OnSelectedChannelPropertyChanged;
+                }
+
+                OnPropertyChanged("SelectedChannel");
+                OnPropertyChanged("Slides");
+                OnPropertyChanged("Host");
+                OnPropertyChanged("HasSelectedChannel");
+            }
+        }
+
+        // When the selected channel's window opens or closes, Host flips
+        // between the live window VM and the local preview VM — refresh the
+        // bindings so the Прев toggle and ListView reflect whichever is active.
+        private void OnSelectedChannelPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SlideChannel.IsOpen))
+            {
                 OnPropertyChanged("Host");
             }
         }
 
-        public ObservableCollection<ScreenSlide> Slides
-        {
-            get { return _slides; }
-            set
-            {
-                _slides = value;
+        public bool HasSelectedChannel => _selectedChannel != null;
 
-                OnPropertyChanged("Slides");
+        // When a monitor window is open for the selected channel, Host mirrors
+        // that window's VM so the in-panel timer toggle + current-slide
+        // selection reflect the live state. Otherwise it returns a per-channel
+        // preview VM (cached so its timer state survives channel switches).
+        public SlideHostViewModel Host
+        {
+            get
+            {
+                if (_selectedChannel == null) return null;
+                return _windowManager?.GetViewModelForChannel(_selectedChannel) ?? GetOrCreatePreview(_selectedChannel);
             }
         }
+
+        private SlideHostViewModel GetOrCreatePreview(SlideChannel channel)
+        {
+            if (!_previewVms.TryGetValue(channel, out var vm))
+            {
+                vm = new SlideHostViewModel(DiContainer) { Channel = channel };
+                vm.InitData();
+                _previewVms[channel] = vm;
+            }
+            return vm;
+        }
+
+        // ListView ItemsSource — tracks the selected channel's slides.
+        public ObservableCollection<ScreenSlide> Slides => _selectedChannel?.Slides;
+
+        #region Slide commands (scoped to SelectedChannel)
 
         public ICommand DeleteAllSlidesCommand
         {
@@ -105,12 +188,11 @@ namespace Wrestling.UI.Material.Slider
             {
                 if (_deleteAllSlidesCommand == null)
                 {
-                    _deleteAllSlidesCommand = new RelayCommand(param => DeleteAllSlides(), param => true);
+                    _deleteAllSlidesCommand = new RelayCommand(param => DeleteAllSlides(), param => _selectedChannel != null);
                 }
                 return _deleteAllSlidesCommand;
             }
         }
-
 
         public ICommand DeleteSlideCommand
         {
@@ -123,6 +205,7 @@ namespace Wrestling.UI.Material.Slider
                 return _deleteSlideCommand;
             }
         }
+
         public ICommand UpSlideCommand
         {
             get
@@ -134,6 +217,7 @@ namespace Wrestling.UI.Material.Slider
                 return _upSlideCommand;
             }
         }
+
         public ICommand DownSlideCommand
         {
             get
@@ -152,7 +236,7 @@ namespace Wrestling.UI.Material.Slider
             {
                 if (_addSlideCommand == null)
                 {
-                    _addSlideCommand = new RelayCommand(param => AddSlide(), param => true);
+                    _addSlideCommand = new RelayCommand(param => AddSlide(), param => _selectedChannel != null);
                 }
                 return _addSlideCommand;
             }
@@ -170,10 +254,154 @@ namespace Wrestling.UI.Material.Slider
             }
         }
 
-        private void OpenSlider()
+        #endregion
+
+        #region Channel commands
+
+        public ICommand AddChannelCommand
         {
-            _slideHostVm.InitData();
-            _slider.ShowScreen(_slideHostVm);
+            get
+            {
+                if (_addChannelCommand == null)
+                {
+                    _addChannelCommand = new RelayCommand(param => AddChannel(), param => true);
+                }
+                return _addChannelCommand;
+            }
+        }
+
+        public ICommand RenameChannelCommand
+        {
+            get
+            {
+                if (_renameChannelCommand == null)
+                {
+                    _renameChannelCommand = new RelayCommand(param => RenameChannel(param as SlideChannel), param => param is SlideChannel);
+                }
+                return _renameChannelCommand;
+            }
+        }
+
+        public ICommand DeleteChannelCommand
+        {
+            get
+            {
+                if (_deleteChannelCommand == null)
+                {
+                    _deleteChannelCommand = new RelayCommand(param => DeleteChannel(param as SlideChannel), param => param is SlideChannel);
+                }
+                return _deleteChannelCommand;
+            }
+        }
+
+        public ICommand ToggleChannelCommand
+        {
+            get
+            {
+                if (_toggleChannelCommand == null)
+                {
+                    _toggleChannelCommand = new RelayCommand(param => ToggleChannel(param as SlideChannel), param => param is SlideChannel);
+                }
+                return _toggleChannelCommand;
+            }
+        }
+
+        #endregion
+
+        private async void ToggleChannel(SlideChannel channel)
+        {
+            if (channel == null) return;
+
+            // One button per channel: open on a chosen monitor if closed, close
+            // the existing window if open. This matches the single on-screen
+            // control the user sees, without a separate "close" action.
+            if (_windowManager.CountForChannel(channel) > 0)
+            {
+                _windowManager.CloseChannel(channel);
+                return;
+            }
+
+            var monitor = await MonitorPicker.PickAsync();
+            if (monitor == null) return;
+
+            _windowManager.OpenOnMonitor(channel, monitor);
+        }
+
+        private void CloseAllSliders()
+        {
+            _windowManager.CloseAll();
+        }
+
+        private async void AddChannel()
+        {
+            var channel = new SlideChannel
+            {
+                Name = NextChannelName(),
+                SliderMaxSecond = DataContext.Tournament.Settings.SliderMaxSecond
+            };
+
+            var vm = new ChannelEditorViewModel
+            {
+                Name = channel.Name,
+                SliderMaxSecond = channel.SliderMaxSecond
+            };
+
+            var dialog = new ChannelEditorDialog { DataContext = vm };
+            var result = await DialogHost.Show(dialog, "RootDialog");
+            if (result is bool ok && ok)
+            {
+                channel.Name = string.IsNullOrWhiteSpace(vm.Name) ? channel.Name : vm.Name.Trim();
+                channel.SliderMaxSecond = vm.SliderMaxSecond > 0 ? vm.SliderMaxSecond : channel.SliderMaxSecond;
+
+                Channels.Add(channel);
+                SelectedChannel = channel;
+            }
+        }
+
+        private async void RenameChannel(SlideChannel channel)
+        {
+            if (channel == null) return;
+
+            var vm = new ChannelEditorViewModel
+            {
+                Name = channel.Name,
+                SliderMaxSecond = channel.SliderMaxSecond
+            };
+
+            var dialog = new ChannelEditorDialog { DataContext = vm };
+            var result = await DialogHost.Show(dialog, "RootDialog");
+            if (result is bool ok && ok)
+            {
+                if (!string.IsNullOrWhiteSpace(vm.Name)) channel.Name = vm.Name.Trim();
+                if (vm.SliderMaxSecond > 0) channel.SliderMaxSecond = vm.SliderMaxSecond;
+            }
+        }
+
+        private void DeleteChannel(SlideChannel channel)
+        {
+            if (channel == null) return;
+
+            if (Dialog.ShowMessageBox(this, $"Удалить канал «{channel.Name}» со всеми слайдами?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) return;
+
+            _windowManager.CloseChannel(channel);
+
+            if (_previewVms.TryGetValue(channel, out var previewVm))
+            {
+                previewVm.Shutdown();
+                _previewVms.Remove(channel);
+            }
+
+            Channels.Remove(channel);
+
+            if (Channels.Count == 0)
+            {
+                CreateDefaultChannel();
+            }
+
+            if (SelectedChannel == channel)
+            {
+                SelectedChannel = Channels.FirstOrDefault();
+            }
         }
 
         private async void EditSlide(ScreenSlide slide)
@@ -202,9 +430,15 @@ namespace Wrestling.UI.Material.Slider
 
         private async void AddSlide()
         {
+            if (_selectedChannel == null) return;
+
+            var defaultDuration = _selectedChannel.SliderMaxSecond > 0
+                ? _selectedChannel.SliderMaxSecond
+                : DataContext.Tournament.Settings.SliderMaxSecond;
+
             var vm = new AddSlideViewModel(DiContainer)
             {
-                Item = new ScreenSlide {Duration = DataContext.Tournament.Settings.SliderMaxSecond}
+                Item = new ScreenSlide { Duration = defaultDuration }
             };
 
             var view = new AddSlideDialog
@@ -218,54 +452,79 @@ namespace Wrestling.UI.Material.Slider
 
             if (result != null && (bool)result)
             {
-                Slides.Add(vm.Item);
-
-                _slideHostVm.InitData();
+                // In-place mutation: open slide-host windows and the cached
+                // preview VM all share this ObservableCollection reference,
+                // so the new slide shows up in the next rotation without
+                // forcing a state-destroying InitData().
+                _selectedChannel.Slides.Add(vm.Item);
             }
         }
 
         private void UpSlide(ScreenSlide slide)
         {
-            var i = Slides.IndexOf(slide);
+            if (_selectedChannel == null) return;
+
+            var slides = _selectedChannel.Slides;
+            var i = slides.IndexOf(slide);
             var j = i - 1;
             if (j >= 0)
             {
-                Slides.Swap(i, j);
+                slides.Swap(i, j);
             }
         }
 
         private void DownSlide(ScreenSlide slide)
         {
-            var i = Slides.IndexOf(slide);
+            if (_selectedChannel == null) return;
+
+            var slides = _selectedChannel.Slides;
+            var i = slides.IndexOf(slide);
             var j = i + 1;
-            if (j < Slides.Count)
+            if (j < slides.Count)
             {
-                Slides.Swap(i, j);
+                slides.Swap(i, j);
             }
         }
 
         private void DeleteAllSlides()
         {
+            if (_selectedChannel == null) return;
+
             if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить все слайды?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
 
-            Slides = new ObservableCollection<ScreenSlide>();
-            DataContext.Tournament.Slides = Slides;
-
+            // Clear in place — replacing the collection would invalidate cached
+            // Slides references held by the preview VM and open window VMs.
+            _selectedChannel.Slides.Clear();
         }
 
         private void DeleteSlide(ScreenSlide slide)
         {
-            var slides = new ObservableCollection<ScreenSlide>(Slides);
-            slides.Remove(slide);
-            Slides = slides;
-            DataContext.Tournament.Slides = slides;
+            if (_selectedChannel == null) return;
 
-            _slideHostVm.InitData();
+            _selectedChannel.Slides.Remove(slide);
         }
 
-        private void InitDefaultSlides()
+        private string NextChannelName()
+        {
+            int i = Channels.Count + 1;
+            string candidate;
+            do
+            {
+                candidate = $"Канал {i}";
+                i++;
+            } while (Channels.Any(c => c.Name == candidate));
+            return candidate;
+        }
+
+        private void CreateDefaultChannel()
         {
             var groupBracketSlide = new GroupBracketSlide(DiContainer);
+            var channel = new SlideChannel
+            {
+                Name = "Основной",
+                SliderMaxSecond = DataContext.Tournament.Settings.SliderMaxSecond
+            };
+
             foreach (var group in _groups)
             {
                 var slide = new ScreenSlide
@@ -277,10 +536,10 @@ namespace Wrestling.UI.Material.Slider
 
                 slide.NamedValues.Add("GroupID", group.ID);
 
-                _slides.Add(slide);
+                channel.Slides.Add(slide);
             }
 
-            DataContext.Tournament.Slides = _slides;
+            Channels.Add(channel);
         }
     }
 }

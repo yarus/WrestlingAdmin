@@ -5,6 +5,7 @@ using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
+using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament
@@ -44,6 +45,12 @@ namespace Wrestling.UI.Material.Tournament
             }
 
             if(saveRequired) await SaveDataAsync();
+
+            // Close any open slider windows before dropping the tournament so
+            // they don't hold stale references; the score screen stays registered
+            // as a singleton and is simply hidden by its own CloseScreen() on next
+            // navigation.
+            Resolve<ISliderWindowManager>()?.CloseAll();
 
             DataContext.Tournament = null;
             DataContext.Group = null;

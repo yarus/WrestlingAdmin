@@ -1,0 +1,50 @@
+<UserControl x:Class="Wrestling.UI.Material.Slider.ChannelEditorDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:system="clr-namespace:System;assembly=mscorlib"
+             mc:Ignorable="d" MinWidth="360" MaxWidth="480"
+             d:DesignHeight="180" d:DesignWidth="360">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Канал слайдов" FontSize="20" Margin="0,0,0,12" />
+
+        <TextBox Grid.Row="1"
+                 materialDesign:HintAssist.Hint="Название канала"
+                 Style="{DynamicResource MaterialDesignFloatingHintTextBox}"
+                 Margin="0,5,0,5" FontSize="16"
+                 Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBox Grid.Row="2"
+                 materialDesign:HintAssist.Hint="Длительность слайда по умолчанию (с)"
+                 Style="{DynamicResource MaterialDesignFloatingHintTextBox}"
+                 Margin="0,5,0,5" FontSize="16"
+                 Text="{Binding SliderMaxSecond, UpdateSourceTrigger=PropertyChanged}" />
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button IsDefault="True"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                <Button.CommandParameter>
+                    <system:Boolean>True</system:Boolean>
+                </Button.CommandParameter>
+                СОХРАНИТЬ
+            </Button>
+            <Button IsCancel="True" Margin="8,0,0,0"
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                <Button.CommandParameter>
+                    <system:Boolean>False</system:Boolean>
+                </Button.CommandParameter>
+                ОТМЕНИТЬ
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

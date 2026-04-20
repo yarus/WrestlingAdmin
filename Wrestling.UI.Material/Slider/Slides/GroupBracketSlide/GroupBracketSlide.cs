@@ -1,17 +1,20 @@
-﻿using Wrestling.UI.Utils;
+using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
 {
     public class GroupBracketSlide : ISlideType
     {
+        private readonly IDiContainer _di;
+
         public GroupBracketSlide(IDiContainer di)
         {
+            _di = di;
             SettingsControl = di.Resolve<GroupBracketSlideSettingsViewModel>();
-            ViewControl = di.Resolve<GroupBracketViewModel>();
         }
 
         public string SlideType => "Сетка группы";
         public ISliderSettingsControl SettingsControl { get; }
-        public ISliderViewControl ViewControl { get; }
+
+        public ISliderViewControl CreateViewControl() => new GroupBracketViewModel(_di);
     }
 }

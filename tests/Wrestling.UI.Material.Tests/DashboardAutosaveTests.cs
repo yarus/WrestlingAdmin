@@ -28,6 +28,7 @@ public sealed class DashboardAutosaveTests
 
     private sealed class NullPanelView : IPanelView
     {
+        public bool WasShown => false;
         public void ShowScreen(ObservableObject dataContext) { }
         public void CloseScreen() { }
     }

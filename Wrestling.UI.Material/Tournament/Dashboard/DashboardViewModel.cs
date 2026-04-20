@@ -163,8 +163,19 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
             NavigateToView<ResultsViewModel>();
         }
 
-        private void OpenMonitor()
+        private async void OpenMonitor()
         {
+            if (!_scoreScreenView.WasShown)
+            {
+                var monitor = await MonitorPicker.PickAsync();
+                if (monitor == null) return;
+
+                if (_scoreScreenView is PanelViewBase panel)
+                {
+                    panel.TargetMonitor = monitor;
+                }
+            }
+
             _scoreScreenVm.IsSoundEnabled = Tournament.Settings.IsSoundEnabled;
             _scoreScreenVm.IsTimerBackward = Tournament.Settings.IsTimerBackward;
             _scoreScreenVm.MaxActionSecond = Tournament.Settings.MaxActionSecond;
