@@ -1,4 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
@@ -28,6 +32,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         private IList<CommandButtonItem> _drawerItems;
 
         private readonly CommandButtonItem _saveQuickCommand;
+        private readonly CommandButtonItem _openLogsQuickCommand;
 
         private IPanelView _scoreScreenView;
         private ScoreScreenViewModel _scoreScreenVm;
@@ -37,8 +42,10 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
 
         public DashboardViewModel(IDiContainer container) : base(container)
         {
-            _saveQuickCommand = new CommandButtonItem("Сохранить турнир", PackIconKind.ContentSave, 
+            _saveQuickCommand = new CommandButtonItem("Сохранить турнир", PackIconKind.ContentSave,
                 new AsyncRelayCommand(execute: async _ => await SaveDataAsync()));
+            _openLogsQuickCommand = new CommandButtonItem("Открыть журнал", PackIconKind.FileDocumentOutline,
+                new RelayCommand(param => OpenLatestLogFile(), param => true));
         }
 
         public override void InitData()
@@ -57,11 +64,12 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         {
             get
             {
-                return _quickButtons ?? 
+                return _quickButtons ??
                 (
                     _quickButtons = new List<CommandButtonItem>
                     {
-                        _saveQuickCommand
+                        _saveQuickCommand,
+                        _openLogsQuickCommand
                     }
                 );
             }
@@ -197,6 +205,50 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         // is always visible regardless of the flag — autosave only covers
         // match/import events, so other mutations (team/wrestler registration,
         // bracket generation, schedule edits) still rely on manual save.
+        private void OpenLatestLogFile()
+        {
+            try
+            {
+                var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                var appName = Assembly.GetEntryAssembly()?.GetName().Name ?? "WrestlingAdmin";
+                var logDirectory = Path.Combine(appDataPath, appName, "Logs");
+
+                if (!Directory.Exists(logDirectory))
+                {
+                    ShowSnackMessage("Журнал пуст.");
+                    return;
+                }
+
+                string latest = null;
+                var latestWrite = DateTime.MinValue;
+                foreach (var file in Directory.EnumerateFiles(logDirectory, "*.txt"))
+                {
+                    var write = File.GetLastWriteTime(file);
+                    if (write > latestWrite)
+                    {
+                        latestWrite = write;
+                        latest = file;
+                    }
+                }
+
+                if (latest == null)
+                {
+                    ShowSnackMessage("Журнал пуст.");
+                    return;
+                }
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = latest,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                ShowSnackMessage("Не удалось открыть журнал: " + ex.Message);
+            }
+        }
+
         private async Task SetupAutoSaveAsync()
         {
             if (DataContext.Tournament != null

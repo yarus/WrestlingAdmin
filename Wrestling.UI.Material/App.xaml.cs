@@ -89,6 +89,18 @@ namespace Wrestling.UI.Material
 
             DispatcherUnhandledException += (sender, args) =>
             {
+                // Benign WPF resource-lookup miss — typically raised by injected
+                // overlays (accessibility tools, IME candidate windows, touch
+                // keyboard) doing DynamicResource lookups against keys we never
+                // defined. It cannot leave the tournament in a half-mutated
+                // state, so skip the backup + MessageBox ceremony and log quietly.
+                if (args.Exception is ResourceReferenceKeyNotFoundException)
+                {
+                    LogException("Application.DispatcherUnhandledException (ignored: ResourceReferenceKeyNotFoundException)", args.Exception);
+                    args.Handled = true;
+                    return;
+                }
+
                 LogException("Application.DispatcherUnhandledException", args.Exception);
 
                 // Always write a dated backup instead of overwriting the active

@@ -18,14 +18,6 @@
         </CollectionViewSource>
 
         <converters:IndexConverter x:Key="IndexConverter"/>
-        
-        <Style x:Key="RotatedText" TargetType="TextBlock">
-            <Setter Property="LayoutTransform">
-                <Setter.Value>
-                    <RotateTransform Angle="-90" />
-                </Setter.Value>
-            </Setter>
-        </Style>
     </UserControl.Resources>
 
     <ScrollViewer x:Name="RootControl" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
