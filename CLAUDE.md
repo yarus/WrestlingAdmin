@@ -91,7 +91,12 @@ Policy lives on the tournament being saved (`info.Settings.IsBackupEnabled` / `M
 
 `JsonStorageDataAccess.ReadFromFile{,Async}` deliberately returns `default(T)` for file-not-found, `IOException`, `UnauthorizedAccessException`, `JsonException`, `SocketException`, `TimeoutException`, `ArgumentException`, `SecurityException`, `PathTooLongException`, `NotSupportedException`, `FormatException`. The import feature polls network/UNC paths on a timer during live matches; a WiFi drop must not crash the app. Each failure logs a classification tag (`Corrupt` / `AccessDenied` / `Transient` / `InvalidPath` / `NotFound` / `IO` / `Other`) to `data_log_<date>.txt` plus retry count. Network paths (UNC or mapped network drives) get 3–5 retries with exponential backoff; local paths one shot.
 
-`TournamentImporter.ImportDataFromFileAsync` returns a classified `ImportResult` (`Imported` / `NoNewData` / `FileUnavailable` / `TournamentMismatch` / `Error`), never `int`. `ImportViewModel.ImportDataAsync` renders a per-outcome message in the UI log.
+`ITournamentImporter` is split into two phases to keep UI responsive during timer-driven imports:
+
+- **`PrepareAsync(target, fileName)`** — thread-pool-safe. Loads + deserializes + runs the adapter (the 50–200 ms CPU hit). Does not touch the target's `ObservableCollection<T>` graph. Returns an `ImportPlan` that either short-circuits (`ImportPlan.Skip(outcome)`) or carries the loaded remote tournament (`ImportPlan.Proceed(remote)`).
+- **`Apply(target, plan)`** — UI-thread only. Walks the remote and merges any genuinely-new completions via `IGroupBracketProcessor.CompleteMatch`. Touches `ObservableCollection` and raises `INotifyPropertyChanged`. Fast (~1–10 ms) because only matches that actually flipped Pending→Completed are applied.
+
+`ImportViewModel.ImportDataAsync` wraps `PrepareAsync` in `Task.Run` so the heavy work runs off the UI thread, then calls `Apply` synchronously on the captured (UI) context. This eliminates UI stutter even when an import tick fires during a live round timer. The final classified `ImportResult` (`Imported` / `NoNewData` / `FileUnavailable` / `TournamentMismatch` / `Error`) drives the per-outcome log message and the autosave gate.
 
 ### Autosave is event-driven, not timer-based
 

@@ -437,11 +437,41 @@ namespace Wrestling.UI.Material.Tournament.Import
             }
         }
 
-        // internal for test access — verifies the autosave gate fires only on
-        // a successful Imported outcome.
+        // internal for test access. Runs the expensive load + parse + adapter
+        // step on a threadpool thread via Task.Run so a slow tick cannot stutter
+        // the UI (e.g. a live match timer's render loop). The apply phase runs
+        // on the captured (UI) context and is small — typically < 10 ms because
+        // only the matches that actually flipped Pending→Completed since the
+        // last import touch ObservableCollections.
         internal async Task ImportDataAsync(string path)
         {
-            var result = await _importer.ImportDataFromFileAsync(DataContext.Tournament, path);
+            var target = DataContext.Tournament;
+
+            ImportPlan plan;
+            try
+            {
+                plan = await Task.Run(() => _importer.PrepareAsync(target, path)).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Import prepare failed: {ex.Message}");
+                AddLog(path, "Ошибка импорта. Подробности в журнале.");
+                return;
+            }
+
+            ImportResult result;
+            try
+            {
+                result = plan.NeedsApply
+                    ? _importer.Apply(target, plan)
+                    : new ImportResult(plan.ShortCircuit ?? ImportOutcome.Error, 0);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Import apply failed: {ex.Message}");
+                AddLog(path, "Ошибка импорта. Подробности в журнале.");
+                return;
+            }
 
             switch (result.Outcome)
             {

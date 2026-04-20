@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,21 +20,43 @@ namespace Wrestling.UI.Material.Model
             _drawTypes = processors;
         }
 
-        public async Task<ImportResult> ImportDataFromFileAsync(Entities.Tournament target, string fileName)
+        public async Task<ImportPlan> PrepareAsync(Entities.Tournament target, string fileName)
         {
-            int result = 0;
+            // Phase 1 — threadpool-safe. Loads + deserializes + runs the entity
+            // adapter (the expensive 50-200ms CPU step) without touching the
+            // target's live ObservableCollections. The caller is expected to
+            // wrap this in Task.Run so the work happens off the UI thread.
 
-            if (string.IsNullOrEmpty(fileName)) return ImportResult.FileUnavailable();
+            if (string.IsNullOrEmpty(fileName)) return ImportPlan.Skip(ImportOutcome.FileUnavailable);
 
-            var tournament = await _tournService.LoadFromFileAsync(fileName);
+            var tournament = await _tournService.LoadFromFileAsync(fileName).ConfigureAwait(false);
 
-            if (tournament == null) return ImportResult.FileUnavailable();
+            if (tournament == null) return ImportPlan.Skip(ImportOutcome.FileUnavailable);
 
             if (tournament.Name != target.Name ||
-                tournament.Groups.Count != target.Groups.Count || tournament.StartDate != target.StartDate)
+                tournament.Groups.Count != target.Groups.Count ||
+                tournament.StartDate != target.StartDate)
             {
-                return ImportResult.TournamentMismatch();
+                return ImportPlan.Skip(ImportOutcome.TournamentMismatch);
             }
+
+            return ImportPlan.Proceed(tournament);
+        }
+
+        public ImportResult Apply(Entities.Tournament target, ImportPlan plan)
+        {
+            // Phase 2 — UI-thread. Walks the remote tournament loaded by
+            // PrepareAsync and merges genuinely-new completions into the live
+            // target via the bracket processors. Only the matches that actually
+            // flipped from Pending to Completed touch ObservableCollection, so
+            // the typical per-tick cost is < 10 ms even under a live round.
+
+            if (plan == null) return new ImportResult(ImportOutcome.Error, 0);
+            if (plan.ShortCircuit.HasValue) return new ImportResult(plan.ShortCircuit.Value, 0);
+            if (plan.Remote == null) return new ImportResult(ImportOutcome.Error, 0);
+
+            int result = 0;
+            var tournament = plan.Remote;
 
             foreach (var group in tournament.Groups)
             {
@@ -75,14 +97,14 @@ namespace Wrestling.UI.Material.Model
                     }
                 }
             }
-            
+
             // Sync wrestler info (supporting changing of names)
             foreach (var wrestler in tournament.Wrestlers)
             {
                 var changedWrestler = target.Wrestlers.FirstOrDefault(x => x.ID == wrestler.ID);
-                
+
                 if (changedWrestler == null || changedWrestler.Timestamp >= wrestler.Timestamp) continue;
-                
+
                 changedWrestler.Sync(wrestler);
             }
 

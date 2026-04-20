@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Wrestling.Entities;
@@ -13,17 +14,49 @@ namespace Wrestling.UI.Material.Tests;
 // Import path: only a successful Imported outcome should trigger autosave,
 // and only when the autosave flag is on. Other outcomes (no new data,
 // file unavailable, tournament mismatch, error) must never persist.
+//
+// Post-split: the importer's heavy Prepare phase must run off the test's
+// calling thread (ImportViewModel wraps it in Task.Run). The Apply phase
+// runs on the caller's context.
 public sealed class ImportAutosaveTests
 {
     private sealed class StubImporter : ITournamentImporter
     {
         private readonly ImportResult _result;
-        public int Calls { get; private set; }
+        public int PrepareCalls { get; private set; }
+        public int ApplyCalls { get; private set; }
+        public int PrepareThreadId { get; private set; }
+        public int ApplyThreadId { get; private set; }
+
         public StubImporter(ImportResult result) => _result = result;
-        public Task<ImportResult> ImportDataFromFileAsync(Entities.Tournament target, string fileName)
+
+        public Task<ImportPlan> PrepareAsync(Entities.Tournament target, string fileName)
         {
-            Calls++;
-            return Task.FromResult(_result);
+            PrepareCalls++;
+            PrepareThreadId = Thread.CurrentThread.ManagedThreadId;
+
+            // For short-circuit outcomes the VM skips Apply entirely.
+            switch (_result.Outcome)
+            {
+                case ImportOutcome.FileUnavailable:
+                    return Task.FromResult(ImportPlan.Skip(ImportOutcome.FileUnavailable));
+                case ImportOutcome.TournamentMismatch:
+                    return Task.FromResult(ImportPlan.Skip(ImportOutcome.TournamentMismatch));
+                case ImportOutcome.Error:
+                    return Task.FromResult(ImportPlan.Skip(ImportOutcome.Error));
+                default:
+                    // Give Apply something to work against; the stub's Apply
+                    // ignores contents and returns the configured result.
+                    var remote = new Entities.Tournament(new GlobalSettings()) { Name = target.Name };
+                    return Task.FromResult(ImportPlan.Proceed(remote));
+            }
+        }
+
+        public ImportResult Apply(Entities.Tournament target, ImportPlan plan)
+        {
+            ApplyCalls++;
+            ApplyThreadId = Thread.CurrentThread.ManagedThreadId;
+            return _result;
         }
     }
 
@@ -57,8 +90,34 @@ public sealed class ImportAutosaveTests
 
         await vm.ImportDataAsync("peer.wrt");
 
-        importer.Calls.Should().Be(1);
+        importer.PrepareCalls.Should().Be(1);
+        importer.ApplyCalls.Should().Be(1);
         mgr.SaveAsyncCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Prepare_runs_off_callers_thread_to_keep_UI_responsive()
+    {
+        var callerThreadId = Thread.CurrentThread.ManagedThreadId;
+        var (vm, _, importer) = BuildVm(ImportResult.Imported(1), autosave: false);
+
+        await vm.ImportDataAsync("peer.wrt");
+
+        importer.PrepareThreadId.Should().NotBe(callerThreadId,
+            "the heavy load + parse + adapter step must run off the UI thread via Task.Run");
+    }
+
+    [Fact]
+    public async Task Short_circuit_outcome_never_invokes_Apply()
+    {
+        // FileUnavailable is short-circuited inside PrepareAsync; the VM must
+        // not call Apply for these outcomes because there is nothing to merge.
+        var (vm, _, importer) = BuildVm(ImportResult.FileUnavailable(), autosave: true);
+
+        await vm.ImportDataAsync("peer.wrt");
+
+        importer.PrepareCalls.Should().Be(1);
+        importer.ApplyCalls.Should().Be(0);
     }
 
     [Fact]
