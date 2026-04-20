@@ -39,11 +39,8 @@ namespace Wrestling.Providers
                 SliderMaxSecond = info.SliderMaxSecond,
                 SliderOpacityValue = info.SliderOpacityValue,
                 IsAutosaveEnabled = info.IsAutosaveEnabled,
-                AutosaveMaxSecond = info.AutosaveMaxSecond,
                 IsTournamentScoreInternational = info.IsTournamentScoreInternational,
                 IsOverlayOlympic = info.IsOverlayOlympic,
-                IsVideoRecordingEnabled = info.IsVideoRecordingEnabled,
-                VideoStoragePath = info.VideStoragePath,
                 IsBackupEnabled = info.IsBackupEnabled,
                 MaxBackupCount = info.MaxBackupCount,
                 BackupFolderPath = info.BackupFolderPath
@@ -76,11 +73,8 @@ namespace Wrestling.Providers
                 SliderMaxSecond = entity.SliderMaxSecond,
                 SliderOpacityValue = entity.SliderOpacityValue,
                 IsAutosaveEnabled = entity.IsAutosaveEnabled,
-                AutosaveMaxSecond = entity.AutosaveMaxSecond,
                 IsTournamentScoreInternational = entity.IsTournamentScoreInternational,
                 IsOverlayOlympic = entity.IsOverlayOlympic,
-                IsVideoRecordingEnabled = entity.IsVideoRecordingEnabled,
-                VideStoragePath = entity.VideoStoragePath,
                 IsBackupEnabled = entity.IsBackupEnabled,
                 MaxBackupCount = entity.MaxBackupCount,
                 BackupFolderPath = entity.BackupFolderPath

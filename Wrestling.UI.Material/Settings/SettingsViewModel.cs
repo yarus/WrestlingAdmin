@@ -105,7 +105,6 @@ namespace Wrestling.UI.Material.Settings
                     if (success == true)
                     {
                         DataContext.Tournament.Settings.IsAutosaveEnabled = true;
-                        DataContext.Tournament.Settings.AutosaveMaxSecond = GlobalSettings.AutosaveMaxSecond;
 
                         var tournService = Resolve<ITournamentsManager>();
 

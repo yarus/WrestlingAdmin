@@ -65,11 +65,8 @@ public class AdapterRoundTripTests
             IsTimerBackward = true,
             IsSoundEnabled = false,
             IsAutosaveEnabled = true,
-            AutosaveMaxSecond = 45,
             IsTournamentScoreInternational = false,
             IsOverlayOlympic = false,
-            IsVideoRecordingEnabled = true,
-            VideoStoragePath = @"C:\videos",
             IsBackupEnabled = false,
             MaxBackupCount = 7,
             BackupFolderPath = @"D:\shared-backups"
@@ -84,10 +81,7 @@ public class AdapterRoundTripTests
         restored.Settings.IsTimerBackward.Should().BeTrue();
         restored.Settings.IsSoundEnabled.Should().BeFalse();
         restored.Settings.IsAutosaveEnabled.Should().BeTrue();
-        restored.Settings.AutosaveMaxSecond.Should().Be(45);
         restored.Settings.IsTournamentScoreInternational.Should().BeFalse();
-        restored.Settings.IsVideoRecordingEnabled.Should().BeTrue();
-        restored.Settings.VideoStoragePath.Should().Be(@"C:\videos");
         restored.Settings.IsBackupEnabled.Should().BeFalse();
         restored.Settings.MaxBackupCount.Should().Be(7);
         restored.Settings.BackupFolderPath.Should().Be(@"D:\shared-backups");

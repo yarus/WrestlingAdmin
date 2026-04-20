@@ -7,12 +7,10 @@ namespace Wrestling.Entities
         public static string DefaultSliderImage = AppDomain.CurrentDomain.BaseDirectory + "Images\\SliderLogo.jpg";
         public static string DefaultStartGongSound = AppDomain.CurrentDomain.BaseDirectory + "Sounds\\SingleGongBeep.wav";
         public static string DefaultEndGongSound = AppDomain.CurrentDomain.BaseDirectory + "Sounds\\TripleGongBeep.wav";
-        public static string DefaultVideosPath = AppDomain.CurrentDomain.BaseDirectory + "Videos";
 
         private bool _isTimerBackward;
         private bool _isSoundEnabled;
         private bool _isAutosaveEnabled;
-        private int _autosaveMaxSecond;
         private int _sliderMaxSecond;
         private int _sliderOpacityValue;
         private string _sliderBackgroundImagePath;
@@ -23,8 +21,6 @@ namespace Wrestling.Entities
         private int _maxActionSecond;
         private bool _isTournamentScoreInternational;
 
-        private bool _isVideoRecordingEnabled;
-        private string _videoStoragePath;
         private bool _isOverlayOlympic;
 
         private string _integrationUserName;
@@ -36,7 +32,6 @@ namespace Wrestling.Entities
 
         public GlobalSettings()
         {
-            AutosaveMaxSecond = 30;
             SliderMaxSecond = 10;
             SliderOpacityValue = 25;
             SliderBackgroundImagePath = DefaultSliderImage;
@@ -47,7 +42,6 @@ namespace Wrestling.Entities
             MaxActionSecond = 30;
             IsTournamentScoreInternational = true;
             IsOverlayOlympic = true;
-            VideoStoragePath = DefaultVideosPath;
             IsBackupEnabled = true;
             MaxBackupCount = 10;
             BackupFolderPath = string.Empty;
@@ -70,27 +64,6 @@ namespace Wrestling.Entities
             {
                 _integrationPassword = value;
                 OnPropertyChanged("IntegrationPassword");
-            }
-        }
-
-        public string VideoStoragePath
-        {
-            get { return _videoStoragePath; }
-            set
-            {
-                _videoStoragePath = value;
-                OnPropertyChanged("VideoStoragePath");
-            }
-        }
-        
-        public bool IsVideoRecordingEnabled
-        {
-            get { return _isVideoRecordingEnabled; }
-            set
-            {
-                _isVideoRecordingEnabled = value;
-                
-                OnPropertyChanged("IsVideoRecordingEnabled");
             }
         }
 
@@ -194,16 +167,6 @@ namespace Wrestling.Entities
             {
                 _sliderMaxSecond = value;
                 OnPropertyChanged("SliderMaxSecond");
-            }
-        }
-
-        public int AutosaveMaxSecond
-        {
-            get { return _autosaveMaxSecond; }
-            set
-            {
-                _autosaveMaxSecond = value;
-                OnPropertyChanged("AutosaveMaxSecond");
             }
         }
 

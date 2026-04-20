@@ -74,7 +74,6 @@ namespace Wrestling.UI.Material.Tournament
                 if (success == true)
                 {
                     DataContext.Tournament.Settings.IsAutosaveEnabled = true;
-                    DataContext.Tournament.Settings.AutosaveMaxSecond = GlobalSettings.AutosaveMaxSecond;
 
                     var result = await TournamentManager.SaveToFileAsync(DataContext.Tournament, settings.FileName);
                     ShowSnackMessage(result ? "Турнир сохранен! Автосохранение включено." : "При сохранении произошла ошибка!");

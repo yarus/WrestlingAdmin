@@ -22,8 +22,6 @@ namespace Wrestling.Data
         [DataMember]
         public bool IsAutosaveEnabled { get; set; }
         [DataMember]
-        public int AutosaveMaxSecond { get; set; }
-        [DataMember]
         public int SliderMaxSecond { get; set; }
         [DataMember]
         public int SliderOpacityValue { get; set; }
@@ -43,10 +41,6 @@ namespace Wrestling.Data
         public bool IsTournamentScoreInternational { get; set; }
         [DataMember]
         public bool IsOverlayOlympic { get; set; }
-        [DataMember]
-        public bool IsVideoRecordingEnabled { get; set; }
-        [DataMember]
-        public string VideStoragePath { get; set; }
         [DataMember]
         public bool IsBackupEnabled { get; set; }
         [DataMember]

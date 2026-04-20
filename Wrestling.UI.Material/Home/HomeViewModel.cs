@@ -293,11 +293,8 @@ namespace Wrestling.UI.Material.Home
                 SliderMaxSecond = GlobalSettings.SliderMaxSecond,
                 SliderOpacityValue = GlobalSettings.SliderOpacityValue,
                 IsAutosaveEnabled = GlobalSettings.IsAutosaveEnabled,
-                AutosaveMaxSecond = GlobalSettings.AutosaveMaxSecond,
                 IsTournamentScoreInternational = GlobalSettings.IsTournamentScoreInternational,
-                IsOverlayOlympic = GlobalSettings.IsOverlayOlympic,
-                IsVideoRecordingEnabled = GlobalSettings.IsVideoRecordingEnabled,
-                VideoStoragePath = GlobalSettings.VideoStoragePath
+                IsOverlayOlympic = GlobalSettings.IsOverlayOlympic
             };
 
             return settings;

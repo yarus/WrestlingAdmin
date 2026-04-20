@@ -193,22 +193,17 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         // Event-driven autosave: no timer. When autosave is enabled and the
         // tournament has no FileName yet (fresh session), prompt once so the
         // first match-complete or import event can save without a dialog
-        // interrupting mid-match. When autosave is off, expose the manual
-        // save button on the dashboard toolbar.
+        // interrupting mid-match. The manual "Сохранить турнир" quick button
+        // is always visible regardless of the flag — autosave only covers
+        // match/import events, so other mutations (team/wrestler registration,
+        // bracket generation, schedule edits) still rely on manual save.
         private async Task SetupAutoSaveAsync()
         {
-            if (DataContext.Tournament != null && IsAutosaveEnabled)
+            if (DataContext.Tournament != null
+                && IsAutosaveEnabled
+                && string.IsNullOrEmpty(DataContext.Tournament.FileName))
             {
-                if (string.IsNullOrEmpty(DataContext.Tournament.FileName))
-                {
-                    await SaveDataAsync();
-                }
-
-                if (QuickButtons.Contains(_saveQuickCommand)) QuickButtons.Remove(_saveQuickCommand);
-            }
-            else
-            {
-                if (!QuickButtons.Contains(_saveQuickCommand)) QuickButtons.Add(_saveQuickCommand);
+                await SaveDataAsync();
             }
         }
 

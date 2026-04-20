@@ -71,8 +71,45 @@ Domain logic lives in `Wrestling.Entities` (computed properties like `IsApplicat
 
 - Tournaments serialize to `.wrt` files (plain JSON via Newtonsoft.Json 13.x) via `ITournamentsManager` / `TournamentsManager` in `Wrestling.Providers`.
 - Entity ↔ DTO mapping lives in `EntityToInfoAdapter` (`Wrestling.Providers`). When you add a new entity field, update **both** directions of the adapter and its `*Info` counterpart in `Wrestling.Data`, otherwise the field won't round-trip through save/load.
-- Schema migration is implicit — the adapter applies defaults for missing fields on load (see patterns like `if (entity.Settings.MaxRoundSecond == 0) entity.Settings.MaxRoundSecond = …`). Use that pattern when introducing new persisted properties so existing `.wrt` files still open.
-- Wrestler / team caches: `Cache_Wrestlers.json`, `Cache_Teams.json` under `%LocalAppData%/WrestlingAdmin/`, managed by `CacheManager`. Backups on crash: `%LocalAppData%/WrestlingAdmin/Backups/*.wrt`. Error logs: `%LocalAppData%/WrestlingAdmin/Logs/error_log_<yyyyMMdd>.txt`.
+- Schema migration is implicit — use constructor defaults on the `*Info` DTO (Newtonsoft calls the parameterless ctor before overlaying JSON, so missing fields in old files stay at the ctor value) **and/or** adapter-level normalization (e.g. `if (entity.MaxBackupCount <= 0) entity.MaxBackupCount = 10`). Old `.wrt` files must keep opening.
+- **Removing a persisted field is safe** — Newtonsoft silently drops unknown JSON properties on load. No migration needed. (Example: `IsVideoRecordingEnabled` / `VideStoragePath` were removed in 2026-04-20 cleanup; legacy files still open.)
+- Wrestler / team caches: `Cache_Wrestlers.json`, `Cache_Teams.json` under `%LocalAppData%/WrestlingAdmin/`, managed by `CacheManager`. Crash backups: `%LocalAppData%/WrestlingAdmin/Backups/*.wrt`. Crash log: `%LocalAppData%/WrestlingAdmin/Logs/error_log_<yyyyMMdd>.txt`. Data-access log (load/backup failures, classified): `%LocalAppData%/WrestlingAdmin/Logs/data_log_<yyyyMMdd>.txt` via `FileLogger` in `Wrestling.DataAccess`.
+
+### Tournament save pipeline — atomic write + backup + verify
+
+`TournamentDataAccess.SaveToFile{,Async}` wraps `JsonStorageDataAccess` with three defense layers, in order:
+1. **Pre-save backup** — copy the existing `.wrt` (if any) to `<dir>/Backups/<filename>/yyyyMMdd_HHmmss_fff.wrt` before overwrite. Default root is `<tournament-dir>/Backups/`; override via `GlobalSettings.BackupFolderPath` (absolute path wins; relative resolves against the tournament's directory). Per-tournament subfolder keeps multiple `.wrt`s sharing a working directory from mixing backups.
+2. **Atomic write** — `JsonStorageDataAccess` serializes to `<file>.tmp.{guid}` then `File.Replace` swaps in. Torn writes are impossible.
+3. **Post-save verification** — re-read the file, deserialize into `TournamentInfo`. On failure (rare but possible if serialization produces invalid JSON), restore the newest backup and return `false` (the UI surfaces "save failed" via snack bar; no exception propagates).
+4. **Rotation** — drop oldest beyond `GlobalSettings.MaxBackupCount` (default 10).
+
+Policy lives on the tournament being saved (`info.Settings.IsBackupEnabled` / `MaxBackupCount` / `BackupFolderPath`). When `IsBackupEnabled=false`, steps 1 and 4 are skipped (verification still runs).
+
+**Backup operations are always best-effort.** Any `IOException` / `UnauthorizedAccessException` / `SecurityException` / `PathTooLongException` / `ArgumentException` / `NotSupportedException` is logged via `FileLogger` and swallowed — a backup failure must never prevent the actual save. Anything outside that set (OOM, AccessViolation, NRE from a bug) propagates so the global crash handler fires.
+
+### Load paths never throw for expected I/O or parse errors
+
+`JsonStorageDataAccess.ReadFromFile{,Async}` deliberately returns `default(T)` for file-not-found, `IOException`, `UnauthorizedAccessException`, `JsonException`, `SocketException`, `TimeoutException`, `ArgumentException`, `SecurityException`, `PathTooLongException`, `NotSupportedException`, `FormatException`. The import feature polls network/UNC paths on a timer during live matches; a WiFi drop must not crash the app. Each failure logs a classification tag (`Corrupt` / `AccessDenied` / `Transient` / `InvalidPath` / `NotFound` / `IO` / `Other`) to `data_log_<date>.txt` plus retry count. Network paths (UNC or mapped network drives) get 3–5 retries with exponential backoff; local paths one shot.
+
+`TournamentImporter.ImportDataFromFileAsync` returns a classified `ImportResult` (`Imported` / `NoNewData` / `FileUnavailable` / `TournamentMismatch` / `Error`), never `int`. `ImportViewModel.ImportDataAsync` renders a per-outcome message in the UI log.
+
+### Autosave is event-driven, not timer-based
+
+There is **no** DispatcherTimer for autosave. Saves fire only after:
+1. **Match completion** — `MatchResultsViewModel.ApproveAsync` calls `SaveIfAutosaveEnabledAsync()` after the processor's `CompleteMatch()` runs.
+2. **Successful import** — `ImportViewModel.ImportDataAsync` calls `SaveIfAutosaveEnabledAsync()` only when the outcome is `Imported` (not for `NoNewData`, `FileUnavailable`, etc.).
+
+The gate is a public method on `TournamentViewModelBase`:
+
+```csharp
+public async Task SaveIfAutosaveEnabledAsync()
+{
+    if (IsAutosaveEnabled && DataContext.Tournament != null)
+        await SaveDataAsync();
+}
+```
+
+The Settings UI exposes only the `IsAutosaveEnabled` toggle. The "Сохранить турнир" quick button is **always visible on the dashboard** regardless of the flag — autosave only covers match/import events, so other mutations (team/wrestler registration, bracket generation, schedule edits) rely on manual save. (The old `AutosaveMaxSecond` interval field was fully removed 2026-04-20; legacy `.wrt` files containing it load fine since Newtonsoft silently drops unknown JSON properties.)
 
 ### Bracket generation is a Strategy pattern
 
@@ -92,11 +129,11 @@ Domain logic lives in `Wrestling.Entities` (computed properties like `IsApplicat
 
 ### Multi-carpet synchronization
 
-Carpets (mats) running on networked PCs sync results through a shared folder — the tournament file is the sync medium. Changes to save/load paths or the `.wrt` format must preserve round-trip compatibility across machines that may briefly disagree on state.
+Each carpet (mat) PC keeps its own local copy of the tournament `.wrt`. Results move between carpets via the **Import** feature (`ImportViewModel` + `TournamentImporter`) — not a shared file. The import path polls remote laptops on a timer, typically over UNC paths like `\\192.168.x.x\share\tournament.wrt`, and merges completed matches into the local tournament. Changes to the import flow or `.wrt` schema must keep round-trip compatibility so peer carpets with slightly different app versions can still read each other's saves.
 
 ### Error handling and crash recovery
 
-`App.xaml.cs` installs three handlers (`AppDomain.UnhandledException`, `DispatcherUnhandledException`, `TaskScheduler.UnobservedTaskException`). On crash they log to the Logs folder and save a backup `.wrt` to the Backups folder. When adding code on hot paths, prefer throwing over swallowing — the handlers will preserve user data.
+`App.xaml.cs` installs three handlers (`AppDomain.UnhandledException`, `DispatcherUnhandledException`, `TaskScheduler.UnobservedTaskException`). On crash they log to the Logs folder and save a backup `.wrt` to the Backups folder. Prefer throwing over swallowing **in domain and UI code**, so the handlers can preserve user data. **Exception**: the I/O layer (`JsonStorageDataAccess`, `TournamentDataAccess` backup helpers) deliberately swallows expected FS/parse exceptions — a crash during a live match from a flaky WiFi import tick is worse than a silently-skipped read. See the "Load paths never throw" section above.
 
 ### UI conventions
 
@@ -108,6 +145,7 @@ Carpets (mats) running on networked PCs sync results through a shared folder —
 ## Conventions worth preserving
 
 - Entity classes implement `INotifyPropertyChanged` directly (they double as view-model-bindable objects). Collections use `ObservableCollection<T>`. Don't convert to plain `List<T>` on domain objects.
-- `Info` (DTO) classes in `Wrestling.Data` are plain property bags. Keep them behaviorless — all logic goes in the entity or adapter.
-- File I/O in providers has both sync and async variants; the UI currently uses the **sync** path from view models. If you move a call to async, make sure the invoking command is an `AsyncRelayCommand` (not `RelayCommand`) or the UI will deadlock / freeze.
-- `GlobalSettings` is persisted per-tournament (inside the `.wrt` file), not globally. New user-tunable settings belong there.
+- `Info` (DTO) classes in `Wrestling.Data` are plain property bags — keep them behaviorless. The **one** allowed piece of logic is a parameterless constructor that seeds safe defaults for new-schema fields so legacy `.wrt` files deserialize to sensible values (Newtonsoft calls it before overlaying JSON).
+- File I/O in providers has both sync and async variants. Autosave and import now use the **async** path end-to-end; a few sync call sites remain (settings toggle, crash backup, `HomeViewModel`). When moving a call to async, the invoking command must be an `AsyncRelayCommand` (not `RelayCommand`) or the UI will deadlock.
+- `GlobalSettings` is persisted per-tournament (inside the `.wrt` file), not globally. New user-tunable settings belong there. Current fields worth knowing about: `IsAutosaveEnabled`, `IsBackupEnabled` / `MaxBackupCount` / `BackupFolderPath`, the match timing settings, slider settings.
+- **Test access to internals**: `Wrestling.UI.Material` exposes internals to `Wrestling.UI.Material.Tests` via `Properties/InternalsVisibleTo.cs`. The csproj-based `AssemblyAttribute` trick doesn't work because `GenerateAssemblyInfo=false`. Use `internal` for methods that need direct test exercise (e.g. `ImportViewModel.ImportDataAsync`).
