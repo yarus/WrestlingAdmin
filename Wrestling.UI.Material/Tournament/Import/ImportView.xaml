@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Wrestling.UI.Material.Tournament.Import.ImportView"
+<UserControl x:Class="Wrestling.UI.Material.Tournament.Import.ImportView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -7,146 +7,193 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              md:DialogServiceViews.IsRegistered="True"
              mc:Ignorable="d"
-             d:DesignHeight="400" d:DesignWidth="700">
+             d:DesignHeight="500" d:DesignWidth="900">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
-    </UserControl.Resources>
 
-    <Grid x:Name="RootControl" Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="1*" />
-        </Grid.RowDefinitions>
-
-        <Grid Grid.Row="0" Grid.Column="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            
-            <TextBlock Grid.Column="0" Text="Укажите путь к файлу для импорта" Margin="10,0,10,0" VerticalAlignment="Center"></TextBlock>
-
-            <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0">
-                <Button ToolTip="Указать путь к файлу для импорта" Margin="0" Padding="0" Width="22" Height="22"
+        <!-- Popup: «Добавить общую папку» -->
+        <StackPanel x:Key="AddSharedFolderDialog" Margin="24" MinWidth="520">
+            <TextBlock FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12"
+                       Text="Добавить общую папку" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Command="{Binding SelectPathCommand}"
+                        ToolTip="Выбрать файл на диске или в сетевой папке"
+                        Margin="0,0,8,0" Content="Обзор..." />
+                <TextBox Grid.Column="1" VerticalAlignment="Center"
+                         materialDesign:HintAssist.Hint="UNC (\\host\share\tournament.wrt) или локальный путь"
+                         Text="{Binding Path, UpdateSourceTrigger=PropertyChanged}" />
+            </Grid>
+            <TextBlock Margin="0,12,0,0" Foreground="{DynamicResource MaterialDesignBodyLight}"
+                       TextWrapping="Wrap"
+                       Text="После ввода пути нажмите «Добавить» — путь появится в списке источников импорта." />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                <Button Content="Добавить" IsDefault="True" IsEnabled="{Binding IsValid}"
                         Style="{StaticResource MaterialDesignRaisedButton}"
-                        Command="{Binding ElementName=RootControl, Path=DataContext.SelectPathCommand}"
-                        VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <materialDesign:PackIcon Kind="DotsHorizontal" Width="22" Height="22" Margin="0" Padding="0" />
-                </Button>
+                        Command="{Binding AddPathCommand}" Margin="0,0,8,0" />
+                <Button Content="Готово" Style="{StaticResource MaterialDesignFlatButton}"
+                        Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}" />
             </StackPanel>
+        </StackPanel>
 
-            <TextBlock Grid.Column="2" Text="{Binding Path}" Margin="10,0,10,0" VerticalAlignment="Center"></TextBlock>
-
-            <Button Grid.Column="3" Content="Добавить"
-                    HorizontalAlignment="Right" Margin="10,0,0,0"
-                    Command="{Binding Path=AddPathCommand}"
-                    CommandParameter="{Binding IsValid}" />
-        </Grid>
-
-        <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}" />
-
-        <ScrollViewer Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,10,0,10">
-            <ListView x:Name="PendingList" ItemsSource="{Binding ImportSources}">
-            <ListView.View>
-
-                <GridView AllowsColumnReorder="true">
-                    <GridViewColumn DisplayMemberBinding="{Binding }" Header="Путь к файлу" Width="300" />
-
-                    <GridViewColumn Width="Auto">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <Button ToolTip="Удалить" Margin="0" Padding="0" Width="22" Height="22"
-                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                        Command="{Binding ElementName=RootControl, Path=DataContext.DeletePathCommand}"
-                                        CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="Close" Width="22" Height="22" Margin="0" Padding="0" />
-                                </Button>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                </GridView>
-            </ListView.View>
-        </ListView>
-        </ScrollViewer>
-
-        <Border Grid.Row="1" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}" />
-        
-        <Grid Grid.Row="2" Grid.Column="0" Margin="10">
-
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="100" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Таймер импорта:" VerticalAlignment="Center" HorizontalAlignment="Center" />
-
-            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ImportSeconds, UpdateSourceTrigger=PropertyChanged}" TextWrapping="NoWrap" TabIndex="0" VerticalAlignment="Center" HorizontalAlignment="Center" />
-
-            <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
-                <Button
-                    Content="Запустить"
-                    Visibility="{Binding IsImportJobStoped, Converter={StaticResource BoolToVis}}"
-                    Command="{Binding StartImportJobCommand}" />
-
-                <Button
-                    Content="Остановить"
-                    Visibility="{Binding IsImportJobStarted, Converter={StaticResource BoolToVis}}"
-                    Command="{Binding EndImportJobCommand}" />
-
-                <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Text="До следующего импорта:" Margin="20,0,0,0" />
-
-                <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Text="{Binding LeftToImport, StringFormat={}{0:mm':'ss}}" Margin="20,0,0,0" />
-
-                <materialDesign:PackIcon 
-                    Kind="Refresh"
-                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
-                    Width="24" Height="24" Foreground="Blue" Margin="20,0,0,0">
-                    <materialDesign:PackIcon.Style>
-                        <Style TargetType="materialDesign:PackIcon">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsLoading}" Value="True">
-                                    <DataTrigger.EnterActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation
-                                    Storyboard.TargetProperty="(RenderTransform).(RotateTransform.Angle)"
-                                    From="0" To="360" Duration="0:0:1"
-                                    RepeatBehavior="Forever"/>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </DataTrigger.EnterActions>
-                                </DataTrigger>
-                            </Style.Triggers>
-                            <Setter Property="RenderTransform">
-                                <Setter.Value>
-                                    <RotateTransform CenterX="12" CenterY="12"/>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </materialDesign:PackIcon.Style>
-                </materialDesign:PackIcon>
-
-            </StackPanel>
-
-        </Grid>
-
-        <Border Grid.Row="2" Grid.Column="0" BorderThickness="0,0,0,1" BorderBrush="Black" />
-
-        <ScrollViewer Grid.Row="3" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,10,0,10">
-            <ListView ItemsSource="{Binding ImportLog}">
+        <!-- Popup: «Добавить узел из сети» -->
+        <StackPanel x:Key="AddDiscoveredPeerDialog" Margin="24" MinWidth="760">
+            <TextBlock FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12"
+                       Text="Добавить узел из сети" />
+            <TextBlock Margin="0,0,0,8" Foreground="{DynamicResource MaterialDesignBodyLight}"
+                       TextWrapping="Wrap"
+                       Text="Соседи автоматически объявляют себя по UDP. Выберите нужный и нажмите «+»." />
+            <ListView ItemsSource="{Binding DiscoveredPeers}" MaxHeight="320">
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn DisplayMemberBinding="{Binding }" Header="Журнал импорта" Width="Auto" />
+                        <GridViewColumn Header="Имя узла" DisplayMemberBinding="{Binding NodeName}" Width="220" />
+                        <GridViewColumn Header="Турнир" DisplayMemberBinding="{Binding TournamentTitle}" Width="200" />
+                        <GridViewColumn Header="URL" DisplayMemberBinding="{Binding HttpUrl}" Width="300" />
+                        <GridViewColumn Width="48">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button ToolTip="Добавить в источники импорта" Width="28" Height="28" Padding="0"
+                                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                            Command="{Binding DataContext.AddDiscoveredPeerCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="{Binding}">
+                                        <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" />
+                                    </Button>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
                     </GridView>
                 </ListView.View>
             </ListView>
-        </ScrollViewer>
-    </Grid>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                <Button Content="Добавить все отображаемые"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Command="{Binding AddAllDisplayedPeersCommand}" Margin="0,0,8,0" />
+                <Button Content="Готово" Style="{StaticResource MaterialDesignFlatButton}"
+                        Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}" />
+            </StackPanel>
+        </StackPanel>
+    </UserControl.Resources>
+
+    <materialDesign:DialogHost Identifier="ImportDialogs">
+        <Grid x:Name="RootControl" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="1*" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                <Button Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,12,0"
+                        Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                        CommandParameter="{StaticResource AddDiscoveredPeerDialog}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="LanConnect" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBlock Text="Добавить узел из сети" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                        Command="{x:Static materialDesign:DialogHost.OpenDialogCommand}"
+                        CommandParameter="{StaticResource AddSharedFolderDialog}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FolderNetwork" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBlock Text="Добавить общую папку" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}" />
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,10,0,10">
+                <ListView x:Name="PendingList" ItemsSource="{Binding ImportSources}">
+                    <ListView.View>
+                        <GridView AllowsColumnReorder="true">
+                            <GridViewColumn DisplayMemberBinding="{Binding }" Header="Путь к файлу" Width="600" />
+                            <GridViewColumn Width="Auto">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button ToolTip="Удалить" Margin="0" Padding="0" Width="22" Height="22"
+                                                Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                                Command="{Binding ElementName=RootControl, Path=DataContext.DeletePathCommand}"
+                                                CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="Close" Width="22" Height="22" Margin="0" Padding="0" />
+                                        </Button>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </ScrollViewer>
+
+            <Border Grid.Row="1" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}" />
+
+            <Grid Grid.Row="2" Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Таймер импорта:" VerticalAlignment="Center" HorizontalAlignment="Center" />
+
+                <TextBox Grid.Column="1" Text="{Binding ImportSeconds, UpdateSourceTrigger=PropertyChanged}"
+                         TextWrapping="NoWrap" TabIndex="0" VerticalAlignment="Center" HorizontalAlignment="Center" />
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <Button Content="Запустить" Visibility="{Binding IsImportJobStoped, Converter={StaticResource BoolToVis}}"
+                            Command="{Binding StartImportJobCommand}" />
+                    <Button Content="Остановить" Visibility="{Binding IsImportJobStarted, Converter={StaticResource BoolToVis}}"
+                            Command="{Binding EndImportJobCommand}" />
+
+                    <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Text="До следующего импорта:" Margin="20,0,0,0" />
+                    <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center"
+                               Text="{Binding LeftToImport, StringFormat={}{0:mm':'ss}}" Margin="20,0,0,0" />
+
+                    <materialDesign:PackIcon Kind="Refresh" Width="24" Height="24" Foreground="Blue" Margin="20,0,0,0"
+                                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                        <materialDesign:PackIcon.Style>
+                            <Style TargetType="materialDesign:PackIcon">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(RenderTransform).(RotateTransform.Angle)"
+                                                                     From="0" To="360" Duration="0:0:1" RepeatBehavior="Forever" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <RotateTransform CenterX="12" CenterY="12" />
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </materialDesign:PackIcon.Style>
+                    </materialDesign:PackIcon>
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="2" BorderThickness="0,0,0,1" BorderBrush="Black" />
+
+            <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,10,0,10">
+                <ListView ItemsSource="{Binding ImportLog}">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn DisplayMemberBinding="{Binding }" Header="Журнал импорта" Width="Auto" />
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </ScrollViewer>
+        </Grid>
+    </materialDesign:DialogHost>
 
 </UserControl>

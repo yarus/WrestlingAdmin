@@ -161,6 +161,54 @@ public class AdapterRoundTripTests
     }
 
     [Fact]
+    public void Round_trip_preserves_network_settings()
+    {
+        var settings = new GlobalSettings
+        {
+            IsDiscoveryEnabled = false,
+            DiscoveryPort = 40000,
+            IsHttpServerEnabled = false,
+            HttpServerPort = 40001,
+            NodeName = "Ковёр 3",
+            SelfUncPath = @"\\HOST\Share\tournament.wrt"
+        };
+        var t = new Tournament(settings) { ID = Guid.NewGuid(), Name = "N" };
+
+        var info = _adapter.GetInfoFromEntity(t);
+        var restored = _adapter.GetEntityFromInfo(info);
+
+        restored.Settings.IsDiscoveryEnabled.Should().BeFalse();
+        restored.Settings.DiscoveryPort.Should().Be(40000);
+        restored.Settings.IsHttpServerEnabled.Should().BeFalse();
+        restored.Settings.HttpServerPort.Should().Be(40001);
+        restored.Settings.NodeName.Should().Be("Ковёр 3");
+        restored.Settings.SelfUncPath.Should().Be(@"\\HOST\Share\tournament.wrt");
+    }
+
+    [Fact]
+    public void Legacy_info_without_network_fields_applies_safe_defaults()
+    {
+        // Simulates a .wrt saved before the discovery feature: the persisted
+        // DiscoveryPort/HttpServerPort are missing (0), NodeName absent.
+        // The info constructor seeds defaults, the adapter normalizes zero-ports.
+        var legacyInfo = new Wrestling.Data.TournamentInfo
+        {
+            ID = Guid.NewGuid(),
+            Name = "legacy",
+            Settings = new Wrestling.Data.GlobalSettingsInfo { DiscoveryPort = 0, HttpServerPort = 0 }
+        };
+
+        var restored = _adapter.GetEntityFromInfo(legacyInfo);
+
+        restored.Settings.IsDiscoveryEnabled.Should().BeTrue();
+        restored.Settings.DiscoveryPort.Should().Be(24565);
+        restored.Settings.IsHttpServerEnabled.Should().BeTrue();
+        restored.Settings.HttpServerPort.Should().Be(24566);
+        restored.Settings.NodeName.Should().BeEmpty();
+        restored.Settings.SelfUncPath.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Round_trip_of_bracket_preserves_match_state_and_winner_reference()
     {
         var group = new AgeWeightGroup

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using MaterialDesignThemes.Wpf;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
+using Wrestling.Providers.Network;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Tournament.Dashboard;
 using Wrestling.UI.Utils;
@@ -41,6 +43,13 @@ namespace Wrestling.UI.Material.Tournament.Import
         private ICommand _selectPathCommand;
         private ICommand _deletePathCommand;
         private ICommand _addPathCommand;
+        private ICommand _addDiscoveredPeerCommand;
+        private ICommand _addAllDisplayedPeersCommand;
+
+        private IPeerDiscoveryService _discovery;
+        private bool _discoveryWired;
+        private Dispatcher _uiDispatcher;
+        private ObservableCollection<DiscoveredPeer> _discoveredPeers;
 
         #endregion
 
@@ -169,6 +178,16 @@ namespace Wrestling.UI.Material.Tournament.Import
             }
         }
 
+        public ObservableCollection<DiscoveredPeer> DiscoveredPeers
+        {
+            get { return _discoveredPeers; }
+            private set
+            {
+                _discoveredPeers = value;
+                OnPropertyChanged("DiscoveredPeers");
+            }
+        }
+
         #endregion
 
         public override void InitData()
@@ -181,7 +200,7 @@ namespace Wrestling.UI.Material.Tournament.Import
             {
                 throw new ApplicationException("Tournament property is not set!");
             }
-            
+
             if (_importLog == null)
             {
                 _importLog = new ObservableCollection<string>();
@@ -190,6 +209,57 @@ namespace Wrestling.UI.Material.Tournament.Import
             if (ImportSeconds == 0) ImportSeconds = 300;
 
             LeftToImport = new TimeSpan(0, 0, 0, ImportSeconds);
+
+            WireDiscovery();
+        }
+
+        private void WireDiscovery()
+        {
+            // Singleton VM — we can only afford to subscribe once per process
+            // lifetime, otherwise repeat navigations leak event handlers and
+            // add duplicate peers on every incoming packet.
+            if (_discoveryWired) return;
+
+            _discovery = Resolve<IPeerDiscoveryService>();
+            if (_discovery == null) return;
+
+            _uiDispatcher = Dispatcher.CurrentDispatcher;
+            _discoveredPeers = new ObservableCollection<DiscoveredPeer>();
+            OnPropertyChanged("DiscoveredPeers");
+
+            // Seed with anything the service already knows — discovery runs
+            // since the tournament was opened, possibly well before the user
+            // navigated here.
+            foreach (var peer in _discovery.SnapshotPeers())
+            {
+                _discoveredPeers.Add(peer);
+            }
+
+            _discovery.PeerUpserted += OnPeerUpserted;
+            _discovery.PeerExpired += OnPeerExpired;
+            _discoveryWired = true;
+        }
+
+        private void OnPeerUpserted(object sender, DiscoveredPeer peer)
+        {
+            RunOnUi(() =>
+            {
+                if (!_discoveredPeers.Contains(peer))
+                {
+                    _discoveredPeers.Add(peer);
+                }
+            });
+        }
+
+        private void OnPeerExpired(object sender, DiscoveredPeer peer)
+        {
+            RunOnUi(() => _discoveredPeers.Remove(peer));
+        }
+
+        private void RunOnUi(Action action)
+        {
+            if (_uiDispatcher == null || _uiDispatcher.CheckAccess()) action();
+            else _uiDispatcher.BeginInvoke(action);
         }
 
         protected override void OnBackCommand()
@@ -269,6 +339,36 @@ namespace Wrestling.UI.Material.Tournament.Import
                     );
                 }
                 return _endImportJobCommand;
+            }
+        }
+
+        public ICommand AddDiscoveredPeerCommand
+        {
+            get
+            {
+                if (_addDiscoveredPeerCommand == null)
+                {
+                    _addDiscoveredPeerCommand = new RelayCommand(
+                        param => AddDiscoveredPeer(param as DiscoveredPeer),
+                        param => CanAddDiscoveredPeer(param as DiscoveredPeer)
+                    );
+                }
+                return _addDiscoveredPeerCommand;
+            }
+        }
+
+        public ICommand AddAllDisplayedPeersCommand
+        {
+            get
+            {
+                if (_addAllDisplayedPeersCommand == null)
+                {
+                    _addAllDisplayedPeersCommand = new RelayCommand(
+                        param => AddAllDisplayedPeers(),
+                        param => true
+                    );
+                }
+                return _addAllDisplayedPeersCommand;
             }
         }
 
@@ -497,6 +597,47 @@ namespace Wrestling.UI.Material.Tournament.Import
                 default:
                     AddLog(path, "Ошибка импорта. Подробности в журнале.");
                     break;
+            }
+        }
+
+        // When a peer advertises both HTTP and UNC we pack them into a single
+        // ImportSources entry separated by the importer's alternatives char.
+        // The importer tries HTTP first (usually works out of the box) and
+        // falls back to UNC automatically if the embedded HTTP server is down
+        // or blocked by a firewall.
+        private static string PeerPreferredSource(DiscoveredPeer peer)
+        {
+            if (peer == null) return null;
+            var hasHttp = !string.IsNullOrEmpty(peer.HttpUrl);
+            var hasUnc = !string.IsNullOrEmpty(peer.UncPath);
+            if (hasHttp && hasUnc) return peer.HttpUrl + TournamentImporter.SourceAlternativesSeparator + peer.UncPath;
+            if (hasHttp) return peer.HttpUrl;
+            if (hasUnc) return peer.UncPath;
+            return null;
+        }
+
+        private bool CanAddDiscoveredPeer(DiscoveredPeer peer)
+        {
+            var src = PeerPreferredSource(peer);
+            if (src == null) return false;
+            if (DataContext?.Tournament == null) return false;
+            return !ImportSources.Contains(src);
+        }
+
+        private void AddDiscoveredPeer(DiscoveredPeer peer)
+        {
+            var src = PeerPreferredSource(peer);
+            if (src == null) return;
+            if (ImportSources.Contains(src)) return;
+            ImportSources.Add(src);
+        }
+
+        private void AddAllDisplayedPeers()
+        {
+            if (_discoveredPeers == null) return;
+            foreach (var peer in _discoveredPeers.ToList())
+            {
+                AddDiscoveredPeer(peer);
             }
         }
 

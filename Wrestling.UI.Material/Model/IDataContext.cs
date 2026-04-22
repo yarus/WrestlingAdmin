@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Wrestling.Entities;
 
 namespace Wrestling.UI.Material.Model
@@ -16,5 +17,12 @@ namespace Wrestling.UI.Material.Model
         List<TeamApplication> TeamsCache { get; set; }
         string UserName { get; set; }
         string Password { get; set; }
+
+        // Fires after the Tournament property changes (set to new instance,
+        // swapped, or cleared to null). Sent with the new value so subscribers
+        // can react without re-querying the property. Used by the network
+        // services to bring the UDP announcer and HTTP server in and out of
+        // lockstep with the open tournament.
+        event EventHandler<Entities.Tournament> TournamentChanged;
     }
 }

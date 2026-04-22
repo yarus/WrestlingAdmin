@@ -42,7 +42,7 @@ namespace Wrestling.UI.Material.Home
             _cacheManager = Resolve<ICacheManager>();
         }
 
-        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20251101";
+        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20260421";
 
         public override IList<CommandButtonItem> DrawerItems
         {

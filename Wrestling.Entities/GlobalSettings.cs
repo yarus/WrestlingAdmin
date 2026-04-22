@@ -30,6 +30,13 @@ namespace Wrestling.Entities
         private int _maxBackupCount;
         private string _backupFolderPath;
 
+        private bool _isDiscoveryEnabled;
+        private int _discoveryPort;
+        private bool _isHttpServerEnabled;
+        private int _httpServerPort;
+        private string _nodeName;
+        private string _selfUncPath;
+
         public GlobalSettings()
         {
             SliderMaxSecond = 10;
@@ -45,6 +52,12 @@ namespace Wrestling.Entities
             IsBackupEnabled = true;
             MaxBackupCount = 10;
             BackupFolderPath = string.Empty;
+            IsDiscoveryEnabled = true;
+            DiscoveryPort = 24565;
+            IsHttpServerEnabled = true;
+            HttpServerPort = 24566;
+            NodeName = string.Empty;
+            SelfUncPath = string.Empty;
         }
 
         public string IntegrationUserName
@@ -226,6 +239,66 @@ namespace Wrestling.Entities
             {
                 _backupFolderPath = value;
                 OnPropertyChanged("BackupFolderPath");
+            }
+        }
+
+        public bool IsDiscoveryEnabled
+        {
+            get { return _isDiscoveryEnabled; }
+            set
+            {
+                _isDiscoveryEnabled = value;
+                OnPropertyChanged("IsDiscoveryEnabled");
+            }
+        }
+
+        public int DiscoveryPort
+        {
+            get { return _discoveryPort; }
+            set
+            {
+                _discoveryPort = value;
+                OnPropertyChanged("DiscoveryPort");
+            }
+        }
+
+        public bool IsHttpServerEnabled
+        {
+            get { return _isHttpServerEnabled; }
+            set
+            {
+                _isHttpServerEnabled = value;
+                OnPropertyChanged("IsHttpServerEnabled");
+            }
+        }
+
+        public int HttpServerPort
+        {
+            get { return _httpServerPort; }
+            set
+            {
+                _httpServerPort = value;
+                OnPropertyChanged("HttpServerPort");
+            }
+        }
+
+        public string NodeName
+        {
+            get { return _nodeName; }
+            set
+            {
+                _nodeName = value;
+                OnPropertyChanged("NodeName");
+            }
+        }
+
+        public string SelfUncPath
+        {
+            get { return _selfUncPath; }
+            set
+            {
+                _selfUncPath = value;
+                OnPropertyChanged("SelfUncPath");
             }
         }
     }

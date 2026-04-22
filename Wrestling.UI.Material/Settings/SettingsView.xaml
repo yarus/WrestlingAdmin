@@ -353,7 +353,7 @@
                 </Grid>
             </materialDesign:Card>
 
-            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="320">
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
                 <Grid VerticalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -428,6 +428,111 @@
                                         IsEnabled="{Binding Path=IsChecked, ElementName=BackupEnabledCb}"
                                         Command="{Binding BrowseBackupFolderCommand}"
                                         Content="Обзор..." />
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </materialDesign:Card>
+
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
+                <Grid VerticalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="LanConnect" Width="80" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                    <StackPanel Grid.Row="0" Grid.Column="1">
+                        <TextBlock Margin="16 16 16 8">Сеть</TextBlock>
+                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
+                            Роль этого ноутбука в сети турнира, порты UDP-обнаружения и встроенного HTTP-сервера для обмена .wrt.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="AccountBox" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                            <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="10,5,10,5"
+                                     Text="{Binding Path=Item.NodeName, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="Имя узла (Ковёр 1, Стенд у входа...)" />
+
+                            <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0 8 0 0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="80" />
+                                </Grid.ColumnDefinitions>
+                                <ToggleButton Grid.Column="0" VerticalAlignment="Center"
+                                              IsChecked="{Binding Path=Item.IsDiscoveryEnabled, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Grid.Column="1" Margin="12 0 12 0" VerticalAlignment="Center">Обнаружение соседей (UDP)</TextBlock>
+                                <TextBox Grid.Column="2" VerticalAlignment="Center"
+                                         Text="{Binding Path=Item.DiscoveryPort, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="порт" />
+                            </Grid>
+
+                            <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Margin="0 6 0 0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="80" />
+                                </Grid.ColumnDefinitions>
+                                <ToggleButton Grid.Column="0" VerticalAlignment="Center"
+                                              IsChecked="{Binding Path=Item.IsHttpServerEnabled, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Grid.Column="1" Margin="12 0 12 0" VerticalAlignment="Center">Раздача .wrt по HTTP</TextBlock>
+                                <TextBox Grid.Column="2" VerticalAlignment="Center"
+                                         Text="{Binding Path=Item.HttpServerPort, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="порт" />
+                            </Grid>
+
+                            <materialDesign:PackIcon Grid.Row="3" Grid.Column="0" Kind="Folder" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                            <TextBox Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" Margin="10,5,6,5"
+                                     Text="{Binding Path=Item.SelfUncPath, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="UNC-путь (если настроена SMB-шара)" />
+                            <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,5,0,5">
+                                <Button ToolTip="Настроить общий доступ Windows" Width="32" Height="32" Padding="0" Margin="0,0,4,0"
+                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                        Command="{Binding ConfigureShareCommand}">
+                                    <materialDesign:PackIcon Kind="FolderCog" Width="18" Height="18" />
+                                </Button>
+                                <Button ToolTip="Отключить общий доступ" Width="32" Height="32" Padding="0"
+                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                        Command="{Binding DisableShareCommand}">
+                                    <materialDesign:PackIcon Kind="FolderRemove" Width="18" Height="18" />
+                                </Button>
+                            </StackPanel>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Margin="0 10 0 2" Foreground="{DynamicResource MaterialDesignBodyLight}">Адрес этого узла для соседей:</TextBlock>
+
+                            <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" IsReadOnly="True" VerticalAlignment="Center" Margin="0,0,6,0"
+                                         Text="{Binding PublicHttpUrl, Mode=OneWay}" />
+                                <Button Grid.Column="1" ToolTip="Скопировать адрес" Style="{StaticResource MaterialDesignFloatingActionMiniButton}" Width="32" Height="32"
+                                        Command="{Binding CopyPublicUrlCommand}">
+                                    <materialDesign:PackIcon Kind="ContentCopy" Width="18" Height="18" />
+                                </Button>
                             </Grid>
                         </Grid>
                     </Border>

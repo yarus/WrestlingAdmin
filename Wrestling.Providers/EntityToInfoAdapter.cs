@@ -43,7 +43,13 @@ namespace Wrestling.Providers
                 IsOverlayOlympic = info.IsOverlayOlympic,
                 IsBackupEnabled = info.IsBackupEnabled,
                 MaxBackupCount = info.MaxBackupCount,
-                BackupFolderPath = info.BackupFolderPath
+                BackupFolderPath = info.BackupFolderPath,
+                IsDiscoveryEnabled = info.IsDiscoveryEnabled,
+                DiscoveryPort = info.DiscoveryPort,
+                IsHttpServerEnabled = info.IsHttpServerEnabled,
+                HttpServerPort = info.HttpServerPort,
+                NodeName = info.NodeName ?? string.Empty,
+                SelfUncPath = info.SelfUncPath ?? string.Empty
             };
 
             // Legacy .wrt files saved before the backup feature shipped don't
@@ -52,6 +58,14 @@ namespace Wrestling.Providers
             // explicitly serialized MaxBackupCount = 0 is indistinguishable
             // from "missing". Treat 0 as "use default" to be safe.
             if (entity.MaxBackupCount <= 0) entity.MaxBackupCount = 10;
+
+            // Same kind of legacy-zero concern: .wrt files saved before the
+            // network feature shipped can deserialize with DiscoveryPort = 0 /
+            // HttpServerPort = 0 (field missing → DTO ctor seeds defaults, but
+            // a pre-feature file that ever serialized them as zero is possible
+            // in theory). Re-seed to defaults so listeners start on usable ports.
+            if (entity.DiscoveryPort <= 0) entity.DiscoveryPort = 24565;
+            if (entity.HttpServerPort <= 0) entity.HttpServerPort = 24566;
 
             return entity;
         }
@@ -77,7 +91,13 @@ namespace Wrestling.Providers
                 IsOverlayOlympic = entity.IsOverlayOlympic,
                 IsBackupEnabled = entity.IsBackupEnabled,
                 MaxBackupCount = entity.MaxBackupCount,
-                BackupFolderPath = entity.BackupFolderPath
+                BackupFolderPath = entity.BackupFolderPath,
+                IsDiscoveryEnabled = entity.IsDiscoveryEnabled,
+                DiscoveryPort = entity.DiscoveryPort,
+                IsHttpServerEnabled = entity.IsHttpServerEnabled,
+                HttpServerPort = entity.HttpServerPort,
+                NodeName = entity.NodeName ?? string.Empty,
+                SelfUncPath = entity.SelfUncPath ?? string.Empty
             };
 
             return info;

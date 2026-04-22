@@ -15,6 +15,7 @@ using Wrestling.Entities.Bracket;
 using Wrestling.Entities.Results;
 using Wrestling.Entities.Results.Achievements;
 using Wrestling.Providers;
+using Wrestling.Providers.Network;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
@@ -36,6 +37,20 @@ namespace Wrestling.UI.Material
         private int _shuttingDown; // 0 = normal, 1 = currently handling a crash-path save
         private readonly object _persistenceLock = new object();
         private readonly object _logLock = new object();
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            // Tear down network services so their sockets release cleanly on
+            // normal shutdown. Crash paths go through the exception handlers
+            // above; the OS reclaims sockets either way, but an orderly stop
+            // flushes final announce/response cycles and frees the UDP/TCP
+            // ports faster for restarts.
+            var di = DiContainer.Instance;
+            try { di.Resolve<NetworkServicesLifecycle>()?.Dispose(); } catch { }
+            try { (di.Resolve<IPeerDiscoveryService>() as IDisposable)?.Dispose(); } catch { }
+            try { (di.Resolve<ITournamentHttpServer>() as IDisposable)?.Dispose(); } catch { }
+            base.OnExit(e);
+        }
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -59,6 +74,22 @@ namespace Wrestling.UI.Material
             navService.ShellVm = app.DataContext as IShellViewModel;
 
             MainWindow = app;
+
+            // Network services bubble port conflicts, firewall hints, etc. as
+            // DiagnosticMessage events. Route to the snackbar once the shell
+            // VM is available — must marshal to the UI thread because the
+            // firewall watchdog fires from a thread-pool Timer callback.
+            var lifecycle = di.Resolve<NetworkServicesLifecycle>();
+            var shell = navService.ShellVm;
+            if (lifecycle != null && shell != null)
+            {
+                lifecycle.DiagnosticMessage += (s, msg) =>
+                {
+                    var dispatcher = Current?.Dispatcher;
+                    if (dispatcher == null || dispatcher.CheckAccess()) shell.ShowSnackbarMessage(msg);
+                    else dispatcher.BeginInvoke(new Action(() => shell.ShowSnackbarMessage(msg)));
+                };
+            }
 
             app.Show();
 
@@ -277,6 +308,16 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             });
 
             di.Add<ITournamentImporter>(new TournamentImporter(di.Resolve<ITournamentsManager>(), di.Resolve<List<IGroupBracketProcessor>>()));
+
+            // Network services: peer discovery via UDP broadcast + embedded
+            // HTTP server that serves this node's .wrt. Both are singletons and
+            // are driven by NetworkServicesLifecycle (below) which watches the
+            // data context.
+            var discovery = new PeerDiscoveryService();
+            var httpServer = new TournamentHttpServer();
+            di.Add<IPeerDiscoveryService>(discovery);
+            di.Add<ITournamentHttpServer>(httpServer);
+            di.Add<NetworkServicesLifecycle>(new NetworkServicesLifecycle(dc, discovery, httpServer));
 
             di.Add(new WwfScoreScreenView(), "ScoreScreen");
 

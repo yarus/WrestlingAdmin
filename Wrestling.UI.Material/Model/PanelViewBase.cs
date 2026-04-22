@@ -1,5 +1,8 @@
 using System;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
 
 namespace Wrestling.UI.Material.Model
 {
@@ -23,25 +26,63 @@ namespace Wrestling.UI.Material.Model
         {
             base.AdjustScreenOnShow();
 
-            var monitor = TargetMonitor ?? PickDefaultMonitor();
+            var monitor = ResolveMonitor();
+            if (monitor == null) return;
 
-            // Screen.Bounds is in GDI physical pixels; WPF Top/Left/Width/Height
-            // are device-independent pixels (1/96 inch). Without DPI conversion
-            // the window ends up smaller than the monitor on high-DPI displays
-            // (visible gaps on all sides). Bounds (not WorkingArea) so the
-            // window also covers the taskbar on the target screen.
             var bounds = monitor.Bounds;
-            var dpi = GetMainWindowDpi();
 
             WindowStyle = WindowStyle.None;
             ResizeMode = ResizeMode.NoResize;
             WindowStartupLocation = WindowStartupLocation.Manual;
             WindowState = WindowState.Normal;
 
-            Left = bounds.Left / dpi.X;
-            Top = bounds.Top / dpi.Y;
-            Width = bounds.Width / dpi.X;
-            Height = bounds.Height / dpi.Y;
+            // Force HWND creation so we can position via Win32 before the window
+            // becomes visible (prevents a flash on the wrong monitor).
+            var hwnd = new WindowInteropHelper(this).EnsureHandle();
+
+            if (hwnd != IntPtr.Zero)
+            {
+                // SetWindowPos speaks physical pixels directly — bypasses WPF's
+                // per-monitor-DPI math, which produced wrong sizes when the
+                // target monitor had a different DPI than the primary one
+                // (e.g. 150% laptop + 100% TV). Bounds (not WorkingArea) means
+                // we cover the taskbar on the target screen.
+                SetWindowPos(hwnd, IntPtr.Zero,
+                    bounds.Left, bounds.Top, bounds.Width, bounds.Height,
+                    SWP_NOZORDER | SWP_NOACTIVATE);
+            }
+            else
+            {
+                // Extremely unlikely fallback: DIP math against main-window DPI.
+                var dpi = GetMainWindowDpi();
+                Left = bounds.Left / dpi.X;
+                Top = bounds.Top / dpi.Y;
+                Width = bounds.Width / dpi.X;
+                Height = bounds.Height / dpi.Y;
+            }
+        }
+
+        private System.Windows.Forms.Screen ResolveMonitor()
+        {
+            var screens = System.Windows.Forms.Screen.AllScreens;
+            if (screens.Length == 0) return null;
+
+            // Revalidate the user-selected monitor — if it was unplugged since
+            // selection (or its bounds changed), fall back to default picking
+            // so we don't try to position onto coordinates that no longer exist.
+            if (TargetMonitor != null)
+            {
+                var stillPresent = screens.Any(s =>
+                    string.Equals(s.DeviceName, TargetMonitor.DeviceName, StringComparison.OrdinalIgnoreCase) &&
+                    s.Bounds == TargetMonitor.Bounds);
+
+                if (!stillPresent)
+                {
+                    TargetMonitor = null;
+                }
+            }
+
+            return TargetMonitor ?? PickDefaultMonitor();
         }
 
         private struct DpiScale
@@ -82,5 +123,13 @@ namespace Wrestling.UI.Material.Model
 
             return monitor;
         }
+
+        private const uint SWP_NOZORDER = 0x0004;
+        private const uint SWP_NOACTIVATE = 0x0010;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter,
+            int X, int Y, int cx, int cy, uint uFlags);
     }
 }

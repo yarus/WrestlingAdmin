@@ -13,6 +13,12 @@ namespace Wrestling.Data
             // false in a saved file still wins.
             IsBackupEnabled = true;
             MaxBackupCount = 10;
+            IsDiscoveryEnabled = true;
+            DiscoveryPort = 24565;
+            IsHttpServerEnabled = true;
+            HttpServerPort = 24566;
+            NodeName = string.Empty;
+            SelfUncPath = string.Empty;
         }
 
         [DataMember]
@@ -47,5 +53,17 @@ namespace Wrestling.Data
         public int MaxBackupCount { get; set; }
         [DataMember]
         public string BackupFolderPath { get; set; }
+        [DataMember]
+        public bool IsDiscoveryEnabled { get; set; }
+        [DataMember]
+        public int DiscoveryPort { get; set; }
+        [DataMember]
+        public bool IsHttpServerEnabled { get; set; }
+        [DataMember]
+        public int HttpServerPort { get; set; }
+        [DataMember]
+        public string NodeName { get; set; }
+        [DataMember]
+        public string SelfUncPath { get; set; }
     }
 }
