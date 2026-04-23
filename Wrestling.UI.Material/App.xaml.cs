@@ -12,6 +12,7 @@ using System.Windows.Media;
 using Wrestling.DataAccess;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
+using Wrestling.Entities.Bracket.Seeding;
 using Wrestling.Entities.Results;
 using Wrestling.Entities.Results.Achievements;
 using Wrestling.Providers;
@@ -289,6 +290,12 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
                 new RoundRobinGroupBracketProcessor(),
                 new SubGroupsToOlympicBracketProcessor()
             });
+
+            // Seeding strategy drives DrawViewModel.SeedWrestlers. Default is
+            // ClubCityLevelSeedingStrategy which keeps same-club / same-city /
+            // high-Level wrestlers on opposite sides of the bracket. Swap in
+            // ShuffleSeedingStrategy here if a pure random draw is ever needed.
+            di.Add<ISeedingStrategy>(new ClubCityLevelSeedingStrategy());
 
             // Per-host ISliderViewControl instances are now constructed via
             // ISlideType.CreateViewControl(), so these view-model types are no

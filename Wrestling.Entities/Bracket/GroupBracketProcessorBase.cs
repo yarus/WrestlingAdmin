@@ -23,7 +23,7 @@ namespace Wrestling.Entities.Bracket
 
         public void Generate(Tournament tournament, AgeWeightGroup group)
         {
-            if (tournament == null || group == null || group.Wrestlers.Count == 0) return;
+            if (tournament == null || group == null || group.Wrestlers.Count < 2) return;
 
             LoadTournamentGroup(tournament, group);
 

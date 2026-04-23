@@ -7,9 +7,9 @@ using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
+using Wrestling.Entities.Bracket.Seeding;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Tournament.Print.PrintApplications;
-using Wrestling.UI.Material.Tournament.Print.PrintBracket;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Standing.Draw
@@ -19,7 +19,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         #region Fields
 
         private IMatchNumbersGenerator _matchNumbersGenerator;
-        
+        private ISeedingStrategy _seedingStrategy;
+
         private ICommand _generateBracketCommand;
         private ICommand _removeBracketCommand;
         private ICommand _printProtocolCommand;
@@ -48,6 +49,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             _matchNumbersGenerator = Resolve<IMatchNumbersGenerator>();
 
             _drawTypes = Resolve<List<IGroupBracketProcessor>>();
+            _seedingStrategy = Resolve<ISeedingStrategy>();
 
             var groups = DataContext.Tournament.Groups.OrderBy(g => g.IsFemale).ThenByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax).ToList();
             foreach (var group in groups)
@@ -273,40 +275,19 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             }
         }
         
+        // Delegates to the injected ISeedingStrategy (see App.xaml.cs). The
+        // strategy is responsible for honoring IsSeedFixed locks, rewriting
+        // SeedNumber to a contiguous 1..N range, and sorting group.Wrestlers
+        // by the new SeedNumber.
         private void SeedWrestlers(AgeWeightGroup group)
         {
-            var staticSeeds = new List<Wrestler>();
-
-            var tmpSeeds = new List<Wrestler>();
-            foreach (var wr in group.Wrestlers)
+            // InitData is the first call site — _seedingStrategy may not be
+            // resolved yet when unit tests bypass InitData. Guard defensively.
+            if (_seedingStrategy == null)
             {
-                if (wr.IsSeedFixed && wr.SeedNumber.HasValue)
-                {
-                    staticSeeds.Add(wr);
-                }
-                else
-                {
-                    wr.IsSeedFixed = false;
-                    wr.SeedNumber = new Random().Next();
-                    tmpSeeds.Add(wr);
-                }
+                _seedingStrategy = Resolve<ISeedingStrategy>();
             }
-
-            tmpSeeds.Shuffle(new Random());
-
-            foreach (var wr in staticSeeds.OrderBy(w => w.SeedNumber))
-            {
-                tmpSeeds.Add(wr);
-            }
-
-            tmpSeeds = tmpSeeds.OrderBy(w => w.SeedNumber).ToList();
-
-            for (int i = 0; i < tmpSeeds.Count; i++)
-            {
-                tmpSeeds[i].SeedNumber = i+1;
-            }
-
-            group.Wrestlers = tmpSeeds;
+            _seedingStrategy.Seed(group);
         }
 
         #endregion

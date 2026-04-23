@@ -1,0 +1,22 @@
+{
+  "_comment": "Accumulated QID overrides for cities/places that wbsearchentities resolves incorrectly. Key format: '<primary>|<region>'. Update when new tournaments surface ambiguous places. region is empty string when target had no parent region in raw City string.",
+  "qids": {
+    "Сербия|Сербия": "Q403",
+    "Болгария|Болгария": "Q219",
+    "Новое Девяткино|Ленинградская область": "Q4323758",
+    "Свердлова|Ленинградская область": "Q1051145",
+    "Отрадное|Ленинградская область": "Q15323",
+    "Дивногорск|Красноярский край": "Q135213",
+    "Химки|Московская область": "Q197582",
+    "Грязи|Липецкая область": "Q134663",
+    "Каа-Хем|Республика Тыва": "Q940962",
+    "Башлыкент|": "Q4080203",
+    "Новокаякент|Республика Дагестан": "Q4324212"
+  },
+  "slugs": {
+    "Санкт-Петербург|": "saint-petersburg",
+    "Москва|": "moscow",
+    "Сербия|": "serbia",
+    "Болгария|": "bulgaria"
+  }
+}
