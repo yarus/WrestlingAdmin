@@ -49,5 +49,7 @@ namespace Wrestling.Data
         public int WarningsNumberBlue { get; set; }
         [DataMember]
         public int WarningsNumberRed { get; set; }
+        [DataMember]
+        public string ImportCompletionSource { get; set; }
     }
 }

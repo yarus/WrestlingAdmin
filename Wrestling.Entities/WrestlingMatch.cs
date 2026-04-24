@@ -23,6 +23,7 @@ namespace Wrestling.Entities
         private string _note;
         private MatchStatusEnum _status;
         private MatchWinTypeEnum? _winType;
+        private string _importCompletionSource;
 
         private Wrestler _wrestlerInRed;
         private Wrestler _wrestlerInBlue;
@@ -318,6 +319,30 @@ namespace Wrestling.Entities
         }
 
         public bool IsMatchCompleted => _status == MatchStatusEnum.Completed;
+
+        // When the current Completed state was applied by TournamentImporter,
+        // this holds the raw ImportSources entry (HTTP URL, UNC, or packed
+        // "http|unc") of the peer that supplied the completion. Null/empty for
+        // locally-entered results. Used to safely propagate remote reverts:
+        // the importer only reverts locally when the SAME peer that provided
+        // the completion now reports Pending. A different peer being "behind"
+        // (still Pending) is ignored, preventing flip-flop between multiple
+        // sources. Reset to null by ApproveAsync (manual completion) and by
+        // RejectAsync/RevertMatch paths.
+        public string ImportCompletionSource
+        {
+            get { return _importCompletionSource; }
+            set
+            {
+                _importCompletionSource = value;
+                OnPropertyChanged("ImportCompletionSource");
+                OnPropertyChanged("IsCompletionFromImport");
+            }
+        }
+
+        // Derived convenience flag used in a couple of UI call sites. True
+        // whenever the match's current completion was applied via import.
+        public bool IsCompletionFromImport => !string.IsNullOrEmpty(_importCompletionSource);
 
         public int BestActionRed
         {

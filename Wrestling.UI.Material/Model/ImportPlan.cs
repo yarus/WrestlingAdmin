@@ -10,9 +10,17 @@ namespace Wrestling.UI.Material.Model
         public ImportOutcome? ShortCircuit { get; set; }
         public Entities.Tournament Remote { get; set; }
 
+        // Raw ImportSources entry (HTTP URL, UNC, or packed "http|unc") that
+        // produced this plan. Stamped onto WrestlingMatch.ImportCompletionSource
+        // when Case 1 applies a remote completion — the next tick compares this
+        // string against the match's stored source before propagating a revert,
+        // so a peer that hasn't seen the completion yet can't fight with the
+        // peer that did.
+        public string Source { get; set; }
+
         public bool NeedsApply => ShortCircuit == null && Remote != null;
 
         public static ImportPlan Skip(ImportOutcome outcome) => new ImportPlan { ShortCircuit = outcome };
-        public static ImportPlan Proceed(Entities.Tournament remote) => new ImportPlan { Remote = remote };
+        public static ImportPlan Proceed(Entities.Tournament remote, string source) => new ImportPlan { Remote = remote, Source = source };
     }
 }

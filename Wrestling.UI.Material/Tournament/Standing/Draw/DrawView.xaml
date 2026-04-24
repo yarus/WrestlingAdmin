@@ -44,6 +44,10 @@
                         HorizontalAlignment="Left" Margin="5,0,5,0"
                         Command="{Binding Path=DataContext.RegenerateAllBrackets, ElementName=RootControl}"
                         CommandParameter="{Binding }" />
+                <Button Content="Снять фиксированный посев"
+                        HorizontalAlignment="Left" Margin="5,0,5,0"
+                        ToolTip="Сбросить IsSeedFixed у всех участников во всех группах"
+                        Command="{Binding Path=DataContext.UnfixAllSeedsCommand, ElementName=RootControl}" />
             </TextBlock>
             
             <TextBlock Grid.Row="0" Grid.Column="1" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">

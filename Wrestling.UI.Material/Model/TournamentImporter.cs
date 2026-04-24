@@ -79,7 +79,10 @@ namespace Wrestling.UI.Material.Model
                         continue;
                     }
 
-                    return ImportPlan.Proceed(tournament);
+                    // Pass the original packed source (fileName) — not the
+                    // selected candidate — so Case-2 revert checks remain
+                    // stable even when one alternative (HTTP vs UNC) is down.
+                    return ImportPlan.Proceed(tournament, fileName);
                 }
                 finally
                 {
@@ -182,7 +185,12 @@ namespace Wrestling.UI.Material.Model
                 foreach (var importedMatch in importedMatches)
                 {
                     var baseMatch = matches.FirstOrDefault(p => p.MatchNumber == importedMatch.MatchNumber);
-                    if (baseMatch != null && baseMatch.Status == MatchStatusEnum.Pending && importedMatch.Status == MatchStatusEnum.Completed)
+                    if (baseMatch == null) continue;
+
+                    // Case 1: apply remote completion onto a local Pending match.
+                    // Guard: only promote Pending→Completed. A local manual
+                    // completion is never silently overwritten.
+                    if (baseMatch.Status == MatchStatusEnum.Pending && importedMatch.Status == MatchStatusEnum.Completed)
                     {
                         baseMatch.WinType = importedMatch.WinType;
                         baseMatch.LastSecondInMatch = importedMatch.LastSecondInMatch;
@@ -193,12 +201,36 @@ namespace Wrestling.UI.Material.Model
                         baseMatch.IsRedWon = importedMatch.IsRedWon;
                         baseMatch.Note = importedMatch.Note;
                         baseMatch.MatchActions = new List<MatchAction>(importedMatch.MatchActions);
+                        // Stamp the originating peer so a later remote revert
+                        // can be matched back to the same source (Case 2).
+                        baseMatch.ImportCompletionSource = plan.Source;
 
                         var processor = GetProcessorForGroup(sameGroup.Bracket.BracketTypeCode);
                         if (processor == null) throw new ApplicationException("Can't find processor!");
 
                         processor.Load(target, sameGroup);
                         processor.CompleteMatch(baseMatch, baseMatch.IsRedWon.Value, baseMatch.WinType.Value);
+
+                        result++;
+                    }
+                    // Case 2: propagate a remote revert. We only revert locally
+                    // when the SAME peer that originally gave us the completion
+                    // now reports Pending. A different peer being "behind" and
+                    // still Pending is ignored — otherwise two sources would
+                    // flip-flop the match on every tick (one re-applies, the
+                    // other reverts). A manual local result (ImportCompletionSource
+                    // null) is always preserved.
+                    else if (baseMatch.Status == MatchStatusEnum.Completed
+                             && importedMatch.Status == MatchStatusEnum.Pending
+                             && !string.IsNullOrEmpty(baseMatch.ImportCompletionSource)
+                             && baseMatch.ImportCompletionSource == plan.Source)
+                    {
+                        var processor = GetProcessorForGroup(sameGroup.Bracket.BracketTypeCode);
+                        if (processor == null) throw new ApplicationException("Can't find processor!");
+
+                        processor.Load(target, sameGroup);
+                        processor.RevertMatch(baseMatch);
+                        baseMatch.ImportCompletionSource = null;
 
                         result++;
                     }

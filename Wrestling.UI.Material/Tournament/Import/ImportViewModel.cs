@@ -51,6 +51,14 @@ namespace Wrestling.UI.Material.Tournament.Import
         private Dispatcher _uiDispatcher;
         private ObservableCollection<DiscoveredPeer> _discoveredPeers;
 
+        // In-memory cache: ImportSources path (URL, UNC, or packed "url|unc")
+        // → friendly node name. Populated whenever the user adds a discovered
+        // peer, and consulted by the log writer so the journal shows readable
+        // labels instead of raw HTTP URLs. After an app restart the cache is
+        // empty and refills from the next UDP discovery cycle (seconds on LAN);
+        // unresolved entries fall back to the raw path.
+        private readonly Dictionary<string, string> _sourceLabels = new Dictionary<string, string>();
+
         #endregion
 
         public ImportViewModel(IDiContainer container) : base(container)
@@ -551,6 +559,10 @@ namespace Wrestling.UI.Material.Tournament.Import
         internal async Task ImportDataAsync(string path)
         {
             var target = DataContext.Tournament;
+            // Resolve the node label once per import attempt. The raw path is
+            // still reachable in the ImportSources list; the journal below
+            // shows the friendly label (node name) instead.
+            var label = DisplayLabelForPath(path);
 
             ImportPlan plan;
             try
@@ -560,7 +572,7 @@ namespace Wrestling.UI.Material.Tournament.Import
             catch (Exception ex)
             {
                 Debug.WriteLine($"Import prepare failed: {ex.Message}");
-                AddLog(path, "Ошибка импорта. Подробности в журнале.");
+                AddLog(label, "Ошибка импорта. Подробности в журнале.");
                 return;
             }
 
@@ -574,28 +586,28 @@ namespace Wrestling.UI.Material.Tournament.Import
             catch (Exception ex)
             {
                 Debug.WriteLine($"Import apply failed: {ex.Message}");
-                AddLog(path, "Ошибка импорта. Подробности в журнале.");
+                AddLog(label, "Ошибка импорта. Подробности в журнале.");
                 return;
             }
 
             switch (result.Outcome)
             {
                 case ImportOutcome.Imported:
-                    AddLog(path, $"Успешно загружено {result.ImportedCount} результатов!");
+                    AddLog(label, $"Успешно загружено {result.ImportedCount} результатов!");
                     ShowSnackMessage($"Успешно импортировано {result.ImportedCount} результатов!");
                     await SaveIfAutosaveEnabledAsync();
                     break;
                 case ImportOutcome.NoNewData:
-                    AddLog(path, "Новые данные отсутствуют!");
+                    AddLog(label, "Новые данные отсутствуют!");
                     break;
                 case ImportOutcome.FileUnavailable:
-                    AddLog(path, "Файл недоступен (сеть или путь). Подробности в журнале.");
+                    AddLog(label, "Файл недоступен (сеть или путь). Подробности в журнале.");
                     break;
                 case ImportOutcome.TournamentMismatch:
-                    AddLog(path, "Файл не соответствует текущему турниру.");
+                    AddLog(label, "Файл не соответствует текущему турниру.");
                     break;
                 default:
-                    AddLog(path, "Ошибка импорта. Подробности в журнале.");
+                    AddLog(label, "Ошибка импорта. Подробности в журнале.");
                     break;
             }
         }
@@ -630,6 +642,10 @@ namespace Wrestling.UI.Material.Tournament.Import
             if (src == null) return;
             if (ImportSources.Contains(src)) return;
             ImportSources.Add(src);
+            if (!string.IsNullOrWhiteSpace(peer.NodeName))
+            {
+                _sourceLabels[src] = peer.NodeName;
+            }
         }
 
         private void AddAllDisplayedPeers()
@@ -646,6 +662,51 @@ namespace Wrestling.UI.Material.Tournament.Import
             if (ImportLog.Count > 10) ImportLog = new ObservableCollection<string>();
 
             ImportLog.Add(string.Format($"{DateTime.Now} - {path} - {message}"));
+        }
+
+        // Render a friendly label for an ImportSources entry. Preference order:
+        //   1. Label cached when the user added the peer from the discovery
+        //      dialog (holds across the entire session).
+        //   2. Match against the current DiscoveredPeers list by HttpUrl /
+        //      UncPath / the packed "http|unc" combined source — repopulates
+        //      after an app restart once the next UDP advertisement arrives.
+        //   3. Fallback — raw path. Keeps behaviour graceful for manually-
+        //      added shared folders where no NodeName is ever available.
+        private string DisplayLabelForPath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return path;
+            if (_sourceLabels.TryGetValue(path, out var cached) && !string.IsNullOrWhiteSpace(cached))
+            {
+                return cached;
+            }
+
+            var peers = _discoveredPeers;
+            if (peers != null)
+            {
+                foreach (var peer in peers.ToList())
+                {
+                    if (peer == null || string.IsNullOrWhiteSpace(peer.NodeName)) continue;
+                    var preferred = PeerPreferredSource(peer);
+                    if (!string.IsNullOrEmpty(preferred) && preferred == path)
+                    {
+                        return peer.NodeName;
+                    }
+                    // A source saved as packed "http|unc" may partially match a
+                    // peer that currently only advertises one half (e.g. HTTP
+                    // server is down). Accept substring hits so the label shows
+                    // through during partial outages.
+                    if (!string.IsNullOrEmpty(peer.HttpUrl) && path.Contains(peer.HttpUrl))
+                    {
+                        return peer.NodeName;
+                    }
+                    if (!string.IsNullOrEmpty(peer.UncPath) && path.Contains(peer.UncPath))
+                    {
+                        return peer.NodeName;
+                    }
+                }
+            }
+
+            return path;
         }
 
         #endregion

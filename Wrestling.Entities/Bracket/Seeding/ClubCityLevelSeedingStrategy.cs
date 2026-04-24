@@ -18,26 +18,46 @@ namespace Wrestling.Entities.Bracket.Seeding
     // For each strategy call:
     //   - Wrestlers entering with IsSeedFixed=true AND a valid SeedNumber are
     //     treated as locks (their slot is not changed).
-    //   - All other wrestlers get re-placed; all end up IsSeedFixed=true so a
-    //     subsequent "regenerate" doesn't reshuffle.
+    //   - All other wrestlers get re-placed. IsSeedFixed is left as-is — it's
+    //     the caller's job to lock after an explicit draw (DrawViewModel does
+    //     this in RegenerateBrackets/GenerateBracket). This lets InitData run
+    //     Seed on tab entry for display purposes without silently locking
+    //     everyone.
     public class ClubCityLevelSeedingStrategy : ISeedingStrategy
     {
         private const double WeightClub = 10000;
         private const double WeightCity = 500;
         private const double WeightLevel = 5;
 
+        // Randomness source. Default: unseeded — production callers get a fresh
+        // shuffle on each Seed invocation, so clicking "Пересоздать все сетки"
+        // after unfixing everyone produces a genuinely new distribution whenever
+        // the group has multiple wrestlers at the same Level (very common).
+        // Tests pass a fixed seed via the overload for reproducibility.
+        private readonly Random _rng;
+
+        public ClubCityLevelSeedingStrategy() : this(null) { }
+
+        public ClubCityLevelSeedingStrategy(int? seed)
+        {
+            _rng = seed.HasValue ? new Random(seed.Value) : new Random();
+        }
+
         public void Seed(AgeWeightGroup group)
         {
             if (group?.Wrestlers == null) return;
-            var wrestlers = group.Wrestlers.ToList();
+            // Pre-shuffle the input list so the downstream OrderByDescending(Level)
+            // (a stable sort in LINQ-to-Objects) preserves a random order inside
+            // each equal-Level bucket. Locked wrestlers are still pinned by
+            // BuildLocks below, so fairness of locks is unaffected.
+            var wrestlers = ShuffleCopy(group.Wrestlers);
             int n = wrestlers.Count;
             if (n < 2)
             {
-                // Edge cases: 0 or 1 wrestler — just normalize IsSeedFixed + SeedNumber.
+                // Edge cases: 0 or 1 wrestler — just normalize SeedNumber.
                 for (int i = 0; i < wrestlers.Count; i++)
                 {
                     wrestlers[i].SeedNumber = i + 1;
-                    wrestlers[i].IsSeedFixed = true;
                 }
                 group.Wrestlers = wrestlers;
                 return;
@@ -65,7 +85,6 @@ namespace Wrestling.Entities.Bracket.Seeding
             {
                 var wr = slots[i + 1];
                 wr.SeedNumber = i + 1;
-                wr.IsSeedFixed = true;
                 reordered.Add(wr);
             }
             group.Wrestlers = reordered;
@@ -105,7 +124,6 @@ namespace Wrestling.Entities.Bracket.Seeding
             var rest = wrestlers
                 .Where(w => !lockedIds.Contains(w.ID))
                 .OrderByDescending(w => LevelNormalizer.Normalize(w.Level))
-                .ThenBy(w => FullNameKey(w))
                 .ToList();
 
             int k = 0;
@@ -189,14 +207,11 @@ namespace Wrestling.Entities.Bracket.Seeding
             // locked seed keeps its place and free seats fill up in a
             // predictable order.
             var aFree = best.Value.aPick.Select(i => free[i])
-                .OrderByDescending(w => LevelNormalizer.Normalize(w.Level))
-                .ThenBy(w => FullNameKey(w)).ToList();
+                .OrderByDescending(w => LevelNormalizer.Normalize(w.Level)).ToList();
             var bFree = best.Value.bPick.Select(i => free[i])
-                .OrderByDescending(w => LevelNormalizer.Normalize(w.Level))
-                .ThenBy(w => FullNameKey(w)).ToList();
+                .OrderByDescending(w => LevelNormalizer.Normalize(w.Level)).ToList();
             var mFree = best.Value.mPick.Select(i => free[i])
-                .OrderByDescending(w => LevelNormalizer.Normalize(w.Level))
-                .ThenBy(w => FullNameKey(w)).ToList();
+                .OrderByDescending(w => LevelNormalizer.Normalize(w.Level)).ToList();
 
             foreach (var s in freeSlotsA) { slots[s] = aFree[0]; aFree.RemoveAt(0); }
             foreach (var s in freeSlotsB) { slots[s] = bFree[0]; bFree.RemoveAt(0); }
@@ -224,7 +239,6 @@ namespace Wrestling.Entities.Bracket.Seeding
             var remaining = wrestlers
                 .Where(w => !lockedIds.Contains(w.ID))
                 .OrderByDescending(w => LevelNormalizer.Normalize(w.Level))
-                .ThenBy(w => FullNameKey(w))
                 .ToList();
 
             // Initial placement: strongest wrestlers into the "seeded" slots
@@ -406,8 +420,21 @@ namespace Wrestling.Entities.Bracket.Seeding
             return w;
         }
 
-        private static string FullNameKey(Wrestler w) =>
-            string.Join(" ", new[] { w.LastName, w.FirstName, w.MiddleName }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        // Fisher-Yates shuffle into a fresh List<Wrestler>. Leaves the caller's
+        // ObservableCollection untouched.
+        private List<Wrestler> ShuffleCopy(IEnumerable<Wrestler> source)
+        {
+            var list = source.ToList();
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = _rng.Next(i + 1);
+                if (j != i)
+                {
+                    (list[i], list[j]) = (list[j], list[i]);
+                }
+            }
+            return list;
+        }
 
         // Standard n-choose-k enumerator; yields index lists sized k drawn from
         // `pool`.

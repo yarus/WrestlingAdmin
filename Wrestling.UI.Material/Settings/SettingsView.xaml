@@ -215,7 +215,7 @@
                 </Grid>
             </materialDesign:Card>
 
-            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="250">
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
                 <Grid VerticalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -320,7 +320,7 @@
                 </Grid>
             </materialDesign:Card>
 
-            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="250">
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
                 <Grid VerticalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

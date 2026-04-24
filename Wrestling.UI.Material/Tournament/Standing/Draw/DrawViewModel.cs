@@ -25,6 +25,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         private ICommand _removeBracketCommand;
         private ICommand _printProtocolCommand;
         private ICommand _regenerateAllBrackets;
+        private ICommand _unfixAllSeedsCommand;
 
         private List<IGroupBracketProcessor> _drawTypes;
         private ObservableCollection<AgeWeightGroup> _groups;
@@ -113,6 +114,18 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                 return _regenerateAllBrackets;
             }
         }
+
+        public ICommand UnfixAllSeedsCommand
+        {
+            get
+            {
+                if (_unfixAllSeedsCommand == null)
+                {
+                    _unfixAllSeedsCommand = new RelayCommand(param => UnfixAllSeeds(), param => true);
+                }
+                return _unfixAllSeedsCommand;
+            }
+        }
         
         public ICommand PrintProtocolCommand
         {
@@ -189,6 +202,16 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
                     OnPropertyChanged("MatchesCount");
                 }
+            }
+        }
+
+        private void UnfixAllSeeds()
+        {
+            if (Dialog.ShowMessageBox(this, "Снять отметку «Фикс.» у всех участников во всех группах?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+
+            foreach (var wrestler in DataContext.Tournament.Wrestlers)
+            {
+                wrestler.IsSeedFixed = false;
             }
         }
 

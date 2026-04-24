@@ -48,7 +48,7 @@ namespace Wrestling.UI.Material.Match
                     if (WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Completed && CanRejectResult)
                     {
                         _quickButtons.Add(new CommandButtonItem("Анулировать", PackIconKind.BlockHelper,
-                            new RelayCommand(param => Reject(),
+                            new AsyncRelayCommand(async param => await RejectAsync(),
                                 param => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Completed &&
                                          CanRejectResult)));
                     }
@@ -529,7 +529,7 @@ namespace Wrestling.UI.Material.Match
             return team != null ? team.EmblemPath : string.Empty;
         }
 
-        private void Reject()
+        private async Task RejectAsync()
         {
             if (Dialog.ShowMessageBox(this,
                     "Результат матча будет анулирован и сетка перестроена! Вы уверены?",
@@ -551,6 +551,17 @@ namespace Wrestling.UI.Material.Match
             WrestlingMatch = null;
             WinType = null;
             Note = string.Empty;
+
+            // Autosave after revert so peers importing over HTTP/UNC see the
+            // Pending state. Without this, a stale .wrt on disk still reports
+            // the cancelled match as Completed, and the importer's
+            // "local Pending + remote Completed → apply" guard (TournamentImporter.cs:185)
+            // re-applies the old result, masking a newer completion from
+            // another peer.
+            if (DataContext.Tournament != null)
+            {
+                await SaveIfAutosaveEnabledAsync();
+            }
 
             if (Tournament == null)
             {
@@ -587,6 +598,11 @@ namespace Wrestling.UI.Material.Match
             WrestlingMatch.IsRedWon = Winner == WrestlingMatch.WrestlerInRed.ID;
             WrestlingMatch.WinType = WinType;
             WrestlingMatch.Note = Note;
+            // Manual completion — clear the import-source stamp so that a
+            // later remote-Pending state won't auto-revert this result. Only
+            // completions applied via TournamentImporter may be reverted by
+            // a subsequent import cycle.
+            WrestlingMatch.ImportCompletionSource = null;
             WrestlingMatch.MatchActions.Add(new MatchAction
             {
                 DateTime = DateTime.Now,
@@ -638,6 +654,7 @@ namespace Wrestling.UI.Material.Match
             WrestlingMatch.IsRedWon = Winner == WrestlingMatch.WrestlerInRed.ID;
             WrestlingMatch.WinType = WinType;
             WrestlingMatch.Note = Note;
+            WrestlingMatch.ImportCompletionSource = null;
             WrestlingMatch.Status = MatchStatusEnum.Completed;
             WrestlingMatch = null;
 

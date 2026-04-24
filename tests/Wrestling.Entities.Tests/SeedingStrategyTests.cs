@@ -56,7 +56,9 @@ public class SeedingStrategyTests
 
         var seeds = g.Wrestlers.Select(w => w.SeedNumber).ToList();
         seeds.Should().BeEquivalentTo(Enumerable.Range(1, 8).Select(i => (int?)i));
-        g.Wrestlers.Should().OnlyContain(w => w.IsSeedFixed == true);
+        // Seed does not mutate IsSeedFixed — callers (DrawViewModel.RegenerateBrackets /
+        // .GenerateBracket) lock wrestlers only after an explicit draw action.
+        g.Wrestlers.Should().OnlyContain(w => w.IsSeedFixed == false);
     }
 
     [Fact]
@@ -172,7 +174,8 @@ public class SeedingStrategyTests
         new ClubCityLevelSeedingStrategy().Seed(g);
 
         g.Wrestlers.Should().ContainSingle().Which.SeedNumber.Should().Be(1);
-        g.Wrestlers[0].IsSeedFixed.Should().BeTrue();
+        // Seed leaves IsSeedFixed untouched (see notes on ClubCityLevelSeedingStrategy).
+        g.Wrestlers[0].IsSeedFixed.Should().BeFalse();
     }
 
     [Fact]
