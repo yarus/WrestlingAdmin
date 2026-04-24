@@ -360,11 +360,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
 
             DataContext.Tournament.TeamApplications.Remove(app.Team);
+            Items.Remove(app);
 
             OnPropertyChanged("AppsCount");
             OnPropertyChanged("WrestlersCount");
-
-            OnPropertyChanged("Items");
         }
 
         private async Task AddWrestler(TeamApplicationViewModel app)
