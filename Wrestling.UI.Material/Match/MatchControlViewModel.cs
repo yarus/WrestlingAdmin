@@ -42,6 +42,7 @@ namespace Wrestling.UI.Material.Match
         private ICommand _startCommand;
         private ICommand _stopCommand;
         private ICommand _adjustPointsCommand;
+        private ICommand _adjustTimerCommand;
         private ICommand _actionStartStopCommand;
         private ICommand _resetCommand;
         private ICommand _changeWarningsCommand;
@@ -229,6 +230,22 @@ namespace Wrestling.UI.Material.Match
                     );
                 }
                 return _adjustPointsCommand;
+            }
+        }
+
+        public ICommand AdjustTimerCommand
+        {
+            get
+            {
+                if (_adjustTimerCommand == null)
+                {
+                    _adjustTimerCommand = new RelayCommand(
+                        param => AdjustTimer(Convert.ToInt32(param)),
+                        param => DataContext.WrestlingMatch != null
+                                 && DataContext.WrestlingMatch.Status != MatchStatusEnum.Completed
+                    );
+                }
+                return _adjustTimerCommand;
             }
         }
 
@@ -895,6 +912,22 @@ namespace Wrestling.UI.Material.Match
             AddPoints(isRed, value);
 
             CalculateAdvantage();
+        }
+
+        private void AdjustTimer(int deltaRemainingSeconds)
+        {
+            var mainDelta = ScoreScreenVm.IsTimerBackward ? -deltaRemainingSeconds : deltaRemainingSeconds;
+            var max = ScoreScreenVm.IsTimeout ? ScoreScreenVm.MaxTimeoutSecond : ScoreScreenVm.MaxRoundSecond;
+
+            var newSeconds = ScoreScreenVm.MainSeconds + mainDelta;
+            if (newSeconds < 0) newSeconds = 0;
+            if (newSeconds > max) newSeconds = max;
+
+            if (newSeconds == ScoreScreenVm.MainSeconds) return;
+
+            ScoreScreenVm.MainSeconds = newSeconds;
+
+            AddAction($"Коррекция таймера на {deltaRemainingSeconds:+#;-#;0}с", 0, null);
         }
 
         private void CalculateAdvantage()

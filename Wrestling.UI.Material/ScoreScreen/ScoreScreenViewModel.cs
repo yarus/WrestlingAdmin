@@ -20,6 +20,8 @@ namespace Wrestling.UI.Material.ScoreScreen
         private string _wrestler2;
         private string _wrestler1TeamName;
         private string _wrestler2TeamName;
+        private string _wrestler1TeamCity;
+        private string _wrestler2TeamCity;
         private string _wrestler1TeamEmblem;
         private string _wrestler2TeamEmblem;
         private int _points1;
@@ -222,6 +224,8 @@ namespace Wrestling.UI.Material.ScoreScreen
             RoundName = DataContext.WrestlingMatch.RoundName;
             Wrestler1TeamName = DataContext.WrestlingMatch.WrestlerInRed.TeamName;
             Wrestler2TeamName = DataContext.WrestlingMatch.WrestlerInBlue.TeamName;
+            Wrestler1TeamCity = DataContext.WrestlingMatch.WrestlerInRed.TeamCity;
+            Wrestler2TeamCity = DataContext.WrestlingMatch.WrestlerInBlue.TeamCity;
             MatchFullNumber = DataContext.WrestlingMatch.MatchNumber.ToString();
 
             Wrestler1TeamEmblem = string.Empty;
@@ -428,6 +432,26 @@ namespace Wrestling.UI.Material.ScoreScreen
             {
                 _wrestler2TeamName = value;
                 OnPropertyChanged("Wrestler2TeamName");
+            }
+        }
+
+        public string Wrestler1TeamCity
+        {
+            get { return _wrestler1TeamCity; }
+            set
+            {
+                _wrestler1TeamCity = value;
+                OnPropertyChanged("Wrestler1TeamCity");
+            }
+        }
+
+        public string Wrestler2TeamCity
+        {
+            get { return _wrestler2TeamCity; }
+            set
+            {
+                _wrestler2TeamCity = value;
+                OnPropertyChanged("Wrestler2TeamCity");
             }
         }
 

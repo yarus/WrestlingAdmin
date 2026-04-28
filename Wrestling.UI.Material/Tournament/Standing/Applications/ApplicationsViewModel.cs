@@ -123,7 +123,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 throw new ApplicationException("Tournament property is not set!");
             }
 
-            Items = new ObservableCollection<TeamApplicationViewModel>(DataContext.Tournament.TeamApplications.Select(x => new TeamApplicationViewModel(x, DataContext.Tournament)));
+            Filter(_filterString, _isOnlyUnapprovedVisible);
         }
 
         #region Command Properties
@@ -239,7 +239,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
             var filteredWrestlers = DataContext.Tournament.Wrestlers.Where(w => (!isOnlyUnapprovedVisible || !w.IsRegistrationApproved)
                     && (filter == null || filter.Length <= 2 || (filter.Length > 2 && w.LastName.StartsWith(filter, true, CultureInfo.InvariantCulture)))).ToList();
-            var filtered = new ObservableCollection<TeamApplicationViewModel>(DataContext.Tournament.TeamApplications.Where(a => filteredWrestlers.Select(w => w.TeamID).Contains(a.ID)).Select(a => new TeamApplicationViewModel(a.Clone() as TeamApplication, DataContext.Tournament)));
+            var filtered = new ObservableCollection<TeamApplicationViewModel>(DataContext.Tournament.TeamApplications.Where(a => filteredWrestlers.Select(w => w.TeamID).Contains(a.ID)).Select(a => new TeamApplicationViewModel(a, DataContext.Tournament)));
             foreach (var teamApplication in filtered)
             {
                 teamApplication.SetFilter(filter, isOnlyUnapprovedVisible);
