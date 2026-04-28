@@ -192,6 +192,56 @@ public sealed class TournamentImporterHttpTests
     }
 
     [Fact]
+    public async Task Source_with_matching_id_is_accepted_even_when_name_differs()
+    {
+        // Operators sometimes rename a tournament mid-event ("Турнир →
+        // Турнир (день 2)"). The importer must keep matching by the stable
+        // ID so peers do not start refusing each other's results because of
+        // a cosmetic change.
+        var id = Guid.NewGuid();
+        var target = MakeTarget(name: "Original");
+        target.ID = id;
+        var remote = MakeTarget(name: "Renamed");
+        remote.ID = id;
+        var mgr = new CapturingTournamentsManager { Response = remote };
+        var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>());
+
+        var fakeFile = Path.Combine(Path.GetTempPath(), "id-match-" + Guid.NewGuid().ToString("N") + ".wrt");
+        File.WriteAllBytes(fakeFile, Encoding.UTF8.GetBytes("{}"));
+        try
+        {
+            var plan = await importer.PrepareAsync(target, fakeFile);
+            plan.Remote.Should().NotBeNull();
+            plan.ShortCircuit.Should().BeNull();
+        }
+        finally { File.Delete(fakeFile); }
+    }
+
+    [Fact]
+    public async Task Source_with_different_id_is_rejected_even_when_name_matches()
+    {
+        // The flip side: same display name does not mean same tournament.
+        // Two separate events with identical "Ярыгин 2026" titles must not
+        // import each other's results.
+        var target = MakeTarget(name: "Ярыгин 2026");
+        target.ID = Guid.NewGuid();
+        var remote = MakeTarget(name: "Ярыгин 2026");
+        remote.ID = Guid.NewGuid();
+        var mgr = new CapturingTournamentsManager { Response = remote };
+        var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>());
+
+        var fakeFile = Path.Combine(Path.GetTempPath(), "id-mismatch-" + Guid.NewGuid().ToString("N") + ".wrt");
+        File.WriteAllBytes(fakeFile, Encoding.UTF8.GetBytes("{}"));
+        try
+        {
+            var plan = await importer.PrepareAsync(target, fakeFile);
+            plan.Remote.Should().BeNull();
+            plan.ShortCircuit.Should().Be(ImportOutcome.TournamentMismatch);
+        }
+        finally { File.Delete(fakeFile); }
+    }
+
+    [Fact]
     public async Task Compound_source_where_all_candidates_fail_yields_FileUnavailable()
     {
         var port1 = FindFreePort();

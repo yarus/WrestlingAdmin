@@ -36,6 +36,7 @@ namespace Wrestling.Entities
         private int _httpServerPort;
         private string _nodeName;
         private string _selfUncPath;
+        private string _announceIpOverride;
 
         public GlobalSettings()
         {
@@ -58,6 +59,7 @@ namespace Wrestling.Entities
             HttpServerPort = 24566;
             NodeName = string.Empty;
             SelfUncPath = string.Empty;
+            AnnounceIpOverride = string.Empty;
         }
 
         public string IntegrationUserName
@@ -299,6 +301,22 @@ namespace Wrestling.Entities
             {
                 _selfUncPath = value;
                 OnPropertyChanged("SelfUncPath");
+            }
+        }
+
+        // Manual override for the IP advertised in the HTTP URL announced to
+        // peers. Empty string means "auto-pick the first private-range IPv4
+        // via LocalIpAddressProbe.PickDefault()" — preserves legacy behavior.
+        // Operators set this when a laptop has multiple NICs and the auto
+        // pick lands on the wrong subnet (e.g. a hotspot interface instead
+        // of the tournament LAN).
+        public string AnnounceIpOverride
+        {
+            get { return _announceIpOverride; }
+            set
+            {
+                _announceIpOverride = value;
+                OnPropertyChanged("AnnounceIpOverride");
             }
         }
     }

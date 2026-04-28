@@ -49,7 +49,8 @@ namespace Wrestling.Providers
                 IsHttpServerEnabled = info.IsHttpServerEnabled,
                 HttpServerPort = info.HttpServerPort,
                 NodeName = info.NodeName ?? string.Empty,
-                SelfUncPath = info.SelfUncPath ?? string.Empty
+                SelfUncPath = info.SelfUncPath ?? string.Empty,
+                AnnounceIpOverride = info.AnnounceIpOverride ?? string.Empty
             };
 
             // Legacy .wrt files saved before the backup feature shipped don't
@@ -97,7 +98,8 @@ namespace Wrestling.Providers
                 IsHttpServerEnabled = entity.IsHttpServerEnabled,
                 HttpServerPort = entity.HttpServerPort,
                 NodeName = entity.NodeName ?? string.Empty,
-                SelfUncPath = entity.SelfUncPath ?? string.Empty
+                SelfUncPath = entity.SelfUncPath ?? string.Empty,
+                AnnounceIpOverride = entity.AnnounceIpOverride ?? string.Empty
             };
 
             return info;

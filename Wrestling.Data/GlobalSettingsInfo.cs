@@ -19,6 +19,7 @@ namespace Wrestling.Data
             HttpServerPort = 24566;
             NodeName = string.Empty;
             SelfUncPath = string.Empty;
+            AnnounceIpOverride = string.Empty;
         }
 
         [DataMember]
@@ -65,5 +66,7 @@ namespace Wrestling.Data
         public string NodeName { get; set; }
         [DataMember]
         public string SelfUncPath { get; set; }
+        [DataMember]
+        public string AnnounceIpOverride { get; set; }
     }
 }

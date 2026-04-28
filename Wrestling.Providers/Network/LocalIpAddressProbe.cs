@@ -58,6 +58,27 @@ namespace Wrestling.Providers.Network
             return list.Count > 0 ? list[0] : IPAddress.Loopback;
         }
 
+        // Resolves the IP to advertise in the HTTP announcement URL. When the
+        // operator pinned a specific address via Settings.AnnounceIpOverride
+        // (e.g. on a multi-NIC laptop where auto-pick lands on the wrong
+        // subnet) we honor that — but only if it actually exists on the
+        // machine. A stale override (NIC unplugged, IP reassigned by DHCP)
+        // would otherwise advertise an unreachable URL to peers; falling
+        // back to PickDefault recovers gracefully.
+        public static IPAddress PickAnnounceAddress(string overrideValue)
+        {
+            if (!string.IsNullOrWhiteSpace(overrideValue) &&
+                IPAddress.TryParse(overrideValue.Trim(), out var parsed) &&
+                !IPAddress.IsLoopback(parsed))
+            {
+                foreach (var ip in EnumerateLanAddresses())
+                {
+                    if (ip.Equals(parsed)) return parsed;
+                }
+            }
+            return PickDefault();
+        }
+
         private static int Priority(IPAddress ip)
         {
             var bytes = ip.GetAddressBytes();

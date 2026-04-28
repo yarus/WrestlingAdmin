@@ -74,6 +74,7 @@ namespace Wrestling.UI.Material.Model
                 case nameof(GlobalSettings.IsHttpServerEnabled):
                 case nameof(GlobalSettings.HttpServerPort):
                 case nameof(GlobalSettings.SelfUncPath):
+                case nameof(GlobalSettings.AnnounceIpOverride):
                     var t = _dataContext.Tournament;
                     StopAll();
                     if (t != null) StartAll(t);
@@ -94,7 +95,7 @@ namespace Wrestling.UI.Material.Model
                 _httpServer.Start(settings.HttpServerPort);
                 if (_httpServer.ActualPort.HasValue)
                 {
-                    var ip = LocalIpAddressProbe.PickDefault();
+                    var ip = LocalIpAddressProbe.PickAnnounceAddress(settings.AnnounceIpOverride);
                     if (!IPAddress.IsLoopback(ip))
                     {
                         httpUrl = "http://" + ip + ":" + _httpServer.ActualPort.Value + "/tournament/" + tournament.ID.Value + ".wrt";

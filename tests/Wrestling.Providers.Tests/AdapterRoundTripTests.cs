@@ -170,7 +170,8 @@ public class AdapterRoundTripTests
             IsHttpServerEnabled = false,
             HttpServerPort = 40001,
             NodeName = "Ковёр 3",
-            SelfUncPath = @"\\HOST\Share\tournament.wrt"
+            SelfUncPath = @"\\HOST\Share\tournament.wrt",
+            AnnounceIpOverride = "192.168.88.42"
         };
         var t = new Tournament(settings) { ID = Guid.NewGuid(), Name = "N" };
 
@@ -183,6 +184,7 @@ public class AdapterRoundTripTests
         restored.Settings.HttpServerPort.Should().Be(40001);
         restored.Settings.NodeName.Should().Be("Ковёр 3");
         restored.Settings.SelfUncPath.Should().Be(@"\\HOST\Share\tournament.wrt");
+        restored.Settings.AnnounceIpOverride.Should().Be("192.168.88.42");
     }
 
     [Fact]
@@ -206,6 +208,7 @@ public class AdapterRoundTripTests
         restored.Settings.HttpServerPort.Should().Be(24566);
         restored.Settings.NodeName.Should().BeEmpty();
         restored.Settings.SelfUncPath.Should().BeEmpty();
+        restored.Settings.AnnounceIpOverride.Should().BeEmpty();
     }
 
     [Fact]

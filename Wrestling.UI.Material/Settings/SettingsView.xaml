@@ -463,6 +463,7 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -520,7 +521,7 @@
                                 </Button>
                             </StackPanel>
 
-                            <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Margin="0 10 0 2" Foreground="{DynamicResource MaterialDesignBodyLight}">Адрес этого узла для соседей:</TextBlock>
+                            <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Margin="0 14 0 2" Foreground="{DynamicResource MaterialDesignBodyLight}">Адрес этого узла для соседей:</TextBlock>
 
                             <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3">
                                 <Grid.ColumnDefinitions>
@@ -534,6 +535,31 @@
                                     <materialDesign:PackIcon Kind="ContentCopy" Width="18" Height="18" />
                                 </Button>
                             </Grid>
+
+                            <!-- Visible only when the laptop has more than one IPv4 (or
+                                 a stale override is saved). The frame says exactly when
+                                 to use it: "if neighbors don't see this node, try
+                                 another address" — operators don't need to know what
+                                 NIC means to recognize that symptom. -->
+                            <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3" Margin="0 8 0 0" Padding="8"
+                                    Background="{DynamicResource MaterialDesignChipBackground}"
+                                    Visibility="{Binding IsAnnounceAddressPickerVisible, Converter={StaticResource BoolToVis}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <materialDesign:PackIcon Grid.Column="0" Kind="AlertCircleOutline" Width="20" Height="20" VerticalAlignment="Top" Margin="0 2 10 0" Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBodyLight}">
+                                            У этого ноута несколько IP-адресов. Если соседи не видят этот узел в списке обнаружения — попробуйте сменить адрес ниже на тот, что в их подсети.
+                                        </TextBlock>
+                                        <ComboBox Margin="0 8 0 0"
+                                                  ItemsSource="{Binding AnnounceAddressOptions}"
+                                                  SelectedItem="{Binding SelectedAnnounceAddress, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
                         </Grid>
                     </Border>
                 </Grid>

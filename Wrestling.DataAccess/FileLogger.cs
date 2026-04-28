@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Wrestling.DataAccess
 {
-    internal static class FileLogger
+    public static class FileLogger
     {
         private static readonly object _lock = new object();
         private const string AppFolderFallback = "WrestlingAdmin";

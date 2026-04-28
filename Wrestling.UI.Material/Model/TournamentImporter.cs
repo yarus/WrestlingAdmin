@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Wrestling.DataAccess;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Providers;
@@ -61,23 +62,45 @@ namespace Wrestling.UI.Material.Model
                 if (string.IsNullOrEmpty(candidate)) continue;
 
                 var fetch = await FetchLocalCopyAsync(candidate).ConfigureAwait(false);
-                if (!fetch.Ok) continue;
+                if (!fetch.Ok)
+                {
+                    // FetchLocalCopyAsync logs the underlying exception itself;
+                    // here we only record the candidate-level outcome so the
+                    // operator can correlate "import failed for source X" in the
+                    // ImportLog with a specific candidate that did not even
+                    // produce a local file.
+                    FileLogger.Log("Import.fetch", candidate, "fetch failed (see preceding entry for cause)");
+                    continue;
+                }
 
                 try
                 {
                     var tournament = await _tournService.LoadFromFileAsync(fetch.LocalPath).ConfigureAwait(false);
-                    if (tournament == null) continue;
+                    if (tournament == null)
+                    {
+                        // ReadFromFile already classified and logged the cause
+                        // (Corrupt / AccessDenied / Transient / etc.); add the
+                        // import-side breadcrumb so the data_log shows the
+                        // chain "candidate → load returned null".
+                        FileLogger.Log("Import.parse", candidate, "load returned null (see ReadFromFile entry for classification)");
+                        continue;
+                    }
 
-                    if (tournament.Name != target.Name ||
-                        tournament.Groups.Count != target.Groups.Count ||
-                        tournament.StartDate != target.StartDate)
+                    // Identity check: prefer Tournament.ID (stable GUID assigned
+                    // at creation, survives renames / date adjustments). Fall
+                    // back to the legacy Name+Date+Groups.Count heuristic only
+                    // when either side is missing an ID (very old .wrt files).
+                    if (!IsSameTournament(tournament, target))
                     {
                         // Remember we saw at least one candidate that loaded
                         // but pointed at the wrong tournament — preserve that
                         // outcome for the final result if no sibling succeeds.
                         mismatchSeen = true;
+                        FileLogger.Log("Import.match", candidate, FormatMismatchReason(tournament, target));
                         continue;
                     }
+
+                    FileLogger.Log("Import.ok", candidate, "candidate accepted");
 
                     // Pass the original packed source (fileName) — not the
                     // selected candidate — so Case-2 revert checks remain
@@ -90,7 +113,36 @@ namespace Wrestling.UI.Material.Model
                 }
             }
 
-            return ImportPlan.Skip(mismatchSeen ? ImportOutcome.TournamentMismatch : ImportOutcome.FileUnavailable);
+            var finalOutcome = mismatchSeen ? ImportOutcome.TournamentMismatch : ImportOutcome.FileUnavailable;
+            FileLogger.Log("Import.skip", fileName, "all candidates exhausted — outcome=" + finalOutcome);
+            return ImportPlan.Skip(finalOutcome);
+        }
+
+        private static bool IsSameTournament(Entities.Tournament source, Entities.Tournament target)
+        {
+            if (source.ID.HasValue && target.ID.HasValue)
+            {
+                return source.ID.Value == target.ID.Value;
+            }
+            // Fallback for legacy files without an ID — keeps the original
+            // heuristic so a brand-new tournament with no ID can still match
+            // by Name + Date + GroupsCount during the same session.
+            return source.Name == target.Name
+                   && source.Groups.Count == target.Groups.Count
+                   && source.StartDate == target.StartDate;
+        }
+
+        private static string FormatMismatchReason(Entities.Tournament source, Entities.Tournament target)
+        {
+            string srcId = source.ID?.ToString() ?? "<none>";
+            string tgtId = target.ID?.ToString() ?? "<none>";
+            if (source.ID.HasValue && target.ID.HasValue)
+            {
+                return $"id mismatch: source={srcId} target={tgtId}";
+            }
+            return $"heuristic mismatch (no IDs): srcName='{source.Name}' tgtName='{target.Name}'"
+                   + $", srcGroups={source.Groups.Count} tgtGroups={target.Groups.Count}"
+                   + $", srcStart={source.StartDate} tgtStart={target.StartDate}";
         }
 
         // Normalizes a source string (UNC path, absolute path, http/https URL)
@@ -111,6 +163,7 @@ namespace Wrestling.UI.Material.Model
                 {
                     if (!response.IsSuccessStatusCode)
                     {
+                        FileLogger.Log("Import.http", source, "HTTP " + (int)response.StatusCode + " " + response.ReasonPhrase);
                         return FetchOutcome.Failed;
                     }
                     using (var netStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
@@ -121,10 +174,10 @@ namespace Wrestling.UI.Material.Model
                 }
                 return new FetchOutcome(ok: true, localPath: tempPath, isTemp: true);
             }
-            catch (HttpRequestException) { SafeDeleteTempFile(tempPath); return FetchOutcome.Failed; }
-            catch (TaskCanceledException) { SafeDeleteTempFile(tempPath); return FetchOutcome.Failed; }
-            catch (IOException) { SafeDeleteTempFile(tempPath); return FetchOutcome.Failed; }
-            catch (UnauthorizedAccessException) { SafeDeleteTempFile(tempPath); return FetchOutcome.Failed; }
+            catch (HttpRequestException ex) { SafeDeleteTempFile(tempPath); FileLogger.Log("Import.http", source, ex); return FetchOutcome.Failed; }
+            catch (TaskCanceledException ex) { SafeDeleteTempFile(tempPath); FileLogger.Log("Import.http", source, ex); return FetchOutcome.Failed; }
+            catch (IOException ex) { SafeDeleteTempFile(tempPath); FileLogger.Log("Import.http", source, ex); return FetchOutcome.Failed; }
+            catch (UnauthorizedAccessException ex) { SafeDeleteTempFile(tempPath); FileLogger.Log("Import.http", source, ex); return FetchOutcome.Failed; }
         }
 
         private static bool IsHttpUri(string source)

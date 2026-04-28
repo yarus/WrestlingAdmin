@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Active punch-list
+
+Operational issues raised after real tournaments are tracked in **`docs/TodoList.md`** — load this file at the start of every session and treat it as the source of truth for outstanding work and what has shipped. When issues are resolved or new ones surface, update that file (move entries between the `Done` and `Список проблем` sections, mark headings with ✅ as appropriate). When the user references "пункт N" / "проблема N" / "issue N", look it up there.
+
 ## What this is
 
 WPF desktop application for administrating and running freestyle wrestling tournaments: team/wrestler registration, automatic bracket generation, match control with live scoring and timers, multi-carpet (mat) scheduling, result calculation, broadcast/projection slides, and printed reports. UI is **Russian-only** (hardcoded `ru-RU` culture, no resource files) — keep new strings in Russian unless the user asks to introduce localization.

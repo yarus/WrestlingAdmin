@@ -633,19 +633,49 @@ namespace Wrestling.UI.Material.Tournament.Import
             var src = PeerPreferredSource(peer);
             if (src == null) return false;
             if (DataContext?.Tournament == null) return false;
-            return !ImportSources.Contains(src);
+            var existing = FindExistingForSameHost(src);
+            // Permit the click when there is no entry for this peer yet, OR
+            // when the existing entry's text differs from the freshly-built
+            // packed string — that latter case is exactly the dedup scenario:
+            // the peer's announce shape changed (e.g. SelfUncPath was added)
+            // and the operator should be able to refresh the entry.
+            return existing == null || existing != src;
         }
 
         private void AddDiscoveredPeer(DiscoveredPeer peer)
         {
             var src = PeerPreferredSource(peer);
             if (src == null) return;
-            if (ImportSources.Contains(src)) return;
-            ImportSources.Add(src);
+            var existing = FindExistingForSameHost(src);
+            if (existing == src) return; // already up-to-date
+            if (existing != null)
+            {
+                // Same physical peer (matched by host) but different shape —
+                // replace in place to preserve the operator's ListView order
+                // and clean up the stale labels cache so log lines render the
+                // current node name instead of a now-orphaned label.
+                var idx = ImportSources.IndexOf(existing);
+                ImportSources.RemoveAt(idx);
+                ImportSources.Insert(idx, src);
+                _sourceLabels.Remove(existing);
+            }
+            else
+            {
+                ImportSources.Add(src);
+            }
             if (!string.IsNullOrWhiteSpace(peer.NodeName))
             {
                 _sourceLabels[src] = peer.NodeName;
             }
+        }
+
+        private string FindExistingForSameHost(string src)
+        {
+            foreach (var s in ImportSources)
+            {
+                if (PeerSourceMatcher.SameHost(s, src)) return s;
+            }
+            return null;
         }
 
         private void AddAllDisplayedPeers()

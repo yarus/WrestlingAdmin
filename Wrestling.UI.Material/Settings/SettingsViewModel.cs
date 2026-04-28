@@ -387,6 +387,71 @@ namespace Wrestling.UI.Material.Settings
             }
         }
 
+        // The override picker is shown only when the operator actually has a
+        // choice to make — a single-NIC laptop has no ambiguity and the
+        // control would be pure noise. Stale overrides from a previous
+        // session also count: keep the picker visible so the operator can
+        // see (and clear) a value that no longer matches reality.
+        public bool IsAnnounceAddressPickerVisible
+        {
+            get
+            {
+                if (LocalIpAddressProbe.EnumerateLanAddresses().Count > 1) return true;
+                return Item != null && !string.IsNullOrEmpty(Item.AnnounceIpOverride);
+            }
+        }
+
+        // ComboBox source: a sentinel "(Авто)" entry plus every IPv4 address
+        // found on the machine. Empty selection (the sentinel) means "fall
+        // back to LocalIpAddressProbe.PickDefault()" — same behavior the app
+        // had before the override was added.
+        public const string AnnounceAuto = "(Авто)";
+
+        public IList<string> AnnounceAddressOptions
+        {
+            get
+            {
+                var options = new List<string> { AnnounceAuto };
+                foreach (var ip in LocalIpAddressProbe.EnumerateLanAddresses())
+                {
+                    options.Add(ip.ToString());
+                }
+                // If the stored override no longer matches any current NIC
+                // (laptop moved networks, NIC unplugged) keep it visible
+                // anyway — otherwise the ComboBox would fail to render the
+                // current selection and the operator would be confused about
+                // why the override silently went away. PickAnnounceAddress
+                // already falls back to auto in this case at runtime.
+                var saved = Item?.AnnounceIpOverride;
+                if (!string.IsNullOrWhiteSpace(saved) && !options.Contains(saved))
+                {
+                    options.Add(saved);
+                }
+                return options;
+            }
+        }
+
+        // Two-way binding glue: the entity stores empty string for "auto",
+        // but the ComboBox needs a non-null SelectedItem to render its label,
+        // so we map empty ↔ "(Авто)" here. Setter also re-broadcasts
+        // PublicHttpUrl because the displayed URL depends on this value.
+        public string SelectedAnnounceAddress
+        {
+            get
+            {
+                if (Item == null) return AnnounceAuto;
+                return string.IsNullOrEmpty(Item.AnnounceIpOverride) ? AnnounceAuto : Item.AnnounceIpOverride;
+            }
+            set
+            {
+                if (Item == null) return;
+                Item.AnnounceIpOverride = (string.IsNullOrEmpty(value) || value == AnnounceAuto) ? string.Empty : value;
+                OnPropertyChanged(nameof(SelectedAnnounceAddress));
+                OnPropertyChanged(nameof(PublicHttpUrl));
+                OnPropertyChanged(nameof(IsAnnounceAddressPickerVisible));
+            }
+        }
+
         public string PublicHttpUrl
         {
             get
@@ -395,7 +460,7 @@ namespace Wrestling.UI.Material.Settings
                 if (t == null || !t.ID.HasValue) return string.Empty;
                 var server = Resolve<ITournamentHttpServer>();
                 if (server == null || !server.ActualPort.HasValue) return string.Empty;
-                var ip = LocalIpAddressProbe.PickDefault();
+                var ip = LocalIpAddressProbe.PickAnnounceAddress(Item?.AnnounceIpOverride);
                 if (IPAddress.IsLoopback(ip)) return string.Empty;
                 return "http://" + ip + ":" + server.ActualPort.Value + "/tournament/" + t.ID.Value + ".wrt";
             }
