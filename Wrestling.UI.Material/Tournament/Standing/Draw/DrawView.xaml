@@ -108,14 +108,7 @@
 
                                 <TextBlock Grid.Column="2" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Center" Margin="20,0,0,0" Text="{Binding Path=Bracket.BracketTypeLabel}" />
 
-                                <StackPanel Grid.Row="0" Grid.Column="3" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}">
-                                    <Button Content="Удалить сетку"
-                                            HorizontalAlignment="Right" Margin="5,0,5,0"
-                                            Command="{Binding Path=DataContext.RemoveBracketCommand, ElementName=RootControl}"
-                                            CommandParameter="{Binding }" />
-                                </StackPanel>
-
-                                <StackPanel Grid.Row="0" Grid.Column="3" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource InvBoolToVis}}">
+                                <StackPanel Grid.Row="0" Grid.Column="3">
                                     <Button Content="Создать сетку"
                                             HorizontalAlignment="Right" Margin="5,0,5,0"
                                             Command="{Binding Path=DataContext.GenerateBracketCommand, ElementName=RootControl}"

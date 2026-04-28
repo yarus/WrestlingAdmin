@@ -22,7 +22,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         private ISeedingStrategy _seedingStrategy;
 
         private ICommand _generateBracketCommand;
-        private ICommand _removeBracketCommand;
         private ICommand _printProtocolCommand;
         private ICommand _regenerateAllBrackets;
         private ICommand _unfixAllSeedsCommand;
@@ -151,18 +150,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             }
         }
 
-        public ICommand RemoveBracketCommand
-        {
-            get
-            {
-                if (_removeBracketCommand == null)
-                {
-                    _removeBracketCommand = new RelayCommand(param => RemoveBracket(param as AgeWeightGroup), param => param != null);
-                }
-                return _removeBracketCommand;
-            }
-        }
-
         #endregion
 
         #region Private Methods
@@ -244,19 +231,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             ShowPrintPreview(new PrintApplicationsViewModel(DiContainer));
         }
 
-        private void RemoveBracket(AgeWeightGroup group)
-        {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить результаты жеребьевки?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
-
-            group.Bracket = null;
-
-            OnPropertyChanged("MatchesCount");
-        }
-
         private async void GenerateBracket(AgeWeightGroup group)
         {
             if (group == null) return;
-            
+
             var vm = new AddBracketViewModel(DiContainer, group);
             vm.InitData();
 
@@ -266,35 +244,31 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             };
 
             var result = await DialogHost.Show(view, "RootDialog");
+            if (result == null || !(bool)result) return;
 
-            if (result != null && (bool)result)
+            var drawType = _drawTypes.FirstOrDefault(d => d.Title == vm.SelectedDrawType.Title);
+            if (drawType == null) throw new ApplicationException("Wrong Bracket type!");
+
+            SeedWrestlers(group);
+
+            drawType.Generate(DataContext.Tournament, group);
+
+            foreach (var wr in group.Wrestlers)
             {
-                SeedWrestlers(group);
+                wr.FinalPlace = null;
+                wr.IsSeedFixed = true;
+            }
 
-                var drawType = _drawTypes.FirstOrDefault(d => d.Title == vm.SelectedDrawType.Title);
-
-                if (drawType == null) throw new ApplicationException("Wrong Bracket type!");
-
-                drawType.Generate(DataContext.Tournament, group);
-
-                foreach (var wr in group.Wrestlers)
+            if (group.Bracket != null)
+            {
+                if (DataContext.Tournament.Carpets.FirstOrDefault(c => c.Groups.Contains(group)) != null)
                 {
-                    wr.FinalPlace = null;
-                    wr.IsSeedFixed = true;
+                    _matchNumbersGenerator.Generate(DataContext.Tournament, _drawTypes);
                 }
 
-                if (group.Bracket != null)
-                {
-                    if (DataContext.Tournament.Carpets.FirstOrDefault(c => c.Groups.Contains(group)) != null)
-                    {
-                        _matchNumbersGenerator.Generate(DataContext.Tournament, _drawTypes);
-                    }
+                group.Bracket.Rounds = new List<GroupRound>(group.Bracket.Rounds);
 
-                    // We need to refresh Rounds collection to redraw it on UI
-                    group.Bracket.Rounds = new List<GroupRound>(group.Bracket.Rounds);
-
-                    OnPropertyChanged("MatchesCount");
-                }
+                OnPropertyChanged("MatchesCount");
             }
         }
         

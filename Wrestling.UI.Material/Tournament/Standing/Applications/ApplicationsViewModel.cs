@@ -73,6 +73,18 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 _items = value;
 
                 OnPropertyChanged("Items");
+                OnPropertyChanged("ShouldAutoExpand");
+            }
+        }
+
+        public bool ShouldAutoExpand
+        {
+            get
+            {
+                if (!IsFilterEnabled || _items == null || _items.Count == 0) return false;
+                if (_items.Count == 1) return true;
+
+                return _items.Sum(i => i.Wrestlers.Count) <= 5;
             }
         }
 
@@ -86,6 +98,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
                 Filter(_filterString, IsOnlyUnapprovedVisible);
                 OnPropertyChanged("IsFilterEnabled");
+                OnPropertyChanged("ShouldAutoExpand");
             }
         }
 
@@ -105,8 +118,9 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                         Filter(_filterString, IsOnlyUnapprovedVisible);
                     }
                 }
-                
+
                 OnPropertyChanged("IsFilterEnabled");
+                OnPropertyChanged("ShouldAutoExpand");
             }
         }
 
@@ -237,9 +251,22 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 return;
             }
 
-            var filteredWrestlers = DataContext.Tournament.Wrestlers.Where(w => (!isOnlyUnapprovedVisible || !w.IsRegistrationApproved)
-                    && (filter == null || filter.Length <= 2 || (filter.Length > 2 && w.LastName.StartsWith(filter, true, CultureInfo.InvariantCulture)))).ToList();
-            var filtered = new ObservableCollection<TeamApplicationViewModel>(DataContext.Tournament.TeamApplications.Where(a => filteredWrestlers.Select(w => w.TeamID).Contains(a.ID)).Select(a => new TeamApplicationViewModel(a, DataContext.Tournament)));
+            var hasTextFilter = !string.IsNullOrEmpty(filter) && filter.Length > 2;
+
+            var matchingWrestlerTeamIds = new HashSet<Guid>(DataContext.Tournament.Wrestlers
+                .Where(w => (!isOnlyUnapprovedVisible || !w.IsRegistrationApproved)
+                            && (!hasTextFilter || ContainsCi(w.FullName, filter)))
+                .Where(w => w.TeamID.HasValue)
+                .Select(w => w.TeamID.Value));
+
+            var matched = DataContext.Tournament.TeamApplications.Where(app =>
+                matchingWrestlerTeamIds.Contains(app.ID)
+                || (hasTextFilter
+                    && (ContainsCi(app.ShortName, filter) || ContainsCi(app.FullName, filter) || ContainsCi(app.City, filter))
+                    && (!isOnlyUnapprovedVisible
+                        || DataContext.Tournament.Wrestlers.Any(w => w.TeamID == app.ID && !w.IsRegistrationApproved))));
+
+            var filtered = new ObservableCollection<TeamApplicationViewModel>(matched.Select(a => new TeamApplicationViewModel(a, DataContext.Tournament)));
             foreach (var teamApplication in filtered)
             {
                 teamApplication.SetFilter(filter, isOnlyUnapprovedVisible);
@@ -247,6 +274,11 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
             Items = filtered;
         }
+
+        private static bool ContainsCi(string source, string value) =>
+            !string.IsNullOrEmpty(source)
+            && !string.IsNullOrEmpty(value)
+            && source.IndexOf(value, StringComparison.InvariantCultureIgnoreCase) >= 0;
 
         private void ApproveAllWrestlers()
         {

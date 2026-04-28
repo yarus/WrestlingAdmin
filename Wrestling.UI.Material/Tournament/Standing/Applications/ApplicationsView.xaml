@@ -63,7 +63,7 @@
                         <materialDesign:PackIcon Kind="Magnify" Opacity=".56" />
                     </Button>
 
-                    <TextBox Grid.Column="1" Margin="8 0 0 0" materialDesign:HintAssist.Hint="Поиск по фамилии"
+                    <TextBox Grid.Column="1" Margin="8 0 0 0" materialDesign:HintAssist.Hint="Поиск по ФИО, команде или городу"
                              materialDesign:TextFieldAssist.DecorationVisibility="Hidden" BorderThickness="0"
                              MinWidth="200" VerticalAlignment="Center"
                              Text="{Binding FilterString, UpdateSourceTrigger=PropertyChanged, Delay=1000}" />
@@ -116,7 +116,7 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <Expander Background="LightGray" Margin="0" Padding="0" x:Name="Expander"
-                              IsExpanded="{Binding Path=DataContext.IsFilterEnabled, ElementName=RootControl, Mode=OneWay}">
+                              IsExpanded="{Binding Path=DataContext.ShouldAutoExpand, ElementName=RootControl, Mode=OneWay}">
                         <Expander.Header>
                             <Grid Margin="0">
                                 <Grid.ColumnDefinitions>
