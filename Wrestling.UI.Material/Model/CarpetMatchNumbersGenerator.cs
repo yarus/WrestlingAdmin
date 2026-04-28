@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Wrestling.Entities;
@@ -20,21 +20,47 @@ namespace Wrestling.UI.Material.Model
                 var groups = carpet.Groups.Where(g => g.Bracket != null).ToList();
                 if (groups.Count == 0) continue;
 
-                int maxRound = groups.SelectMany(g => g.Bracket.Rounds).Where(r => r.RoundType == GroupRoundTypeEnum.Main).Max(r => r.RoundNumber);
+                // Reset every match number first so stale values from previous runs cannot leak through
+                // if a Bind* method fails to cover a particular match (the catch-all at the end will then
+                // pick it up).
+                foreach (var match in groups.SelectMany(g => g.Bracket.Rounds.SelectMany(r => r.RoundMatches)))
+                {
+                    match.MatchNumber = 0;
+                }
 
-                BindMainBracketQualification(groups, processors, ref currentMatchNumber);
+                // Each WrestlingMatch instance can only be numbered once per Generate pass — protects against
+                // shared references between rounds (e.g., a match accidentally referenced from both semi-final
+                // and final rounds), which would otherwise yield two carpet matches sharing a MatchNumber.
+                var assigned = new HashSet<WrestlingMatch>();
 
-                BindSemiFinals(groups, processors, ref currentMatchNumber);
+                BindMainBracketQualification(groups, processors, ref currentMatchNumber, assigned);
 
-                BindAdditionalQualificationMatches(groups, processors, ref currentMatchNumber);
+                BindSemiFinals(groups, processors, ref currentMatchNumber, assigned);
 
-                BindThirdPlaceMatches(groups, processors, ref currentMatchNumber);
+                BindAdditionalQualificationMatches(groups, processors, ref currentMatchNumber, assigned);
 
-                BindFinalMatches(groups, processors, ref currentMatchNumber);                
+                BindThirdPlaceMatches(groups, processors, ref currentMatchNumber, assigned);
+
+                BindFinalMatches(groups, processors, ref currentMatchNumber, assigned);
+
+                // Catch-all: number any matches that were missed by Bind* (kept defensively in case a bracket
+                // type adds a new round shape that the existing partition methods don't cover).
+                foreach (var group in groups)
+                {
+                    foreach (var round in group.Bracket.Rounds)
+                    {
+                        foreach (var match in round.RoundMatches)
+                        {
+                            if (!assigned.Add(match)) continue;
+                            match.MatchNumber = currentMatchNumber;
+                            currentMatchNumber++;
+                        }
+                    }
+                }
             }
         }
 
-        private void BindMainBracketQualification(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber)
+        private void BindMainBracketQualification(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
         {
             int maxRound = groups.SelectMany(g => g.Bracket.Rounds).Where(r => r.RoundType == GroupRoundTypeEnum.Main).Max(r => r.RoundNumber);
 
@@ -55,6 +81,7 @@ namespace Wrestling.UI.Material.Model
                     {
                         foreach (var match in round.RoundMatches)
                         {
+                            if (!assigned.Add(match)) continue;
                             match.MatchNumber = currentMatchNumber;
                             currentMatchNumber++;
                         }
@@ -63,7 +90,7 @@ namespace Wrestling.UI.Material.Model
             }
         }
 
-        private void BindSemiFinals(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber)
+        private void BindSemiFinals(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
         {
             // Bind semi-finals
             foreach (var group in groups)
@@ -84,13 +111,14 @@ namespace Wrestling.UI.Material.Model
 
                 foreach (var match in semiFinalRound.RoundMatches)
                 {
+                    if (!assigned.Add(match)) continue;
                     match.MatchNumber = currentMatchNumber;
                     currentMatchNumber++;
                 }
             }
         }
 
-        private void BindAdditionalQualificationMatches(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber)
+        private void BindAdditionalQualificationMatches(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
         {
             var maxRounds = 0;
 
@@ -132,6 +160,7 @@ namespace Wrestling.UI.Material.Model
                     {
                         foreach (var match in round.RoundMatches)
                         {
+                            if (!assigned.Add(match)) continue;
                             match.MatchNumber = currentMatchNumber;
                             currentMatchNumber++;
                         }
@@ -140,8 +169,8 @@ namespace Wrestling.UI.Material.Model
             }
         }
 
-        private void BindThirdPlaceMatches(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber)
-        {            
+        private void BindThirdPlaceMatches(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
+        {
             foreach (var group in groups)
             {
                 var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
@@ -158,13 +187,14 @@ namespace Wrestling.UI.Material.Model
 
                 foreach (var match in thirdPlaceRound.RoundMatches)
                 {
+                    if (!assigned.Add(match)) continue;
                     match.MatchNumber = currentMatchNumber;
                     currentMatchNumber++;
                 }
             }
         }
 
-        private void BindFinalMatches(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber)
+        private void BindFinalMatches(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
         {
             foreach (var group in groups)
             {
@@ -182,6 +212,7 @@ namespace Wrestling.UI.Material.Model
 
                 foreach (var match in finalRound.RoundMatches)
                 {
+                    if (!assigned.Add(match)) continue;
                     match.MatchNumber = currentMatchNumber;
                     currentMatchNumber++;
                 }
