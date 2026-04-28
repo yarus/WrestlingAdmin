@@ -200,8 +200,28 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
                 {
                     item.Sync(tmp);
 
+                    ApplyTimingsToPendingMatches(item);
                     RemoveWrestlersWhichNotFeatToGroupLimits(item);
                     UpdateWrestlersGroupData(item);
+                }
+            }
+        }
+
+        private void ApplyTimingsToPendingMatches(AgeWeightGroup item)
+        {
+            if (item.Bracket?.Rounds == null) return;
+
+            foreach (var round in item.Bracket.Rounds)
+            {
+                if (round.RoundMatches == null) continue;
+
+                foreach (var match in round.RoundMatches)
+                {
+                    if (match.Status == MatchStatusEnum.Completed) continue;
+
+                    match.MaxRoundSecond = item.MaxRoundSecond;
+                    match.MaxTimeoutSecond = item.MaxTimeoutSecond;
+                    match.MaxActionSecond = item.MaxActionSecond;
                 }
             }
         }
