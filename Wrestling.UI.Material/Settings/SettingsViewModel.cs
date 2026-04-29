@@ -33,6 +33,8 @@ namespace Wrestling.UI.Material.Settings
         private ICommand _playEndGongCommand;
         private ICommand _playStartGongCommand;
         private ICommand _browseBackupFolderCommand;
+        private ICommand _browseSignatureFooterImageCommand;
+        private ICommand _removeSignatureFooterImageCommand;
         private ICommand _copyPublicUrlCommand;
         private ICommand _configureShareCommand;
         private ICommand _disableShareCommand;
@@ -372,6 +374,78 @@ namespace Wrestling.UI.Material.Settings
             {
                 Item.BackupFolderPath = settings.SelectedPath;
                 OnPropertyChanged("Item");
+            }
+        }
+
+        public ICommand BrowseSignatureFooterImageCommand
+        {
+            get
+            {
+                if (_browseSignatureFooterImageCommand == null)
+                {
+                    _browseSignatureFooterImageCommand = new RelayCommand(
+                        param => BrowseSignatureFooterImage(),
+                        param => true);
+                }
+                return _browseSignatureFooterImageCommand;
+            }
+        }
+
+        public ICommand RemoveSignatureFooterImageCommand
+        {
+            get
+            {
+                if (_removeSignatureFooterImageCommand == null)
+                {
+                    _removeSignatureFooterImageCommand = new RelayCommand(
+                        param =>
+                        {
+                            Item.SignatureFooterImagePath = null;
+                            OnPropertyChanged("Item");
+                        },
+                        param => !string.IsNullOrEmpty(Item?.SignatureFooterImagePath));
+                }
+                return _removeSignatureFooterImageCommand;
+            }
+        }
+
+        private void BrowseSignatureFooterImage()
+        {
+            var settings = new OpenFileDialogSettings
+            {
+                Title = "Выберите изображение печати и подписей",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                Filter = "Изображения (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|Все файлы (*.*)|*.*"
+            };
+
+            bool? success = Dialog.ShowOpenFileDialog(this, settings);
+            if (success != true) return;
+
+            // Copy the user-selected file into the app's Images/ folder and
+            // store only its filename in GlobalSettings. Same pattern as
+            // EmblemPath: keeps the .wrt portable across user-folder layouts
+            // on the same machine, and lets the path round-trip through save/
+            // load without absolute-path drift. Cross-machine transfer still
+            // requires copying the Images/ folder, but that's consistent with
+            // how team emblems already behave.
+            var previousPath = Item.SignatureFooterImagePath;
+            try
+            {
+                var imagesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images");
+                Directory.CreateDirectory(imagesDir);
+
+                var fileName = Path.GetFileName(settings.FileName);
+                var targetPath = Path.Combine(imagesDir, fileName);
+
+                File.Copy(settings.FileName, targetPath, true);
+
+                Item.SignatureFooterImagePath = fileName;
+                OnPropertyChanged("Item");
+            }
+            catch (Exception ex)
+            {
+                ShowSnackMessage($"Не удалось сохранить изображение: {ex.Message}");
+                Item.SignatureFooterImagePath = previousPath;
             }
         }
 

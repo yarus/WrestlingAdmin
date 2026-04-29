@@ -6,7 +6,8 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
-             mc:Ignorable="d" 
+             xmlns:matConverters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             mc:Ignorable="d"
              md:DialogServiceViews.IsRegistered="True"
              d:DesignHeight="1180" d:DesignWidth="960">
 
@@ -17,6 +18,7 @@
             <converters:BoolInverterConverter />
             <converters:GroupedBoolToVisConverter />
         </converters:ValueConverterGroup>
+        <matConverters:OptionalImagePathConverter x:Key="OptionalImage" />
     </UserControl.Resources>
 
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -429,6 +431,69 @@
                                         Command="{Binding BrowseBackupFolderCommand}"
                                         Content="Обзор..." />
                             </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </materialDesign:Card>
+
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
+                <Grid VerticalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="DrawPen" Width="80" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                    <StackPanel Grid.Row="0" Grid.Column="1">
+                        <TextBlock Margin="16 16 16 8">Печать и подписи в протоколах</TextBlock>
+
+                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
+                                Если изображение задано, оно автоматически накладывается поверх линий подписи во всех генерируемых протоколах. Изображение должно содержать только печать и подписи — лейблы и ФИО уже рисуются протоколом.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Margin="0 4 0 4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <materialDesign:PackIcon Grid.Column="0" Kind="ImageOutline" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
+
+                                <TextBox Grid.Column="1" VerticalAlignment="Center" Margin="10,5,0,5"
+                                         IsReadOnly="True"
+                                         Text="{Binding Path=Item.SignatureFooterImagePath, Mode=OneWay}"
+                                         materialDesign:HintAssist.Hint="Путь к изображению (пусто = без печати)" />
+
+                                <Button Grid.Column="2" VerticalAlignment="Center" Margin="8 5 4 5"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        Command="{Binding BrowseSignatureFooterImageCommand}"
+                                        Content="Обзор..." />
+
+                                <Button Grid.Column="3" VerticalAlignment="Center" Margin="0 5 8 5"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        Command="{Binding RemoveSignatureFooterImageCommand}"
+                                        Content="Очистить" />
+                            </Grid>
+
+                            <Border Grid.Row="1" Margin="0 8 0 0" BorderThickness="1" BorderBrush="{DynamicResource MaterialDesignDivider}" Background="White">
+                                <Image Source="{Binding Path=Item.SignatureFooterImagePath, Converter={StaticResource OptionalImage}}"
+                                       Stretch="Uniform" Margin="6" />
+                            </Border>
                         </Grid>
                     </Border>
                 </Grid>

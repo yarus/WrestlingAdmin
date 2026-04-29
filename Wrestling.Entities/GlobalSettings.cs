@@ -38,6 +38,8 @@ namespace Wrestling.Entities
         private string _selfUncPath;
         private string _announceIpOverride;
 
+        private string _signatureFooterImagePath;
+
         public GlobalSettings()
         {
             SliderMaxSecond = 10;
@@ -317,6 +319,18 @@ namespace Wrestling.Entities
             {
                 _announceIpOverride = value;
                 OnPropertyChanged("AnnounceIpOverride");
+            }
+        }
+
+        // Absolute path to a stamp+signatures image overlaid on the bottom of
+        // every printed/exported protocol. Empty/null = no overlay (default).
+        public string SignatureFooterImagePath
+        {
+            get { return _signatureFooterImagePath; }
+            set
+            {
+                _signatureFooterImagePath = value;
+                OnPropertyChanged("SignatureFooterImagePath");
             }
         }
     }

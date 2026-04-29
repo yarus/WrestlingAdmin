@@ -26,6 +26,7 @@
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <PackageReference Include="MvvmDialogs" Version="9.1.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="PdfSharp" Version="6.1.1" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
     <PackageReference Include="System.Windows.Extensions" Version="9.0.10" />
   </ItemGroup>

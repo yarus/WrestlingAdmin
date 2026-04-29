@@ -68,5 +68,7 @@ namespace Wrestling.Data
         public string SelfUncPath { get; set; }
         [DataMember]
         public string AnnounceIpOverride { get; set; }
+        [DataMember]
+        public string SignatureFooterImagePath { get; set; }
     }
 }

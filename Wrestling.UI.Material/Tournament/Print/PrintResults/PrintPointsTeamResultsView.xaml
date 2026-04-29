@@ -47,6 +47,7 @@
                 <GridView AllowsColumnReorder="true">
                     <GridViewColumn Header="#" DisplayMemberBinding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
                     <GridViewColumn DisplayMemberBinding="{Binding TeamName}" Header="Команда" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding TeamCity}" Header="Город" Width="Auto" />
                     <GridViewColumn DisplayMemberBinding="{Binding TotalPoints}" Header="Очки" Width="Auto" />
                     <GridViewColumn DisplayMemberBinding="{Binding GoldMedals}" Header="1-е место" Width="Auto" />
                     <GridViewColumn DisplayMemberBinding="{Binding SilverMedals}" Header="2-е место" Width="Auto" />

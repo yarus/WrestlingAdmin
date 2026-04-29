@@ -14,6 +14,8 @@
         <converters:BracketCellLeftLineVisConverter x:Key="LeftLineVis" />
         <converters:BracketColumnTopMarginConverter x:Key="BracketColTopMargin" />
         <converters:BracketRoundVertLineVisibilityConverter x:Key="VertVis" />
+        <converters:OptionalImagePathConverter x:Key="OptionalImage" />
+        <converters:FullNameToShortConverter x:Key="ShortName" />
     </UserControl.Resources>
 
     <StackPanel Background="White" x:Name="RootControl">
@@ -366,9 +368,10 @@
             </ItemsControl>
         </Grid>
 
-        <Grid Margin="0, 20, 0, 0">
+        <Grid Margin="0, 10, 0, 0">
             <ListView ItemsSource="{Binding Path=GroupWrestlers}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-              ScrollViewer.CanContentScroll="True" HorizontalContentAlignment="Stretch">
+              ScrollViewer.CanContentScroll="False" HorizontalContentAlignment="Stretch"
+              VirtualizingPanel.IsVirtualizing="False">
                 <ListView.View>
                     <GridView AllowsColumnReorder="true">
                         <GridViewColumn Width="60">
@@ -482,38 +485,54 @@
             </ListView>
         </Grid>
 
-        <Grid Margin="0,30,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="3*" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <Grid Margin="0,5,0,5">
+            <!-- Inner Grid sizes by text rows only — image is a sibling and
+                 doesn't expand row heights. VerticalAlignment="Center" centers
+                 the text rows within the outer Grid's height (determined by
+                 the taller image), so the stamp midline lands between the
+                 judge and secretary rows instead of below them. -->
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <TextBlock Grid.Column="0" Grid.Row="0"
-                        TextWrapping="NoWrap" Foreground="Black" Text="Главный судья соревнований"
-                        FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
+                <TextBlock Grid.Column="0" Grid.Row="0"
+                            TextWrapping="NoWrap" Foreground="Black" Text="Главный судья"
+                            FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
-            <TextBlock Grid.Column="3" Grid.Row="0"
-                        TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Tournament.MainJudge}"
-                        FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" MinWidth="100"/>
+                <TextBlock Grid.Column="2" Grid.Row="0"
+                            TextWrapping="NoWrap" Foreground="Black"
+                            Text="{Binding Path=Tournament.MainJudge, Converter={StaticResource ShortName}}"
+                            FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" MinWidth="100"/>
 
-            <Border Grid.Row="0" Grid.Column="2" BorderThickness="0,0,0,1" BorderBrush="Black" Width="180" />
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                            TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь"
+                            FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
-            <TextBlock Grid.Row="1" Grid.Column="0"
-                        TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь соревнований"
-                        FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
+                <TextBlock Grid.Row="1" Grid.Column="2"
+                            TextWrapping="NoWrap" Foreground="Black"
+                            Text="{Binding Path=Tournament.MainSecretary, Converter={StaticResource ShortName}}"
+                            FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" MinWidth="100" />
+            </Grid>
 
-            <TextBlock Grid.Row="1" Grid.Column="3"
-                        TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Tournament.MainSecretary}"
-                        FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" MinWidth="100" />
-
-            <Border Grid.Row="1" Grid.Column="2" BorderThickness="0,0,0,1" BorderBrush="Black" Width="180" />
+            <!-- Stamp + signatures sibling of the inner Grid in this single-cell
+                 outer Grid. Image position is independent of inner row sizing —
+                 rows stay compact regardless of stamp height. Image rendered
+                 last → on top in z-order (relevant only if the user's image has
+                 transparent background; with opaque white bg it's irrelevant). -->
+            <Image Source="{Binding Path=Tournament.Settings.SignatureFooterImagePath, Converter={StaticResource OptionalImage}}"
+                   Stretch="Uniform"
+                   Height="150"
+                   HorizontalAlignment="Center" VerticalAlignment="Top"
+                   Margin="0,30,0,0"
+                   IsHitTestVisible="False" />
         </Grid>
 
     </StackPanel>

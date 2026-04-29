@@ -29,5 +29,17 @@ namespace Wrestling.UI.Material.Model
         public PackIconKind? IconKind { get; set; }
 
         public ICommand Open { get; }
+
+        private bool _isBusy;
+        public bool IsBusy
+        {
+            get => _isBusy;
+            set
+            {
+                if (_isBusy == value) return;
+                _isBusy = value;
+                OnPropertyChanged("IsBusy");
+            }
+        }
     }
 }

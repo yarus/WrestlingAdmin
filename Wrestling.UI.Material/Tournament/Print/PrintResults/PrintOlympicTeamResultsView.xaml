@@ -4,11 +4,22 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:matConverters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
              mc:Ignorable="d" Foreground="Black" Background="LightGray"
              d:DesignHeight="800" d:DesignWidth="800">
 
     <UserControl.Resources>
         <converters:IndexConverter x:Key="IndexConverter" />
+        <matConverters:OptionalImagePathConverter x:Key="OptionalImage" />
+        <matConverters:FullNameToShortConverter x:Key="ShortName" />
+
+        <!-- Tight column-header style: collapse Material Design's default padding
+             so narrow columns don't clip their headers into invisible width. -->
+        <Style x:Key="CompactColumnHeader" TargetType="GridViewColumnHeader">
+            <Setter Property="Padding" Value="2,0,2,0" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
     </UserControl.Resources>
 
     <StackPanel Background="White">
@@ -42,51 +53,67 @@
 
         <Border BorderBrush="Black" BorderThickness="0,1,0,0" />
 
-        <ListView ItemsSource="{Binding TeamResults}">
+        <ListView ItemsSource="{Binding TeamResults}"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                  ScrollViewer.CanContentScroll="False"
+                  VirtualizingPanel.IsVirtualizing="False">
             <ListView.View>
-                <GridView AllowsColumnReorder="true">
-                    <GridViewColumn Header="#" DisplayMemberBinding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
-                    <GridViewColumn DisplayMemberBinding="{Binding TeamName}" Header="Команда" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding GoldMedals}" Header="1-е место" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding SilverMedals}" Header="2-е место" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding BronzeMedals}" Header="3-е место" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Wrestlers.Count}" Header="Борцов" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding GroupCount}" Header="Групп" Width="Auto" />
+                <GridView AllowsColumnReorder="false" ColumnHeaderContainerStyle="{StaticResource CompactColumnHeader}">
+                    <GridViewColumn Header="#" Width="30" DisplayMemberBinding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
+                    <GridViewColumn DisplayMemberBinding="{Binding TeamName}" Header="Команда" Width="180" />
+                    <GridViewColumn DisplayMemberBinding="{Binding TeamCity}" Header="Город" Width="140" />
+                    <GridViewColumn DisplayMemberBinding="{Binding GoldMedals}" Header="1-е место" Width="70" />
+                    <GridViewColumn DisplayMemberBinding="{Binding SilverMedals}" Header="2-е место" Width="70" />
+                    <GridViewColumn DisplayMemberBinding="{Binding BronzeMedals}" Header="3-е место" Width="70" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Wrestlers.Count}" Header="Борцов" Width="60" />
+                    <GridViewColumn DisplayMemberBinding="{Binding GroupCount}" Header="Групп" Width="55" />
                 </GridView>
             </ListView.View>
         </ListView>
 
         <Grid Margin="0,40,0,40">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <TextBlock Grid.Column="0" Grid.Row="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="Главный судья соревнований"
-                       FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,10,10,0" />
+                <TextBlock Grid.Column="0" Grid.Row="0"
+                           TextWrapping="NoWrap" Foreground="Black" Text="Главный судья"
+                           FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
-            <TextBlock Grid.Column="2" Grid.Row="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Tournament.MainJudge}"
-                       FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,10,10,0" />
+                <TextBlock Grid.Column="2" Grid.Row="0"
+                           TextWrapping="NoWrap" Foreground="Black"
+                           Text="{Binding Path=Tournament.MainJudge, Converter={StaticResource ShortName}}"
+                           FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" />
 
-            <Border Grid.Row="0" Grid.Column="1" BorderThickness="0,0,0,1" BorderBrush="Black" />
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                           TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь"
+                           FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
-            <TextBlock Grid.Row="1" Grid.Column="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь соревнований"
-                       FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,40,10,0" />
+                <TextBlock Grid.Row="1" Grid.Column="2"
+                           TextWrapping="NoWrap" Foreground="Black"
+                           Text="{Binding Path=Tournament.MainSecretary, Converter={StaticResource ShortName}}"
+                           FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" />
+            </Grid>
 
-            <TextBlock Grid.Row="1" Grid.Column="2"
-                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Tournament.MainSecretary}"
-                       FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,40,10,0" />
-
-            <Border Grid.Row="1" Grid.Column="1" BorderThickness="0,0,0,1" BorderBrush="Black" />
+            <!-- Stamp + signatures sibling of inner Grid. See PrintBracketView for
+                 rationale. The 30 DIP top margin shifts the image down — without
+                 it the stamp visually sits too high in this report (the rotated
+                 ListView headers above pull the eye upward, making the stamp's
+                 center read as misaligned with the judge/secretary rows). -->
+            <Image Source="{Binding Path=Tournament.Settings.SignatureFooterImagePath, Converter={StaticResource OptionalImage}}"
+                   Stretch="Uniform"
+                   Height="150"
+                   HorizontalAlignment="Center" VerticalAlignment="Top"
+                   Margin="0,30,0,0"
+                   IsHitTestVisible="False" />
         </Grid>
 
     </StackPanel>

@@ -163,18 +163,38 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <DockPanel ToolTip="{Binding TooltipText}" Background="Transparent" Margin="0">
-                                        <Button Margin="0,0,20,0" 
-                                            Command="{Binding Open}" 
+                                        <Button Margin="0,0,20,0"
+                                            Command="{Binding Open}"
                                             CommandParameter="{Binding ElementName=ContentControl}"
-                                            Padding="0" 
-                                            Background="Transparent" 
-                                            BorderThickness="0" 
+                                            Padding="0"
+                                            Background="Transparent"
+                                            BorderThickness="0"
                                             Foreground="White">
-                                            <materialDesign:PackIcon Kind="{Binding IconKind}" 
-                                                                 VerticalAlignment="Center" 
-                                                                 HorizontalAlignment="Center" 
-                                                                 Width="32" 
-                                                                 Height="32"/>
+                                            <Grid Width="32" Height="32">
+                                                <materialDesign:PackIcon Kind="{Binding IconKind}"
+                                                                     VerticalAlignment="Center"
+                                                                     HorizontalAlignment="Center"
+                                                                     Width="32"
+                                                                     Height="32">
+                                                    <materialDesign:PackIcon.Style>
+                                                        <Style TargetType="materialDesign:PackIcon">
+                                                            <Setter Property="Opacity" Value="1" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                                                    <Setter Property="Opacity" Value="0.3" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </materialDesign:PackIcon.Style>
+                                                </materialDesign:PackIcon>
+                                                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                                             IsIndeterminate="True"
+                                                             Width="28" Height="28"
+                                                             Foreground="White"
+                                                             VerticalAlignment="Center"
+                                                             HorizontalAlignment="Center"
+                                                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+                                            </Grid>
                                         </Button>
                                     </DockPanel>
                                 </DataTemplate>

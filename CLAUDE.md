@@ -149,7 +149,7 @@ Each carpet (mat) PC keeps its own local copy of the tournament `.wrt`. Results 
 - Material Design 3 via `MaterialDesignThemes` 5.x (DeepPurple / Lime, Light theme). Theme bundled inline in `App.xaml`; there is no separate resource dictionary file — add global styles in `App.xaml` or the nearest `Window.Resources`.
 - Dialogs: `MvvmDialogs` (`IDialogService` injected via DI). Use it for file-open/save and for modal view-models; don't call `MessageBox` directly except in App-level error paths.
 - Converters live in `Wrestling.UI.Utils/Converters/`. Prefer reusing existing ones (there are ~12, including `ValueConverterGroup` for composition) over adding new one-off converters in the UI project.
-- Printing uses a custom `VisualPrinter` utility in `Wrestling.UI.Utils` rendering XAML UserControls — no ReportViewer / QuestPDF. Print views are `PrintXxxView` / `PrintXxxViewModel` pairs.
+- Printing uses a custom `VisualPrinter` utility in `Wrestling.UI.Utils` rendering XAML UserControls — no ReportViewer / QuestPDF. Print views are `PrintXxxView` / `PrintXxxViewModel` pairs. Bulk PDF export (dashboard "Скачать сетки PDF") uses `BulkBracketPdfExporter`. **Before touching either utility — or adding a new XAML view to bulk export — read `docs/PrintingNotes.md`**: it documents WPF gotchas (off-tree rendering, why hosting in a Window caps content at screen height, why `IsVirtualizing="False"` matters off-tree, why `Math.Max(DesiredSize, ActualHeight)` is load-bearing after UpdateLayout) that have already burned us once.
 
 ## Conventions worth preserving
 
