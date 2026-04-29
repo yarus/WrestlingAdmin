@@ -73,4 +73,82 @@ public class RoundRobinBracketTests
             (m.WrestlerInRed != null && m.WrestlerInRed.LastName == "Bye") ||
             (m.WrestlerInBlue != null && m.WrestlerInBlue.LastName == "Bye"));
     }
+
+    // Regression: 3-way tie on Wins where remaining wrestlers differ on
+    // OverallTournamentClassificationPoints. After Tagirov takes 1st, the
+    // old code applied a Surkhaev↔Goryachev head-to-head check that ignored
+    // their classification-point difference and demoted Surkhaev despite
+    // his higher CP. UWW order: CP first, head-to-head only when all
+    // measurable criteria are tied.
+    //
+    // Mirrors real group "2012-2013 55kg" in 20260426.wrt — see git log.
+    [Fact]
+    public void Three_way_tie_on_wins_breaks_by_classification_points_not_pair_result()
+    {
+        var (g, proc) = Setup(3);
+
+        var w = g.Wrestlers.OrderBy(x => x.SeedNumber).ToList();
+        var tagirov = w[0];
+        var surkhaev = w[1];
+        var goryachev = w[2];
+
+        var matches = g.Bracket.Rounds.SelectMany(r => r.RoundMatches).ToList();
+
+        // Tagirov def. Goryachev by Tushe       (Tagirov +5 CP, Goryachev +0)
+        // Surkhaev def. Tagirov by DominationWin with points (Surkhaev +4, Tagirov +1)
+        // Goryachev def. Surkhaev by Points-with-points (Goryachev +3, Surkhaev +1)
+        // → Wins: Tag=Sur=Gor=1. CP: Tag=6, Sur=5, Gor=3.
+        // Expected: Tag 1st, Sur 2nd, Gor 3rd.
+        CompleteByPair(matches, proc, tagirov, goryachev, MatchWinTypeEnum.Tushe);
+        CompleteByPair(matches, proc, surkhaev, tagirov, MatchWinTypeEnum.DominationWinWithPoints);
+        CompleteByPair(matches, proc, goryachev, surkhaev, MatchWinTypeEnum.PointsWinWithPoints);
+
+        proc.GetResults();
+
+        tagirov.FinalPlace.Should().Be(1, "Tagirov has 6 CP — highest");
+        surkhaev.FinalPlace.Should().Be(2, "Surkhaev has 5 CP — second; head-to-head only kicks in when CP is equal");
+        goryachev.FinalPlace.Should().Be(3, "Goryachev has 3 CP — lowest");
+    }
+
+    [Fact]
+    public void Two_way_tie_on_everything_breaks_by_head_to_head()
+    {
+        var (g, proc) = Setup(3);
+
+        var w = g.Wrestlers.OrderBy(x => x.SeedNumber).ToList();
+        var champ = w[0];
+        var a = w[1];
+        var b = w[2];
+
+        var matches = g.Bracket.Rounds.SelectMany(r => r.RoundMatches).ToList();
+
+        // Champ wins both by Tushe → 2 wins, 10 CP.
+        // a vs b: a wins by Tushe → a 1 win 5 CP, b 0 wins 0 CP.
+        // (Different wins counts, no tie among a and b — but verify champ takes 1st by CP/wins)
+        CompleteByPair(matches, proc, champ, a, MatchWinTypeEnum.Tushe);
+        CompleteByPair(matches, proc, champ, b, MatchWinTypeEnum.Tushe);
+        CompleteByPair(matches, proc, a, b, MatchWinTypeEnum.Tushe);
+
+        proc.GetResults();
+
+        champ.FinalPlace.Should().Be(1);
+        a.FinalPlace.Should().Be(2);
+        b.FinalPlace.Should().Be(3);
+    }
+
+    private static void CompleteByPair(
+        System.Collections.Generic.List<WrestlingMatch> matches,
+        RoundRobinGroupBracketProcessor proc,
+        Wrestler winner,
+        Wrestler loser,
+        MatchWinTypeEnum winType)
+    {
+        var match = matches.First(m =>
+            (m.Status == MatchStatusEnum.Pending) &&
+            ((m.WrestlerInRed!.ID == winner.ID && m.WrestlerInBlue!.ID == loser.ID) ||
+             (m.WrestlerInBlue!.ID == winner.ID && m.WrestlerInRed!.ID == loser.ID)));
+
+        var isRedWon = match.WrestlerInRed!.ID == winner.ID;
+        proc.CompleteMatch(match, isRedWon, winType);
+    }
 }

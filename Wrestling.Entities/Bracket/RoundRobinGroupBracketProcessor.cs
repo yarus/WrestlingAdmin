@@ -43,8 +43,23 @@ namespace Wrestling.Entities.Bracket
         {
             if (Group.Bracket == null || !Group.IsBracketCompleted) return;
 
-            // 1. First order by wins count
-            // 2. Check pair result if wins count equals
+            // UWW round-robin tie-breakers, in priority order:
+            //   1. Classification points (already proxied by Wins as primary, then CP)
+            //   2. Wins by Tushe (fall)
+            //   3. Wins by Domination / DominationWithPoints (technical superiority)
+            //   4. Most technical points scored
+            //   5. Fewest technical points conceded
+            //   6. Head-to-head (only when all of the above are equal)
+            //   7. Seed number (last resort, app-specific)
+            //
+            // Bug fixed 2026-04-29: previously head-to-head was checked
+            // whenever exactly two wrestlers shared the same Wins count,
+            // overriding higher-priority tiebreakers. In a 3-way tie on
+            // Wins, after the leader took 1st, the remaining two were
+            // forced through head-to-head — flipping the order even when
+            // their classification points clearly differed (real case:
+            // 2012-2013 55kg group, Surkhaev 5 CP > Goryachev 3 CP, but
+            // Goryachev advanced because he beat Surkhaev head-to-head).
             var orderedStats = GetStats()
                 .OrderByDescending(x => x.Wins)
                 .ThenByDescending(x => x.OverallTournamentClassificationPoints)
@@ -64,30 +79,66 @@ namespace Wrestling.Entities.Bracket
                     continue;
                 }
 
-                var sameWins = orderedStats.Where(x => x.Wins == stat.Wins && x.Wrestler.ID != stat.Wrestler.ID && !x.Wrestler.FinalPlace.HasValue).ToList();
-                if (sameWins.Count == 0)
+                var fullyTied = orderedStats.Where(x =>
+                    x.Wrestler.ID != stat.Wrestler.ID
+                    && !x.Wrestler.FinalPlace.HasValue
+                    && x.Wins == stat.Wins
+                    && x.OverallTournamentClassificationPoints == stat.OverallTournamentClassificationPoints
+                    && x.WinsByTushe == stat.WinsByTushe
+                    && x.WinsByDomination == stat.WinsByDomination
+                    && x.WinsByDominationWithPoints == stat.WinsByDominationWithPoints
+                    && x.AllGainedPoints == stat.AllGainedPoints
+                    && x.AllLostPoints == stat.AllLostPoints).ToList();
+
+                if (fullyTied.Count == 0)
                 {
                     stat.Wrestler.FinalPlace = finalPlace;
                     finalPlace++;
                     continue;
                 }
-                
-                // If only 1 wrestler with same wins count - check pair result
-                if (sameWins.Count == 1)
+
+                // Two wrestlers tied on every measurable criterion — use head-to-head.
+                if (fullyTied.Count == 1)
                 {
-                    var winner = GetWinnerFromPair(stat.Wrestler, sameWins[0].Wrestler, Group.Bracket);
-                    if (winner == null) continue;
-                    
+                    var winner = GetWinnerFromPair(stat.Wrestler, fullyTied[0].Wrestler, Group.Bracket);
+                    if (winner == null)
+                    {
+                        // No pair match (shouldn't happen in a complete round-robin) —
+                        // fall back to SeedNumber order already established by the OrderBy chain.
+                        stat.Wrestler.FinalPlace = finalPlace;
+                        finalPlace++;
+                        continue;
+                    }
+
                     stat.Wrestler.FinalPlace = winner.ID == stat.Wrestler.ID ? finalPlace : finalPlace + 1;
-                    sameWins[0].Wrestler.FinalPlace = winner.ID == sameWins[0].Wrestler.ID ? finalPlace : finalPlace + 1;
+                    fullyTied[0].Wrestler.FinalPlace = winner.ID == fullyTied[0].Wrestler.ID ? finalPlace : finalPlace + 1;
 
                     finalPlace += 2;
                     continue;
                 }
-                
-                // If more than 1 wrestlers with same result - use the current order
-                stat.Wrestler.FinalPlace = finalPlace;
-                finalPlace++;
+
+                // 3+ wrestlers tied on everything — head-to-head between specific
+                // pairs may be circular; rank by number of head-to-head wins among
+                // the tied group, fall back to SeedNumber for residual ties.
+                var ranked = fullyTied
+                    .Concat(new[] { stat })
+                    .Select(r => new
+                    {
+                        Stat = r,
+                        HthWins = fullyTied
+                            .Concat(new[] { stat })
+                            .Count(other => other.Wrestler.ID != r.Wrestler.ID
+                                            && GetWinnerFromPair(r.Wrestler, other.Wrestler, Group.Bracket)?.ID == r.Wrestler.ID)
+                    })
+                    .OrderByDescending(x => x.HthWins)
+                    .ThenBy(x => x.Stat.Wrestler.SeedNumber)
+                    .ToList();
+
+                foreach (var item in ranked)
+                {
+                    item.Stat.Wrestler.FinalPlace = finalPlace;
+                    finalPlace++;
+                }
             }
         }
 
