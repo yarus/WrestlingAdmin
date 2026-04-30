@@ -370,9 +370,19 @@ namespace Wrestling.Providers
         {
             if (info == null) return null;
 
+            var status = ParseEnumOrDefault(info.Status, MatchStatusEnum.Pending);
+            // Legacy migration: pre-version .wrt files have info.Version == 0
+            // for every match. Bumping legacy Completed matches to V=1 prevents
+            // an accidental local Approve (V=0→V=1) on one peer from auto-
+            // overwriting an already-completed match on a sibling peer who is
+            // still on V=0 — equal versions keep local, so legacy completions
+            // are protected by the symmetric ceiling.
+            var version = info.Version;
+            if (version == 0 && status == MatchStatusEnum.Completed) version = 1;
+
             return new WrestlingMatch
             {
-                Status = ParseEnumOrDefault(info.Status, MatchStatusEnum.Pending),
+                Status = status,
                 WrestlerInBlue = info.WrestlerInBlue.HasValue ? wrestlers.FirstOrDefault(w => w.ID == info.WrestlerInBlue.Value) : null,
                 WrestlerInRed = info.WrestlerInRed.HasValue ? wrestlers.FirstOrDefault(w => w.ID == info.WrestlerInRed.Value) : null,
                 MatchNumber = info.MatchNumber,
@@ -383,7 +393,7 @@ namespace Wrestling.Providers
                 PointsRed = info.PointsRed,
                 WarningsNumberBlue = info.WarningsNumberBlue,
                 WarningsNumberRed = info.WarningsNumberRed,
-                ImportCompletionSource = info.ImportCompletionSource,
+                Version = version,
                 StartDateTime = info.StartDateTime,
                 RoundNumber = info.RoundNumber,
                 MaxRoundSecond = info.MaxRoundSecond,
@@ -617,7 +627,7 @@ namespace Wrestling.Providers
                 PointsRed = entity.PointsRed,
                 WarningsNumberRed = entity.WarningsNumberRed,
                 WarningsNumberBlue = entity.WarningsNumberBlue,
-                ImportCompletionSource = entity.ImportCompletionSource,
+                Version = entity.Version,
                 StartDateTime = entity.StartDateTime,
                 WinType = entity.WinType.ToString(),
                 RoundNumber = entity.RoundNumber,

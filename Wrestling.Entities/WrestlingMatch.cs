@@ -23,7 +23,7 @@ namespace Wrestling.Entities
         private string _note;
         private MatchStatusEnum _status;
         private MatchWinTypeEnum? _winType;
-        private string _importCompletionSource;
+        private int _version;
 
         private Wrestler _wrestlerInRed;
         private Wrestler _wrestlerInBlue;
@@ -320,29 +320,24 @@ namespace Wrestling.Entities
 
         public bool IsMatchCompleted => _status == MatchStatusEnum.Completed;
 
-        // When the current Completed state was applied by TournamentImporter,
-        // this holds the raw ImportSources entry (HTTP URL, UNC, or packed
-        // "http|unc") of the peer that supplied the completion. Null/empty for
-        // locally-entered results. Used to safely propagate remote reverts:
-        // the importer only reverts locally when the SAME peer that provided
-        // the completion now reports Pending. A different peer being "behind"
-        // (still Pending) is ignored, preventing flip-flop between multiple
-        // sources. Reset to null by ApproveAsync (manual completion) and by
-        // RejectAsync/RevertMatch paths.
-        public string ImportCompletionSource
+        // Monotonic per-match counter. Bumped exactly once on every state
+        // transition the importer propagates (Pending→Completed by ApproveAsync,
+        // Completed→Pending by RejectAsync). Never touched on mid-match scoring,
+        // timer adjustments, or bracket structure changes — those are not
+        // exported by the importer. Import comparison is strict ">" so equal
+        // versions keep the local copy; this is the cheap escape hatch when two
+        // peers concurrently approve the same match. Legacy .wrt files load with
+        // 0 for Pending and 1 for Completed via the adapter (see
+        // EntityToInfoAdapter.GetEntityFromInfo).
+        public int Version
         {
-            get { return _importCompletionSource; }
+            get { return _version; }
             set
             {
-                _importCompletionSource = value;
-                OnPropertyChanged("ImportCompletionSource");
-                OnPropertyChanged("IsCompletionFromImport");
+                _version = value;
+                OnPropertyChanged("Version");
             }
         }
-
-        // Derived convenience flag used in a couple of UI call sites. True
-        // whenever the match's current completion was applied via import.
-        public bool IsCompletionFromImport => !string.IsNullOrEmpty(_importCompletionSource);
 
         public int BestActionRed
         {

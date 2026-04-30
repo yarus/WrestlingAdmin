@@ -547,6 +547,10 @@ namespace Wrestling.UI.Material.Match
                 WrestlingMatch.PointsRed = 0;
                 WrestlingMatch.StartDateTime = null;
             }
+            // Bump version — Completed→Pending transition. Same rationale as in
+            // ApproveAsync: peers with the prior Completed copy will see strictly
+            // higher remote.Version and adopt the revert.
+            WrestlingMatch.Version++;
 
             WrestlingMatch = null;
             WinType = null;
@@ -598,11 +602,12 @@ namespace Wrestling.UI.Material.Match
             WrestlingMatch.IsRedWon = Winner == WrestlingMatch.WrestlerInRed.ID;
             WrestlingMatch.WinType = WinType;
             WrestlingMatch.Note = Note;
-            // Manual completion — clear the import-source stamp so that a
-            // later remote-Pending state won't auto-revert this result. Only
-            // completions applied via TournamentImporter may be reverted by
-            // a subsequent import cycle.
-            WrestlingMatch.ImportCompletionSource = null;
+            // Bump version — this is the only state-change point that turns a
+            // Pending match into Completed, so it's the canonical place to mark
+            // "newer than what any peer might still be holding". Importer treats
+            // strict "remote.Version > local.Version" as the trigger to adopt
+            // remote state.
+            WrestlingMatch.Version++;
             WrestlingMatch.MatchActions.Add(new MatchAction
             {
                 DateTime = DateTime.Now,
@@ -654,7 +659,7 @@ namespace Wrestling.UI.Material.Match
             WrestlingMatch.IsRedWon = Winner == WrestlingMatch.WrestlerInRed.ID;
             WrestlingMatch.WinType = WinType;
             WrestlingMatch.Note = Note;
-            WrestlingMatch.ImportCompletionSource = null;
+            WrestlingMatch.Version++;
             WrestlingMatch.Status = MatchStatusEnum.Completed;
             WrestlingMatch = null;
 

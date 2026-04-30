@@ -48,7 +48,7 @@ public sealed class ImportAutosaveTests
                     // Give Apply something to work against; the stub's Apply
                     // ignores contents and returns the configured result.
                     var remote = new Entities.Tournament(new GlobalSettings()) { Name = target.Name };
-                    return Task.FromResult(ImportPlan.Proceed(remote, fileName));
+                    return Task.FromResult(ImportPlan.Proceed(remote));
             }
         }
 

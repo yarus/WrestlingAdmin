@@ -102,10 +102,7 @@ namespace Wrestling.UI.Material.Model
 
                     FileLogger.Log("Import.ok", candidate, "candidate accepted");
 
-                    // Pass the original packed source (fileName) — not the
-                    // selected candidate — so Case-2 revert checks remain
-                    // stable even when one alternative (HTTP vs UNC) is down.
-                    return ImportPlan.Proceed(tournament, fileName);
+                    return ImportPlan.Proceed(tournament);
                 }
                 finally
                 {
@@ -240,53 +237,46 @@ namespace Wrestling.UI.Material.Model
                     var baseMatch = matches.FirstOrDefault(p => p.MatchNumber == importedMatch.MatchNumber);
                     if (baseMatch == null) continue;
 
-                    // Case 1: apply remote completion onto a local Pending match.
-                    // Guard: only promote Pending→Completed. A local manual
-                    // completion is never silently overwritten.
+                    // Strict ">" — equal versions keep the local copy. This is
+                    // the cheap escape hatch when two peers concurrently approve
+                    // the same match: each keeps its own state, operators notice
+                    // the divergence on the dashboard rather than one peer
+                    // silently winning by import-tick race.
+                    if (importedMatch.Version <= baseMatch.Version) continue;
+
+                    var processor = GetProcessorForGroup(sameGroup.Bracket.BracketTypeCode);
+                    if (processor == null) throw new ApplicationException("Can't find processor!");
+                    processor.Load(target, sameGroup);
+
+                    // Three observable transitions when remote is strictly newer.
+                    // The fourth (both Pending) bumps version only — bracket is
+                    // already in the right state. See docs/TodoList.md #14.
                     if (baseMatch.Status == MatchStatusEnum.Pending && importedMatch.Status == MatchStatusEnum.Completed)
                     {
-                        baseMatch.WinType = importedMatch.WinType;
-                        baseMatch.LastSecondInMatch = importedMatch.LastSecondInMatch;
-                        baseMatch.PointsBlue = importedMatch.PointsBlue;
-                        baseMatch.PointsRed = importedMatch.PointsRed;
-                        baseMatch.WarningsNumberBlue = importedMatch.WarningsNumberBlue;
-                        baseMatch.WarningsNumberRed = importedMatch.WarningsNumberRed;
-                        baseMatch.IsRedWon = importedMatch.IsRedWon;
-                        baseMatch.Note = importedMatch.Note;
-                        baseMatch.MatchActions = new List<MatchAction>(importedMatch.MatchActions);
-                        // Stamp the originating peer so a later remote revert
-                        // can be matched back to the same source (Case 2).
-                        baseMatch.ImportCompletionSource = plan.Source;
-
-                        var processor = GetProcessorForGroup(sameGroup.Bracket.BracketTypeCode);
-                        if (processor == null) throw new ApplicationException("Can't find processor!");
-
-                        processor.Load(target, sameGroup);
+                        // Case 1: applied completion (Pending → Completed).
+                        ApplyResultFields(baseMatch, importedMatch);
                         processor.CompleteMatch(baseMatch, baseMatch.IsRedWon.Value, baseMatch.WinType.Value);
-
                         result++;
                     }
-                    // Case 2: propagate a remote revert. We only revert locally
-                    // when the SAME peer that originally gave us the completion
-                    // now reports Pending. A different peer being "behind" and
-                    // still Pending is ignored — otherwise two sources would
-                    // flip-flop the match on every tick (one re-applies, the
-                    // other reverts). A manual local result (ImportCompletionSource
-                    // null) is always preserved.
-                    else if (baseMatch.Status == MatchStatusEnum.Completed
-                             && importedMatch.Status == MatchStatusEnum.Pending
-                             && !string.IsNullOrEmpty(baseMatch.ImportCompletionSource)
-                             && baseMatch.ImportCompletionSource == plan.Source)
+                    else if (baseMatch.Status == MatchStatusEnum.Completed && importedMatch.Status == MatchStatusEnum.Pending)
                     {
-                        var processor = GetProcessorForGroup(sameGroup.Bracket.BracketTypeCode);
-                        if (processor == null) throw new ApplicationException("Can't find processor!");
-
-                        processor.Load(target, sameGroup);
+                        // Case 2: applied revert (Completed → Pending).
                         processor.RevertMatch(baseMatch);
-                        baseMatch.ImportCompletionSource = null;
-
                         result++;
                     }
+                    else if (baseMatch.Status == MatchStatusEnum.Completed && importedMatch.Status == MatchStatusEnum.Completed)
+                    {
+                        // Case 3: applied edit on the author side (revert + re-
+                        // approve between our ticks). Roll the local bracket
+                        // back to clean Pending, then apply the new completion.
+                        processor.RevertMatch(baseMatch);
+                        ApplyResultFields(baseMatch, importedMatch);
+                        processor.CompleteMatch(baseMatch, baseMatch.IsRedWon.Value, baseMatch.WinType.Value);
+                        result++;
+                    }
+                    // else: both Pending — bracket already correct, no-op.
+
+                    baseMatch.Version = importedMatch.Version;
                 }
             }
 
@@ -306,6 +296,24 @@ namespace Wrestling.UI.Material.Model
         private IGroupBracketProcessor GetProcessorForGroup(string processorType)
         {
             return _drawTypes.FirstOrDefault(p => p.Code == processorType);
+        }
+
+        // Copies the result-bearing fields the importer is responsible for
+        // propagating. Keep this in sync with the version-bump triggers in
+        // MatchResultsViewModel (ApproveAsync / RejectAsync) — adding a new
+        // field here without bumping Version on local edits would mean peers
+        // never see the change.
+        private static void ApplyResultFields(WrestlingMatch dest, WrestlingMatch source)
+        {
+            dest.WinType = source.WinType;
+            dest.LastSecondInMatch = source.LastSecondInMatch;
+            dest.PointsBlue = source.PointsBlue;
+            dest.PointsRed = source.PointsRed;
+            dest.WarningsNumberBlue = source.WarningsNumberBlue;
+            dest.WarningsNumberRed = source.WarningsNumberRed;
+            dest.IsRedWon = source.IsRedWon;
+            dest.Note = source.Note;
+            dest.MatchActions = new List<MatchAction>(source.MatchActions);
         }
     }
 }
