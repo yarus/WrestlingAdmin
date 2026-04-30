@@ -101,23 +101,33 @@
                        Source="{Binding ScoreScreenVm.Wrestler1TeamEmblem, Converter={StaticResource ClubToIconConverter}, ConverterParameter=DefaultLogo.png}" />
             </Viewbox>
 
-            <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="1" Margin="10,0,10,0">
-                <StackPanel>
-                    <TextBlock FontSize="14" HorizontalAlignment="Center"
-                               Text="{Binding ScoreScreenVm.Wrestler1TeamCity, Converter={StaticResource UpperCaseConverter}}"/>
-                    <TextBlock FontSize="14" HorizontalAlignment="Center"
-                               Text="{Binding ScoreScreenVm.Wrestler1TeamName, Converter={StaticResource UpperCaseConverter}}"/>
-                </StackPanel>
-            </Viewbox>
+            <Grid Grid.Row="0" Grid.Column="1" Margin="10,0,10,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+                <Viewbox Grid.Row="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ScoreScreenVm.Wrestler1TeamCity, Converter={StaticResource UpperCaseConverter}}"/>
+                </Viewbox>
+                <Viewbox Grid.Row="1" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ScoreScreenVm.Wrestler1TeamName, Converter={StaticResource UpperCaseConverter}}"/>
+                </Viewbox>
+            </Grid>
 
-            <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="2" Margin="10,0,10,0">
-                <StackPanel>
-                    <TextBlock FontSize="14" HorizontalAlignment="Center"
-                               Text="{Binding ScoreScreenVm.Wrestler2TeamCity, Converter={StaticResource UpperCaseConverter}}"/>
-                    <TextBlock FontSize="14" HorizontalAlignment="Center"
-                               Text="{Binding ScoreScreenVm.Wrestler2TeamName, Converter={StaticResource UpperCaseConverter}}"/>
-                </StackPanel>
-            </Viewbox>
+            <Grid Grid.Row="0" Grid.Column="2" Margin="10,0,10,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+                <Viewbox Grid.Row="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ScoreScreenVm.Wrestler2TeamCity, Converter={StaticResource UpperCaseConverter}}"/>
+                </Viewbox>
+                <Viewbox Grid.Row="1" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ScoreScreenVm.Wrestler2TeamName, Converter={StaticResource UpperCaseConverter}}"/>
+                </Viewbox>
+            </Grid>
+
+            <Border Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Height="1" Background="White" VerticalAlignment="Center"/>
 
             <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Image Stretch="UniformToFill" Margin="10"

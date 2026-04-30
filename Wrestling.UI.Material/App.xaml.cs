@@ -22,6 +22,7 @@ using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Material.Slider.Slides;
+using Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide;
 using Wrestling.UI.Material.Slider.Slides.GroupBracketSlide;
 using Wrestling.UI.Material.Slider.Slides.ImageSlide;
 using Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide;
@@ -302,6 +303,7 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             // longer DI singletons. Only the settings VMs (which back the one
             // AddSlide dialog) stay singletons.
             di.Add<GroupBracketSlideSettingsViewModel>(new GroupBracketSlideSettingsViewModel(di));
+            di.Add<CarpetBracketsSlideSettingsViewModel>(new CarpetBracketsSlideSettingsViewModel(di));
             di.Add<ImageSlideSettingsViewModel>(new ImageSlideSettingsViewModel(di));
             di.Add<VideoSlideSettingsViewModel>(new VideoSlideSettingsViewModel(di));
             di.Add<UpcomingMatchesSlideSettingsViewModel>(new UpcomingMatchesSlideSettingsViewModel(di));
@@ -309,6 +311,7 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             di.Add<List<ISlideType>>(new List<ISlideType>
             {
                 new GroupBracketSlide(di),
+                new CarpetBracketsSlide(di),
                 new UpcomingMatchesSlide(di),
                 new ImageSlide(di),
                 new VideoSlide(di)

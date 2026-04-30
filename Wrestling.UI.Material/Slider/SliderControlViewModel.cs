@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -8,6 +9,8 @@ using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
+using Wrestling.UI.Material.Slider.Slides;
+using Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide;
 using Wrestling.UI.Material.Slider.Slides.GroupBracketSlide;
 using Wrestling.UI.Material.Tournament;
 using Wrestling.UI.Material.Tournament.Dashboard;
@@ -496,11 +499,65 @@ namespace Wrestling.UI.Material.Slider
 
             if (result != null && (bool)result)
             {
+                if (vm.Item.SlideType == CarpetBracketsSlide.TypeName)
+                {
+                    // Macro: expand to one regular GroupBracketSlide per group
+                    // of the chosen carpet (with dedup by GroupID). The macro
+                    // itself is never persisted into the channel.
+                    ExpandCarpetBracketsMacro(vm.Item);
+                    return;
+                }
+
                 // In-place mutation: open slide-host windows and the cached
                 // preview VM all share this ObservableCollection reference,
                 // so the new slide shows up in the next rotation without
                 // forcing a state-destroying InitData().
                 _selectedChannel.Slides.Add(vm.Item);
+            }
+        }
+
+        private void ExpandCarpetBracketsMacro(ScreenSlide macro)
+        {
+            if (_selectedChannel == null) return;
+
+            var carpetIdRaw = macro.GetNamedValue("CarpetID");
+            if (carpetIdRaw == null) return;
+
+            Guid carpetId;
+            try { carpetId = new Guid(carpetIdRaw.ToString()); }
+            catch { return; }
+
+            var carpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == carpetId);
+            if (carpet == null) return;
+
+            var groupBracketTypeName = Resolve<List<ISlideType>>()
+                .OfType<GroupBracketSlide>()
+                .Select(t => t.SlideType)
+                .FirstOrDefault();
+            if (string.IsNullOrEmpty(groupBracketTypeName)) return;
+
+            var existingGroupIds = new HashSet<Guid>(
+                _selectedChannel.Slides
+                    .Where(s => s.SlideType == groupBracketTypeName)
+                    .Select(s => s.GetNamedValue("GroupID"))
+                    .Where(v => v != null)
+                    .Select(v => { try { return (Guid?)new Guid(v.ToString()); } catch { return null; } })
+                    .Where(g => g.HasValue)
+                    .Select(g => g.Value));
+
+            foreach (var group in carpet.Groups)
+            {
+                if (!existingGroupIds.Add(group.ID)) continue;
+
+                var slide = new ScreenSlide
+                {
+                    Title = group.Name,
+                    SlideType = groupBracketTypeName,
+                    Duration = macro.Duration
+                };
+                slide.NamedValues.Add("GroupID", group.ID);
+
+                _selectedChannel.Slides.Add(slide);
             }
         }
 

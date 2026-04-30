@@ -28,7 +28,6 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="100" />
@@ -68,7 +67,7 @@
 
                             <materialDesign:PackIcon Grid.Row="1" Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
                             <TextBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center"
-                                         Text="{Binding Path=Item.MaxRoundSecond, UpdateSourceTrigger=PropertyChanged}" 
+                                         Text="{Binding Path=Item.MaxRoundSecond, UpdateSourceTrigger=PropertyChanged}"
                                          materialDesign:HintAssist.Hint="секунд" />
                             <TextBlock Grid.Row="1" Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
                                     Продолжительность раунда.
@@ -76,7 +75,7 @@
 
                             <materialDesign:PackIcon Grid.Row="2" Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
                             <TextBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center"
-                                         Text="{Binding Path=Item.MaxTimeoutSecond, UpdateSourceTrigger=PropertyChanged}" 
+                                         Text="{Binding Path=Item.MaxTimeoutSecond, UpdateSourceTrigger=PropertyChanged}"
                                          materialDesign:HintAssist.Hint="секунд" />
                             <TextBlock Grid.Row="2" Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
                                     Продолжительность перерыва.
@@ -84,7 +83,7 @@
 
                             <materialDesign:PackIcon Grid.Row="3" Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
                             <TextBox Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"
-                                         Text="{Binding Path=Item.MaxActionSecond, UpdateSourceTrigger=PropertyChanged}" 
+                                         Text="{Binding Path=Item.MaxActionSecond, UpdateSourceTrigger=PropertyChanged}"
                                          materialDesign:HintAssist.Hint="секунд" />
                             <TextBlock Grid.Row="3" Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
                                     Время на выполнение действия.
@@ -93,28 +92,6 @@
                         </Grid>
 
                     </Border>
-
-                    <Grid Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="8,0,8,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <materialDesign:PackIcon Grid.Column="0" Kind="Monitor" Width="20" Height="20" VerticalAlignment="Center"/>
-
-                        <TextBlock Grid.Column="1" TextWrapping="Wrap" Margin="10 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
-                            Электронное табло
-                        </TextBlock>
-
-                        <StackPanel Grid.Column="2" Grid.ColumnSpan="2" Orientation="Horizontal">
-                            <RadioButton VerticalAlignment="Center" GroupName="ScoreScreenTournament" Content="Турнирное" Margin="8,0,8,8" 
-                                         IsChecked="{Binding IsTournamentScoreInternational}" />
-                            <RadioButton VerticalAlignment="Center" GroupName="ScoreScreenTournament" Content="Упрощенное" Margin="8,0,8,8" 
-                                         IsChecked="{Binding IsTournamentScoreInternational, Converter={StaticResource BoolInvert}}" />
-                        </StackPanel>
-                    </Grid>
 
                 </Grid>
             </materialDesign:Card>

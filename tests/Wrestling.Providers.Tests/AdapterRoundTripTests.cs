@@ -65,7 +65,6 @@ public class AdapterRoundTripTests
             IsTimerBackward = true,
             IsSoundEnabled = false,
             IsAutosaveEnabled = true,
-            IsTournamentScoreInternational = false,
             IsOverlayOlympic = false,
             IsBackupEnabled = false,
             MaxBackupCount = 7,
@@ -81,7 +80,6 @@ public class AdapterRoundTripTests
         restored.Settings.IsTimerBackward.Should().BeTrue();
         restored.Settings.IsSoundEnabled.Should().BeFalse();
         restored.Settings.IsAutosaveEnabled.Should().BeTrue();
-        restored.Settings.IsTournamentScoreInternational.Should().BeFalse();
         restored.Settings.IsBackupEnabled.Should().BeFalse();
         restored.Settings.MaxBackupCount.Should().Be(7);
         restored.Settings.BackupFolderPath.Should().Be(@"D:\shared-backups");

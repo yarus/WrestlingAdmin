@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -51,49 +50,20 @@ namespace Wrestling.UI.Material.ScoreScreen
 
         private bool _isMainScreenVisible;
         private bool _isWinnerDialogVisible;
-        private bool _isUpcomingMatchesVisible;
         private string _winnerTeamEmblem;
         private Wrestler _winner;
         private SolidColorBrush _winnerColorBrush;
 
         private DispatcherTimer _timer;
 
-        private Carpet _lastMatchCarpet;
-
-        private ObservableCollection<WrestlingMatch> _upcomingMatches;
-
         public ScoreScreenViewModel(IDiContainer container) : base(container)
         {
             IsMainScreenVisible = true;
         }
 
-        private string _backgroundPath;
-
-        public string BackgroundPath
-        {
-            get { return _backgroundPath; }
-            set
-            {
-                _backgroundPath = value;
-                OnPropertyChanged("BackgroundPath");
-            }
-        }
-
         public System.Drawing.Bitmap LogoImage { get; set; }
         public System.Drawing.RectangleF LogoRectangle { get; set; }
         public LogoPositionEnum LogoPosition { get; set; }
-
-        private double _backgroundOpacity;
-
-        public double BackgroundOpacity
-        {
-            get { return _backgroundOpacity; }
-            set
-            {
-                _backgroundOpacity = value;
-                OnPropertyChanged("BackgroundOpacity");
-            }
-        }
 
         public void ShowWinner(WrestlingMatch match)
         {
@@ -132,32 +102,7 @@ namespace Wrestling.UI.Material.ScoreScreen
             WinnerColorBrush = null;
             WinnerTeamEmblem = string.Empty;
             IsWinnerDialogVisible = false;
-
-            if (LastMatchCarpet != null && DataContext.Tournament != null)
-            {
-                if (!IsMainScreenVisible)
-                {
-                    UpcomingMatches = new ObservableCollection<WrestlingMatch>(LastMatchCarpet.Groups
-                        .Where(g => g.Bracket != null)
-                        .SelectMany(g => g.Bracket.Rounds)
-                        .SelectMany(r => r.RoundMatches)
-                        .Where(m => m.IsMatchCanStart)
-                        .OrderBy(m => m.MatchNumber).Take(3));
-
-                    if (UpcomingMatches.Count > 0)
-                    {
-                        IsUpcomingMatchesVisible = true;
-                    }
-                    else
-                    {
-                        IsMainScreenVisible = true;
-                    }
-                }
-            }
-            else
-            {
-                IsMainScreenVisible = true;
-            }
+            IsMainScreenVisible = true;
 
             Winner = null;
 
@@ -172,18 +117,9 @@ namespace Wrestling.UI.Material.ScoreScreen
         public override void InitData()
         {
             base.InitData();
-            
-            BackgroundPath = GlobalSettings.SliderBackgroundImagePath;
-            BackgroundOpacity = GlobalSettings.SliderOpacity;
 
             IsWinnerDialogVisible = false;
-            IsUpcomingMatchesVisible = false;
             IsMainScreenVisible = true;
-
-            if (DataContext.Tournament != null && DataContext.Tournament.Carpets.Count > 0)
-            {
-                LastMatchCarpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == DataContext.Group.CarpetID);
-            }
 
             if (DataContext.WrestlingMatch.LastSecondInMatch == 0)
             {
@@ -295,26 +231,6 @@ namespace Wrestling.UI.Material.ScoreScreen
             return team != null ? team.EmblemPath : string.Empty;
         }
 
-        public ObservableCollection<WrestlingMatch> UpcomingMatches
-        {
-            get { return _upcomingMatches; }
-            set
-            {
-                _upcomingMatches = value;
-                OnPropertyChanged("UpcomingMatches");
-            }
-        }
-
-        public Carpet LastMatchCarpet
-        {
-            get { return _lastMatchCarpet; }
-            set
-            {
-                _lastMatchCarpet = value;
-                OnPropertyChanged("LastMatchCarpet");
-            }
-        }
-
         public Wrestler Winner
         {
             get { return _winner; }
@@ -342,16 +258,6 @@ namespace Wrestling.UI.Material.ScoreScreen
             {
                 _winnerTeamEmblem = value;
                 OnPropertyChanged("WinnerTeamEmblem");
-            }
-        }
-
-        public bool IsUpcomingMatchesVisible
-        {
-            get { return _isUpcomingMatchesVisible; }
-            set
-            {
-                _isUpcomingMatchesVisible = value;
-                OnPropertyChanged("IsUpcomingMatchesVisible");
             }
         }
 

@@ -45,8 +45,6 @@ namespace Wrestling.Data
         [DataMember]
         public int MaxActionSecond { get; set; }
         [DataMember]
-        public bool IsTournamentScoreInternational { get; set; }
-        [DataMember]
         public bool IsOverlayOlympic { get; set; }
         [DataMember]
         public bool IsBackupEnabled { get; set; }

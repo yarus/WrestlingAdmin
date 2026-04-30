@@ -19,7 +19,6 @@ using Wrestling.Providers;
 using Wrestling.Providers.Network;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Tournament.Dashboard;
 using Wrestling.UI.Utils;
 
@@ -66,17 +65,6 @@ namespace Wrestling.UI.Material.Settings
                 _validation = value;
 
                 OnPropertyChanged("Validation");
-            }
-        }
-
-        public bool IsTournamentScoreInternational
-        {
-            get { return Item.IsTournamentScoreInternational; }
-            set
-            {
-                Item.IsTournamentScoreInternational = value;
-                SetupScoreScreen(value);
-                OnPropertyChanged("IsTournamentScoreInternational");
             }
         }
 
@@ -260,20 +248,6 @@ namespace Wrestling.UI.Material.Settings
                     );
                 }
                 return _setSliderBackgroundCommand;
-            }
-        }
-
-        private void SetupScoreScreen(bool isInternational)
-        {
-            DiContainer.Remove("ScoreScreen");
-
-            if (isInternational)
-            {
-                DiContainer.Add(new InternationalScoreScreenView(), "ScoreScreen");
-            }
-            else
-            {
-                DiContainer.Add(new ScoreScreenView(), "ScoreScreen");
             }
         }
 

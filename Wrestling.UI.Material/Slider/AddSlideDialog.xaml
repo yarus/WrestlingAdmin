@@ -7,6 +7,7 @@
              xmlns:system="clr-namespace:System;assembly=mscorlib"
              xmlns:validation="clr-namespace:Wrestling.UI.Material.Model.Validation"
              xmlns:groupBracketSlide1="clr-namespace:Wrestling.UI.Material.Slider.Slides.GroupBracketSlide"
+             xmlns:carpetBracketsSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide"
              xmlns:imageSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.ImageSlide"
              xmlns:videoSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.VideoSlide"
              xmlns:upcomingMatchesSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide"
@@ -16,6 +17,10 @@
     <UserControl.Resources>
         <DataTemplate DataType="{x:Type groupBracketSlide1:GroupBracketSlideSettingsViewModel}">
             <groupBracketSlide1:GroupBracketSlideSettings />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type carpetBracketsSlide:CarpetBracketsSlideSettingsViewModel}">
+            <carpetBracketsSlide:CarpetBracketsSlideSettings />
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type imageSlide:ImageSlideSettingsViewModel}">

@@ -19,7 +19,6 @@ namespace Wrestling.Entities
         private int _maxRoundSecond;
         private int _maxTimeoutSecond;
         private int _maxActionSecond;
-        private bool _isTournamentScoreInternational;
 
         private bool _isOverlayOlympic;
 
@@ -50,7 +49,6 @@ namespace Wrestling.Entities
             MaxRoundSecond = 180;
             MaxTimeoutSecond = 30;
             MaxActionSecond = 30;
-            IsTournamentScoreInternational = true;
             IsOverlayOlympic = true;
             IsBackupEnabled = true;
             MaxBackupCount = 10;
@@ -81,16 +79,6 @@ namespace Wrestling.Entities
             {
                 _integrationPassword = value;
                 OnPropertyChanged("IntegrationPassword");
-            }
-        }
-
-        public bool IsTournamentScoreInternational
-        {
-            get { return _isTournamentScoreInternational; }
-            set
-            {
-                _isTournamentScoreInternational = value;
-                OnPropertyChanged("IsTournamentScoreInternational");
             }
         }
 

@@ -7,7 +7,6 @@ using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
 using Wrestling.Providers;
-using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Settings;
 using Wrestling.UI.Material.Tournament.Dashboard;
@@ -26,7 +25,6 @@ namespace Wrestling.UI.Material.Home
         private ICommand _newTournamentCommand;
         private ICommand _openTournamentCommand;
         private ICommand _openSettingsCommand;
-        private ICommand _newQuickMatchCommand;
 
         #endregion
 
@@ -58,21 +56,6 @@ namespace Wrestling.UI.Material.Home
 
         #region Commands
 
-        public ICommand NewQuickMatchCommand
-        {
-            get
-            {
-                if (_newQuickMatchCommand == null)
-                {
-                    _newQuickMatchCommand = new RelayCommand(
-                        param => NewQuickMatch(),
-                        param => true
-                    );
-                }
-                return _newQuickMatchCommand;
-            }
-        }
-        
         public ICommand OpenSettingsCommand
         {
             get
@@ -293,7 +276,6 @@ namespace Wrestling.UI.Material.Home
                 SliderMaxSecond = GlobalSettings.SliderMaxSecond,
                 SliderOpacityValue = GlobalSettings.SliderOpacityValue,
                 IsAutosaveEnabled = GlobalSettings.IsAutosaveEnabled,
-                IsTournamentScoreInternational = GlobalSettings.IsTournamentScoreInternational,
                 IsOverlayOlympic = GlobalSettings.IsOverlayOlympic
             };
 
@@ -303,21 +285,6 @@ namespace Wrestling.UI.Material.Home
         private void OpenSettings()
         {
             NavigateToView<SettingsViewModel>();
-        }
-        
-        private void NewQuickMatch()
-        {
-            DataContext.WrestlingMatch = new WrestlingMatch
-            {
-                MaxTimeoutSecond = 30,
-                MaxRoundSecond = 180,
-                MaxActionSecond = 30,
-                MatchNumber = 1,
-                WrestlerInRed = new Wrestler { ID = Guid.NewGuid()},
-                WrestlerInBlue = new Wrestler { ID = Guid.NewGuid()}
-            };
-
-            NavigateToView<MatchControlViewModel>();
         }
 
         #endregion

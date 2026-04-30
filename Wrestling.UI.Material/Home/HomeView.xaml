@@ -55,36 +55,6 @@
                         </Grid>
                     </materialDesign:Card>
 
-                    <materialDesign:Card Width="420" Margin="8 2 4 16" Height="240">
-                        <Grid VerticalAlignment="Stretch">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="200" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="AccountMultipleOutline" Width="160" Height="160" HorizontalAlignment="Center" VerticalAlignment="Center" />
-
-                            <StackPanel Grid.Row="0" Grid.Column="1">
-                                <TextBlock Margin="16 16 16 8" Style="{StaticResource MaterialDesignHeadline5TextBlock}">Поединок</TextBlock>
-
-                                <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
-                                    Используйте этот модуль для проведения быстрой схватки вне рамок какого-либо турнира.
-                                </TextBlock>
-                            </StackPanel>
-
-                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
-                                <DockPanel>
-                                    <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Margin="8 4 8 8"                                            
-                                            Command="{Binding Path=NewQuickMatchCommand}">НОВЫЙ</Button>
-                                </DockPanel>
-                            </Border>
-
-                        </Grid>
-                    </materialDesign:Card>
                 </StackPanel>
             </Grid>
         </ScrollViewer>
