@@ -1,10 +1,26 @@
-﻿<UserControl x:Class="Wrestling.UI.Material.Tournament.Print.PrintApplications.PrintApplicationsView"
+<UserControl x:Class="Wrestling.UI.Material.Tournament.Print.PrintApplications.PrintApplicationsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
              mc:Ignorable="d" Foreground="Black" Background="LightGray"
              d:DesignHeight="600" d:DesignWidth="1000">
+
+    <UserControl.Resources>
+        <converters:OptionalImagePathConverter x:Key="OptionalImage" />
+        <converters:FullNameToShortConverter x:Key="ShortName" />
+
+        <!-- Tight column-header style: collapse Material Design's default padding
+             so a 6-char "Разряд" actually fits inside a 60-DIP column. The default
+             style added ~12 DIP padding on each side which clipped narrow headers
+             into invisible width. Mirrors the pattern used in PrintPersonalResultsView. -->
+        <Style x:Key="CompactColumnHeader" TargetType="GridViewColumnHeader">
+            <Setter Property="Padding" Value="2,0,2,0" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
 
     <StackPanel Background="White">
         <TextBlock Text="{Binding Tournament.Name}"
@@ -28,24 +44,24 @@
         </Grid>
 
         <TextBlock
-            TextWrapping="NoWrap" Foreground="Black" Text="ПРОТОКОЛ"
-            FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,5,10,0" />
+            TextWrapping="NoWrap" Foreground="Black" Text="Протокол Взвешивания"
+            FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,10,10,0" />
 
         <TextBlock
-            TextWrapping="NoWrap" Foreground="Black" Text="взвешивания и жеребьевки участников"
-            FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,5,10,0" />
-        
-        <TextBlock 
                    TextWrapping="NoWrap" Foreground="Black" Text="{Binding SelectedGroup.Name}"
                    FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,5,10,0" />
 
         <Border BorderBrush="Black" BorderThickness="0,1,0,0" />
 
         <Grid Margin="0">
-            <ListView ItemsSource="{Binding Path=GroupWrestlers}">
+            <ListView ItemsSource="{Binding Path=GroupWrestlers}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.CanContentScroll="False"
+                     HorizontalContentAlignment="Stretch"
+                     VirtualizingPanel.IsVirtualizing="False">
                 <ListView.View>
-                    <GridView AllowsColumnReorder="true">
-                        <GridViewColumn Header="№" Width="60">
+                    <GridView AllowsColumnReorder="false" ColumnHeaderContainerStyle="{StaticResource CompactColumnHeader}">
+                        <GridViewColumn Header="№" Width="40">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding SeedNumber}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
@@ -53,8 +69,7 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-
-                        <GridViewColumn Header="ФИО" Width="Auto">
+                        <GridViewColumn Header="ФИО" Width="200">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding AthleteName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
@@ -62,15 +77,15 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Г.р." Width="60">
+                        <GridViewColumn Header="Г.р." Width="50">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding BirthYear}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding BirthYear}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Команда" Width="150">
+                        <GridViewColumn Header="Команда" Width="130">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding TeamName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
@@ -86,7 +101,7 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Разряд" Width="80">
+                        <GridViewColumn Header="Разряд" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Level}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
@@ -94,10 +109,10 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Вес" Width="80">
+                        <GridViewColumn Header="Вес" Width="50">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Weight}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding Weight}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -107,36 +122,52 @@
         </Grid>
 
         <Grid Margin="0,30,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+            <!-- Inner Grid sizes by text rows only — image is a sibling and
+                 doesn't expand row heights. VerticalAlignment="Center" centers
+                 the text rows within the outer Grid's height (determined by
+                 the taller stamp image), so the stamp midline lands between
+                 the judge and secretary rows instead of below them. Mirrors
+                 the pattern in PrintBracketView. -->
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <TextBlock Grid.Column="0" Grid.Row="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="Главный судья соревнований"
-                       FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,10,10,0" />
+                <TextBlock Grid.Column="0" Grid.Row="0"
+                           TextWrapping="NoWrap" Foreground="Black" Text="Главный судья"
+                           FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,10,10,0" />
 
-            <TextBlock Grid.Column="2" Grid.Row="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Tournament.MainJudge}"
-                       FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,10,10,0" />
+                <TextBlock Grid.Column="2" Grid.Row="0"
+                           TextWrapping="NoWrap" Foreground="Black"
+                           Text="{Binding Path=Tournament.MainJudge, Converter={StaticResource ShortName}}"
+                           FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,10,10,0" MinWidth="100" />
 
-            <Border Grid.Row="0" Grid.Column="1" BorderThickness="0,0,0,1" BorderBrush="Black" />
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                           TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь"
+                           FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
-            <TextBlock Grid.Row="1" Grid.Column="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь соревнований"
-                       FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
+                <TextBlock Grid.Row="1" Grid.Column="2"
+                           TextWrapping="NoWrap" Foreground="Black"
+                           Text="{Binding Path=Tournament.MainSecretary, Converter={StaticResource ShortName}}"
+                           FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" MinWidth="100" />
+            </Grid>
 
-            <TextBlock Grid.Row="1" Grid.Column="2"
-                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Tournament.MainSecretary}"
-                       FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" />
-
-            <Border Grid.Row="1" Grid.Column="1" BorderThickness="0,0,0,1" BorderBrush="Black" />
+            <!-- Signature/stamp image overlays the inner Grid as a sibling; if
+                 SignatureFooterImagePath is empty, OptionalImage converter
+                 returns null and nothing is drawn. -->
+            <Image Source="{Binding Path=Tournament.Settings.SignatureFooterImagePath, Converter={StaticResource OptionalImage}}"
+                   Stretch="Uniform"
+                   Height="150"
+                   HorizontalAlignment="Center" VerticalAlignment="Top"
+                   Margin="0,30,0,0"
+                   IsHitTestVisible="False" />
         </Grid>
 
     </StackPanel>

@@ -46,6 +46,9 @@
   - **Удалён встроенный блок «Ближайшие поединки» из `WwfScoreScreenView`.** Был избыточен — отдельная фича `UpcomingMatchesSlide` в Slider-системе её закрывает. Из `ScoreScreenViewModel` убраны: `IsUpcomingMatchesVisible`, `UpcomingMatches` (с `_upcomingMatches`), `LastMatchCarpet` (с `_lastMatchCarpet`), `BackgroundPath`/`BackgroundOpacity` (использовались только в этом блоке), а также соответствующие инициализации в `InitData` и ветвление в `OnWinnerShowCompleted` (теперь после показа победителя сразу `IsMainScreenVisible = true`). Убран неиспользуемый namespace `materialDesign` и `using System.Collections.ObjectModel`.
   - **Удалён старый `MatchControlView` (v1)** — `MainWindow.xaml` рендерит `MatchControlViewModel` через `MatchControlView2`, v1 был мёртвым кодом.
   - **Удалены все `ToolTip=...` из `WwfScoreScreenView`** — на табло во время живой схватки они мешают.
+- ✅ **#4 Bulk-добавление слайдов «Сетки ковра»** (коммит `b958ad9`). Новый макро-тип `CarpetBracketsSlide` (`Wrestling.UI.Material/Slider/Slides/CarpetBracketsSlide/`): в `AddSlideDialog` пользователь выбирает ковёр, после подтверждения `SliderControlViewModel.AddSlide` детектит макро-тип и разворачивает его в по одному `GroupBracketSlide` на каждую группу выбранного ковра. Сам макро-слайд в канал не сохраняется — при попытке рендера `CreateViewControl` бросает `NotSupportedException` (fail loudly).
+- ✅ **#13 (часть 2) Массовый PDF протоколов взвешивания.** Quick-button «Скачать протоколы взвешивания PDF» (PackIcon `Scale`) рядом с «Скачать сетки PDF» на Dashboard. Переиспользует `BulkBracketPdfExporter` через generic `BulkPdfExportJob.ViewFactory` без правок самого экспортёра. Новые методы `ExportAllApplicationsPdfsAsync` / `BuildApplicationsExportJobs` в `DashboardViewModel` — клон bracket-флоу с фильтром `Wrestlers.Count > 0` (сетка не требуется) и префиксом `Взвешивание_<GroupName>.pdf` (нет коллизии при выгрузке обоих видов в одну папку). `PrintApplicationsView.xaml` подтянут к каноничному виду print-views: заголовок «Протокол Взвешивания», `CompactColumnHeader` style (`Padding="2,0,2,0"`, `FontSize="11"`) на колонках, ширины колонок укладываются в портретный A4, виртуализация ListView отключена (`VirtualizingPanel.IsVirtualizing="False"`), подстановка печати через `Tournament.Settings.SignatureFooterImagePath` + `OptionalImagePathConverter`, имена через `FullNameToShortConverter`. Тот же `CompactColumnHeader` style применён и в `PrintBracketView` для единообразия.
+- ✅ **Bulk-PDF: трейлинг-blank-страница не создаётся.** В `BulkBracketPdfExporter.RenderViewToPdf` три слоя защиты от пустой второй страницы (особенно остро в landscape A4, где imageable height ~697 DIPs и StackPanel-layout slack стабильно перетекает за page boundary): (1) `FindLastContentRow` отрезает трейлинг-вайтспейс bitmap'а до нарезки; (2) clamp totalHeightPx до pageHeightPx если overflow ≤25% (slack, не контент); (3) `IsSliceMostlyBlank` row-based: слайс пустой если <3 строк × <10 dark pixels — режет тонкие 1-px разделители, которые проходят первые два фильтра.
 
 ---
 
@@ -89,14 +92,10 @@
 
 ---
 
-### #4 — Bulk-добавление слайдов в Слайдер ротации сеток
+### ✅ #4 — Bulk-добавление слайдов в Слайдер (DONE)
 **Симптом:** в Слайдере добавляешь по одной весовой категории. На реальном турнире (10+ категорий на ковёр) это долго.
 
-**Решение:** В UI Слайдера — выпадающий список «Ковёр», после выбора:
-- Кнопка «добавить слайд для каждой группы этого ковра» (по одному слайду на группу).
-- Кнопка «добавить один слайд на каждую группу как объединённый» (если такой режим есть).
-
-**Сложность:** S. Локальное изменение в `Wrestling.UI.Material/Slider/...`, без сетевой части.
+**Решение:** Новый макро-тип `CarpetBracketsSlide` в `AddSlideDialog`. Пользователь выбирает ковёр, `SliderControlViewModel.AddSlide` детектит макро-тип и разворачивает в по одному `GroupBracketSlide` на каждую группу ковра. См. блок Done выше.
 
 ---
 
@@ -189,7 +188,9 @@
 
 **Решение (DONE для сеток):** Quick-button «Скачать сетки PDF» (PackIcon FilePdfBox) на Dashboard рядом с «Сохранить турнир» → выбор папки → один PDF на каждую группу со сгенерированной сеткой и результатами (через PdfSharp 6.1, без диалога печати). Реализовано в `Wrestling.UI.Material/Tournament/Print/BulkBracketPdfExporter.cs` — переиспользует `PrintBracketView` через off-tree рендер в RenderTargetBitmap (300 DPI), нарезка по A4 **landscape** (842×595pt), сборка PDF страница за страницей. Имена файлов санитайзятся под Windows. Виртуализация ListView с местами участников отключена (`VirtualizingPanel.IsVirtualizing="False"`) — иначе off-tree рендер показывал только первого финалиста.
 
-**Что осталось (если понадобится):** протоколы взвешивания (PrintApplications) тем же способом; выбор подмножества групп через чекбоксы; добавление печати/подписи в шаблон сетки (отдельная задача, обсуждаем после).
+**Решение (DONE для протоколов взвешивания):** Quick-button «Скачать протоколы взвешивания PDF» рядом с «Скачать сетки PDF» на Dashboard. Переиспользует `BulkBracketPdfExporter` через generic `BulkPdfExportJob.ViewFactory` (без правок самого экспортёра). Фильтр групп — `Wrestlers.Count > 0` (сетка не требуется). Файлы — `Взвешивание_<GroupName>.pdf` (префикс предотвращает коллизию с bracket-экспортом в одну папку). В `PrintApplicationsView.xaml` отключена виртуализация ListView (`VirtualizingPanel.IsVirtualizing="False"` + `ScrollViewer.CanContentScroll="False"`) — обязательный инвариант для off-tree рендера.
+
+**Что осталось (если понадобится):** выбор подмножества групп через чекбоксы; добавление печати/подписи в шаблон сетки (отдельная задача, обсуждаем после).
 
 **Где живёт сейчас:**
 - `Wrestling.UI.Material/Tournament/Standing/Draw/DrawViewModel.cs:225` — `PrintProtocol(group)` ставит `DataContext.Group = group` и зовёт `ShowPrintPreview(new PrintApplicationsViewModel(...))`.
@@ -234,7 +235,7 @@
 | # | Пункт | Сложность | Зависимости |
 |---|-------|-----------|-------------|
 | 1 | ✅ **#2** Кнопки ±1с у таймера (DONE) | S | — |
-| 2 | **#4** Bulk-слайды в Слайдере | S | — |
+| 2 | ✅ **#4** Bulk-слайды в Слайдере (DONE) | S | — |
 | 3 | ✅ **#11** Дубль номера 120 (DONE) / **#8** Id-based импорт — отложено до #3 | S+M | — / #3 |
 | 4 | ✅ **#9** Аудит круговой сетки (DONE) | M | — |
 | 5 | **#6** HTTP+share парсинг | S-M | — |

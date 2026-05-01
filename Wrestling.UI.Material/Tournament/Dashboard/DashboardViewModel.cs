@@ -18,6 +18,7 @@ using Wrestling.UI.Material.Settings;
 using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Material.Tournament.Import;
 using Wrestling.UI.Material.Tournament.Print;
+using Wrestling.UI.Material.Tournament.Print.PrintApplications;
 using Wrestling.UI.Material.Tournament.Print.PrintBracket;
 using Wrestling.UI.Material.Tournament.Print.PrintResults;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
@@ -43,6 +44,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         private readonly CommandButtonItem _saveQuickCommand;
         private readonly CommandButtonItem _openLogsQuickCommand;
         private readonly CommandButtonItem _exportBracketsPdfQuickCommand;
+        private readonly CommandButtonItem _exportApplicationsPdfQuickCommand;
         private bool _isExportingPdfs;
 
         private IPanelView _scoreScreenView;
@@ -59,6 +61,8 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
                 new RelayCommand(param => OpenLatestLogFile(), param => true));
             _exportBracketsPdfQuickCommand = new CommandButtonItem("Скачать сетки PDF", PackIconKind.FilePdfBox,
                 new AsyncRelayCommand(execute: _ => ExportAllBracketPdfsAsync(), canExecute: _ => !_isExportingPdfs));
+            _exportApplicationsPdfQuickCommand = new CommandButtonItem("Скачать протоколы взвешивания PDF", PackIconKind.Scale,
+                new AsyncRelayCommand(execute: _ => ExportAllApplicationsPdfsAsync(), canExecute: _ => !_isExportingPdfs));
         }
 
         public override void InitData()
@@ -83,6 +87,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
                     {
                         _saveQuickCommand,
                         _exportBracketsPdfQuickCommand,
+                        _exportApplicationsPdfQuickCommand,
                         _openLogsQuickCommand
                     }
                 );
@@ -390,6 +395,94 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
                         var vm = new PrintBracketViewModel(DiContainer);
                         vm.InitData();
                         return new PrintBracketView { DataContext = vm };
+                    }
+                });
+            }
+
+            return jobs;
+        }
+
+        private async Task ExportAllApplicationsPdfsAsync()
+        {
+            var tournament = DataContext.Tournament;
+            var groupsWithWrestlers = tournament?.Groups?
+                .Where(g => g?.Wrestlers != null && g.Wrestlers.Count > 0).ToList() ?? new List<AgeWeightGroup>();
+            if (groupsWithWrestlers.Count == 0)
+            {
+                Dialog.ShowMessageBox(this,
+                    "Нет групп с зарегистрированными участниками.",
+                    "Экспорт протоколов взвешивания", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var tournamentDir = !string.IsNullOrWhiteSpace(tournament?.FileName)
+                ? Path.GetDirectoryName(tournament.FileName)
+                : null;
+            var defaultPath = !string.IsNullOrWhiteSpace(tournamentDir) && Directory.Exists(tournamentDir)
+                ? tournamentDir
+                : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            var settings = new FolderBrowserDialogSettings
+            {
+                Description = "Выберите папку для сохранения протоколов взвешивания",
+                ShowNewFolderButton = true,
+                SelectedPath = defaultPath
+            };
+
+            if (Dialog.ShowFolderBrowserDialog(this, settings) != true) return;
+
+            _isExportingPdfs = true;
+            _exportApplicationsPdfQuickCommand.IsBusy = true;
+            try
+            {
+                var jobs = BuildApplicationsExportJobs(groupsWithWrestlers);
+                ShowSnackMessage($"Идет создание протоколов взвешивания: {jobs.Count} файлов...");
+
+                var exporter = new BulkBracketPdfExporter();
+                var result = await exporter.ExportAsync(jobs, settings.SelectedPath);
+
+                var msg = $"Готово. Сохранено PDF: {result.Succeeded}";
+                if (result.Skipped > 0) msg += $", пропущено: {result.Skipped}";
+                if (result.Failures.Count > 0) msg += $", ошибок: {result.Failures.Count}";
+                ShowSnackMessage(msg);
+
+                if (result.Failures.Count > 0)
+                {
+                    Dialog.ShowMessageBox(this,
+                        "Не удалось сохранить часть протоколов:\n\n" + string.Join("\n", result.Failures),
+                        "Экспорт протоколов взвешивания", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                Dialog.ShowMessageBox(this,
+                    "Ошибка экспорта: " + ex.Message,
+                    "Экспорт протоколов взвешивания", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                _isExportingPdfs = false;
+                _exportApplicationsPdfQuickCommand.IsBusy = false;
+            }
+        }
+
+        private List<BulkPdfExportJob> BuildApplicationsExportJobs(List<AgeWeightGroup> groupsWithWrestlers)
+        {
+            var jobs = new List<BulkPdfExportJob>();
+
+            foreach (var group in groupsWithWrestlers)
+            {
+                var capturedGroup = group;
+                jobs.Add(new BulkPdfExportJob
+                {
+                    FileName = "Взвешивание_" + BulkBracketPdfExporter.MakeSafeFileName(capturedGroup.Name) + ".pdf",
+                    Landscape = false,
+                    ViewFactory = () =>
+                    {
+                        DataContext.Group = capturedGroup;
+                        var vm = new PrintApplicationsViewModel(DiContainer);
+                        vm.InitData();
+                        return new PrintApplicationsView { DataContext = vm };
                     }
                 });
             }

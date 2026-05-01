@@ -16,6 +16,17 @@
         <converters:BracketRoundVertLineVisibilityConverter x:Key="VertVis" />
         <converters:OptionalImagePathConverter x:Key="OptionalImage" />
         <converters:FullNameToShortConverter x:Key="ShortName" />
+
+        <!-- Tight column-header style: collapse Material Design's default padding
+             so a 6-char "Разряд" actually fits inside a 60-DIP column. The default
+             style added ~12 DIP padding on each side which clipped narrow headers
+             into invisible width. Mirrors the pattern used in PrintPersonalResultsView
+             and PrintApplicationsView. -->
+        <Style x:Key="CompactColumnHeader" TargetType="GridViewColumnHeader">
+            <Setter Property="Padding" Value="2,0,2,0" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
     </UserControl.Resources>
 
     <StackPanel Background="White" x:Name="RootControl">
@@ -373,14 +384,11 @@
               ScrollViewer.CanContentScroll="False" HorizontalContentAlignment="Stretch"
               VirtualizingPanel.IsVirtualizing="False">
                 <ListView.View>
-                    <GridView AllowsColumnReorder="true">
-                        <GridViewColumn Width="60">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Место" HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                    <GridView AllowsColumnReorder="false" ColumnHeaderContainerStyle="{StaticResource CompactColumnHeader}">
+                        <GridViewColumn Header="Место" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Order}" 
+                                    <TextBlock Text="{Binding Order}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Bottom"
                                       Margin="0,8,0,0"
@@ -389,13 +397,10 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Width="250">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ФИО" HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="ФИО" Width="250">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding AthleteName}" 
+                                    <TextBlock Text="{Binding AthleteName}"
                                       HorizontalAlignment="Left"
                                       VerticalAlignment="Bottom"
                                       Margin="8,8,0,0"
@@ -405,13 +410,10 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Width="120">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Команда" HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="Команда" Width="120">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding TeamName}" 
+                                    <TextBlock Text="{Binding TeamName}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Bottom"
                                       Margin="0,8,0,0"
@@ -421,13 +423,10 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Width="60">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Г.р." HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="Г.р." Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding BirthYear}" 
+                                    <TextBlock Text="{Binding BirthYear}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Bottom"
                                       Margin="0,8,0,0"
@@ -436,13 +435,10 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Width="60">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Разряд" HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="Разряд" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Level}" 
+                                    <TextBlock Text="{Binding Level}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Bottom"
                                       Margin="0,8,0,0"
@@ -451,13 +447,10 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Width="60">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Вес" HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="Вес" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Weight}" 
+                                    <TextBlock Text="{Binding Weight}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Bottom"
                                       Margin="0,8,8,0"
@@ -466,13 +459,10 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Width="60">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Жребий" HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="Жребий" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding SeedNumber}" 
+                                    <TextBlock Text="{Binding SeedNumber}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Bottom"
                                       Margin="0,8,0,0"

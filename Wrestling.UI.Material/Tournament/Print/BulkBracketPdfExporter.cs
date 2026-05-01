@@ -152,15 +152,33 @@ namespace Wrestling.UI.Material.Tournament.Print
             bitmap.Render(view);
 
             var pageHeightPx = (int)Math.Floor(imageableHeightDip * dpiScale);
-            var totalHeightPx = bitmap.PixelHeight;
+            // Trim trailing whitespace before slicing. WPF layout often leaves a
+            // strip of blank pixels at the bottom of the rendered StackPanel
+            // (footer margin + StackPanel slack). Without trimming, even a few
+            // pixels past the page boundary produce a fully-blank A4 second
+            // page in the PDF. Scan upward from the last row until we find any
+            // dark pixel.
+            var totalHeightPx = Math.Max(1, FindLastContentRow(bitmap) + 1);
+            // If the trimmed content overflows a single page by ≤25%, clamp to
+            // one page. WPF layout slack (StackPanel padding past the visible
+            // footer, ListView trailing separators) routinely pushes the
+            // bitmap a few dozen DIPs past the page boundary. Without this
+            // clamp the slicer dutifully produces an A4 second page with no
+            // visible content. Genuine two-page brackets overflow by 50%+ so
+            // they aren't affected.
+            if (totalHeightPx > pageHeightPx && totalHeightPx <= (int)(pageHeightPx * 1.25))
+            {
+                totalHeightPx = pageHeightPx;
+            }
             var totalWidthPx = bitmap.PixelWidth;
 
-            using (var document = new PdfDocument())
+            // First, plan out the page slices. Then drop any trailing slices that
+            // are visually blank — these arise when WPF layout slack pushes a
+            // few dark pixels past the page boundary (see IsSliceMostlyBlank
+            // for the row-density heuristic). Doing this up front means we
+            // never call PdfDocument.AddPage for blank pages.
+            var slices = new List<(int top, int height)>();
             {
-                document.Info.Title = Path.GetFileNameWithoutExtension(outputPath);
-
-                var keepAlive = new List<MemoryStream>();
-
                 int top = 0;
                 while (top < totalHeightPx)
                 {
@@ -168,8 +186,24 @@ namespace Wrestling.UI.Material.Tournament.Print
                     int bottom = rawBottom < totalHeightPx
                         ? FindCleanBreakRow(bitmap, top + (int)(pageHeightPx * 0.6), rawBottom)
                         : rawBottom;
-                    int height = bottom - top;
-                    var slice = new CroppedBitmap(bitmap, new Int32Rect(0, top, totalWidthPx, height));
+                    slices.Add((top, bottom - top));
+                    top = bottom;
+                }
+                while (slices.Count > 1 && IsSliceMostlyBlank(bitmap, slices[slices.Count - 1].top, slices[slices.Count - 1].height))
+                {
+                    slices.RemoveAt(slices.Count - 1);
+                }
+            }
+
+            using (var document = new PdfDocument())
+            {
+                document.Info.Title = Path.GetFileNameWithoutExtension(outputPath);
+
+                var keepAlive = new List<MemoryStream>();
+
+                foreach (var (sliceTop, sliceHeight) in slices)
+                {
+                    var slice = new CroppedBitmap(bitmap, new Int32Rect(0, sliceTop, totalWidthPx, sliceHeight));
 
                     var pngStream = new MemoryStream();
                     var encoder = new PngBitmapEncoder();
@@ -186,7 +220,7 @@ namespace Wrestling.UI.Material.Tournament.Print
 
                     using (var gfx = XGraphics.FromPdfPage(page))
                     {
-                        var sliceHeightPoints = height / dpiScale / DipsPerPoint;
+                        var sliceHeightPoints = sliceHeight / dpiScale / DipsPerPoint;
                         gfx.DrawImage(
                             image,
                             HorizontalMarginPoints,
@@ -194,8 +228,6 @@ namespace Wrestling.UI.Material.Tournament.Print
                             pageWidthPoints - HorizontalMarginPoints * 2,
                             sliceHeightPoints);
                     }
-
-                    top = bottom;
                 }
 
                 document.Save(outputPath);
@@ -246,6 +278,92 @@ namespace Wrestling.UI.Material.Tournament.Print
             }
 
             return bottomLine;
+        }
+
+        private const int ContentDarkThreshold = 240;
+        private const int ContentAlphaThreshold = 32;
+
+        // Returns the index of the last row with at least minContentPixels of
+        // non-near-white pixels, or -1 if no such row exists. Requiring multiple
+        // dark pixels per row defeats sub-pixel anti-aliasing artifacts and
+        // single-pixel layout-rounding leftovers that occasionally outlive the
+        // visible content area. Pbgra32 is premultiplied; a fully-transparent
+        // pixel reads as (0,0,0,0) and we skip it via the alpha threshold.
+        private static int FindLastContentRow(RenderTargetBitmap bmp)
+        {
+            int width = bmp.PixelWidth;
+            int height = bmp.PixelHeight;
+            if (width <= 0 || height <= 0) return -1;
+
+            const int minContentPixels = 3;
+
+            var rowBuffer = new byte[width * 4];
+
+            for (int i = height - 1; i >= 0; i--)
+            {
+                bmp.CopyPixels(new Int32Rect(0, i, width, 1), rowBuffer, width * 4, 0);
+                int contentPixels = 0;
+                for (int c = 0; c < width; c++)
+                {
+                    int o = c * 4;
+                    byte a = rowBuffer[o + 3];
+                    if (a < ContentAlphaThreshold) continue;
+                    byte b = rowBuffer[o];
+                    byte g = rowBuffer[o + 1];
+                    byte r = rowBuffer[o + 2];
+                    if (r < ContentDarkThreshold || g < ContentDarkThreshold || b < ContentDarkThreshold)
+                    {
+                        contentPixels++;
+                        if (contentPixels >= minContentPixels) return i;
+                    }
+                }
+            }
+            return -1;
+        }
+
+        // Slice is "mostly blank" if fewer than minContentRows rows contain at
+        // least minPixelsPerRow dark pixels each. Row-density beats raw-pixel
+        // counting because a single thin separator line (which can survive the
+        // FindLastContentRow trim) gives many dark pixels in just one row —
+        // looks like content by total count, but won't satisfy "≥3 rows".
+        // Real content (text, table grid, stamps) spans dozens of rows.
+        private static bool IsSliceMostlyBlank(RenderTargetBitmap bmp, int top, int height)
+        {
+            int width = bmp.PixelWidth;
+            if (width <= 0 || height <= 0) return true;
+
+            const int minContentRows = 3;
+            const int minPixelsPerRow = 10;
+            int bmpHeight = bmp.PixelHeight;
+
+            var rowBuffer = new byte[width * 4];
+            int contentRows = 0;
+
+            for (int i = top; i < top + height && i < bmpHeight; i++)
+            {
+                bmp.CopyPixels(new Int32Rect(0, i, width, 1), rowBuffer, width * 4, 0);
+                int rowDarkPixels = 0;
+                for (int c = 0; c < width; c++)
+                {
+                    int o = c * 4;
+                    byte a = rowBuffer[o + 3];
+                    if (a < ContentAlphaThreshold) continue;
+                    byte b = rowBuffer[o];
+                    byte g = rowBuffer[o + 1];
+                    byte r = rowBuffer[o + 2];
+                    if (r < ContentDarkThreshold || g < ContentDarkThreshold || b < ContentDarkThreshold)
+                    {
+                        rowDarkPixels++;
+                        if (rowDarkPixels >= minPixelsPerRow) break;
+                    }
+                }
+                if (rowDarkPixels >= minPixelsPerRow)
+                {
+                    contentRows++;
+                    if (contentRows >= minContentRows) return false;
+                }
+            }
+            return true;
         }
 
         public static string MakeSafeFileName(string raw)
