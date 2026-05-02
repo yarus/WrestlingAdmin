@@ -29,7 +29,6 @@ namespace Wrestling.Entities
         private int _maxBackupCount;
         private string _backupFolderPath;
 
-        private bool _isDiscoveryEnabled;
         private int _discoveryPort;
         private bool _isHttpServerEnabled;
         private int _httpServerPort;
@@ -53,13 +52,28 @@ namespace Wrestling.Entities
             IsBackupEnabled = true;
             MaxBackupCount = 10;
             BackupFolderPath = string.Empty;
-            IsDiscoveryEnabled = true;
             DiscoveryPort = 24565;
             IsHttpServerEnabled = true;
             HttpServerPort = 24566;
-            NodeName = string.Empty;
+            // Default NodeName to the machine's host name so a fresh tournament
+            // is immediately discoverable on the LAN without operator setup.
+            // The user can override later from the Settings screen.
+            NodeName = SafeMachineName();
             SelfUncPath = string.Empty;
             AnnounceIpOverride = string.Empty;
+        }
+
+        private static string SafeMachineName()
+        {
+            try
+            {
+                var name = Environment.MachineName;
+                return string.IsNullOrWhiteSpace(name) ? string.Empty : name;
+            }
+            catch
+            {
+                return string.Empty;
+            }
         }
 
         public string IntegrationUserName
@@ -231,16 +245,6 @@ namespace Wrestling.Entities
             {
                 _backupFolderPath = value;
                 OnPropertyChanged("BackupFolderPath");
-            }
-        }
-
-        public bool IsDiscoveryEnabled
-        {
-            get { return _isDiscoveryEnabled; }
-            set
-            {
-                _isDiscoveryEnabled = value;
-                OnPropertyChanged("IsDiscoveryEnabled");
             }
         }
 

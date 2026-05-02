@@ -34,6 +34,13 @@ namespace Wrestling.Providers.Network
         [JsonProperty("appVersion")]
         public string AppVersion { get; set; }
 
+        // Compact fingerprint of the sender's tournament state (groups +
+        // bracket/match versions). Receivers compare against their own to
+        // decide whether a pull is needed. Empty when the sender hasn't yet
+        // computed it (first announce after open).
+        [JsonProperty("stateHash")]
+        public string StateHash { get; set; }
+
         [JsonProperty("sentAt")]
         public DateTime SentAt { get; set; }
 

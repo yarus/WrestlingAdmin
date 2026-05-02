@@ -43,7 +43,6 @@ namespace Wrestling.Providers
                 IsBackupEnabled = info.IsBackupEnabled,
                 MaxBackupCount = info.MaxBackupCount,
                 BackupFolderPath = info.BackupFolderPath,
-                IsDiscoveryEnabled = info.IsDiscoveryEnabled,
                 DiscoveryPort = info.DiscoveryPort,
                 IsHttpServerEnabled = info.IsHttpServerEnabled,
                 HttpServerPort = info.HttpServerPort,
@@ -52,6 +51,15 @@ namespace Wrestling.Providers
                 AnnounceIpOverride = info.AnnounceIpOverride ?? string.Empty,
                 SignatureFooterImagePath = info.SignatureFooterImagePath
             };
+
+            // Legacy .wrt files saved before NodeName was an auto-default field
+            // come back with NodeName="". Without a NodeName the laptop is
+            // invisible to peers — fall back to MachineName so the user is
+            // discoverable out of the box and can rename later in Settings.
+            if (string.IsNullOrWhiteSpace(entity.NodeName))
+            {
+                try { entity.NodeName = Environment.MachineName ?? string.Empty; } catch { entity.NodeName = string.Empty; }
+            }
 
             // Legacy .wrt files saved before the backup feature shipped don't
             // carry MaxBackupCount. The GlobalSettingsInfo constructor seeds
@@ -92,7 +100,6 @@ namespace Wrestling.Providers
                 IsBackupEnabled = entity.IsBackupEnabled,
                 MaxBackupCount = entity.MaxBackupCount,
                 BackupFolderPath = entity.BackupFolderPath,
-                IsDiscoveryEnabled = entity.IsDiscoveryEnabled,
                 DiscoveryPort = entity.DiscoveryPort,
                 IsHttpServerEnabled = entity.IsHttpServerEnabled,
                 HttpServerPort = entity.HttpServerPort,
@@ -136,8 +143,6 @@ namespace Wrestling.Providers
                     });
                 }
             }
-
-            var importSources = info.ImportSources?.ToList() ?? new List<string>();
 
             foreach (var wrestler in wrestlers)
             {
@@ -208,8 +213,7 @@ namespace Wrestling.Providers
                 MainJudgePhone = info.MainJudgePhone,
                 MainSecretaryEmail = info.MainSecretaryEmail,
                 MainSecretaryPhone = info.MainSecretaryPhone,
-                EntryFee = info.EntryFee,
-                ImportSources = new ObservableCollection<string>(importSources)
+                EntryFee = info.EntryFee
             };
 
             if (!tournEntity.ID.HasValue)
@@ -450,8 +454,7 @@ namespace Wrestling.Providers
                 MainJudgePhone = item.MainJudgePhone,
                 MainSecretaryPhone = item.MainSecretaryPhone,
                 MainSecretaryEmail = item.MainSecretaryEmail,
-                EntryFee = item.EntryFee,
-                ImportSources = item.ImportSources.ToList()
+                EntryFee = item.EntryFee
             };
 
             if (!info.ID.HasValue)

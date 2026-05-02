@@ -86,8 +86,7 @@ public class AdapterEdgeCasesTests
                 }
             },
             Carpets = new List<CarpetInfo>(),
-            Slides = new List<ScreenSlideInfo>(),
-            ImportSources = new List<string>()
+            Slides = new List<ScreenSlideInfo>()
         };
 
         var entity = _adapter.GetEntityFromInfo(info);

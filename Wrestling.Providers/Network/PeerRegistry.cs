@@ -21,7 +21,7 @@ namespace Wrestling.Providers.Network
         public event EventHandler<DiscoveredPeer> PeerUpserted;
         public event EventHandler<DiscoveredPeer> PeerExpired;
 
-        public PeerRegistry() : this(TimeSpan.FromSeconds(6)) { }
+        public PeerRegistry() : this(TimeSpan.FromSeconds(15)) { }
 
         public PeerRegistry(TimeSpan expiry)
         {
@@ -77,6 +77,7 @@ namespace Wrestling.Providers.Network
                 peer.HttpUrl = ad.HttpUrl;
                 peer.UncPath = ad.UncPath;
                 peer.AppVersion = ad.AppVersion;
+                peer.StateHash = ad.StateHash ?? string.Empty;
                 peer.LastSeenUtc = now;
                 peer.SenderAddress = sender;
                 upserted = peer;

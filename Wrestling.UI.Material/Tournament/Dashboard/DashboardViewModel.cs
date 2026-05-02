@@ -16,7 +16,6 @@ using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Settings;
 using Wrestling.UI.Material.Slider;
-using Wrestling.UI.Material.Tournament.Import;
 using Wrestling.UI.Material.Tournament.Print;
 using Wrestling.UI.Material.Tournament.Print.PrintApplications;
 using Wrestling.UI.Material.Tournament.Print.PrintBracket;
@@ -50,7 +49,12 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         private IPanelView _scoreScreenView;
         private ScoreScreenViewModel _scoreScreenVm;
 
+        private PeerSyncStatusTracker _peerSyncTracker;
+
         #endregion
+
+        public System.Collections.ObjectModel.ObservableCollection<PeerStatusViewModel> PeerStatuses
+            => _peerSyncTracker?.Peers;
 
 
         public DashboardViewModel(IDiContainer container) : base(container)
@@ -71,6 +75,14 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
 
             _scoreScreenView = Resolve<IPanelView>("ScoreScreen");
             _scoreScreenVm = Resolve<ScoreScreenViewModel>();
+
+            // Wire the peer-sync read model lazily on first dashboard nav.
+            // Singleton in DI; binding survives across re-navigations to Home.
+            if (_peerSyncTracker == null)
+            {
+                _peerSyncTracker = Resolve<PeerSyncStatusTracker>();
+                OnPropertyChanged(nameof(PeerStatuses));
+            }
 
             _ = SetupAutoSaveAsync();
         }
@@ -100,7 +112,6 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
             {
                 return _drawerItems ?? (_drawerItems = new List<CommandButtonItem>
                 {
-                    new CommandButtonItem("Импорт", new RelayCommand(param => OpenImport(), param => true)),
                     new CommandButtonItem("Табло", new RelayCommand(param => OpenMonitor(), param => true)),
                     new CommandButtonItem("Настройки", new RelayCommand(param => OpenSettings(), param => true)),
                     new CommandButtonItem("Закрыть", new AsyncRelayCommand(param => CloseTournament(), param => true))
@@ -167,10 +178,6 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
 
         #region Private Methods
 
-        private void OpenImport()
-        {
-            NavigateToView<ImportViewModel>();
-        }
 
         private void OpenStanding()
         {

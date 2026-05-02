@@ -217,3 +217,32 @@ UI-удобство «опубликовать сейчас» (форс-flush в
 | **#12** | Дисквалификация спортсмена с турнира с каскадом | L |
 
 Всё остальное закрыто. «Сквозная архитектурная тема» (админ-панель + push-канал) снята: версионная модель + расширенный `Apply` уже покрывают раскатку структурных правок через обычный pull-импорт.
+
+---
+
+## Done — Convergence-driven sync (2026-05-03)
+
+После проектирования push-канала пришли к выводу, что та же UX даётся pull-only архитектурой за счёт UDP-гигрегации `stateHash` + event-driven pull. Реализовано:
+
+- **`PeerStateHasher`** (`Wrestling.Providers/Network/PeerStateHasher.cs`) — SHA256-prefix (16 hex) от канонической `(GroupID, FieldsVersion, BracketVersion) + (BracketFullNumber, MatchVersion)`. Идентичные состояния → идентичный хеш.
+- **`PeerAdvertisement.StateHash`** — поле в UDP-анонсе. Каждый пир вычисляет свой хеш перед отправкой через `Func<string> stateHashProvider` callback на `PeerDiscoveryService.StartForTournament`.
+- **`PeerSyncService`** (`Wrestling.UI.Material/Model/PeerSyncService.cs`) — слушает `IPeerDiscoveryService.PeerUpserted`. При `peer.StateHash != local`: `PrepareAsync` (threadpool) → `Apply` (UI). Per-peer дедуп по `(InstanceId, lastPulledHash)`. Autosave срабатывает только на `Outcome=Imported`.
+- **`PeerSyncStatusTracker`** (`Wrestling.UI.Material/Model/PeerSyncStatusTracker.cs`) — read-model для UI. ObservableCollection<PeerStatusViewModel> с тремя статусами (✅ синхронизирован / ⏳ догоняет / ⚠ не в сети). 5-минутный session-cache: пир, выпавший из `PeerRegistry`, остаётся в карточке как «не в сети» ещё 5 минут — оператор успевает заметить.
+- **Card «Синхронизация»** — добавлена в `DashboardView.xaml` после «Слайдер». Имена пиров + статус-иконки.
+- **UDP timing tuned** — `PeerDiscoveryService.AnnounceInterval` 2с → 5с, `PeerRegistry` expire 6с → 15с. На LAN в реалистичной нагрузке UDP-болтовня ~120 Б/с aggregate в steady-state, HTTP-pull срабатывает только при реальной дивергенции.
+
+**Удалено:**
+- `Tournament.ImportSources` (entity, DTO, adapter обе ветки) — discovery становится единственным механизмом sync.
+- `GlobalSettings.IsDiscoveryEnabled` — discovery всегда включён.
+- `GlobalSettings.ImportSeconds` (через `ImportViewModel` deprecation) — таймер ушёл.
+- `ImportViewModel` целиком + `ImportView.xaml` + DataTemplate в `MainWindow.xaml` + DI-регистрация в `App.xaml.cs` + запись в `NavigationService`.
+- Drawer-пункт «Импорт» в `DashboardViewModel`.
+- Тесты `ImportAutosaveTests.cs` (бил тестировал ImportViewModel.ImportDataAsync — путь упразднён).
+
+**Migration / backward-compat:**
+- Старые `.wrt` грузятся: Newtonsoft молча дропает удалённые поля (`ImportSources`, `IsDiscoveryEnabled`, `AutosaveMaxSecond`).
+- `NodeName` пустой → автоматически подставляется `Environment.MachineName` в `EntityToInfoAdapter.GetEntityFromInfo` и в `GlobalSettings` ctor. Старые ноуты после обновления сразу discoverable без явной настройки.
+
+**Live-match-during-pull edge case:** оставлен на ответственность оператора ковра. Карпет, у которого идёт live-матч в группе, у которой `BracketVersion` бампится, потеряет live-state объекта `WrestlingMatch` (как и при текущем pull). Это операторский вопрос, не протокольный — оператор видит в карточке, что он отстал, и физически решает.
+
+**Результаты тестов** на 2026-05-03: 219 пройдено / 0 упало (Wrestling.Entities.Tests 56, Wrestling.Providers.Tests 51, Wrestling.DataAccess.Tests 23, Wrestling.UI.Material.Tests 89).

@@ -250,11 +250,41 @@
                             <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Left" HorizontalAlignment="Left" Margin="8 4 8 8"
-                                            
+
                                             Command="{Binding Path=OpenSliderControlCommand}">ОТКРЫТЬ</Button>
                                 </DockPanel>
                             </Border>
 
+                        </Grid>
+                    </materialDesign:Card>
+
+                    <materialDesign:Card Width="420" Margin="8 2 4 16" Height="240">
+                        <Grid VerticalAlignment="Stretch" Margin="16">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="0 0 0 8">Синхронизация</TextBlock>
+
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding Path=PeerStatuses}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0 4 0 4">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="28" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" FontSize="16" Text="{Binding StatusGlyph}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" FontSize="14" Text="{Binding NodeName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="2" FontSize="12" Text="{Binding StatusText}" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center" Margin="8 0 0 0" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
                         </Grid>
                     </materialDesign:Card>
                 </WrapPanel>

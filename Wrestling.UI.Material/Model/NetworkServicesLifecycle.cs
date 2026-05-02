@@ -69,7 +69,6 @@ namespace Wrestling.UI.Material.Model
             switch (e.PropertyName)
             {
                 case nameof(GlobalSettings.NodeName):
-                case nameof(GlobalSettings.IsDiscoveryEnabled):
                 case nameof(GlobalSettings.DiscoveryPort):
                 case nameof(GlobalSettings.IsHttpServerEnabled):
                 case nameof(GlobalSettings.HttpServerPort):
@@ -107,7 +106,7 @@ namespace Wrestling.UI.Material.Model
             // otherwise peers see a bunch of nameless nodes and can't tell who
             // is who. HTTP server may still be serving (see above) so operator
             // can manually point peers at this node via UNC.
-            if (settings.IsDiscoveryEnabled && !string.IsNullOrEmpty(settings.NodeName))
+            if (!string.IsNullOrEmpty(settings.NodeName))
             {
                 _discovery.StartForTournament(
                     port: settings.DiscoveryPort,
@@ -115,7 +114,8 @@ namespace Wrestling.UI.Material.Model
                     tournamentTitle: tournament.Name ?? string.Empty,
                     nodeName: settings.NodeName,
                     httpUrl: httpUrl ?? string.Empty,
-                    uncPath: settings.SelfUncPath ?? string.Empty);
+                    uncPath: settings.SelfUncPath ?? string.Empty,
+                    stateHashProvider: () => Wrestling.Providers.Network.PeerStateHasher.Compute(_dataContext.Tournament));
 
                 ArmFirewallHint();
             }

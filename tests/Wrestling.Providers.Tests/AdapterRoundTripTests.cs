@@ -163,7 +163,6 @@ public class AdapterRoundTripTests
     {
         var settings = new GlobalSettings
         {
-            IsDiscoveryEnabled = false,
             DiscoveryPort = 40000,
             IsHttpServerEnabled = false,
             HttpServerPort = 40001,
@@ -176,7 +175,6 @@ public class AdapterRoundTripTests
         var info = _adapter.GetInfoFromEntity(t);
         var restored = _adapter.GetEntityFromInfo(info);
 
-        restored.Settings.IsDiscoveryEnabled.Should().BeFalse();
         restored.Settings.DiscoveryPort.Should().Be(40000);
         restored.Settings.IsHttpServerEnabled.Should().BeFalse();
         restored.Settings.HttpServerPort.Should().Be(40001);
@@ -190,7 +188,9 @@ public class AdapterRoundTripTests
     {
         // Simulates a .wrt saved before the discovery feature: the persisted
         // DiscoveryPort/HttpServerPort are missing (0), NodeName absent.
-        // The info constructor seeds defaults, the adapter normalizes zero-ports.
+        // The info constructor seeds defaults, the adapter normalizes zero-ports
+        // and falls back to MachineName for an empty NodeName so the laptop is
+        // discoverable out of the box.
         var legacyInfo = new Wrestling.Data.TournamentInfo
         {
             ID = Guid.NewGuid(),
@@ -200,11 +200,10 @@ public class AdapterRoundTripTests
 
         var restored = _adapter.GetEntityFromInfo(legacyInfo);
 
-        restored.Settings.IsDiscoveryEnabled.Should().BeTrue();
         restored.Settings.DiscoveryPort.Should().Be(24565);
         restored.Settings.IsHttpServerEnabled.Should().BeTrue();
         restored.Settings.HttpServerPort.Should().Be(24566);
-        restored.Settings.NodeName.Should().BeEmpty();
+        restored.Settings.NodeName.Should().Be(Environment.MachineName);
         restored.Settings.SelfUncPath.Should().BeEmpty();
         restored.Settings.AnnounceIpOverride.Should().BeEmpty();
     }

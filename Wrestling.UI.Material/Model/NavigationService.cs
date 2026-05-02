@@ -5,7 +5,6 @@ using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Settings;
 using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Material.Tournament.Dashboard;
-using Wrestling.UI.Material.Tournament.Import;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
 using Wrestling.UI.Material.Tournament.Results;
@@ -33,7 +32,6 @@ namespace Wrestling.UI.Material.Model
                 new SettingsViewModel(_container),
                 new MatchControlViewModel(_container),
                 new MatchResultsViewModel(_container),
-                new ImportViewModel(_container),
                 new BracketsViewModel(_container),
                 new ResultsViewModel(_container),
                 new DashboardViewModel(_container),

@@ -14,6 +14,7 @@ namespace Wrestling.Providers.Network
         public string HttpUrl { get; internal set; }
         public string UncPath { get; internal set; }
         public string AppVersion { get; internal set; }
+        public string StateHash { get; internal set; }
         public DateTime LastSeenUtc { get; internal set; }
         public IPAddress SenderAddress { get; internal set; }
 

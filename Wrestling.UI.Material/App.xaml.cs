@@ -48,6 +48,8 @@ namespace Wrestling.UI.Material
             // flushes final announce/response cycles and frees the UDP/TCP
             // ports faster for restarts.
             var di = DiContainer.Instance;
+            try { di.Resolve<PeerSyncStatusTracker>()?.Dispose(); } catch { }
+            try { di.Resolve<PeerSyncService>()?.Dispose(); } catch { }
             try { di.Resolve<NetworkServicesLifecycle>()?.Dispose(); } catch { }
             try { (di.Resolve<IPeerDiscoveryService>() as IDisposable)?.Dispose(); } catch { }
             try { (di.Resolve<ITournamentHttpServer>() as IDisposable)?.Dispose(); } catch { }
@@ -333,6 +335,23 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             di.Add<IPeerDiscoveryService>(discovery);
             di.Add<ITournamentHttpServer>(httpServer);
             di.Add<NetworkServicesLifecycle>(new NetworkServicesLifecycle(dc, discovery, httpServer));
+
+            // PeerSyncService listens for incoming peer advertisements with a
+            // divergent stateHash and pulls+applies via the existing importer.
+            // Replaces the old DispatcherTimer-based pull import. Constructed
+            // here (after discovery/importer/manager are registered) on the UI
+            // dispatcher so Apply marshals correctly.
+            di.Add<PeerSyncService>(new PeerSyncService(
+                discovery,
+                dc,
+                di.Resolve<ITournamentImporter>(),
+                di.Resolve<ITournamentsManager>(),
+                Current.Dispatcher));
+
+            // Read-model for the Dashboard "Синхронизация" Card. Holds an
+            // ObservableCollection<PeerStatusViewModel> with live status and
+            // a 5-minute session-cache for recently disconnected peers.
+            di.Add<PeerSyncStatusTracker>(new PeerSyncStatusTracker(discovery, dc, Current.Dispatcher));
 
             di.Add(new WwfScoreScreenView(), "ScoreScreen");
 

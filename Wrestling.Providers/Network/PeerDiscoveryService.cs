@@ -13,8 +13,8 @@ namespace Wrestling.Providers.Network
     // in and out of sockets. Safe to call Start/Stop repeatedly.
     public sealed class PeerDiscoveryService : IPeerDiscoveryService
     {
-        private static readonly TimeSpan DefaultAnnounceInterval = TimeSpan.FromSeconds(2);
-        private static readonly TimeSpan DefaultExpiry = TimeSpan.FromSeconds(6);
+        private static readonly TimeSpan DefaultAnnounceInterval = TimeSpan.FromSeconds(5);
+        private static readonly TimeSpan DefaultExpiry = TimeSpan.FromSeconds(15);
         private static readonly TimeSpan DefaultExpiryTick = TimeSpan.FromSeconds(1);
 
         private readonly Guid _instanceId = Guid.NewGuid();
@@ -31,6 +31,7 @@ namespace Wrestling.Providers.Network
         private volatile bool _running;
         private int _activePort;
         private PeerAdvertisement _currentAd;
+        private Func<string> _stateHashProvider;
 
         public event EventHandler<DiscoveredPeer> PeerUpserted;
         public event EventHandler<DiscoveredPeer> PeerExpired;
@@ -56,7 +57,7 @@ namespace Wrestling.Providers.Network
             return _registry.Snapshot();
         }
 
-        public void StartForTournament(int port, Guid tournamentId, string tournamentTitle, string nodeName, string httpUrl, string uncPath)
+        public void StartForTournament(int port, Guid tournamentId, string tournamentTitle, string nodeName, string httpUrl, string uncPath, Func<string> stateHashProvider = null)
         {
             Stop();
 
@@ -69,12 +70,14 @@ namespace Wrestling.Providers.Network
                 NodeName = nodeName ?? string.Empty,
                 HttpUrl = httpUrl ?? string.Empty,
                 UncPath = uncPath ?? string.Empty,
-                AppVersion = _appVersion
+                AppVersion = _appVersion,
+                StateHash = string.Empty
             };
 
             lock (_stateLock)
             {
                 _currentAd = ad;
+                _stateHashProvider = stateHashProvider;
                 _activePort = port;
                 _registry.SetContext(_instanceId, tournamentId);
 
@@ -112,6 +115,7 @@ namespace Wrestling.Providers.Network
                 try { _listener?.Close(); } catch { }
                 _listener = null;
                 _currentAd = null;
+                _stateHashProvider = null;
                 _activePort = 0;
             }
             _registry.Clear();
@@ -158,10 +162,16 @@ namespace Wrestling.Providers.Network
         private void AnnounceSafely()
         {
             PeerAdvertisement ad;
-            lock (_stateLock) { ad = _currentAd; }
+            Func<string> hashProvider;
+            lock (_stateLock) { ad = _currentAd; hashProvider = _stateHashProvider; }
             if (ad == null) return;
 
             ad.SentAt = _clock();
+            if (hashProvider != null)
+            {
+                try { ad.StateHash = hashProvider() ?? string.Empty; }
+                catch { ad.StateHash = string.Empty; }
+            }
             byte[] bytes;
             try { bytes = ad.ToBytes(); }
             catch (Exception ex)

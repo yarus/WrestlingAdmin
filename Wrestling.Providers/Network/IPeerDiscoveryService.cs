@@ -17,7 +17,8 @@ namespace Wrestling.Providers.Network
             string tournamentTitle,
             string nodeName,
             string httpUrl,
-            string uncPath);
+            string uncPath,
+            Func<string> stateHashProvider = null);
 
         void Stop();
     }

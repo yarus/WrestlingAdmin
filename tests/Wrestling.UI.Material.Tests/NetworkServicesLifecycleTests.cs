@@ -28,7 +28,7 @@ public sealed class NetworkServicesLifecycleTests
 
         public IReadOnlyCollection<DiscoveredPeer> SnapshotPeers() => Array.Empty<DiscoveredPeer>();
 
-        public void StartForTournament(int port, Guid tournamentId, string tournamentTitle, string nodeName, string httpUrl, string uncPath)
+        public void StartForTournament(int port, Guid tournamentId, string tournamentTitle, string nodeName, string httpUrl, string uncPath, Func<string> stateHashProvider = null)
         {
             StartCalls++;
             LastPort = port;
@@ -56,12 +56,11 @@ public sealed class NetworkServicesLifecycleTests
         public void Dispose() { }
     }
 
-    private static Entities.Tournament MakeTournament(string nodeName = "Ковёр 1", bool discoveryOn = true, bool httpOn = true, int discoveryPort = 30001, int httpPort = 30002)
+    private static Entities.Tournament MakeTournament(string nodeName = "Ковёр 1", bool httpOn = true, int discoveryPort = 30001, int httpPort = 30002)
     {
         var t = new Entities.Tournament(new GlobalSettings
         {
             NodeName = nodeName,
-            IsDiscoveryEnabled = discoveryOn,
             IsHttpServerEnabled = httpOn,
             DiscoveryPort = discoveryPort,
             HttpServerPort = httpPort
@@ -137,20 +136,4 @@ public sealed class NetworkServicesLifecycleTests
         h.StartCalls.Should().Be(1);
     }
 
-    [Fact]
-    public void Disabling_IsDiscoveryEnabled_in_settings_stops_discovery_only()
-    {
-        var dc = new DataContext();
-        var d = new FakeDiscovery();
-        var h = new FakeHttpServer();
-        using var _ = new NetworkServicesLifecycle(dc, d, h);
-        var t = MakeTournament();
-        dc.Tournament = t;
-        int hStartBefore = h.StartCalls;
-
-        t.Settings.IsDiscoveryEnabled = false;
-
-        d.StopCalls.Should().BeGreaterThanOrEqualTo(1);
-        h.StartCalls.Should().BeGreaterThan(hStartBefore - 1, "http server should continue running across the restart cycle");
-    }
 }
