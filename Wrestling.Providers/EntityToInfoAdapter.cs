@@ -304,7 +304,9 @@ namespace Wrestling.Providers
                 ID = info.ID,
                 IsFemale = info.IsFemale,
                 WeightMax = info.WeightMax,
-                Wrestlers = groupWrestlers
+                Wrestlers = groupWrestlers,
+                FieldsVersion = info.FieldsVersion,
+                BracketVersion = info.BracketVersion
             };
 
             entity.Bracket = GetEntityFromInfo(info.Bracket, entity, groupWrestlers);
@@ -541,7 +543,9 @@ namespace Wrestling.Providers
                 BirthYearMax = group.BirthYearMax,
                 BirthYearMin = group.BirthYearMin,
                 WeightMax = group.WeightMax,
-                IsFemale = group.IsFemale
+                IsFemale = group.IsFemale,
+                FieldsVersion = group.FieldsVersion,
+                BracketVersion = group.BracketVersion
             };
 
             return groupInfo;

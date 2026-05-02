@@ -229,6 +229,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             {
                 group.CarpetID = null;
                 group.CarpetLabel = string.Empty;
+                group.FieldsVersion++;
             }
 
             Items.Remove(carpet);
@@ -252,6 +253,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
                 {
                     vm.SelectedGroup.CarpetLabel = carpet.Name;
                     vm.SelectedGroup.CarpetID = carpet.ID;
+                    vm.SelectedGroup.FieldsVersion++;
                     carpet.Groups.Add(vm.SelectedGroup);
                     carpet.RefreshStats();
                     OnPropertyChanged("UnbindedGroups");
@@ -271,6 +273,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
                 carpet.Groups.Remove(group);
                 group.CarpetID = null;
                 group.CarpetLabel = string.Empty;
+                group.FieldsVersion++;
                 Items = new ObservableCollection<Carpet>(DataContext.Tournament.Carpets);
 
                 GenerateMatchNumbers();

@@ -317,7 +317,12 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
                 new VideoSlide(di)
             });
 
-            di.Add<ITournamentImporter>(new TournamentImporter(di.Resolve<ITournamentsManager>(), di.Resolve<List<IGroupBracketProcessor>>()));
+            di.Add<IMatchNumbersGenerator>(new CarpetMatchNumbersGenerator());
+
+            di.Add<ITournamentImporter>(new TournamentImporter(
+                di.Resolve<ITournamentsManager>(),
+                di.Resolve<List<IGroupBracketProcessor>>(),
+                di.Resolve<IMatchNumbersGenerator>()));
 
             // Network services: peer discovery via UDP broadcast + embedded
             // HTTP server that serves this node's .wrt. Both are singletons and
@@ -334,8 +339,6 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             di.Add<ISliderWindowManager>(new SliderWindowManager(di));
 
             di.Add(new PrintView(), "PrintHost");
-
-            di.Add<IMatchNumbersGenerator>(new CarpetMatchNumbersGenerator());
 
             di.Add<ITeamResultsCalculator>(new TeamResultsCalculator());
 

@@ -31,5 +31,9 @@ namespace Wrestling.Data
         public int? BirthYearMax { get; set; }
         [DataMember]
         public double? WeightMax { get; set; }
+        [DataMember]
+        public int FieldsVersion { get; set; }
+        [DataMember]
+        public int BracketVersion { get; set; }
     }
 }

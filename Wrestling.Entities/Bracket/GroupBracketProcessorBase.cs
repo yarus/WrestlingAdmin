@@ -35,6 +35,14 @@ namespace Wrestling.Entities.Bracket
             };
 
             GenerateRounds();
+
+            // Bump the per-group BracketVersion so peers detect the bracket
+            // rebuild during import. This is the ONLY place BracketVersion is
+            // bumped — field edits (timing, name, CarpetID) don't affect
+            // bracket shape and use FieldsVersion instead. Since Generate()
+            // builds from the current Wrestlers list, the new bracket and the
+            // membership it implies travel together as one atomic unit.
+            Group.BracketVersion++;
         }
 
         protected abstract void GenerateMainRounds();

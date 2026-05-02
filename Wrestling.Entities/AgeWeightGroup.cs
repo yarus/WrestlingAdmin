@@ -22,6 +22,8 @@ namespace Wrestling.Entities
         private GroupBracket _bracket;
         private List<Wrestler> _wrestlers;
         private bool _isExpanded;
+        private int _fieldsVersion;
+        private int _bracketVersion;
 
         #endregion
 
@@ -162,6 +164,34 @@ namespace Wrestling.Entities
             {
                 _wrestlers = value;
                 OnPropertyChanged("Wrestlers");
+            }
+        }
+
+        // Bumped by high-level group field edits (timing, CarpetID, name/age/
+        // weight ranges) — anything that does NOT change bracket shape. Apply
+        // copies the new field values onto the local group and cascades the
+        // new timing into local pending matches without touching the bracket.
+        public int FieldsVersion
+        {
+            get { return _fieldsVersion; }
+            set
+            {
+                _fieldsVersion = value;
+                OnPropertyChanged("FieldsVersion");
+            }
+        }
+
+        // Bumped only by IGroupBracketProcessor.Generate() — i.e. the bracket
+        // was rebuilt from scratch. Apply replaces the bracket and Wrestlers
+        // list wholesale, then re-applies any locally-newer match completions
+        // so other carpets do not lose their work.
+        public int BracketVersion
+        {
+            get { return _bracketVersion; }
+            set
+            {
+                _bracketVersion = value;
+                OnPropertyChanged("BracketVersion");
             }
         }
 

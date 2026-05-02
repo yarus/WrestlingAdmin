@@ -78,7 +78,7 @@ public sealed class TournamentImporterHttpTests
             {
                 Response = MakeTarget(name: "Ярыгин")
             };
-            var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>());
+            var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>(), null);
 
             var plan = await importer.PrepareAsync(target, "http://127.0.0.1:" + port + "/tournament/" + id + ".wrt");
 
@@ -110,7 +110,7 @@ public sealed class TournamentImporterHttpTests
 
             var target = MakeTarget();
             var mgr = new CapturingTournamentsManager();
-            var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>());
+            var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>(), null);
 
             var plan = await importer.PrepareAsync(
                 target,
@@ -133,7 +133,7 @@ public sealed class TournamentImporterHttpTests
         var unusedPort = FindFreePort();
         var target = MakeTarget();
         var mgr = new CapturingTournamentsManager();
-        var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>());
+        var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>(), null);
 
         var plan = await importer.PrepareAsync(
             target,
@@ -153,7 +153,7 @@ public sealed class TournamentImporterHttpTests
         {
             Response = MakeTarget()
         };
-        var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>());
+        var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>(), null);
 
         var plan = await importer.PrepareAsync(target, @"\\host\share\tournament.wrt");
 
@@ -178,7 +178,7 @@ public sealed class TournamentImporterHttpTests
             {
                 Response = MakeTarget()
             };
-            var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>());
+            var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>(), null);
 
             var plan = await importer.PrepareAsync(target, unreachableHttp + "|" + localPath);
 
@@ -204,7 +204,7 @@ public sealed class TournamentImporterHttpTests
         var remote = MakeTarget(name: "Renamed");
         remote.ID = id;
         var mgr = new CapturingTournamentsManager { Response = remote };
-        var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>());
+        var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>(), null);
 
         var fakeFile = Path.Combine(Path.GetTempPath(), "id-match-" + Guid.NewGuid().ToString("N") + ".wrt");
         File.WriteAllBytes(fakeFile, Encoding.UTF8.GetBytes("{}"));
@@ -228,7 +228,7 @@ public sealed class TournamentImporterHttpTests
         var remote = MakeTarget(name: "Ярыгин 2026");
         remote.ID = Guid.NewGuid();
         var mgr = new CapturingTournamentsManager { Response = remote };
-        var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>());
+        var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>(), null);
 
         var fakeFile = Path.Combine(Path.GetTempPath(), "id-mismatch-" + Guid.NewGuid().ToString("N") + ".wrt");
         File.WriteAllBytes(fakeFile, Encoding.UTF8.GetBytes("{}"));
@@ -251,7 +251,7 @@ public sealed class TournamentImporterHttpTests
 
         var target = MakeTarget();
         var mgr = new CapturingTournamentsManager();
-        var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>());
+        var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>(), null);
 
         var plan = await importer.PrepareAsync(target, unreachable1 + "|" + unreachable2);
 
@@ -274,7 +274,7 @@ public sealed class TournamentImporterHttpTests
 
             var target = MakeTarget();
             var mgr = new CapturingTournamentsManager { Response = MakeTarget() };
-            var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>());
+            var importer = new TournamentImporter(mgr, new List<IGroupBracketProcessor>(), null);
 
             await importer.PrepareAsync(target, "http://127.0.0.1:" + port + "/tournament/" + id + ".wrt");
 

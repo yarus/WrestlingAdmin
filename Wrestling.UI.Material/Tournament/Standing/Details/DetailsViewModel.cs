@@ -203,6 +203,11 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
                     ApplyTimingsToPendingMatches(item);
                     RemoveWrestlersWhichNotFeatToGroupLimits(item);
                     UpdateWrestlersGroupData(item);
+
+                    // Bump per-group FieldsVersion so peers pick up the new
+                    // timing / age / weight / female / name on next import tick
+                    // and cascade timing into their own pending matches.
+                    item.FieldsVersion++;
                 }
             }
         }
