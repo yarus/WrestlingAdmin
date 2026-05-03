@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Net;
 using System.Threading;
+using System.Windows.Threading;
 using Wrestling.Entities;
 using Wrestling.Providers.Network;
 
@@ -25,17 +26,19 @@ namespace Wrestling.UI.Material.Model
         private readonly IDataContext _dataContext;
         private readonly IPeerDiscoveryService _discovery;
         private readonly ITournamentHttpServer _httpServer;
+        private readonly Dispatcher _uiDispatcher;
 
         private GlobalSettings _subscribedSettings;
         private Timer _firewallHintTimer;
 
         public event EventHandler<string> DiagnosticMessage;
 
-        public NetworkServicesLifecycle(IDataContext dataContext, IPeerDiscoveryService discovery, ITournamentHttpServer httpServer)
+        public NetworkServicesLifecycle(IDataContext dataContext, IPeerDiscoveryService discovery, ITournamentHttpServer httpServer, Dispatcher uiDispatcher = null)
         {
             _dataContext = dataContext;
             _discovery = discovery;
             _httpServer = httpServer;
+            _uiDispatcher = uiDispatcher;
             _dataContext.TournamentChanged += OnTournamentChanged;
             _discovery.DiagnosticMessage += Bubble;
             _httpServer.DiagnosticMessage += Bubble;
@@ -115,9 +118,33 @@ namespace Wrestling.UI.Material.Model
                     nodeName: settings.NodeName,
                     httpUrl: httpUrl ?? string.Empty,
                     uncPath: settings.SelfUncPath ?? string.Empty,
-                    stateHashProvider: () => Wrestling.Providers.Network.PeerStateHasher.Compute(_dataContext.Tournament));
+                    stateHashProvider: ComputeStateHashOnUiThread);
 
                 ArmFirewallHint();
+            }
+        }
+
+        // Hash callback fires from PeerDiscoveryService.AnnounceSafely on a
+        // threadpool Timer thread. PeerStateHasher.Compute walks
+        // ObservableCollection<AgeWeightGroup> + ObservableCollection<Round> +
+        // List<WrestlingMatch> — all of which the UI thread can be mutating
+        // (bracket regen, group edit, match completion). Iterating without
+        // marshaling throws InvalidOperationException intermittently. Bouncing
+        // through the UI dispatcher serializes hash-compute against UI mutation.
+        private string ComputeStateHashOnUiThread()
+        {
+            var t = _dataContext?.Tournament;
+            if (t == null) return string.Empty;
+            if (_uiDispatcher == null) return PeerStateHasher.Compute(t);
+            try
+            {
+                return _uiDispatcher.Invoke(() => PeerStateHasher.Compute(_dataContext.Tournament));
+            }
+            catch
+            {
+                // Dispatcher shutdown / disposed — fall back to direct compute;
+                // worst case the announce skips this tick.
+                return string.Empty;
             }
         }
 

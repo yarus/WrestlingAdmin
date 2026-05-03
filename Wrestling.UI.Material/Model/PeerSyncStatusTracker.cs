@@ -21,22 +21,24 @@ namespace Wrestling.UI.Material.Model
     // 5-minute boundary even though no event fired).
     public sealed class PeerSyncStatusTracker : IDisposable
     {
-        private static readonly TimeSpan SessionCacheRetention = TimeSpan.FromMinutes(5);
+        public static readonly TimeSpan SessionCacheRetention = TimeSpan.FromMinutes(5);
         private static readonly TimeSpan RefreshInterval = TimeSpan.FromSeconds(2);
 
         private readonly IPeerDiscoveryService _discovery;
         private readonly IDataContext _dataContext;
         private readonly Dispatcher _uiDispatcher;
         private readonly DispatcherTimer _refreshTimer;
+        private readonly Func<DateTime> _clock;
         private readonly Dictionary<Guid, PeerStatusViewModel> _byInstance = new Dictionary<Guid, PeerStatusViewModel>();
 
         public ObservableCollection<PeerStatusViewModel> Peers { get; } = new ObservableCollection<PeerStatusViewModel>();
 
-        public PeerSyncStatusTracker(IPeerDiscoveryService discovery, IDataContext dc, Dispatcher uiDispatcher)
+        public PeerSyncStatusTracker(IPeerDiscoveryService discovery, IDataContext dc, Dispatcher uiDispatcher, Func<DateTime> clock = null)
         {
             _discovery = discovery;
             _dataContext = dc;
             _uiDispatcher = uiDispatcher;
+            _clock = clock ?? (() => DateTime.UtcNow);
 
             if (_discovery != null)
             {
@@ -48,9 +50,14 @@ namespace Wrestling.UI.Material.Model
                 _dataContext.TournamentChanged += OnTournamentChanged;
             }
 
-            _refreshTimer = new DispatcherTimer { Interval = RefreshInterval };
-            _refreshTimer.Tick += (s, e) => Refresh();
-            _refreshTimer.Start();
+            // DispatcherTimer requires a running Dispatcher (i.e. WPF UI). In
+            // unit tests we pass a null dispatcher and call Refresh() directly.
+            if (_uiDispatcher != null)
+            {
+                _refreshTimer = new DispatcherTimer { Interval = RefreshInterval };
+                _refreshTimer.Tick += (s, e) => Refresh();
+                _refreshTimer.Start();
+            }
         }
 
         private void OnTournamentChanged(object sender, Entities.Tournament tournament)
@@ -99,11 +106,13 @@ namespace Wrestling.UI.Material.Model
             Refresh();
         }
 
-        private void Refresh()
+        // Internal so tests can drive the refresh tick without spinning up a
+        // real WPF DispatcherTimer.
+        internal void Refresh()
         {
             var local = _dataContext?.Tournament;
             var localHash = local != null ? PeerStateHasher.Compute(local) : string.Empty;
-            var now = DateTime.UtcNow;
+            var now = _clock();
 
             // Iterate snapshot to allow removal mid-loop.
             var snapshot = new List<PeerStatusViewModel>(_byInstance.Values);
@@ -121,7 +130,7 @@ namespace Wrestling.UI.Material.Model
 
         public void Dispose()
         {
-            _refreshTimer.Stop();
+            _refreshTimer?.Stop();
             if (_discovery != null)
             {
                 _discovery.PeerUpserted -= OnPeerUpserted;

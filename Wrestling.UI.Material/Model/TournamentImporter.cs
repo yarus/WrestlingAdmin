@@ -149,6 +149,14 @@ namespace Wrestling.UI.Material.Model
         // into a local file path the tournaments manager can read. HTTP sources
         // are streamed into a temp file so the rest of the pipeline doesn't
         // need to know about the network origin.
+        //
+        // **W2.1**: 3 attempts with backoff 200ms→500ms→1.2s on transient
+        // exceptions. Mirrors the retry policy already shipped for SMB reads
+        // in JsonStorageDataAccess.ReadFromFileAsync — a peer mid-File.Replace
+        // or a wifi micro-pause on a 5 sec timeout otherwise surfaces as
+        // FileUnavailable and forces the operator to wait for the next
+        // hash-divergence cycle. 4xx responses are NOT retried (404 = peer
+        // serves a different tournament; retry is futile).
         private async Task<FetchOutcome> FetchLocalCopyAsync(string source)
         {
             if (!IsHttpUri(source))
@@ -156,28 +164,58 @@ namespace Wrestling.UI.Material.Model
                 return new FetchOutcome(ok: true, localPath: source, isTemp: false);
             }
 
-            var tempPath = Path.Combine(Path.GetTempPath(), "wrt-import-" + Guid.NewGuid().ToString("N") + ".wrt");
-            try
+            const int maxAttempts = 3;
+            int[] backoffMs = { 200, 500, 1200 };
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                using (var response = await _httpClient.GetAsync(source, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+                var tempPath = Path.Combine(Path.GetTempPath(), "wrt-import-" + Guid.NewGuid().ToString("N") + ".wrt");
+                try
                 {
-                    if (!response.IsSuccessStatusCode)
+                    using (var response = await _httpClient.GetAsync(source, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
                     {
-                        FileLogger.Log("Import.http", source, "HTTP " + (int)response.StatusCode + " " + response.ReasonPhrase);
-                        return FetchOutcome.Failed;
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            FileLogger.Log("Import.http", source,
+                                "HTTP " + (int)response.StatusCode + " " + response.ReasonPhrase + " (attempt " + attempt + "/" + maxAttempts + ", no retry on 4xx/5xx)");
+                            return FetchOutcome.Failed;
+                        }
+                        using (var netStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                        using (var fileStream = File.Create(tempPath))
+                        {
+                            await netStream.CopyToAsync(fileStream).ConfigureAwait(false);
+                        }
                     }
-                    using (var netStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                    using (var fileStream = File.Create(tempPath))
-                    {
-                        await netStream.CopyToAsync(fileStream).ConfigureAwait(false);
-                    }
+                    return new FetchOutcome(ok: true, localPath: tempPath, isTemp: true);
                 }
-                return new FetchOutcome(ok: true, localPath: tempPath, isTemp: true);
+                catch (Exception ex) when (IsTransientHttp(ex))
+                {
+                    SafeDeleteTempFile(tempPath);
+                    FileLogger.Log("Import.http", source, "attempt " + attempt + "/" + maxAttempts + ": " + ex.GetType().Name + " " + ex.Message);
+                    if (attempt < maxAttempts)
+                    {
+                        try { await Task.Delay(backoffMs[attempt - 1]).ConfigureAwait(false); } catch { }
+                        continue;
+                    }
+                    return FetchOutcome.Failed;
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    // Permission errors don't get better with retry.
+                    SafeDeleteTempFile(tempPath);
+                    FileLogger.Log("Import.http", source, ex);
+                    return FetchOutcome.Failed;
+                }
             }
-            catch (HttpRequestException ex) { SafeDeleteTempFile(tempPath); FileLogger.Log("Import.http", source, ex); return FetchOutcome.Failed; }
-            catch (TaskCanceledException ex) { SafeDeleteTempFile(tempPath); FileLogger.Log("Import.http", source, ex); return FetchOutcome.Failed; }
-            catch (IOException ex) { SafeDeleteTempFile(tempPath); FileLogger.Log("Import.http", source, ex); return FetchOutcome.Failed; }
-            catch (UnauthorizedAccessException ex) { SafeDeleteTempFile(tempPath); FileLogger.Log("Import.http", source, ex); return FetchOutcome.Failed; }
+
+            return FetchOutcome.Failed;
+        }
+
+        private static bool IsTransientHttp(Exception ex)
+        {
+            return ex is HttpRequestException
+                || ex is TaskCanceledException
+                || ex is IOException;
         }
 
         private static bool IsHttpUri(string source)
