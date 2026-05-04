@@ -29,9 +29,12 @@ public sealed class FakeNavigationService : INavigationService
     public List<Type> NavigatedTo { get; } = new();
     public int CloseApps { get; private set; }
     public List<ViewModelBase> PrintPreviews { get; } = new();
+    public Dictionary<Type, ViewModelBase> RegisteredViewModels { get; } = new();
 
     public void LoadNavigation() { }
     public void NavigateToView<T>() where T : ViewModelBase => NavigatedTo.Add(typeof(T));
+    public T GetViewModel<T>() where T : ViewModelBase
+        => RegisteredViewModels.TryGetValue(typeof(T), out var vm) ? vm as T : null;
     public void ShowPrintPreview(ViewModelBase vm) => PrintPreviews.Add(vm);
     public void CloseApp() => CloseApps++;
 }

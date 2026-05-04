@@ -183,6 +183,64 @@ Inner Grid `VerticalAlignment="Center"` — текст центрируется 
 
 `BitmapCacheOption.OnLoad` + `Freeze()` обязательны: без них исходный файл лочится до GC, что мешает пользователю переписать стамп.
 
+## Прямая печать (без PDF) через VisualPrinter
+
+Когда нужно отправить XAML-вьюху сразу на принтер (а не сохранять PDF) — используй существующий `VisualPrinter.PrintAcrossPages`, а не «сгенерируй PDF → открой через `Process.Start` с verb=print». Канонический паттерн (см. `Tournament/Print/PrintView.xaml.cs:15-25`):
+
+```csharp
+var dlg = new PrintDialog();
+if (dlg.ShowDialog() == true)
+{
+    if (!VisualPrinter.PrintAcrossPages(dlg, view, "Печать"))
+        MessageBox.Show("Ошибка печати. Попробуйте еще раз.");
+}
+```
+
+`PrintDialog.ShowDialog()` сам показывает выбор принтера + настройки страницы. `VisualPrinter` рендерит off-tree (см. секцию выше) и отправляет в очередь. Никаких temp-файлов, никаких внешних PDF-ридеров.
+
+## `documentName` для PrintDialog должен быть литералом без переменной кириллицы
+
+Имя задания, которое мы передаём в `VisualPrinter.PrintAcrossPages(dlg, view, jobName)`, в итоге попадает в `PrintDialog.PrintDocument(paginator, jobName)`. **Microsoft Print to PDF (и, вероятно, часть других драйверов) портит кириллицу в этом поле**: строка приходит в title bar PDF-вьювера как UTF-8-байты, прочитанные как Latin-1 (`Расписание - Ковер` → `Ð€Ð°Ñ†Ð¸Ñ†Ð°Ð½Ð¸Ðµ - ÐıÐ¾Ð²ÐµÑ•`). Само содержимое PDF (рендер XAML через `RenderTargetBitmap`) от этого не страдает — кириллица там нормальная.
+
+Решение — передавать **фиксированную короткую строку** того же стиля, что в `PrintView.xaml.cs` («Печать»). Не интерполируй имя ковра/группы/чего угодно прямо в `documentName`. Контекст (какой ковёр, какая группа) живёт в самом теле PDF через биндинги (`Stat.CarpetLabel`, `SelectedGroup.Name` и т.п.) — этого достаточно.
+
+Менее очевидная альтернатива — транслитерировать кириллицу в латиницу — выглядит как «костыль» и захламляет код таблицей `а→a, б→b, …`. Если данные действительно нужны в имени задания, лучше сначала проверь, что они там вообще видны (физический принтер обычно отображает имя в очереди печати, а PDF-драйвер — в title bar полученного файла).
+
+## `SharedSizeGroup` несовместим с `Width="<пиксели>"` на `ColumnDefinition`
+
+Если у `ColumnDefinition` явная пиксельная ширина (`Width="120"`) и одновременно `SharedSizeGroup="Foo"` — WPF под капотом ведёт колонку как `Auto` (сжимается к самому широкому контенту), а не как 120 пикселей. Симптом: HorizontalAlignment="Center" на содержимом колонки визуально не центрирует, потому что центрировать не в чем — колонка ровно по ширине контента.
+
+```xml
+<!-- ❌ неправильно: WPF трактует как Auto, 120 игнорируется -->
+<ColumnDefinition Width="120" SharedSizeGroup="ColTeams" />
+
+<!-- ✅ правильно: либо Auto + SharedSize -->
+<ColumnDefinition Width="Auto" SharedSizeGroup="ColTeams" />
+
+<!-- ✅ правильно: либо явные пиксели без SharedSize -->
+<ColumnDefinition Width="120" />
+```
+
+Колонки с одинаковой явной пиксельной шириной в разных Grid'ах (header + строки данных) выровняются и без `SharedSizeGroup` — за счёт совпадения чисел. `SharedSizeGroup` нужен **только** для синхронизации `Auto`-колонок поперёк нескольких Grid-областей в одной `Grid.IsSharedSizeScope="True"`.
+
+## `TextAlignment="Center"` ≠ `HorizontalAlignment="Center"` в табличных print-вьюхах
+
+Для надёжного центрирования текста по центру колонки в print-таблицах (`ItemsControl` + `Grid` per-row) используй `TextAlignment="Center"`, а не `HorizontalAlignment="Center"`.
+
+- `HorizontalAlignment="Center"` сжимает TextBlock до натуральной ширины контента и центрирует **TextBlock** внутри родителя. В `StackPanel`-контейнере это срабатывает только если StackPanel сам растянут на всю ширину Grid-ячейки — что часто **не** так.
+- `TextAlignment="Center"` центрирует **текст** внутри ширины TextBlock'а. TextBlock по умолчанию `HorizontalAlignment="Stretch"` в Grid-ячейке → занимает всю ширину колонки → текст центрирован относительно колонки.
+
+Симптом «центрирование не работает»: заголовок выглядит сдвинутым к левому краю / стартует в той же x-координате, что более широкое содержимое строки данных. Замена `HorizontalAlignment="Center"` → `TextAlignment="Center"` чинит мгновенно.
+
+## Star-sized колонки в print-таблицах: ItemsControl + Grid, не ListView + GridView
+
+`GridViewColumn` **не поддерживает** `Width="*"` нативно. Если в print-таблице нужна одна колонка-«заполнитель» (например «Баллы» — пустое место под рукописные оценки), а остальные — фиксированные пиксели:
+
+- ❌ `ListView` + `GridView` со `<GridViewColumn Width="???">` — звёздочка не работает, биндинг к `ActualWidth` родителя через конвертер хрупок.
+- ✅ `ItemsControl` с `DataTemplate`, в котором каждая строка — `Grid` с явными `ColumnDefinitions` (mix фикс-пикселей и `*`). Шапку выкладывай отдельным Grid'ом сверху с теми же `ColumnDefinitions`.
+
+Пример — `PrintScheduleView.xaml`. Заголовки и строки в двух разных Grid'ах с идентичными `ColumnDefinitions` (`40 / 150 / * / 120 / Auto / 40`) — выравниваются за счёт совпадения чисел.
+
 ## Чек-лист при добавлении новой XAML-вьюхи в bulk-экспорт
 
 ## Чек-лист при добавлении новой XAML-вьюхи в bulk-экспорт

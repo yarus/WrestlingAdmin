@@ -9,7 +9,6 @@ using Wrestling.Entities;
 using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Tournament.Dashboard;
-using Wrestling.UI.Material.Tournament.Print.PrintSchedule;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
 using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
@@ -23,7 +22,6 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         private CarpetStats _selectedCarpet;
 
         private ICommand _openMatchCommand;
-        private ICommand _printProtocolCommand;
         private ICommand _changeCarpetCommand;
 
         private IList<CommandButtonItem> _quickButtons;
@@ -159,29 +157,11 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             }
         }
 
-
-        public ICommand PrintProtocolCommand
-        {
-            get
-            {
-                if (_printProtocolCommand == null)
-                {
-                    _printProtocolCommand = new RelayCommand(param => PrintSchedule((Guid)param), param => param != null);
-                }
-                return _printProtocolCommand;
-            }
-        }
-
         #endregion
 
         protected override void OnBackCommand()
         {
             NavigateToView<DashboardViewModel>();
-        }
-
-        private void PrintSchedule(Guid carpetID)
-        {
-            ShowPrintPreview(new PrintScheduleViewModel(DiContainer, _carpets.FirstOrDefault(c => c.ID == carpetID)));
         }
 
         private void ChangeCarpet(CarpetStats carpet)

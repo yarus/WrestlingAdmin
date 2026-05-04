@@ -15,14 +15,19 @@ namespace Wrestling.UI.Material.Tournament.Standing
     public class StandingViewModel : TournamentViewModelBase
     {
         #region Fields
-        
+
         private IStandingPageViewModel _currentPage;
 
         private List<IStandingPageViewModel> _pageViewModels;
-       
+
         private ICommand _changePageCommand;
         private ICommand _prevPageCommand;
         private ICommand _nextPageCommand;
+
+        // One-shot deep-link target. Set by callers (e.g. Dashboard) before
+        // navigating to StandingViewModel; consumed and cleared in InitData
+        // so the next plain navigation falls back to the first page.
+        private IStandingPageViewModel _pendingInitialPage;
 
         #endregion
 
@@ -202,8 +207,18 @@ namespace Wrestling.UI.Material.Tournament.Standing
 
         private void SetupCurrentPage()
         {
-            CurrentPage = PageViewModels[0];
+            var target = _pendingInitialPage ?? PageViewModels[0];
+            _pendingInitialPage = null;
+            CurrentPage = target;
             CurrentPage.InitData();
+        }
+
+        // Deep-link entry point: pre-position the next navigation onto a
+        // specific sub-page. One-shot — consumed by InitData.
+        public void SetInitialPage<TPage>() where TPage : class, IStandingPageViewModel
+        {
+            if (_pageViewModels == null) InitPages();
+            _pendingInitialPage = _pageViewModels.OfType<TPage>().FirstOrDefault();
         }
     }
 }

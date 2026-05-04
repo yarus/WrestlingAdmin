@@ -45,6 +45,7 @@ namespace Wrestling.UI.Material.Model
         private readonly IDataContext _dataContext;
         private readonly ITournamentImporter _importer;
         private readonly ITournamentsManager _tournService;
+        private readonly IResultsService _resultsService;
         private readonly Dispatcher _uiDispatcher;
         private readonly Func<DateTime> _clock;
 
@@ -58,6 +59,7 @@ namespace Wrestling.UI.Material.Model
             IDataContext dataContext,
             ITournamentImporter importer,
             ITournamentsManager tournService,
+            IResultsService resultsService,
             Dispatcher uiDispatcher,
             Func<DateTime> clock = null)
         {
@@ -65,6 +67,7 @@ namespace Wrestling.UI.Material.Model
             _dataContext = dataContext;
             _importer = importer;
             _tournService = tournService;
+            _resultsService = resultsService;
             _uiDispatcher = uiDispatcher;
             _clock = clock ?? (() => DateTime.UtcNow);
 
@@ -233,6 +236,8 @@ namespace Wrestling.UI.Material.Model
 
             if (result.Outcome == ImportOutcome.Imported)
             {
+                _resultsService?.Recalculate(target);
+
                 await SaveIfAutosaveEnabledAsync(target);
             }
 

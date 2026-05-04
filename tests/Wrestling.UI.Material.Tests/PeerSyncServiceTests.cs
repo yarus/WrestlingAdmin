@@ -98,7 +98,7 @@ public sealed class PeerSyncServiceTests
     }
 
     private static (PeerSyncService svc, StubImporter imp, FakeTournamentsManager mgr, DataContext dc, TestDiscovery disc, FuncClock clock)
-        Build(Entities.Tournament tournament = null, ImportOutcome outcome = ImportOutcome.Imported)
+        Build(Entities.Tournament tournament = null, ImportOutcome outcome = ImportOutcome.Imported, IResultsService resultsService = null)
     {
         var dc = new DataContext { Tournament = tournament ?? new Entities.Tournament(new GlobalSettings()) { Name = "T", FileName = "tournament.wrt" } };
         var imp = new StubImporter { NextOutcome = outcome };
@@ -107,8 +107,20 @@ public sealed class PeerSyncServiceTests
         var clock = new FuncClock();
         // Pass null dispatcher — we call HandlePeerAsync directly to bypass the
         // marshal-to-UI step.
-        var svc = new PeerSyncService(disc, dc, imp, mgr, uiDispatcher: null, clock: () => clock.Now);
+        var svc = new PeerSyncService(disc, dc, imp, mgr, resultsService: resultsService, uiDispatcher: null, clock: () => clock.Now);
         return (svc, imp, mgr, dc, disc, clock);
+    }
+
+    private sealed class StubResultsService : IResultsService
+    {
+        public List<Entities.Tournament> RecalculateCalls { get; } = new();
+        public IReadOnlyList<Entities.Results.TournamentResult> AllResults { get; private set; } = new List<Entities.Results.TournamentResult>();
+        public IReadOnlyList<Entities.Results.TournamentTeamResult> TeamResults { get; private set; } = new List<Entities.Results.TournamentTeamResult>();
+        public IReadOnlyList<Entities.WrestlerAchievement> Achievements { get; private set; } = new List<Entities.WrestlerAchievement>();
+#pragma warning disable CS0067
+        public event Action ResultsChanged;
+#pragma warning restore CS0067
+        public void Recalculate(Entities.Tournament tournament) => RecalculateCalls.Add(tournament);
     }
 
     private sealed class FuncClock { public DateTime Now { get; set; } = DateTime.UtcNow; }
@@ -336,5 +348,36 @@ public sealed class PeerSyncServiceTests
         await svc.HandlePeerAsync(MakePeer(Guid.NewGuid(), "h"));
 
         mgr.SaveAsyncCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Imported_outcome_triggers_results_recalc()
+    {
+        // Recalc must fire on the SAME tournament instance held by DataContext —
+        // and only once per merge, before the autosave hook.
+        var rs = new StubResultsService();
+        var (svc, _, _, dc, _, _) = Build(outcome: ImportOutcome.Imported, resultsService: rs);
+
+        await svc.HandlePeerAsync(MakePeer(Guid.NewGuid(), "remote-hash"));
+
+        rs.RecalculateCalls.Should().HaveCount(1);
+        rs.RecalculateCalls[0].Should().BeSameAs(dc.Tournament);
+    }
+
+    [Theory]
+    [InlineData(ImportOutcome.NoNewData)]
+    [InlineData(ImportOutcome.FileUnavailable)]
+    [InlineData(ImportOutcome.Error)]
+    [InlineData(ImportOutcome.TournamentMismatch)]
+    public async Task NonImported_outcomes_do_not_trigger_results_recalc(ImportOutcome outcome)
+    {
+        // No new completed matches merged → results haven't changed → no
+        // recalc cost. Mirrors the autosave gate's "Imported only" rule.
+        var rs = new StubResultsService();
+        var (svc, _, _, _, _, _) = Build(outcome: outcome, resultsService: rs);
+
+        await svc.HandlePeerAsync(MakePeer(Guid.NewGuid(), "remote-hash"));
+
+        rs.RecalculateCalls.Should().BeEmpty();
     }
 }

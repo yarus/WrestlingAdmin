@@ -54,7 +54,6 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" materialDesign:RippleAssist.IsCentered="True">
@@ -62,15 +61,15 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />                        
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    
+
                     <Border BorderThickness="1" Grid.Column="1" Grid.ColumnSpan="2" BorderBrush="DarkGray"></Border>
 
                     <Button Grid.Column="0" Style="{DynamicResource MaterialDesignToolButton}">
                         <materialDesign:PackIcon Kind="Magnify" Opacity=".56" />
                     </Button>
-                    
+
                     <TextBox Grid.Column="1" Margin="8 0 0 0" materialDesign:HintAssist.Hint="Поиск по фамилии"
                              materialDesign:TextFieldAssist.DecorationVisibility="Hidden" BorderThickness="0"
                              MinWidth="200" VerticalAlignment="Center" Text="{Binding FilterString, UpdateSourceTrigger=PropertyChanged, Delay=1000}" />
@@ -84,11 +83,6 @@
                 <Run Text="Осталось схваток:" />
                 <Run Text="{Binding SelectedCarpet.MatchesLeft, Mode=OneWay}" />
             </TextBlock>
-
-            <Button Grid.Column="3" ToolTip="Распечатать протоколы ближайших схваток" VerticalAlignment="Center" HorizontalAlignment="Center"
-                                                Command="{Binding Path=DataContext.PrintProtocolCommand, ElementName=RootControl}" CommandParameter="{Binding SelectedCarpet.CarpetID}" Margin="20,0,20,0">
-                <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0" Padding="0" />
-            </Button>
 
         </Grid>
     

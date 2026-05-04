@@ -56,6 +56,8 @@ namespace Wrestling.UI.Material.Tournament
             DataContext.Group = null;
             DataContext.WrestlingMatch = null;
 
+            Resolve<IResultsService>().Recalculate(null);
+
             NavigateToView<HomeViewModel>();
         }
 

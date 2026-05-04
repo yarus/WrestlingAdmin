@@ -7,6 +7,7 @@ using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
+using Wrestling.Providers;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
@@ -564,6 +565,8 @@ namespace Wrestling.UI.Material.Match
             // another peer.
             if (DataContext.Tournament != null)
             {
+                Resolve<IResultsService>().Recalculate(DataContext.Tournament);
+
                 await SaveIfAutosaveEnabledAsync();
             }
 
@@ -620,6 +623,8 @@ namespace Wrestling.UI.Material.Match
 
             if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
             {
+                Resolve<IResultsService>().Recalculate(DataContext.Tournament);
+
                 await SaveIfAutosaveEnabledAsync();
 
                 NavigateToMatches();

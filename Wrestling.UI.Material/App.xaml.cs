@@ -326,6 +326,31 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
                 di.Resolve<List<IGroupBracketProcessor>>(),
                 di.Resolve<IMatchNumbersGenerator>()));
 
+            di.Add<ITeamResultsCalculator>(new TeamResultsCalculator());
+
+            di.Add(new OlympicTeamResultsOrderer(), "OlympicOrderer");
+            di.Add(new MedalsTeamResultsOrderer(), "MedalsOrderer");
+            di.Add(new PointsTeamResultsOrderer(), "PointsOrderer");
+
+            di.Add<List<IAchievementCalculator>>(new List<IAchievementCalculator>
+            {
+                new FastestWinAchievementCalculator(),
+                new FastestActionAchievementCalculator(),
+                new MostAmplitudeActionsAchievementCalculator(),
+                new MostPointsCountAchievementCalculator(),
+                new MostTusheWinsAchievementCalculator(),
+                new MostDominationWinsAchievementCalculator(),
+                new WinInLast10SecondsAchievementCalculator()
+            });
+
+            // Event-driven cache of computed tournament results. Recalculated
+            // on tournament open/close, match approve/revert and peer-sync
+            // merge. Consumer VMs subscribe to ResultsChanged.
+            di.Add<IResultsService>(new ResultsService(
+                di.Resolve<List<IGroupBracketProcessor>>(),
+                di.Resolve<ITeamResultsCalculator>(),
+                di.Resolve<List<IAchievementCalculator>>()));
+
             // Network services: peer discovery via UDP broadcast + embedded
             // HTTP server that serves this node's .wrt. Both are singletons and
             // are driven by NetworkServicesLifecycle (below) which watches the
@@ -346,6 +371,7 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
                 dc,
                 di.Resolve<ITournamentImporter>(),
                 di.Resolve<ITournamentsManager>(),
+                di.Resolve<IResultsService>(),
                 Current.Dispatcher));
 
             // Read-model for the Dashboard "Синхронизация" Card. Holds an
@@ -358,23 +384,6 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             di.Add<ISliderWindowManager>(new SliderWindowManager(di));
 
             di.Add(new PrintView(), "PrintHost");
-
-            di.Add<ITeamResultsCalculator>(new TeamResultsCalculator());
-
-            di.Add(new OlympicTeamResultsOrderer(), "OlympicOrderer");
-            di.Add(new MedalsTeamResultsOrderer(), "MedalsOrderer");
-            di.Add(new PointsTeamResultsOrderer(), "PointsOrderer");
-
-            di.Add<List<IAchievementCalculator>>(new List<IAchievementCalculator>
-            {
-                new FastestWinAchievementCalculator(),
-                new FastestActionAchievementCalculator(),
-                new MostAmplitudeActionsAchievementCalculator(),
-                new MostPointsCountAchievementCalculator(),
-                new MostTusheWinsAchievementCalculator(),
-                new MostDominationWinsAchievementCalculator(),
-                new WinInLast10SecondsAchievementCalculator()
-            });
 
             di.Add<IKeyHandler>(new KeyHandler());
 

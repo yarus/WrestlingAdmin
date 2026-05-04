@@ -9,6 +9,7 @@ using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Tournament.Dashboard;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
+using Wrestling.UI.Material.Tournament.Results.PersonalResults;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Results
@@ -185,7 +186,7 @@ namespace Wrestling.UI.Material.Tournament.Results
 
         private void OpenResults()
         {
-            NavigateToView<ResultsViewModel>();
+            NavigateToView<PersonalResultsViewModel>();
         }
     }
 }

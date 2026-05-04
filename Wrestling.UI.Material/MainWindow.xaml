@@ -9,6 +9,9 @@
         xmlns:settings="clr-namespace:Wrestling.UI.Material.Settings"
         xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
         xmlns:results="clr-namespace:Wrestling.UI.Material.Tournament.Results"
+        xmlns:personalResults="clr-namespace:Wrestling.UI.Material.Tournament.Results.PersonalResults"
+        xmlns:teamResults="clr-namespace:Wrestling.UI.Material.Tournament.Results.TeamResults"
+        xmlns:achievements="clr-namespace:Wrestling.UI.Material.Tournament.Results.Achievements"
         xmlns:match="clr-namespace:Wrestling.UI.Material.Match"
         xmlns:standing="clr-namespace:Wrestling.UI.Material.Tournament.Standing"
         xmlns:dashboard="clr-namespace:Wrestling.UI.Material.Tournament.Dashboard"
@@ -61,8 +64,14 @@
             <DataTemplate DataType="{x:Type printBracket:PrintBracketViewModel}">
                 <printBracket:PrintBracketView />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type results:ResultsViewModel}">
-                <results:ResultsView />
+            <DataTemplate DataType="{x:Type personalResults:PersonalResultsViewModel}">
+                <personalResults:PersonalResultsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type teamResults:TeamResultsViewModel}">
+                <teamResults:TeamResultsView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type achievements:AchievementsViewModel}">
+                <achievements:AchievementsView />
             </DataTemplate>
             <DataTemplate DataType="{x:Type brackets1:BracketsViewModel}">
                 <brackets1:BracketsView />

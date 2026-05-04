@@ -8,7 +8,11 @@ using Wrestling.UI.Material.Tournament.Dashboard;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
 using Wrestling.UI.Material.Tournament.Results;
+using Wrestling.UI.Material.Tournament.Results.Achievements;
+using Wrestling.UI.Material.Tournament.Results.PersonalResults;
+using Wrestling.UI.Material.Tournament.Results.TeamResults;
 using Wrestling.UI.Material.Tournament.Standing;
+// CompletedMatchesViewModel still lives under Tournament.Results — keep that namespace.
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Model
@@ -33,7 +37,9 @@ namespace Wrestling.UI.Material.Model
                 new MatchControlViewModel(_container),
                 new MatchResultsViewModel(_container),
                 new BracketsViewModel(_container),
-                new ResultsViewModel(_container),
+                new PersonalResultsViewModel(_container),
+                new TeamResultsViewModel(_container),
+                new AchievementsViewModel(_container),
                 new DashboardViewModel(_container),
                 new ScheduleViewModel(_container),
                 new CompletedMatchesViewModel(_container),
@@ -68,8 +74,8 @@ namespace Wrestling.UI.Material.Model
         }
 
         public IShellViewModel ShellVm { get; set; }
-        
-        private T GetViewModel<T>() where T : ViewModelBase
+
+        public T GetViewModel<T>() where T : ViewModelBase
         {
             return _viewModels.FirstOrDefault(p => p is T) as T;
         }

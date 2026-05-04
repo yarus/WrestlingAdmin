@@ -128,6 +128,8 @@ namespace Wrestling.UI.Material.Home
 
                     UpdateCache();
 
+                    Resolve<IResultsService>().Recalculate(tournament);
+
                     NavigateToView<DashboardViewModel>();
                 }
             }
@@ -231,6 +233,8 @@ namespace Wrestling.UI.Material.Home
                 Status = TournamentStatus.Pending,
                 StartDate = DateTime.Now.AddDays(1)
             };
+
+            Resolve<IResultsService>().Recalculate(DataContext.Tournament);
 
             if (DataContext.Tournament.Settings.IsAutosaveEnabled)
             {
