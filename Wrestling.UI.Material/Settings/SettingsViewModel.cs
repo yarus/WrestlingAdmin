@@ -1,21 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Media;
 using System.Net;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
 using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
-using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
-using Wrestling.Providers;
 using Wrestling.Providers.Network;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
@@ -35,10 +31,9 @@ namespace Wrestling.UI.Material.Settings
         private ICommand _browseSignatureFooterImageCommand;
         private ICommand _removeSignatureFooterImageCommand;
         private ICommand _copyPublicUrlCommand;
-        private ICommand _configureShareCommand;
-        private ICommand _disableShareCommand;
 
         private string _validation;
+        private GlobalSettings _subscribedItem;
 
         public SettingsViewModel(IDiContainer container) : base(container)
         {
@@ -48,7 +43,50 @@ namespace Wrestling.UI.Material.Settings
         {
             base.InitData();
 
+            if (_subscribedItem != null)
+            {
+                _subscribedItem.PropertyChanged -= OnItemPropertyChanged;
+                _subscribedItem = null;
+            }
+
             Item = DataContext.Tournament == null ? Resolve<GlobalSettings>() : DataContext.Tournament.Settings;
+
+            if (Item != null)
+            {
+                Item.PropertyChanged += OnItemPropertyChanged;
+                _subscribedItem = Item;
+            }
+
+            OnPropertyChanged(nameof(EffectiveBackupFolderHint));
+        }
+
+        private void OnItemPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(GlobalSettings.BackupFolderPath))
+            {
+                OnPropertyChanged(nameof(EffectiveBackupFolderHint));
+            }
+        }
+
+        // Shows the operator the actual folder backups will be written into,
+        // mirroring TournamentDataAccess.GetBackupFolder root resolution:
+        // empty/whitespace path → <tournament-dir>/Backups, relative path →
+        // resolved against tournament dir, absolute path → used as-is. Empty
+        // when no tournament is open (general Settings, nothing to resolve).
+        public string EffectiveBackupFolderHint
+        {
+            get
+            {
+                var fileName = DataContext?.Tournament?.FileName;
+                if (string.IsNullOrEmpty(fileName)) return string.Empty;
+                var dir = Path.GetDirectoryName(fileName) ?? string.Empty;
+                var configured = Item?.BackupFolderPath;
+                if (!string.IsNullOrWhiteSpace(configured))
+                {
+                    return Path.IsPathRooted(configured) ? configured : Path.Combine(dir, configured);
+                }
+                return Path.Combine(dir, "Backups");
+            }
         }
 
         public override string PageTitle => DataContext.Tournament == null ? "Общие Настройки" : "Настройки Турнира";
@@ -81,45 +119,6 @@ namespace Wrestling.UI.Material.Settings
                 }
 
                 OnPropertyChanged("IsAuthenticated");
-            }
-        }
-
-        public bool IsAutosaveEnabled
-        {
-            get { return Item.IsAutosaveEnabled; }
-            set
-            {
-                Item.IsAutosaveEnabled = value;
-
-                if (Item.IsAutosaveEnabled && DataContext.Tournament != null && string.IsNullOrEmpty(DataContext.Tournament.FileName))
-                {
-                    var settings = new SaveFileDialogSettings
-                    {
-                        Title = "Сохранить турнир",
-                        CheckFileExists = false,
-                        OverwritePrompt = true,
-                        InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                        Filter = "Wrestling Tournament (*.wrt)|*.wrt|All Files (*.*)|*.*"
-                    };
-
-                    bool? success = Dialog.ShowSaveFileDialog(this, settings);
-                    if (success == true)
-                    {
-                        DataContext.Tournament.Settings.IsAutosaveEnabled = true;
-
-                        var tournService = Resolve<ITournamentsManager>();
-
-                        var result = tournService.SaveToFile(DataContext.Tournament, settings.FileName);
-                        ShowSnackMessage(result ? "Турнир сохранен! Автосохранение включено." : "При сохранении произошла ошибка!");
-
-                        if (!result)
-                        {
-                            Item.IsAutosaveEnabled = false;
-                        }
-                    }
-                }
-
-                OnPropertyChanged("IsAutosaveEnabled");
             }
         }
 
@@ -545,197 +544,6 @@ namespace Wrestling.UI.Material.Settings
                 // happened without crashing the settings page.
                 ShowSnackMessage("Не удалось скопировать — попробуйте ещё раз.");
             }
-        }
-
-        public ICommand ConfigureShareCommand
-        {
-            get
-            {
-                if (_configureShareCommand == null)
-                {
-                    _configureShareCommand = new RelayCommand(
-                        param => ConfigureShare(),
-                        param => true
-                    );
-                }
-                return _configureShareCommand;
-            }
-        }
-
-        // Fires a one-shot Windows share configuration for the folder the
-        // operator picks. Shelling out to `net share` via the `runas` verb
-        // triggers the UAC prompt so an operator without admin rights can
-        // still consent interactively — setting up a share programmatically
-        // without a UAC prompt would require service-level privileges we
-        // deliberately don't run with.
-        private void ConfigureShare()
-        {
-            var initialPath = GetCurrentTournamentFolder();
-            var folderSettings = new FolderBrowserDialogSettings
-            {
-                Description = "Выберите папку с .wrt для раздачи соседям",
-                ShowNewFolderButton = false,
-                SelectedPath = initialPath
-            };
-
-            bool? ok = Dialog.ShowFolderBrowserDialog(this, folderSettings);
-            if (ok != true) return;
-
-            var folder = folderSettings.SelectedPath;
-            if (string.IsNullOrEmpty(folder)) return;
-
-            var shareName = SanitizeShareName(Path.GetFileName(folder.TrimEnd('\\', '/')));
-            if (string.IsNullOrEmpty(shareName)) shareName = "WrestlingTournament";
-
-            try
-            {
-                // `pause` keeps the cmd window open so the operator can see
-                // whether the share was created, reused, or rejected (a
-                // name-collision error is common on re-runs).
-                //
-                // Resolve the "Everyone" group to its localized name via the
-                // well-known SID — a literal "Everyone" fails with system
-                // error 1332 on non-English Windows (the group is "Все" on
-                // ru-RU). The SID itself is identical across locales.
-                var everyone = ResolveEveryoneGroupName();
-                var arguments = "/c net share \"" + shareName + "=" + folder + "\" /GRANT:\"" + everyone + "\",READ /REMARK:\"WrestlingAdmin\" & pause";
-                var psi = new ProcessStartInfo("cmd.exe", arguments)
-                {
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
-                Process.Start(psi);
-            }
-            catch (Win32Exception ex)
-            {
-                // Win32 1223 = user denied the UAC prompt. Anything else is a
-                // more fundamental failure (shell unavailable, etc.).
-                if (ex.NativeErrorCode == 1223)
-                {
-                    ShowSnackMessage("Настройка общего доступа отменена.");
-                }
-                else
-                {
-                    ShowSnackMessage("Не удалось запустить настройку: " + ex.Message);
-                }
-                return;
-            }
-
-            // Prefill SelfUncPath so the operator doesn't have to type it out —
-            // even if the share command itself fails or is cancelled in the
-            // elevated cmd window, the path is a correct starting guess they
-            // can edit. The .wrt leaf is appended only if the currently-open
-            // tournament is under the shared folder.
-            var ip = LocalIpAddressProbe.PickDefault();
-            if (IPAddress.IsLoopback(ip)) return;
-
-            var unc = @"\\" + ip + @"\" + shareName;
-            var tournamentFile = DataContext?.Tournament?.FileName;
-            if (!string.IsNullOrEmpty(tournamentFile) &&
-                tournamentFile.StartsWith(folder, StringComparison.OrdinalIgnoreCase))
-            {
-                var rel = tournamentFile.Substring(folder.Length).TrimStart('\\', '/');
-                unc = unc + @"\" + rel;
-            }
-            Item.SelfUncPath = unc;
-            OnPropertyChanged("Item");
-        }
-
-        private string GetCurrentTournamentFolder()
-        {
-            var file = DataContext?.Tournament?.FileName;
-            if (!string.IsNullOrEmpty(file))
-            {
-                try { return Path.GetDirectoryName(file); }
-                catch { }
-            }
-            return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        }
-
-        private static string SanitizeShareName(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return null;
-            var clean = Regex.Replace(name, @"[^A-Za-z0-9_\-]", "");
-            if (string.IsNullOrEmpty(clean)) return null;
-            return clean.Length > 80 ? clean.Substring(0, 80) : clean;
-        }
-
-        private static string ResolveEveryoneGroupName()
-        {
-            try
-            {
-                var sid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
-                var account = (NTAccount)sid.Translate(typeof(NTAccount));
-                return account.Value;
-            }
-            catch
-            {
-                return "Everyone";
-            }
-        }
-
-        public ICommand DisableShareCommand
-        {
-            get
-            {
-                if (_disableShareCommand == null)
-                {
-                    _disableShareCommand = new RelayCommand(
-                        param => DisableShare(),
-                        param => Item != null && !string.IsNullOrEmpty(Item.SelfUncPath)
-                    );
-                }
-                return _disableShareCommand;
-            }
-        }
-
-        // Symmetrical to ConfigureShare: parses the share name out of the
-        // currently-set UNC, runs `net share <name> /DELETE` elevated, and
-        // clears the SelfUncPath field regardless. Clearing the field even on
-        // OS-level failure is intentional — an operator who hits "отключить"
-        // wants the UI state to reflect intent; if the share still exists on
-        // Windows they can see the cmd output and retry manually.
-        private void DisableShare()
-        {
-            if (Item == null) return;
-            var shareName = TryGetShareNameFromUnc(Item.SelfUncPath);
-
-            if (!string.IsNullOrEmpty(shareName))
-            {
-                try
-                {
-                    var arguments = "/c net share \"" + shareName + "\" /DELETE & pause";
-                    var psi = new ProcessStartInfo("cmd.exe", arguments)
-                    {
-                        UseShellExecute = true,
-                        Verb = "runas"
-                    };
-                    Process.Start(psi);
-                }
-                catch (Win32Exception ex)
-                {
-                    if (ex.NativeErrorCode == 1223)
-                    {
-                        ShowSnackMessage("Отключение общего доступа отменено.");
-                        return;
-                    }
-                    ShowSnackMessage("Не удалось запустить отключение: " + ex.Message);
-                    return;
-                }
-            }
-
-            Item.SelfUncPath = string.Empty;
-            OnPropertyChanged("Item");
-        }
-
-        private static string TryGetShareNameFromUnc(string unc)
-        {
-            if (string.IsNullOrEmpty(unc)) return null;
-            // Expected: \\host\sharename[\optional\path]
-            var trimmed = unc.TrimStart('\\', '/');
-            var parts = trimmed.Split(new[] { '\\', '/' }, 3);
-            if (parts.Length < 2) return null;
-            return string.IsNullOrEmpty(parts[1]) ? null : parts[1];
         }
 
         #endregion

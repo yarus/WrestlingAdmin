@@ -12,12 +12,11 @@ namespace Wrestling.Data
             // before overlaying JSON properties, so explicit "IsBackupEnabled":
             // false in a saved file still wins.
             IsBackupEnabled = true;
-            MaxBackupCount = 10;
+            MaxBackupCount = 20;
             DiscoveryPort = 24565;
             IsHttpServerEnabled = true;
             HttpServerPort = 24566;
             NodeName = string.Empty;
-            SelfUncPath = string.Empty;
             AnnounceIpOverride = string.Empty;
         }
 
@@ -25,8 +24,6 @@ namespace Wrestling.Data
         public bool IsTimerBackward { get; set; }
         [DataMember]
         public bool IsSoundEnabled { get; set; }
-        [DataMember]
-        public bool IsAutosaveEnabled { get; set; }
         [DataMember]
         public int SliderMaxSecond { get; set; }
         [DataMember]
@@ -59,8 +56,6 @@ namespace Wrestling.Data
         public int HttpServerPort { get; set; }
         [DataMember]
         public string NodeName { get; set; }
-        [DataMember]
-        public string SelfUncPath { get; set; }
         [DataMember]
         public string AnnounceIpOverride { get; set; }
         [DataMember]

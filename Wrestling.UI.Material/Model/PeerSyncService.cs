@@ -194,7 +194,7 @@ namespace Wrestling.UI.Material.Model
 
         private async Task<ImportOutcome> PullAndApplyAsync(DiscoveredPeer peer, Entities.Tournament target)
         {
-            var source = !string.IsNullOrEmpty(peer.HttpUrl) ? peer.HttpUrl : peer.UncPath;
+            var source = peer.HttpUrl;
             if (string.IsNullOrEmpty(source)) return ImportOutcome.Error;
             if (target == null) return ImportOutcome.Error;
 
@@ -238,16 +238,19 @@ namespace Wrestling.UI.Material.Model
             {
                 _resultsService?.Recalculate(target);
 
-                await SaveIfAutosaveEnabledAsync(target);
+                await SaveAfterMergeAsync(target);
             }
 
             return result.Outcome;
         }
 
-        private async Task SaveIfAutosaveEnabledAsync(Entities.Tournament target)
+        // Persist after a peer-sync merge. Same gate as the UI-side
+        // SaveIfAutosaveEnabledAsync hook: no FileName means the operator
+        // never picked a save path, so we skip silently rather than pop a
+        // dialog from a background sync tick.
+        private async Task SaveAfterMergeAsync(Entities.Tournament target)
         {
-            if (target?.Settings == null) return;
-            if (!target.Settings.IsAutosaveEnabled) return;
+            if (target == null) return;
             if (string.IsNullOrEmpty(target.FileName)) return;
 
             try

@@ -38,7 +38,6 @@ namespace Wrestling.Providers
                 StartGongSoundPath = info.StartGongSoundPath,
                 SliderMaxSecond = info.SliderMaxSecond,
                 SliderOpacityValue = info.SliderOpacityValue,
-                IsAutosaveEnabled = info.IsAutosaveEnabled,
                 IsOverlayOlympic = info.IsOverlayOlympic,
                 IsBackupEnabled = info.IsBackupEnabled,
                 MaxBackupCount = info.MaxBackupCount,
@@ -47,7 +46,6 @@ namespace Wrestling.Providers
                 IsHttpServerEnabled = info.IsHttpServerEnabled,
                 HttpServerPort = info.HttpServerPort,
                 NodeName = info.NodeName ?? string.Empty,
-                SelfUncPath = info.SelfUncPath ?? string.Empty,
                 AnnounceIpOverride = info.AnnounceIpOverride ?? string.Empty,
                 SignatureFooterImagePath = info.SignatureFooterImagePath
             };
@@ -63,10 +61,10 @@ namespace Wrestling.Providers
 
             // Legacy .wrt files saved before the backup feature shipped don't
             // carry MaxBackupCount. The GlobalSettingsInfo constructor seeds
-            // 10 for newly-constructed instances, but pre-feature JSON that
-            // explicitly serialized MaxBackupCount = 0 is indistinguishable
-            // from "missing". Treat 0 as "use default" to be safe.
-            if (entity.MaxBackupCount <= 0) entity.MaxBackupCount = 10;
+            // the default for newly-constructed instances, but pre-feature
+            // JSON that explicitly serialized MaxBackupCount = 0 is
+            // indistinguishable from "missing". Treat 0 as "use default".
+            if (entity.MaxBackupCount <= 0) entity.MaxBackupCount = 20;
 
             // Same kind of legacy-zero concern: .wrt files saved before the
             // network feature shipped can deserialize with DiscoveryPort = 0 /
@@ -95,7 +93,6 @@ namespace Wrestling.Providers
                 StartGongSoundPath = entity.StartGongSoundPath,
                 SliderMaxSecond = entity.SliderMaxSecond,
                 SliderOpacityValue = entity.SliderOpacityValue,
-                IsAutosaveEnabled = entity.IsAutosaveEnabled,
                 IsOverlayOlympic = entity.IsOverlayOlympic,
                 IsBackupEnabled = entity.IsBackupEnabled,
                 MaxBackupCount = entity.MaxBackupCount,
@@ -104,7 +101,6 @@ namespace Wrestling.Providers
                 IsHttpServerEnabled = entity.IsHttpServerEnabled,
                 HttpServerPort = entity.HttpServerPort,
                 NodeName = entity.NodeName ?? string.Empty,
-                SelfUncPath = entity.SelfUncPath ?? string.Empty,
                 AnnounceIpOverride = entity.AnnounceIpOverride ?? string.Empty,
                 SignatureFooterImagePath = entity.SignatureFooterImagePath
             };

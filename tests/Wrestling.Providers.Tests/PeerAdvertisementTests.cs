@@ -20,7 +20,6 @@ public class PeerAdvertisementTests
             TournamentTitle = "Ярыгин 2025",
             NodeName = "Ковёр 1",
             HttpUrl = "http://192.168.1.50:24566/tournament/deadbeef-dead-beef-dead-beefdeadbeef.wrt",
-            UncPath = @"\\192.168.1.50\TShare\Ярыгин.wrt",
             AppVersion = "1.2.3",
             SentAt = new DateTime(2026, 4, 21, 12, 34, 56, DateTimeKind.Utc)
         };
@@ -35,7 +34,6 @@ public class PeerAdvertisementTests
         restored.TournamentTitle.Should().Be("Ярыгин 2025");
         restored.NodeName.Should().Be("Ковёр 1");
         restored.HttpUrl.Should().Be(original.HttpUrl);
-        restored.UncPath.Should().Be(original.UncPath);
         restored.AppVersion.Should().Be("1.2.3");
     }
 
@@ -49,7 +47,6 @@ public class PeerAdvertisementTests
             TournamentTitle = "T",
             NodeName = "N",
             HttpUrl = "h",
-            UncPath = "u",
             AppVersion = "v"
         };
         var json = Encoding.UTF8.GetString(ad.ToBytes());
@@ -61,7 +58,6 @@ public class PeerAdvertisementTests
         parsed["tournamentTitle"].Should().NotBeNull();
         parsed["nodeName"].Should().NotBeNull();
         parsed["httpUrl"].Should().NotBeNull();
-        parsed["uncPath"].Should().NotBeNull();
         parsed["appVersion"].Should().NotBeNull();
         parsed["sentAt"].Should().NotBeNull();
     }

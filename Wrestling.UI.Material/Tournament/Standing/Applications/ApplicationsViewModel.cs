@@ -13,7 +13,6 @@ using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.Tournament.Print.PrintTeamApplication;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Standing.Applications
@@ -31,7 +30,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         private ICommand _addWrestlerCommand;
         private ICommand _editWrestlerCommand;
         private ICommand _deleteWrestlerCommand;
-        private ICommand _printTeamApplicationCommand;
 
         private string _filterString;
         private bool _isOnlyUnapprovedVisible;
@@ -141,19 +139,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         }
 
         #region Command Properties
-
-        public ICommand PrintTeamApplicationCommand
-        {
-            get
-            {
-                if (_printTeamApplicationCommand == null)
-                {
-                    _printTeamApplicationCommand = new RelayCommand(param => PrintTeamApplication(param as TeamApplicationViewModel), param => param != null);
-                }
-
-                return _printTeamApplicationCommand;
-            }
-        }
 
         public ICommand ApproveAllCommand
         {
@@ -329,15 +314,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
         }
 
-        private void PrintTeamApplication(TeamApplicationViewModel teamApplication)
-        {
-            if (teamApplication == null) return;
-
-            DataContext.Team = teamApplication;
-
-            ShowPrintPreview(new PrintTeamApplicationViewModel(DiContainer));            
-        }
-        
         private async Task EditApplication(TeamApplicationViewModel app)
         {
             var tmpApp = app.Team.Clone() as TeamApplication;

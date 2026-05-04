@@ -64,7 +64,6 @@ public class AdapterRoundTripTests
             MaxActionSecond = 15,
             IsTimerBackward = true,
             IsSoundEnabled = false,
-            IsAutosaveEnabled = true,
             IsOverlayOlympic = false,
             IsBackupEnabled = false,
             MaxBackupCount = 7,
@@ -79,7 +78,6 @@ public class AdapterRoundTripTests
         restored.Settings.MaxActionSecond.Should().Be(15);
         restored.Settings.IsTimerBackward.Should().BeTrue();
         restored.Settings.IsSoundEnabled.Should().BeFalse();
-        restored.Settings.IsAutosaveEnabled.Should().BeTrue();
         restored.Settings.IsBackupEnabled.Should().BeFalse();
         restored.Settings.MaxBackupCount.Should().Be(7);
         restored.Settings.BackupFolderPath.Should().Be(@"D:\shared-backups");
@@ -102,7 +100,7 @@ public class AdapterRoundTripTests
         var restored = _adapter.GetEntityFromInfo(legacyInfo);
 
         restored.Settings.IsBackupEnabled.Should().BeTrue("safe default must enable backups for legacy files");
-        restored.Settings.MaxBackupCount.Should().Be(10, "zero is normalized to the default retention");
+        restored.Settings.MaxBackupCount.Should().Be(20, "zero is normalized to the default retention");
     }
 
     [Fact]
@@ -167,7 +165,6 @@ public class AdapterRoundTripTests
             IsHttpServerEnabled = false,
             HttpServerPort = 40001,
             NodeName = "Ковёр 3",
-            SelfUncPath = @"\\HOST\Share\tournament.wrt",
             AnnounceIpOverride = "192.168.88.42"
         };
         var t = new Tournament(settings) { ID = Guid.NewGuid(), Name = "N" };
@@ -179,7 +176,6 @@ public class AdapterRoundTripTests
         restored.Settings.IsHttpServerEnabled.Should().BeFalse();
         restored.Settings.HttpServerPort.Should().Be(40001);
         restored.Settings.NodeName.Should().Be("Ковёр 3");
-        restored.Settings.SelfUncPath.Should().Be(@"\\HOST\Share\tournament.wrt");
         restored.Settings.AnnounceIpOverride.Should().Be("192.168.88.42");
     }
 
@@ -204,7 +200,6 @@ public class AdapterRoundTripTests
         restored.Settings.IsHttpServerEnabled.Should().BeTrue();
         restored.Settings.HttpServerPort.Should().Be(24566);
         restored.Settings.NodeName.Should().Be(Environment.MachineName);
-        restored.Settings.SelfUncPath.Should().BeEmpty();
         restored.Settings.AnnounceIpOverride.Should().BeEmpty();
     }
 

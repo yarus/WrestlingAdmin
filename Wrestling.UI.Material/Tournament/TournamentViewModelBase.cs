@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.Windows;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Home;
@@ -23,28 +22,15 @@ namespace Wrestling.UI.Material.Tournament
             base.InitData();
 
             _tournService = Resolve<ITournamentsManager>();
-
-            OnPropertyChanged("IsAutosaveEnabled");
         }
 
         protected ITournamentsManager TournamentManager => _tournService;
 
         public Entities.Tournament Tournament => DataContext.Tournament;
 
-        public bool IsAutosaveEnabled => DataContext.Tournament?.Settings.IsAutosaveEnabled ?? false;
-        
         protected async Task CloseTournament()
         {
-            bool saveRequired = true;
-
-            if (!IsAutosaveEnabled)
-            {
-                if (Dialog.ShowMessageBox(this,
-                        "Автосохранение выключено. Сохранить турнир перед выходом?",
-                        "Требуется подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Information) != MessageBoxResult.Yes) saveRequired = false;
-            }
-
-            if(saveRequired) await SaveDataAsync();
+            await SaveDataAsync();
 
             // Close any open slider windows before dropping the tournament so
             // they don't hold stale references; the score screen stays registered
@@ -82,24 +68,27 @@ namespace Wrestling.UI.Material.Tournament
                 bool? success = Dialog.ShowSaveFileDialog(this, settings);
                 if (success == true)
                 {
-                    DataContext.Tournament.Settings.IsAutosaveEnabled = true;
-
                     var result = await TournamentManager.SaveToFileAsync(DataContext.Tournament, settings.FileName);
-                    ShowSnackMessage(result ? "Турнир сохранен! Автосохранение включено." : "При сохранении произошла ошибка!");
+                    ShowSnackMessage(result ? "Турнир сохранен!" : "При сохранении произошла ошибка!");
                 }
             }
         }
 
         // Event-driven autosave hook. Call after any in-memory state change
-        // that should be persisted (match completion, successful import).
-        // No-op when autosave is disabled — users in manual-save mode rely on
-        // the "Сохранить турнир" quick button on the dashboard instead.
+        // that should be persisted (match completion, successful import,
+        // peer-sync merge). No-op when no tournament is loaded or the file
+        // has never been saved (no FileName) — the operator must pick a path
+        // via the "Сохранить турнир" quick button on the dashboard first.
+        // We deliberately do NOT pop a SaveAs dialog here: this hook fires on
+        // background events (timer-driven imports, match approvals) and a
+        // modal dialog mid-tournament would block the operator.
         public async Task SaveIfAutosaveEnabledAsync()
         {
-            if (IsAutosaveEnabled && DataContext.Tournament != null)
-            {
-                await SaveDataAsync();
-            }
+            if (DataContext.Tournament == null) return;
+            if (string.IsNullOrEmpty(DataContext.Tournament.FileName)) return;
+
+            var result = await TournamentManager.SaveToFileAsync(DataContext.Tournament, DataContext.Tournament.FileName);
+            ShowSnackMessage(result ? "Турнир сохранен!" : "При сохранении произошла ошибка!");
         }
     }
 }

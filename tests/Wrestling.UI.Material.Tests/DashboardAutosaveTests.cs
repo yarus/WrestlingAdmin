@@ -16,10 +16,9 @@ namespace Wrestling.UI.Material.Tests;
 // model. InitData on the dashboard must no longer spin up a background timer
 // that periodically saves — saves only happen after explicit events.
 //
-// The manual "Сохранить турнир" quick button must stay visible regardless of
-// the autosave flag: event-driven autosave only covers match/import, so
-// mutations like registering teams/wrestlers or generating brackets still
-// need an on-demand save action.
+// The manual "Сохранить турнир" quick button must always stay reachable as
+// the escape hatch for mutations event-driven autosave doesn't cover (team
+// edits, bracket regeneration, schedule edits).
 public sealed class DashboardAutosaveTests
 {
     // The save button is constructed with the (tooltip, icon, command) overload,
@@ -33,14 +32,13 @@ public sealed class DashboardAutosaveTests
         public void CloseScreen() { }
     }
 
-    private static DashboardViewModel BuildDashboard(bool autosaveEnabled, out FakeTournamentsManager mgr)
+    private static DashboardViewModel BuildDashboard(out FakeTournamentsManager mgr)
     {
         var di = TestContainerBuilder.MakeDefault();
         di.Add(new NullPanelView(), "ScoreScreen");
         di.Add<ScoreScreenViewModel>(new ScoreScreenViewModel(di));
 
-        var settings = new GlobalSettings { IsAutosaveEnabled = autosaveEnabled };
-        var tournament = new Entities.Tournament(settings) { FileName = "tournament.wrt", Name = "T" };
+        var tournament = new Entities.Tournament(new GlobalSettings()) { FileName = "tournament.wrt", Name = "T" };
         di.Resolve<IDataContext>().Tournament = tournament;
 
         mgr = (FakeTournamentsManager)di.Resolve<ITournamentsManager>();
@@ -51,9 +49,9 @@ public sealed class DashboardAutosaveTests
     }
 
     [Fact]
-    public async Task InitData_with_autosave_enabled_and_FileName_does_not_save_periodically()
+    public async Task InitData_does_not_save_periodically()
     {
-        var vm = BuildDashboard(autosaveEnabled: true, out var mgr);
+        var vm = BuildDashboard(out var mgr);
 
         // Give any residual timer a chance to tick. The presence of any
         // background persistence is exactly what this refactor forbids —
@@ -64,20 +62,12 @@ public sealed class DashboardAutosaveTests
     }
 
     [Fact]
-    public void QuickButtons_include_save_command_when_autosave_enabled()
+    public void QuickButtons_include_save_command()
     {
-        var vm = BuildDashboard(autosaveEnabled: true, out _);
+        var vm = BuildDashboard(out _);
 
         vm.QuickButtons.Select(b => b.TooltipText).Should().Contain(SaveButtonTooltip,
             "manual save must stay reachable — event-driven autosave only covers match/import, " +
             "so team/wrestler/bracket/schedule edits have no other escape hatch");
-    }
-
-    [Fact]
-    public void QuickButtons_include_save_command_when_autosave_disabled()
-    {
-        var vm = BuildDashboard(autosaveEnabled: false, out _);
-
-        vm.QuickButtons.Select(b => b.TooltipText).Should().Contain(SaveButtonTooltip);
     }
 }

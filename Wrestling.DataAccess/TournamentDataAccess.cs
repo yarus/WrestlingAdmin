@@ -25,7 +25,7 @@ namespace Wrestling.DataAccess
         // the atomic write in the storage layer already protects against
         // torn files.
         private const string DefaultBackupFolderName = "Backups";
-        private const int FallbackMaxBackupCount = 10;
+        private const int FallbackMaxBackupCount = 20;
 
         private readonly IStorageDataAccess _storageDataAccess;
 

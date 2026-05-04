@@ -9,7 +9,6 @@ using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Entities.Bracket.Seeding;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.Tournament.Print.PrintApplications;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Standing.Draw
@@ -22,7 +21,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         private ISeedingStrategy _seedingStrategy;
 
         private ICommand _generateBracketCommand;
-        private ICommand _printProtocolCommand;
         private ICommand _regenerateAllBrackets;
         private ICommand _unfixAllSeedsCommand;
 
@@ -126,18 +124,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             }
         }
         
-        public ICommand PrintProtocolCommand
-        {
-            get
-            {
-                if (_printProtocolCommand == null)
-                {
-                    _printProtocolCommand = new RelayCommand(param => PrintProtocol(param as AgeWeightGroup), param => param != null);
-                }
-                return _printProtocolCommand;
-            }
-        }
-
         public ICommand GenerateBracketCommand
         {
             get
@@ -220,15 +206,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             }
 
             return drawType;
-        }
-
-        private void PrintProtocol(AgeWeightGroup group)
-        {
-            if (group?.Bracket == null) return;
-
-            DataContext.Group = group;
-
-            ShowPrintPreview(new PrintApplicationsViewModel(DiContainer));
         }
 
         private async void GenerateBracket(AgeWeightGroup group)

@@ -18,7 +18,6 @@ using Wrestling.Entities.Bracket;
 using Wrestling.Entities.Results;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Settings;
 using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Material.Tournament.Print;
@@ -67,9 +66,6 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         private readonly CommandButtonItem _exportResultsQuickCommand;
         private bool _isExportingPdfs;
 
-        private IPanelView _scoreScreenView;
-        private ScoreScreenViewModel _scoreScreenVm;
-
         private PeerSyncStatusTracker _peerSyncTracker;
 
         #endregion
@@ -92,9 +88,6 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         {
             base.InitData();
 
-            _scoreScreenView = Resolve<IPanelView>("ScoreScreen");
-            _scoreScreenVm = Resolve<ScoreScreenViewModel>();
-
             // Wire the peer-sync read model lazily on first dashboard nav.
             // Singleton in DI; binding survives across re-navigations to Home.
             if (_peerSyncTracker == null)
@@ -116,9 +109,7 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
                 (
                     _quickButtons = new List<CommandButtonItem>
                     {
-                        _saveQuickCommand,
-                        _exportResultsQuickCommand,
-                        _openLogsQuickCommand
+                        _saveQuickCommand
                     }
                 );
             }
@@ -130,8 +121,9 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
             {
                 return _drawerItems ?? (_drawerItems = new List<CommandButtonItem>
                 {
-                    new CommandButtonItem("Табло", new RelayCommand(param => OpenMonitor(), param => true)),
                     new CommandButtonItem("Настройки", new RelayCommand(param => OpenSettings(), param => true)),
+                    _exportResultsQuickCommand,
+                    _openLogsQuickCommand,
                     new CommandButtonItem("Закрыть", new AsyncRelayCommand(param => CloseTournament(), param => true))
                 });
             }
@@ -231,30 +223,6 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
             var standing = Resolve<INavigationService>().GetViewModel<StandingViewModel>();
             standing?.SetInitialPage<TPage>();
             NavigateToView<StandingViewModel>();
-        }
-
-        private async void OpenMonitor()
-        {
-            if (!_scoreScreenView.WasShown)
-            {
-                var monitor = await MonitorPicker.PickAsync();
-                if (monitor == null) return;
-
-                if (_scoreScreenView is PanelViewBase panel)
-                {
-                    panel.TargetMonitor = monitor;
-                }
-            }
-
-            _scoreScreenVm.IsSoundEnabled = Tournament.Settings.IsSoundEnabled;
-            _scoreScreenVm.IsTimerBackward = Tournament.Settings.IsTimerBackward;
-            _scoreScreenVm.MaxActionSecond = Tournament.Settings.MaxActionSecond;
-            _scoreScreenVm.MaxRoundSecond = Tournament.Settings.MaxRoundSecond;
-            _scoreScreenVm.MaxTimeoutSecond = Tournament.Settings.MaxTimeoutSecond;
-            _scoreScreenVm.TournamentTitle = Tournament.Name;
-            _scoreScreenVm.Round = 1;
-
-            _scoreScreenView.ShowScreen(_scoreScreenVm);
         }
 
         private void OpenSliderControl()
@@ -570,8 +538,10 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
 
         private async Task SetupAutoSaveAsync()
         {
+            // A freshly-created tournament has no FileName until the operator
+            // picks a path. Prompt once when the dashboard opens so subsequent
+            // event-driven autosaves have a target to write to.
             if (DataContext.Tournament != null
-                && IsAutosaveEnabled
                 && string.IsNullOrEmpty(DataContext.Tournament.FileName))
             {
                 await SaveDataAsync();

@@ -23,7 +23,6 @@ public class PeerRegistryTests
             TournamentTitle = "T",
             NodeName = name,
             HttpUrl = "http://10.0.0.1:24566/tournament/" + tournament + ".wrt",
-            UncPath = string.Empty,
             AppVersion = "1.0",
             SentAt = T0
         };

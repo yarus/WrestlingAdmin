@@ -29,7 +29,7 @@ public sealed class PeerSyncStatusTrackerTests
         public event EventHandler<string> DiagnosticMessage { add { } remove { } }
 
         public IReadOnlyCollection<DiscoveredPeer> SnapshotPeers() => Array.Empty<DiscoveredPeer>();
-        public void StartForTournament(int port, Guid tournamentId, string tournamentTitle, string nodeName, string httpUrl, string uncPath, Func<string> stateHashProvider = null) { }
+        public void StartForTournament(int port, Guid tournamentId, string tournamentTitle, string nodeName, string httpUrl, Func<string> stateHashProvider = null) { }
         public void Stop() { }
         public void Dispose() { }
 

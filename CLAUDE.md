@@ -104,21 +104,26 @@ Policy lives on the tournament being saved (`info.Settings.IsBackupEnabled` / `M
 
 ### Autosave is event-driven, not timer-based
 
-There is **no** DispatcherTimer for autosave. Saves fire only after:
+There is **no** DispatcherTimer for autosave and **no** user-facing toggle — autosave is unconditional now (the old `IsAutosaveEnabled` flag was removed 2026-05-04 once peer-sync made on-disk freshness load-bearing). Saves fire only after:
 1. **Match completion** — `MatchResultsViewModel.ApproveAsync` calls `SaveIfAutosaveEnabledAsync()` after the processor's `CompleteMatch()` runs.
 2. **Successful import** — `ImportViewModel.ImportDataAsync` calls `SaveIfAutosaveEnabledAsync()` only when the outcome is `Imported` (not for `NoNewData`, `FileUnavailable`, etc.).
+3. **Peer-sync merge** — `PeerSyncService.SaveAfterMergeAsync` writes the local `.wrt` after applying remote changes.
 
 The gate is a public method on `TournamentViewModelBase`:
 
 ```csharp
 public async Task SaveIfAutosaveEnabledAsync()
 {
-    if (IsAutosaveEnabled && DataContext.Tournament != null)
-        await SaveDataAsync();
+    if (DataContext.Tournament == null) return;
+    if (string.IsNullOrEmpty(DataContext.Tournament.FileName)) return;
+    var ok = await TournamentManager.SaveToFileAsync(...);
+    ShowSnackMessage(ok ? "Турнир сохранен!" : "При сохранении произошла ошибка!");
 }
 ```
 
-The Settings UI exposes only the `IsAutosaveEnabled` toggle. The "Сохранить турнир" quick button is **always visible on the dashboard** regardless of the flag — autosave only covers match/import events, so other mutations (team/wrestler registration, bracket generation, schedule edits) rely on manual save. (The old `AutosaveMaxSecond` interval field was fully removed 2026-04-20; legacy `.wrt` files containing it load fine since Newtonsoft silently drops unknown JSON properties.)
+The empty-FileName guard matters: this hook fires from background sync ticks and post-match handlers, so it must never pop a SaveAs dialog. New tournaments get their FileName from the up-front prompt in `HomeViewModel.OpenNewTournamentPage` (and a re-prompt in `DashboardViewModel.SetupAutoSaveAsync` if the operator dismissed the first dialog). The "Сохранить турнир" quick button is **always visible on the dashboard** as the manual escape hatch — autosave only covers match/import/sync events, so other mutations (team/wrestler registration, bracket generation, schedule edits) rely on it.
+
+(Both the old `AutosaveMaxSecond` interval field — removed 2026-04-20 — and `IsAutosaveEnabled` — removed 2026-05-04 — are silently dropped by Newtonsoft when loading legacy `.wrt` files.)
 
 ### Bracket generation is a Strategy pattern
 
@@ -156,5 +161,5 @@ Each carpet (mat) PC keeps its own local copy of the tournament `.wrt`. Results 
 - Entity classes implement `INotifyPropertyChanged` directly (they double as view-model-bindable objects). Collections use `ObservableCollection<T>`. Don't convert to plain `List<T>` on domain objects.
 - `Info` (DTO) classes in `Wrestling.Data` are plain property bags — keep them behaviorless. The **one** allowed piece of logic is a parameterless constructor that seeds safe defaults for new-schema fields so legacy `.wrt` files deserialize to sensible values (Newtonsoft calls it before overlaying JSON).
 - File I/O in providers has both sync and async variants. Autosave and import now use the **async** path end-to-end; a few sync call sites remain (settings toggle, crash backup, `HomeViewModel`). When moving a call to async, the invoking command must be an `AsyncRelayCommand` (not `RelayCommand`) or the UI will deadlock.
-- `GlobalSettings` is persisted per-tournament (inside the `.wrt` file), not globally. New user-tunable settings belong there. Current fields worth knowing about: `IsAutosaveEnabled`, `IsBackupEnabled` / `MaxBackupCount` / `BackupFolderPath`, the match timing settings, slider settings.
+- `GlobalSettings` is persisted per-tournament (inside the `.wrt` file), not globally. New user-tunable settings belong there. Current fields worth knowing about: `IsBackupEnabled` / `MaxBackupCount` / `BackupFolderPath`, the match timing settings, slider settings.
 - **Test access to internals**: `Wrestling.UI.Material` exposes internals to `Wrestling.UI.Material.Tests` via `Properties/InternalsVisibleTo.cs`. The csproj-based `AssemblyAttribute` trick doesn't work because `GenerateAssemblyInfo=false`. Use `internal` for methods that need direct test exercise (e.g. `ImportViewModel.ImportDataAsync`).

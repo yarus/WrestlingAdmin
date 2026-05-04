@@ -310,39 +310,6 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="ContentSaveAll" Width="80" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" />
-
-                    <StackPanel Grid.Row="0" Grid.Column="1">
-                        <TextBlock Margin="16 16 16 8">Автосохранение</TextBlock>
-
-                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
-                                При включенном автосохранении турнир сохраняется автоматически после завершения каждого поединка и после успешного импорта результатов.
-                        </TextBlock>
-                    </StackPanel>
-
-                    <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
-                        <StackPanel Orientation="Horizontal">
-                            <ToggleButton VerticalAlignment="Center" ToolTip="Вкл/выкл автосохранение"
-                                              IsChecked="{Binding Path=IsAutosaveEnabled, UpdateSourceTrigger=PropertyChanged}" x:Name="AutosaveEnabledCb" />
-                            <TextBlock TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
-                                    Вкл/Выкл. автосохранение
-                            </TextBlock>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-            </materialDesign:Card>
-
-            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
-                <Grid VerticalAlignment="Stretch">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
                     <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="DatabaseArrowDown" Width="80" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                     <StackPanel Grid.Row="0" Grid.Column="1">
@@ -356,6 +323,7 @@
                     <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
@@ -408,6 +376,10 @@
                                         Command="{Binding BrowseBackupFolderCommand}"
                                         Content="Обзор..." />
                             </Grid>
+
+                            <TextBlock Grid.Row="3" Margin="30 0 8 4" TextWrapping="Wrap"
+                                       FontSize="11" Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                       Text="{Binding EffectiveBackupFolderHint, StringFormat='Используется: {0}'}" />
                         </Grid>
                     </Border>
                 </Grid>
@@ -505,7 +477,6 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -543,26 +514,9 @@
                                          materialDesign:HintAssist.Hint="порт" />
                             </Grid>
 
-                            <materialDesign:PackIcon Grid.Row="3" Grid.Column="0" Kind="Folder" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                            <TextBox Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" Margin="10,5,6,5"
-                                     Text="{Binding Path=Item.SelfUncPath, UpdateSourceTrigger=PropertyChanged}"
-                                     materialDesign:HintAssist.Hint="UNC-путь (если настроена SMB-шара)" />
-                            <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,5,0,5">
-                                <Button ToolTip="Настроить общий доступ Windows" Width="32" Height="32" Padding="0" Margin="0,0,4,0"
-                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                        Command="{Binding ConfigureShareCommand}">
-                                    <materialDesign:PackIcon Kind="FolderCog" Width="18" Height="18" />
-                                </Button>
-                                <Button ToolTip="Отключить общий доступ" Width="32" Height="32" Padding="0"
-                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                        Command="{Binding DisableShareCommand}">
-                                    <materialDesign:PackIcon Kind="FolderRemove" Width="18" Height="18" />
-                                </Button>
-                            </StackPanel>
+                            <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Margin="0 14 0 2" Foreground="{DynamicResource MaterialDesignBodyLight}">Адрес этого узла для соседей:</TextBlock>
 
-                            <TextBlock Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Margin="0 14 0 2" Foreground="{DynamicResource MaterialDesignBodyLight}">Адрес этого узла для соседей:</TextBlock>
-
-                            <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3">
+                            <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -580,7 +534,7 @@
                                  to use it: "if neighbors don't see this node, try
                                  another address" — operators don't need to know what
                                  NIC means to recognize that symptom. -->
-                            <Border Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3" Margin="0 8 0 0" Padding="8"
+                            <Border Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Margin="0 8 0 0" Padding="8"
                                     Background="{DynamicResource MaterialDesignChipBackground}"
                                     Visibility="{Binding IsAnnounceAddressPickerVisible, Converter={StaticResource BoolToVis}}">
                                 <Grid>

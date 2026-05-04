@@ -57,7 +57,7 @@ namespace Wrestling.Providers.Network
             return _registry.Snapshot();
         }
 
-        public void StartForTournament(int port, Guid tournamentId, string tournamentTitle, string nodeName, string httpUrl, string uncPath, Func<string> stateHashProvider = null)
+        public void StartForTournament(int port, Guid tournamentId, string tournamentTitle, string nodeName, string httpUrl, Func<string> stateHashProvider = null)
         {
             Stop();
 
@@ -69,7 +69,6 @@ namespace Wrestling.Providers.Network
                 TournamentTitle = tournamentTitle ?? string.Empty,
                 NodeName = nodeName ?? string.Empty,
                 HttpUrl = httpUrl ?? string.Empty,
-                UncPath = uncPath ?? string.Empty,
                 AppVersion = _appVersion,
                 StateHash = string.Empty
             };

@@ -71,7 +71,7 @@ public sealed class PeerSyncServiceTests
         public event EventHandler<string> DiagnosticMessage { add { } remove { } }
 
         public IReadOnlyCollection<DiscoveredPeer> SnapshotPeers() => Array.Empty<DiscoveredPeer>();
-        public void StartForTournament(int port, Guid tournamentId, string tournamentTitle, string nodeName, string httpUrl, string uncPath, Func<string> stateHashProvider = null) { }
+        public void StartForTournament(int port, Guid tournamentId, string tournamentTitle, string nodeName, string httpUrl, Func<string> stateHashProvider = null) { }
         public void Stop() { }
         public void Dispose() { }
 
@@ -318,7 +318,7 @@ public sealed class PeerSyncServiceTests
     public async Task Autosave_fires_only_on_Imported()
     {
         // Sanity check: NoNewData / FileUnavailable / Error must not save.
-        var t = new Entities.Tournament(new GlobalSettings { IsAutosaveEnabled = true }) { Name = "T", FileName = "tournament.wrt" };
+        var t = new Entities.Tournament(new GlobalSettings()) { Name = "T", FileName = "tournament.wrt" };
         var (svc, imp, mgr, _, _, _) = Build(t, outcome: ImportOutcome.NoNewData);
         await svc.HandlePeerAsync(MakePeer(Guid.NewGuid(), "h-other"));
 
@@ -333,17 +333,7 @@ public sealed class PeerSyncServiceTests
     [Fact]
     public async Task Autosave_skipped_when_FileName_is_empty()
     {
-        var t = new Entities.Tournament(new GlobalSettings { IsAutosaveEnabled = true }) { Name = "T", FileName = string.Empty };
-        var (svc, _, mgr, _, _, _) = Build(t);
-        await svc.HandlePeerAsync(MakePeer(Guid.NewGuid(), "h"));
-
-        mgr.SaveAsyncCount.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task Autosave_skipped_when_flag_off()
-    {
-        var t = new Entities.Tournament(new GlobalSettings { IsAutosaveEnabled = false }) { Name = "T", FileName = "tournament.wrt" };
+        var t = new Entities.Tournament(new GlobalSettings()) { Name = "T", FileName = string.Empty };
         var (svc, _, mgr, _, _, _) = Build(t);
         await svc.HandlePeerAsync(MakePeer(Guid.NewGuid(), "h"));
 

@@ -75,7 +75,6 @@ namespace Wrestling.Providers.Network
                 peer.TournamentTitle = ad.TournamentTitle;
                 peer.NodeName = ad.NodeName;
                 peer.HttpUrl = ad.HttpUrl;
-                peer.UncPath = ad.UncPath;
                 peer.AppVersion = ad.AppVersion;
                 peer.StateHash = ad.StateHash ?? string.Empty;
                 peer.LastSeenUtc = now;

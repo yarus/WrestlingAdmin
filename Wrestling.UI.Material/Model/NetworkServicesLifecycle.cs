@@ -75,7 +75,6 @@ namespace Wrestling.UI.Material.Model
                 case nameof(GlobalSettings.DiscoveryPort):
                 case nameof(GlobalSettings.IsHttpServerEnabled):
                 case nameof(GlobalSettings.HttpServerPort):
-                case nameof(GlobalSettings.SelfUncPath):
                 case nameof(GlobalSettings.AnnounceIpOverride):
                     var t = _dataContext.Tournament;
                     StopAll();
@@ -107,8 +106,7 @@ namespace Wrestling.UI.Material.Model
 
             // Discovery announces only when a human-readable name is set —
             // otherwise peers see a bunch of nameless nodes and can't tell who
-            // is who. HTTP server may still be serving (see above) so operator
-            // can manually point peers at this node via UNC.
+            // is who.
             if (!string.IsNullOrEmpty(settings.NodeName))
             {
                 _discovery.StartForTournament(
@@ -117,7 +115,6 @@ namespace Wrestling.UI.Material.Model
                     tournamentTitle: tournament.Name ?? string.Empty,
                     nodeName: settings.NodeName,
                     httpUrl: httpUrl ?? string.Empty,
-                    uncPath: settings.SelfUncPath ?? string.Empty,
                     stateHashProvider: ComputeStateHashOnUiThread);
 
                 ArmFirewallHint();

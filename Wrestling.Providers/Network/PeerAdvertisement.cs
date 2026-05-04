@@ -28,9 +28,6 @@ namespace Wrestling.Providers.Network
         [JsonProperty("httpUrl")]
         public string HttpUrl { get; set; }
 
-        [JsonProperty("uncPath")]
-        public string UncPath { get; set; }
-
         [JsonProperty("appVersion")]
         public string AppVersion { get; set; }
 

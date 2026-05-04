@@ -236,29 +236,29 @@ namespace Wrestling.UI.Material.Home
 
             Resolve<IResultsService>().Recalculate(DataContext.Tournament);
 
-            if (DataContext.Tournament.Settings.IsAutosaveEnabled)
+            // Prompt for save location up front so event-driven autosaves
+            // (after each match approval / peer-sync merge) have a target.
+            // The dashboard re-prompts if the operator dismissed this dialog.
+            var settings = new SaveFileDialogSettings
             {
-                var settings = new SaveFileDialogSettings
+                Title = "Сохранить турнир",
+                CheckFileExists = false,
+                OverwritePrompt = true,
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                Filter = "Wrestling Tournament (*.wrt)|*.wrt|All Files (*.*)|*.*"
+            };
+
+            bool? success = Dialog.ShowSaveFileDialog(this, settings);
+            if (success == true)
+            {
+                var tournService = Resolve<ITournamentsManager>();
+
+                var result = tournService.SaveToFile(DataContext.Tournament, settings.FileName);
+                ShowSnackMessage(result ? "Турнир сохранен!" : "При сохранении произошла ошибка!");
+
+                if (!result)
                 {
-                    Title = "Сохранить турнир",
-                    CheckFileExists = false,
-                    OverwritePrompt = true,
-                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    Filter = "Wrestling Tournament (*.wrt)|*.wrt|All Files (*.*)|*.*"
-                };
-
-                bool? success = Dialog.ShowSaveFileDialog(this, settings);
-                if (success == true)
-                {
-                    var tournService = Resolve<ITournamentsManager>();
-
-                    var result = tournService.SaveToFile(DataContext.Tournament, settings.FileName);
-                    ShowSnackMessage(result ? "Турнир сохранен! Автосохранение включено." : "При сохранении произошла ошибка!");
-
-                    if (!result)
-                    {
-                        return;
-                    }
+                    return;
                 }
             }
 
@@ -279,7 +279,6 @@ namespace Wrestling.UI.Material.Home
                 StartGongSoundPath = GlobalSettings.StartGongSoundPath,
                 SliderMaxSecond = GlobalSettings.SliderMaxSecond,
                 SliderOpacityValue = GlobalSettings.SliderOpacityValue,
-                IsAutosaveEnabled = GlobalSettings.IsAutosaveEnabled,
                 IsOverlayOlympic = GlobalSettings.IsOverlayOlympic
             };
 

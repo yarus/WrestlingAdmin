@@ -10,7 +10,6 @@ namespace Wrestling.Entities
 
         private bool _isTimerBackward;
         private bool _isSoundEnabled;
-        private bool _isAutosaveEnabled;
         private int _sliderMaxSecond;
         private int _sliderOpacityValue;
         private string _sliderBackgroundImagePath;
@@ -33,14 +32,13 @@ namespace Wrestling.Entities
         private bool _isHttpServerEnabled;
         private int _httpServerPort;
         private string _nodeName;
-        private string _selfUncPath;
         private string _announceIpOverride;
 
         private string _signatureFooterImagePath;
 
         public GlobalSettings()
         {
-            SliderMaxSecond = 10;
+            SliderMaxSecond = 15;
             SliderOpacityValue = 25;
             SliderBackgroundImagePath = DefaultSliderImage;
             StartGongSoundPath = DefaultStartGongSound;
@@ -50,7 +48,7 @@ namespace Wrestling.Entities
             MaxActionSecond = 30;
             IsOverlayOlympic = true;
             IsBackupEnabled = true;
-            MaxBackupCount = 10;
+            MaxBackupCount = 20;
             BackupFolderPath = string.Empty;
             DiscoveryPort = 24565;
             IsHttpServerEnabled = true;
@@ -59,7 +57,6 @@ namespace Wrestling.Entities
             // is immediately discoverable on the LAN without operator setup.
             // The user can override later from the Settings screen.
             NodeName = SafeMachineName();
-            SelfUncPath = string.Empty;
             AnnounceIpOverride = string.Empty;
         }
 
@@ -153,16 +150,6 @@ namespace Wrestling.Entities
             {
                 _sliderBackgroundImagePath = value;
                 OnPropertyChanged("SliderBackgroundImagePath");
-            }
-        }
-
-        public bool IsAutosaveEnabled
-        {
-            get { return _isAutosaveEnabled; }
-            set
-            {
-                _isAutosaveEnabled = value;
-                OnPropertyChanged("IsAutosaveEnabled");
             }
         }
 
@@ -285,16 +272,6 @@ namespace Wrestling.Entities
             {
                 _nodeName = value;
                 OnPropertyChanged("NodeName");
-            }
-        }
-
-        public string SelfUncPath
-        {
-            get { return _selfUncPath; }
-            set
-            {
-                _selfUncPath = value;
-                OnPropertyChanged("SelfUncPath");
             }
         }
 

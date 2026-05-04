@@ -11,12 +11,13 @@ using Xunit;
 
 namespace Wrestling.UI.Material.Tests;
 
-// Covers the event-driven autosave gate introduced to replace the
-// DispatcherTimer-based autosave. Behavior contract:
-//   - SaveIfAutosaveEnabledAsync persists only when IsAutosaveEnabled is true
-//     AND a tournament is loaded AND a FileName is already set.
-//   - No timer is involved: saves happen only after explicit calls from event
-//     handlers (match completion, successful import).
+// Covers the event-driven autosave hook. Behavior contract after the
+// IsAutosaveEnabled flag was removed (autosave is unconditional now):
+//   - SaveIfAutosaveEnabledAsync persists when a tournament is loaded AND a
+//     FileName is already set.
+//   - When FileName is empty the hook is a silent no-op — it must NOT pop a
+//     SaveAs dialog from a background sync tick or post-match handler. The
+//     operator picks a path via the dashboard prompt instead.
 public sealed class AutosaveGateTests
 {
     private sealed class TestableVm : TournamentViewModelBase
@@ -26,11 +27,10 @@ public sealed class AutosaveGateTests
         public override string PageTitle => "test";
     }
 
-    private static (TestableVm vm, FakeTournamentsManager mgr, Entities.Tournament tournament) BuildVm(bool autosave, string fileName)
+    private static (TestableVm vm, FakeTournamentsManager mgr, Entities.Tournament tournament) BuildVm(string fileName)
     {
         var di = TestContainerBuilder.MakeDefault();
-        var settings = new GlobalSettings { IsAutosaveEnabled = autosave };
-        var tournament = new Entities.Tournament(settings) { FileName = fileName, Name = "T" };
+        var tournament = new Entities.Tournament(new GlobalSettings()) { FileName = fileName, Name = "T" };
         di.Resolve<IDataContext>().Tournament = tournament;
 
         var vm = new TestableVm(di);
@@ -40,9 +40,9 @@ public sealed class AutosaveGateTests
     }
 
     [Fact]
-    public async Task Saves_once_when_autosave_enabled_and_FileName_set()
+    public async Task Saves_once_when_FileName_set()
     {
-        var (vm, mgr, _) = BuildVm(autosave: true, fileName: "tournament.wrt");
+        var (vm, mgr, _) = BuildVm(fileName: "tournament.wrt");
 
         await vm.SaveIfAutosaveEnabledAsync();
 
@@ -50,9 +50,9 @@ public sealed class AutosaveGateTests
     }
 
     [Fact]
-    public async Task Does_not_save_when_autosave_disabled()
+    public async Task Does_not_save_when_FileName_empty()
     {
-        var (vm, mgr, _) = BuildVm(autosave: false, fileName: "tournament.wrt");
+        var (vm, mgr, _) = BuildVm(fileName: string.Empty);
 
         await vm.SaveIfAutosaveEnabledAsync();
 

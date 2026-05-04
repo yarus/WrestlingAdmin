@@ -1,5 +1,4 @@
-﻿using MaterialDesignThemes.Wpf;
-using MvvmDialogs;
+﻿using MvvmDialogs;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -8,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Markup;
-using System.Windows.Media;
 using Wrestling.DataAccess;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;

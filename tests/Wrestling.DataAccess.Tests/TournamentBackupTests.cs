@@ -16,7 +16,7 @@ namespace Wrestling.DataAccess.Tests;
 //
 // Policy comes from GlobalSettingsInfo on the saved tournament:
 //   - IsBackupEnabled master toggle
-//   - MaxBackupCount retention (default 10)
+//   - MaxBackupCount retention (default 20)
 //   - BackupFolderPath override (empty => <tournament-dir>/Backups)
 // Backups are further namespaced per tournament file inside that root, so
 // multiple tournaments sharing a working directory don't mix.
@@ -113,18 +113,18 @@ public sealed class TournamentBackupTests : IDisposable
     }
 
     [Fact]
-    public void Default_retention_when_unset_is_ten()
+    public void Default_retention_when_unset_is_twenty()
     {
         var path = TournamentPath();
 
         _da.SaveToFile(NewInfo("v0"), path);
-        for (int i = 1; i <= 15; i++)
+        for (int i = 1; i <= 25; i++)
         {
             System.Threading.Thread.Sleep(2);
             _da.SaveToFile(NewInfo($"v{i}"), path);
         }
 
-        Directory.GetFiles(DefaultBackupFolder(), "*.wrt").Should().HaveCount(10);
+        Directory.GetFiles(DefaultBackupFolder(), "*.wrt").Should().HaveCount(20);
     }
 
     [Fact]

@@ -36,8 +36,7 @@ public class PeerDiscoveryServiceTests
             tournamentId: Guid.NewGuid(),
             tournamentTitle: "T",
             nodeName: "Ковёр 1",
-            httpUrl: "http://127.0.0.1:1234/tournament/x.wrt",
-            uncPath: string.Empty);
+            httpUrl: "http://127.0.0.1:1234/tournament/x.wrt");
         diagnostic.Should().BeNull("normal start should not raise a diagnostic");
 
         service.Stop();
@@ -61,7 +60,7 @@ public class PeerDiscoveryServiceTests
             string diagnostic = null;
             service.DiagnosticMessage += (s, m) => diagnostic = m;
 
-            service.StartForTournament(port, Guid.NewGuid(), "T", "N", string.Empty, string.Empty);
+            service.StartForTournament(port, Guid.NewGuid(), "T", "N", string.Empty);
 
             diagnostic.Should().NotBeNull().And.Contain(port.ToString());
         }
@@ -77,12 +76,12 @@ public class PeerDiscoveryServiceTests
         var port = FindFreeUdpPort();
         using var service = new PeerDiscoveryService();
 
-        service.StartForTournament(port, Guid.NewGuid(), "T", "N", string.Empty, string.Empty);
+        service.StartForTournament(port, Guid.NewGuid(), "T", "N", string.Empty);
         // Second Start on the same service should stop the first listener
         // and open a new one — no port-in-use diagnostic.
         string diagnostic = null;
         service.DiagnosticMessage += (s, m) => diagnostic = m;
-        service.StartForTournament(port, Guid.NewGuid(), "T2", "N2", string.Empty, string.Empty);
+        service.StartForTournament(port, Guid.NewGuid(), "T2", "N2", string.Empty);
 
         diagnostic.Should().BeNull();
     }
