@@ -62,8 +62,6 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         private IList<CommandButtonItem> _drawerItems;
 
         private readonly CommandButtonItem _saveQuickCommand;
-        private readonly CommandButtonItem _openLogsQuickCommand;
-        private readonly CommandButtonItem _exportResultsQuickCommand;
         private bool _isExportingPdfs;
 
         private PeerSyncStatusTracker _peerSyncTracker;
@@ -78,10 +76,6 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
         {
             _saveQuickCommand = new CommandButtonItem("Сохранить турнир", PackIconKind.ContentSave,
                 new AsyncRelayCommand(execute: async _ => await SaveDataAsync()));
-            _openLogsQuickCommand = new CommandButtonItem("Открыть журнал", PackIconKind.FileDocumentOutline,
-                new RelayCommand(param => OpenLatestLogFile(), param => true));
-            _exportResultsQuickCommand = new CommandButtonItem("Экспорт результатов в Excel", PackIconKind.DatabaseExport,
-                new RelayCommand(param => ExportResults(), param => true));
         }
 
         public override void InitData()
@@ -122,8 +116,8 @@ namespace Wrestling.UI.Material.Tournament.Dashboard
                 return _drawerItems ?? (_drawerItems = new List<CommandButtonItem>
                 {
                     new CommandButtonItem("Настройки", new RelayCommand(param => OpenSettings(), param => true)),
-                    _exportResultsQuickCommand,
-                    _openLogsQuickCommand,
+                    new CommandButtonItem("Экспорт в CSV", new RelayCommand(param => ExportResults(), param => true)),
+                    new CommandButtonItem("Открыть журнал", new RelayCommand(param => OpenLatestLogFile(), param => true)),
                     new CommandButtonItem("Закрыть", new AsyncRelayCommand(param => CloseTournament(), param => true))
                 });
             }
