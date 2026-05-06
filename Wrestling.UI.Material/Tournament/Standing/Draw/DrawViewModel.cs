@@ -1,14 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
+using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Entities.Bracket.Seeding;
 using Wrestling.UI.Material.Model;
+using Wrestling.UI.Material.Tournament.Print;
+using Wrestling.UI.Material.Tournament.Print.PrintBracket;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Standing.Draw
@@ -26,6 +31,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
         private List<IGroupBracketProcessor> _drawTypes;
         private ObservableCollection<AgeWeightGroup> _groups;
+
+        private IList<CommandButtonItem> _quickButtons;
 
         private bool IsTeamTournament => true;
 
@@ -80,10 +87,44 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
         public int GroupsCount => DataContext.Tournament.GroupsCount;
         public int WrestlersCount => Groups?.SelectMany(gr => gr.Wrestlers).Count() ?? 0;
-        public int MatchesCount => DataContext.Tournament.MatchesCount;
+
+        // Counts only "real" matches operators must run on the carpet —
+        // bye/walkover slots that the bracket processor auto-completes with
+        // WinType=FreeWin during generation are excluded.
+        public int MatchesCount => DataContext.Tournament.Groups
+            .Where(g => g.Bracket != null)
+            .SelectMany(g => g.Bracket.Rounds)
+            .SelectMany(r => r.RoundMatches)
+            .Count(m => m.WinType != MatchWinTypeEnum.FreeWin);
 
         public string PageName => "Жеребьевка";
         public override string PageTitle => "Жеребьевка Участников";
+
+        public override IList<CommandButtonItem> QuickButtons
+        {
+            get
+            {
+                if (_quickButtons == null)
+                {
+                    CommandButtonItem printBtn = null;
+                    var printCmd = new AsyncRelayCommand(
+                        execute: async _ =>
+                        {
+                            printBtn.IsBusy = true;
+                            try { await ExportDrawProtocolsAsync(); }
+                            finally { printBtn.IsBusy = false; }
+                        },
+                        canExecute: _ => true);
+                    printBtn = new CommandButtonItem(
+                        "Сохранить протоколы жеребьевки",
+                        PackIconKind.PrinterOutline,
+                        printCmd);
+
+                    _quickButtons = new List<CommandButtonItem> { printBtn };
+                }
+                return _quickButtons;
+            }
+        }
         
         public ObservableCollection<AgeWeightGroup> Groups
         {
@@ -262,6 +303,86 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                 _seedingStrategy = Resolve<ISeedingStrategy>();
             }
             _seedingStrategy.Seed(group);
+        }
+
+        // Bulk-PDF export of the draw protocol — one bracket PDF per group
+        // that has a bracket. Same renderer as the «Скачать сетки и итоги»
+        // pipeline; before any matches are played, PrintBracketView shows
+        // the seeded participants without scores, which is exactly what the
+        // draw protocol needs.
+        private async Task ExportDrawProtocolsAsync()
+        {
+            var tournament = DataContext.Tournament;
+            var groupsWithBrackets = tournament?.Groups?
+                .Where(g => g?.Bracket != null).ToList() ?? new List<AgeWeightGroup>();
+            if (groupsWithBrackets.Count == 0)
+            {
+                Dialog.ShowMessageBox(this,
+                    "Нет групп со сгенерированными сетками. Сначала проведите жеребьёвку.",
+                    "Экспорт протоколов жеребьёвки", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var tournamentDir = !string.IsNullOrWhiteSpace(tournament.FileName)
+                ? Path.GetDirectoryName(tournament.FileName)
+                : null;
+            var defaultPath = !string.IsNullOrWhiteSpace(tournamentDir) && Directory.Exists(tournamentDir)
+                ? tournamentDir
+                : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            var settings = new FolderBrowserDialogSettings
+            {
+                Description = "Выберите папку для сохранения протоколов жеребьёвки",
+                ShowNewFolderButton = true,
+                SelectedPath = defaultPath
+            };
+
+            if (Dialog.ShowFolderBrowserDialog(this, settings) != true) return;
+
+            try
+            {
+                var jobs = new List<BulkPdfExportJob>();
+                foreach (var group in groupsWithBrackets)
+                {
+                    var capturedGroup = group;
+                    var mainRounds = capturedGroup.Bracket.Rounds.Count(r => r.RoundType == GroupRoundTypeEnum.Main);
+                    jobs.Add(new BulkPdfExportJob
+                    {
+                        FileName = "Жеребьевка_" + BulkBracketPdfExporter.MakeSafeFileName(capturedGroup.Name) + ".pdf",
+                        Landscape = mainRounds >= 5,
+                        ViewFactory = () =>
+                        {
+                            DataContext.Group = capturedGroup;
+                            var vm = new PrintBracketViewModel(DiContainer) { IsDrawProtocol = true };
+                            vm.InitData();
+                            return new PrintBracketView { DataContext = vm };
+                        }
+                    });
+                }
+
+                ShowSnackMessage($"Идет создание протоколов жеребьёвки: {jobs.Count} файлов...");
+
+                var exporter = new BulkBracketPdfExporter();
+                var result = await exporter.ExportAsync(jobs, settings.SelectedPath);
+
+                var msg = $"Готово. Сохранено PDF: {result.Succeeded}";
+                if (result.Skipped > 0) msg += $", пропущено: {result.Skipped}";
+                if (result.Failures.Count > 0) msg += $", ошибок: {result.Failures.Count}";
+                ShowSnackMessage(msg);
+
+                if (result.Failures.Count > 0)
+                {
+                    Dialog.ShowMessageBox(this,
+                        "Не удалось сохранить часть протоколов:\n\n" + string.Join("\n", result.Failures),
+                        "Экспорт протоколов жеребьёвки", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                Dialog.ShowMessageBox(this,
+                    "Ошибка экспорта: " + ex.Message,
+                    "Экспорт протоколов жеребьёвки", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         #endregion

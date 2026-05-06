@@ -1,9 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Windows;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Threading;
 using MvvmDialogs;
 using Wrestling.UI.Utils;
@@ -46,19 +44,6 @@ namespace Wrestling.UI.Material
         private void ViewModelRequestClose(object sender, System.EventArgs e)
         {
             Close();
-        }
-
-        private void UIElement_OnPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            //until we had a StaysOpen glag to Drawer, this will help with scroll bars
-            var dependencyObject = Mouse.Captured as DependencyObject;
-            while (dependencyObject != null)
-            {
-                if (dependencyObject is ScrollBar) return;
-                dependencyObject = VisualTreeHelper.GetParent(dependencyObject);
-            }
-
-            MenuToggleButton.IsChecked = false;
         }
 
         protected override void OnClosing(CancelEventArgs e)

@@ -23,7 +23,6 @@ namespace Wrestling.UI.Material.Model
 
         public TeamApplicationViewModel Team { get; set; }
         public bool IsAuthenticated { get; set; }
-        public bool IsBracketView { get; set; }
         public List<Wrestler> WrestlersCache { get; set; }
         public List<TeamApplication> TeamsCache { get; set; }
         public string UserName { get; set; }

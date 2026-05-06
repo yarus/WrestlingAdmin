@@ -18,14 +18,13 @@ public class HomeViewModelTests
     }
 
     [Fact]
-    public void DrawerItems_include_settings_and_exit_buttons()
+    public void Open_and_new_tournament_commands_are_available_on_home_page()
     {
         var di = TestContainerBuilder.MakeDefault();
         var vm = new HomeViewModel(di);
 
-        vm.DrawerItems.Should().HaveCount(2);
-        vm.DrawerItems[0].Label.Should().Be("Настройки");
-        vm.DrawerItems[1].Label.Should().Be("Выйти");
+        vm.OpenTournamentCommand.Should().NotBeNull();
+        vm.NewTournamentCommand.Should().NotBeNull();
     }
 
     [Fact]

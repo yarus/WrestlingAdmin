@@ -15,121 +15,126 @@
     <UserControl.Resources>
         <converters:PathToImageConverter x:Key="ClubToIconConverter" />
         <converters1:IndexConverter x:Key="IndexConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <Grid>
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <Grid x:Name="RootControl" Margin="10">
+    <Grid x:Name="RootControl" Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="330" />
+        </Grid.ColumnDefinitions>
 
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
+        <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <materialDesign:Card Margin="10 5 10 5">
+                    <StackPanel>
+                        <StackPanel Margin="10">
+                            <StackPanel.Resources>
+                                <Style TargetType="TextBox" BasedOn="{StaticResource MaterialDesignFloatingHintTextBox}">
+                                    <Setter Property="Margin" Value="0,14,0,0" />
+                                    <Setter Property="FontSize" Value="18" />
+                                </Style>
+                            </StackPanel.Resources>
 
-                <StackPanel Grid.Row="0" Grid.Column="0">
-                    <materialDesign:Card Margin="10 5 10 5">
-                        <StackPanel>
-                            <StackPanel Margin="10">
-                                <TextBlock Style="{DynamicResource MaterialDesignHeadline5TextBlock}">Соревнования</TextBlock>
+                            <TextBlock Style="{DynamicResource MaterialDesignHeadline5TextBlock}">Соревнования</TextBlock>
 
-                                <TextBox Text="{Binding Tournament.HashTag, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="Хэш Тэг"
-                                         TextWrapping="NoWrap" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" FontSize="18" />
+                            <TextBox Text="{Binding Tournament.HashTag, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="Хэш Тэг"
+                                     TextWrapping="NoWrap" />
 
-                                <TextBox Text="{Binding Tournament.Name, UpdateSourceTrigger=PropertyChanged}"
-                                         TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
-                                         Style="{DynamicResource MaterialDesignFloatingHintTextBox}" FontSize="18"
-                                         materialDesign:HintAssist.Hint="Название" MaxHeight="80" />
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition />
-                                        <ColumnDefinition />
-                                    </Grid.ColumnDefinitions>
-
-                                    <DatePicker SelectedDate="{Binding Path=Tournament.StartDate, UpdateSourceTrigger=PropertyChanged}" 
-                                                materialDesign:HintAssist.Hint="Дата проведения"
-                                                Style="{DynamicResource MaterialDesignFloatingHintDatePicker}"
-                                                HorizontalAlignment="Left" FontSize="18" MinWidth="160" Margin="0,10,0,0" />
-
-                                    <TextBox Grid.Column="1" 
-                                             Text="{Binding Tournament.EntryFee, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="Вступительный взнос" Margin="5,0,0,0"
-                                             TextWrapping="NoWrap" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" FontSize="18" />
-                                </Grid>
-                                
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition />
-                                        <ColumnDefinition />
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBox Grid.Column="0" 
-                                             Text="{Binding Tournament.Country, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="Страна" Margin="0,0,10,0"
-                                             TextWrapping="NoWrap" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" FontSize="18" />
-
-                                    <TextBox Grid.Column="1" 
-                                             Text="{Binding Tournament.City, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="Город" Margin="5,0,0,0"
-                                             TextWrapping="NoWrap" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" FontSize="18" />
-
-                                </Grid>
-
-                                <TextBox Text="{Binding Tournament.Address, UpdateSourceTrigger=PropertyChanged}"
-                                         TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
-                                         Style="{DynamicResource MaterialDesignFloatingHintTextBox}" FontSize="18"
-                                         materialDesign:HintAssist.Hint="Адрес" MaxHeight="80" />
-                            </StackPanel>
+                            <TextBox Text="{Binding Tournament.Name, UpdateSourceTrigger=PropertyChanged}"
+                                     TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                                     materialDesign:HintAssist.Hint="Название" MaxHeight="80" />
 
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
                                 </Grid.ColumnDefinitions>
 
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
+                                <DatePicker SelectedDate="{Binding Path=Tournament.StartDate, UpdateSourceTrigger=PropertyChanged}"
+                                            materialDesign:HintAssist.Hint="Дата проведения"
+                                            Style="{DynamicResource MaterialDesignFloatingHintDatePicker}"
+                                            HorizontalAlignment="Left" FontSize="18" MinWidth="160" Margin="0,14,0,0" />
 
-                                <StackPanel Grid.Row="0" Grid.Column="0" Margin="10">
-                                    <TextBlock Style="{DynamicResource MaterialDesignHeadline5TextBlock}">Главный судья</TextBlock>
-
-                                    <TextBox Text="{Binding Tournament.MainJudge, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="ФИО"
-                                             TextWrapping="NoWrap" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" FontSize="18" />
-
-                                    <TextBox Text="{Binding Tournament.MainJudgeEmail, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="Email"
-                                             TextWrapping="NoWrap" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" FontSize="18" />
-
-                                    <TextBox Text="{Binding Tournament.MainJudgePhone, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="Телефон" 
-                                             TextWrapping="NoWrap" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" FontSize="18" />
-                                </StackPanel>
-
-                                <StackPanel Grid.Row="0" Grid.Column="1" Margin="10">
-                                    <TextBlock Style="{DynamicResource MaterialDesignHeadline5TextBlock}">Главный секретарь</TextBlock>
-
-                                    <TextBox Text="{Binding Tournament.MainSecretary, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="ФИО" 
-                                             TextWrapping="NoWrap" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" FontSize="18" />
-
-                                    <TextBox Text="{Binding Tournament.MainSecretaryEmail, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="Email" 
-                                             TextWrapping="NoWrap" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" FontSize="18" />
-
-                                    <TextBox Text="{Binding Tournament.MainSecretaryPhone, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="Телефон"
-                                             TextWrapping="NoWrap" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" FontSize="18" />
-                                </StackPanel>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding Tournament.EntryFee, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="Вступительный взнос" Margin="10,14,0,0"
+                                         TextWrapping="NoWrap" />
                             </Grid>
-                        </StackPanel>
-                    </materialDesign:Card>
-                </StackPanel>
 
-                <StackPanel Grid.Row="1" Grid.Column="0">
-                    <Border BorderThickness="1" Background="White" BorderBrush="{DynamicResource MaterialDesignShadowBrush}" MinHeight="256" ClipToBounds="True" Margin="10 5 10 5">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox Grid.Column="0"
+                                         Text="{Binding Tournament.Country, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="Страна" Margin="0,14,10,0"
+                                         TextWrapping="NoWrap" />
+
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding Tournament.City, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="Город" Margin="10,14,0,0"
+                                         TextWrapping="NoWrap" />
+                            </Grid>
+
+                            <TextBox Text="{Binding Tournament.Address, UpdateSourceTrigger=PropertyChanged}"
+                                     TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                                     materialDesign:HintAssist.Hint="Адрес" MaxHeight="80" />
+                        </StackPanel>
+
+                        <Grid Margin="10">
+                            <Grid.Resources>
+                                <Style TargetType="TextBox" BasedOn="{StaticResource MaterialDesignFloatingHintTextBox}">
+                                    <Setter Property="Margin" Value="0,14,0,0" />
+                                    <Setter Property="FontSize" Value="18" />
+                                </Style>
+                            </Grid.Resources>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Style="{DynamicResource MaterialDesignHeadline5TextBlock}">Главный судья</TextBlock>
+
+                                <TextBox Text="{Binding Tournament.MainJudge, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="ФИО"
+                                         TextWrapping="NoWrap" />
+
+                                <TextBox Text="{Binding Tournament.MainJudgeEmail, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="Email"
+                                         TextWrapping="NoWrap" />
+
+                                <TextBox Text="{Binding Tournament.MainJudgePhone, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="Телефон"
+                                         TextWrapping="NoWrap" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                <TextBlock Style="{DynamicResource MaterialDesignHeadline5TextBlock}">Главный секретарь</TextBlock>
+
+                                <TextBox Text="{Binding Tournament.MainSecretary, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="ФИО"
+                                         TextWrapping="NoWrap" />
+
+                                <TextBox Text="{Binding Tournament.MainSecretaryEmail, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="Email"
+                                         TextWrapping="NoWrap" />
+
+                                <TextBox Text="{Binding Tournament.MainSecretaryPhone, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="Телефон"
+                                         TextWrapping="NoWrap" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </materialDesign:Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Column="1" BorderThickness="1" Background="White" BorderBrush="{DynamicResource MaterialDesignShadowBrush}" MinHeight="256" ClipToBounds="True" Margin="10 5 10 5">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -161,95 +166,96 @@
                                 </Viewbox>
                             </Button>
 
-                            <!-- Multi-column ListView -->
-                            <ListView Grid.Row="1" 
-                      ItemsSource="{Binding Groups}" 
-                      x:Name="GroupsSource"
-                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                      SelectionMode="Single">
-                                <ListView.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel Orientation="Horizontal" 
-                                   Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ScrollContentPresenter}}"/>
-                                    </ItemsPanelTemplate>
-                                </ListView.ItemsPanel>
+                            <!-- Tabular group list. Whole row clickable → opens edit dialog;
+                                 trailing X removes the group. Пол column shows only when both
+                                 genders are present in the list. -->
+                            <ListView Grid.Row="1"
+                                      ItemsSource="{Binding Groups}"
+                                      x:Name="GroupsSource"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                      SelectionMode="Single">
+                                <ListView.View>
+                                    <GridView AllowsColumnReorder="False">
+                                        <GridViewColumn Header="#" Width="32">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}"
+                                                               FontSize="13"
+                                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
 
-                                <ListView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Margin="0" 
-                                Padding="10" 
-                                Width="290"
-                                BorderThickness="1" 
-                                BorderBrush="{DynamicResource MaterialDesignShadowBrush}"
-                                Background="White"
-                                CornerRadius="4">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
+                                        <GridViewColumn Header="Группа" Width="130">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding NameWithoutGender}"
+                                                               FontWeight="SemiBold"
+                                                               FontSize="13"
+                                                               VerticalAlignment="Center" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
 
-                                                <!-- Group Name -->
-                                                <TextBlock Grid.Row="0" Grid.Column="0" 
-                                           Text="{Binding Name}" 
-                                           FontWeight="SemiBold"
-                                           FontSize="14"
-                                           VerticalAlignment="Center"
-                                           TextTrimming="CharacterEllipsis"/>
+                                        <GridViewColumn Header="Время" Width="44">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding MaxRoundSecond, StringFormat='{}{0}s'}"
+                                                               FontSize="12"
+                                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                               HorizontalAlignment="Right"
+                                                               VerticalAlignment="Center" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
 
-                                                <!-- Max Round Second -->
-                                                <Border Grid.Row="0" Grid.Column="1" 
-                                        Background="{DynamicResource MaterialDesignPrimaryBrush}"
-                                        CornerRadius="3"
-                                        Padding="2">
-                                                    <TextBlock Text="{Binding MaxRoundSecond, StringFormat='({0} сек)'}"                                              
-                                               FontSize="11"
-                                               FontWeight="Bold"
-                                               VerticalAlignment="Center"
-                                               HorizontalAlignment="Left"/>
-                                                </Border>
+                                        <GridViewColumn Header="Пол"
+                                                        Width="{Binding ElementName=RootControl, Path=DataContext.GenderColumnWidth, Mode=OneWay}">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding IsFemaleLabel}"
+                                                               FontSize="12"
+                                                               Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
 
-                                                <!-- Action Buttons -->
-                                                <StackPanel Grid.Row="0" Grid.Column="2"
-                                            Orientation="Horizontal" 
-                                            HorizontalAlignment="Right"
-                                            Margin="4 0 0 0">
-                                                    <Button ToolTip="Редактировать данные группы" 
-                                            Margin="4,0,0,0" 
-                                            Padding="0" 
-                                            Width="22" 
-                                            Height="22"
-                                            Style="{DynamicResource MaterialDesignFloatingActionMiniButton}"
-                                            Command="{Binding ElementName=RootControl, Path=DataContext.EditGroupCommand}"
-                                            CommandParameter="{Binding}">
-                                                        <materialDesign:PackIcon Kind="BorderColor" Width="16" Height="16" />
+                                        <GridViewColumn Width="28">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button ToolTip="Удалить группу"
+                                                            Width="22" Height="22"
+                                                            Padding="0"
+                                                            HorizontalAlignment="Left"
+                                                            BorderThickness="0"
+                                                            Background="Transparent"
+                                                            Style="{DynamicResource MaterialDesignToolButton}"
+                                                            Command="{Binding ElementName=RootControl, Path=DataContext.DeleteGroupCommand}"
+                                                            CommandParameter="{Binding}">
+                                                        <materialDesign:PackIcon Kind="Close" Width="14" Height="14" />
                                                     </Button>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
 
-                                                    <Button ToolTip="Удалить группу" 
-                                            Margin="8,0,0,0" 
-                                            Padding="0" 
-                                            Width="22" 
-                                            Height="22"
-                                            Style="{DynamicResource MaterialDesignFloatingActionMiniButton}"
-                                            Command="{Binding ElementName=RootControl, Path=DataContext.DeleteGroupCommand}"
-                                            CommandParameter="{Binding}">
-                                                        <materialDesign:PackIcon Kind="Close" Width="16" Height="16" />
-                                                    </Button>
-                                                </StackPanel>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="Cursor" Value="Hand" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    </Style>
+                                </ListView.ItemContainerStyle>
 
                                 <i:Interaction.Triggers>
                                     <i:EventTrigger EventName="MouseDoubleClick">
                                         <i:InvokeCommandAction
-                            Command="{Binding ElementName=RootControl, Path=DataContext.EditGroupCommand}"
-                            CommandParameter="{Binding Path=SelectedItem, ElementName=GroupsSource}" />
+                                            Command="{Binding ElementName=RootControl, Path=DataContext.EditGroupCommand}"
+                                            CommandParameter="{Binding Path=SelectedItem, ElementName=GroupsSource}" />
                                     </i:EventTrigger>
                                 </i:Interaction.Triggers>
                             </ListView>
@@ -262,11 +268,7 @@
                         Margin="0,20,0,10"
                         Command="{Binding GenerateGroupsCommand}" />
                             </StackPanel>
-                        </Grid>
-                    </Border>
-                </StackPanel>
-
             </Grid>
-        </ScrollViewer>
+        </Border>
     </Grid>
 </UserControl>

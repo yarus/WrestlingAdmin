@@ -17,7 +17,8 @@ namespace Wrestling.UI.Material.Model
 
         private readonly IDiContainer _container;
 
-        public virtual IList<CommandButtonItem> DrawerItems { get; }
+        // DrawerItems removed in shell refactor — the persistent NavigationRail
+        // owns top-level navigation. Per-VM drawer overrides are gone too.
         public virtual IList<CommandButtonItem> QuickButtons { get; }
 
         public virtual string WindowTitle
@@ -53,7 +54,6 @@ namespace Wrestling.UI.Material.Model
         {
             _container = container;
 
-            DrawerItems = new List<CommandButtonItem>();
             QuickButtons = new List<CommandButtonItem>();
         }
 

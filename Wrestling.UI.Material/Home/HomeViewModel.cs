@@ -8,8 +8,7 @@ using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.Settings;
-using Wrestling.UI.Material.Tournament.Dashboard;
+using Wrestling.UI.Material.Tournament.Standing.Details;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Home
@@ -20,11 +19,9 @@ namespace Wrestling.UI.Material.Home
 
         private ITournamentsManager _tournManager;
         private ICacheManager _cacheManager;
-        private IList<CommandButtonItem> _drawerItems;
 
         private ICommand _newTournamentCommand;
         private ICommand _openTournamentCommand;
-        private ICommand _openSettingsCommand;
 
         #endregion
 
@@ -42,34 +39,7 @@ namespace Wrestling.UI.Material.Home
 
         public override string PageTitle => "Вольная борьба - Администратор турниров версия 20260421";
 
-        public override IList<CommandButtonItem> DrawerItems
-        {
-            get
-            {
-                return _drawerItems ?? (_drawerItems = new List<CommandButtonItem>
-                {
-                    new CommandButtonItem("Настройки", new RelayCommand(param => OpenSettings(), param => true)),
-                    new CommandButtonItem("Выйти", new RelayCommand(param => CloseApp(), param => true))
-                });
-            }
-        }
-
         #region Commands
-
-        public ICommand OpenSettingsCommand
-        {
-            get
-            {
-                if (_openSettingsCommand == null)
-                {
-                    _openSettingsCommand = new RelayCommand(
-                        param => OpenSettings(),
-                        param => true
-                    );
-                }
-                return _openSettingsCommand;
-            }
-        }
 
         public ICommand NewTournamentCommand
         {
@@ -130,7 +100,10 @@ namespace Wrestling.UI.Material.Home
 
                     Resolve<IResultsService>().Recalculate(tournament);
 
-                    NavigateToView<DashboardViewModel>();
+                    // After opening / creating a tournament, land on the first
+            // phase (Положение). The persistent rail then guides the
+            // operator through the tournament lifecycle.
+            NavigateToView<DetailsViewModel>();
                 }
             }
         }
@@ -262,7 +235,10 @@ namespace Wrestling.UI.Material.Home
                 }
             }
 
-            NavigateToView<DashboardViewModel>();
+            // After opening / creating a tournament, land on the first
+            // phase (Подготовка). The persistent rail then guides the
+            // operator through the tournament lifecycle.
+            NavigateToView<DetailsViewModel>();
         }
 
         private GlobalSettings GetSettingsObject()
@@ -283,11 +259,6 @@ namespace Wrestling.UI.Material.Home
             };
 
             return settings;
-        }
-
-        private void OpenSettings()
-        {
-            NavigateToView<SettingsViewModel>();
         }
 
         #endregion

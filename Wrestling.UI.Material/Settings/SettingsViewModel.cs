@@ -7,15 +7,17 @@ using System.Media;
 using System.Net;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using Wrestling.Entities;
+using Wrestling.Providers;
 using Wrestling.Providers.Network;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.Tournament.Dashboard;
+using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Settings
@@ -31,6 +33,8 @@ namespace Wrestling.UI.Material.Settings
         private ICommand _browseSignatureFooterImageCommand;
         private ICommand _removeSignatureFooterImageCommand;
         private ICommand _copyPublicUrlCommand;
+        private ICommand _closeTournamentCommand;
+        private ICommand _openErrorLogCommand;
 
         private string _validation;
         private GlobalSettings _subscribedItem;
@@ -130,7 +134,89 @@ namespace Wrestling.UI.Material.Settings
             }
             else
             {
-                NavigateToView<DashboardViewModel>();
+                // Settings closes via the rail — no programmatic back nav.
+            }
+        }
+
+        // Tournament-management actions live here (Step 10) instead of on
+        // the bygone Dashboard. Close-tournament is a destructive action;
+        // we save first (best-effort) before clearing state and bouncing
+        // back to Home, where the operator can pick a new file.
+        public bool IsTournamentLoaded => DataContext?.Tournament != null;
+
+        public ICommand CloseTournamentCommand =>
+            _closeTournamentCommand ?? (_closeTournamentCommand = new AsyncRelayCommand(
+                execute: _ => CloseTournamentAsync(),
+                canExecute: _ => DataContext?.Tournament != null));
+
+        public ICommand OpenErrorLogCommand =>
+            _openErrorLogCommand ?? (_openErrorLogCommand = new RelayCommand(
+                p => OpenErrorLog(),
+                p => true));
+
+        private async Task CloseTournamentAsync()
+        {
+            var tournament = DataContext?.Tournament;
+            if (tournament == null) return;
+
+            // Confirm — closing wipes in-memory state. A successful save
+            // still happens first, but the operator may have a half-edited
+            // form they didn't mean to commit. Mirror the spirit of the
+            // old Dashboard close-tournament flow.
+            if (Dialog.ShowMessageBox(this,
+                    "Закрыть текущий турнир и вернуться на стартовый экран?",
+                    "Подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+            {
+                return;
+            }
+
+            // Best-effort save (no-op if FileName isn't set yet).
+            try
+            {
+                if (!string.IsNullOrEmpty(tournament.FileName))
+                {
+                    var manager = Resolve<ITournamentsManager>();
+                    if (manager != null)
+                    {
+                        var ok = await manager.SaveToFileAsync(tournament, tournament.FileName);
+                        if (!ok) ShowSnackMessage("При сохранении произошла ошибка!");
+                    }
+                }
+            }
+            catch
+            {
+                // Swallow — closing must succeed even if the save path failed.
+            }
+
+            // Tear down anything tied to the open tournament: slider windows,
+            // match-state, computed results. Mirrors TournamentViewModelBase.
+            Resolve<ISliderWindowManager>()?.CloseAll();
+            DataContext.Tournament = null;
+            DataContext.Group = null;
+            DataContext.WrestlingMatch = null;
+            Resolve<IResultsService>()?.Recalculate(null);
+            OnPropertyChanged(nameof(IsTournamentLoaded));
+
+            NavigateToView<HomeViewModel>();
+        }
+
+        private void OpenErrorLog()
+        {
+            try
+            {
+                var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                var appName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+                var logsDir = Path.Combine(appData, appName, "Logs");
+                if (!Directory.Exists(logsDir))
+                {
+                    ShowSnackMessage("Папка журналов ещё не создана.");
+                    return;
+                }
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(logsDir) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                ShowSnackMessage($"Не удалось открыть журнал: {ex.Message}");
             }
         }
 

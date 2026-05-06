@@ -15,6 +15,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:IndexConverter x:Key="IndexConverter"/>
         <converters:IndexItemsConverter x:Key="ItemsIndexConverter" />
+        <converters:SubtractDoubleConverter x:Key="SubtractDouble" />
 
         <converters:ValueConverterGroup x:Key="InvBoolToVis">
             <converters:BoolInverterConverter />
@@ -43,10 +44,16 @@
                         Command="{Binding AddCarpetCommand}" />
             </StackPanel>
 
-            <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Не распределенных групп:" />
-                <Run Text="{Binding UnbindedGroups, Mode=OneWay}" />
-            </TextBlock>
+            <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal"
+                        Margin="20,0,20,0" VerticalAlignment="Center"
+                        ToolTip="Количество нераспределенных групп">
+                <materialDesign:PackIcon Kind="FormatListBulleted" Width="20" Height="20"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                <TextBlock Text="{Binding UnbindedGroups, Mode=OneWay}"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="6,0,0,0" />
+            </StackPanel>
         </Grid>
 
         <ScrollViewer Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
@@ -68,6 +75,7 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Grid.Column="0" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -83,22 +91,45 @@
                                         <Run Text="{Binding Name}"></Run>
                                     </TextBlock>
 
-                                    <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                                        <Run Text="Участников:" />
-                                        <Run Text="{Binding WrestlersCount, Mode=OneWay}" />
-                                    </TextBlock>
+                                    <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal"
+                                                Margin="12,0,12,0" VerticalAlignment="Center"
+                                                ToolTip="Количество участников на ковре">
+                                        <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
+                                                                 VerticalAlignment="Center"
+                                                                 Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                        <TextBlock Text="{Binding WrestlersCount, Mode=OneWay}"
+                                                   FontSize="16" VerticalAlignment="Center"
+                                                   Margin="6,0,0,0" />
+                                    </StackPanel>
 
-                                    <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                                        <Run Text="Поединков:" />
-                                        <Run Text="{Binding MatchesCount, Mode=OneWay}" />
-                                    </TextBlock>
+                                    <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal"
+                                                Margin="12,0,12,0" VerticalAlignment="Center"
+                                                ToolTip="Количество схваток на ковре (без автозавершенных)">
+                                        <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
+                                                                 VerticalAlignment="Center"
+                                                                 Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                        <TextBlock Text="{Binding MatchesCount, Mode=OneWay}"
+                                                   FontSize="16" VerticalAlignment="Center"
+                                                   Margin="6,0,0,0" />
+                                    </StackPanel>
 
-                                    <Button Grid.Column="4" ToolTip="Редактировать информацию о ковре" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                    <StackPanel Grid.Row="0" Grid.Column="4" Orientation="Horizontal"
+                                                Margin="12,0,12,0" VerticalAlignment="Center"
+                                                ToolTip="Ожидаемое время проведения схваток (раунд × 2 + перерыв)">
+                                        <materialDesign:PackIcon Kind="ClockOutline" Width="20" Height="20"
+                                                                 VerticalAlignment="Center"
+                                                                 Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                        <TextBlock Text="{Binding ExpectedDurationLabel, Mode=OneWay}"
+                                                   FontSize="16" VerticalAlignment="Center"
+                                                   Margin="6,0,0,0" />
+                                    </StackPanel>
+
+                                    <Button Grid.Column="5" ToolTip="Редактировать информацию о ковре" VerticalAlignment="Center" HorizontalAlignment="Center"
                                             Command="{Binding Path=DataContext.EditCarpetCommand, ElementName=RootControl}" CommandParameter="{Binding }">
                                         <materialDesign:PackIcon Kind="BorderColor" Width="22" Height="22" Padding="0" />
                                     </Button>
 
-                                    <Button Grid.Column="5" ToolTip="Удалить ковер" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                    <Button Grid.Column="6" ToolTip="Удалить ковер" VerticalAlignment="Center" HorizontalAlignment="Center"
                                             Command="{Binding Path=DataContext.DeleteCarpetCommand, ElementName=RootControl}" CommandParameter="{Binding }" Margin="20,0,0,0">
                                         <materialDesign:PackIcon Kind="Close" Width="22" Height="22" Margin="0" Padding="0" />
                                     </Button>
@@ -109,64 +140,97 @@
                                     <Button  Content="Добавить группу" Width="160" HorizontalAlignment="Left" Margin="20,10,0,10" 
                                              ToolTip="Распределить схватки группы на данный ковер"
                                              Command="{Binding Path=DataContext.BindGroupCommand, ElementName=RootControl}" CommandParameter="{Binding }" />
-                                    <ListView ItemsSource="{Binding Groups}" x:Name="GroupsSource" Margin="40,0,0,0">
+                                    <ListView ItemsSource="{Binding Groups}" x:Name="GroupsSource"
+                                              Margin="10,0,10,0"
+                                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
                                         <ListView.View>
-                                            <GridView AllowsColumnReorder="true">
-                                                <GridViewColumn Header="#">
+                                            <GridView AllowsColumnReorder="false">
+                                                <GridView.ColumnHeaderContainerStyle>
+                                                    <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+                                                        <Setter Property="Padding" Value="6,4,6,4" />
+                                                        <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                                    </Style>
+                                                </GridView.ColumnHeaderContainerStyle>
+
+                                                <GridViewColumn Header="#" Width="44">
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
-                                                            <TextBlock Margin="0,5,0,0" Text="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                                            <TextBlock Text="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}"
+                                                                       TextWrapping="NoWrap" FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
 
-                                                <GridViewColumn Header="Группа" Width="Auto">
+                                                <GridViewColumn Header="Группа" Width="240">
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
-                                                            <TextBlock Text="{Binding Name}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                            <TextBlock Text="{Binding Name}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                                       FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Left" />
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
 
-                                                <GridViewColumn Header="Участников" Width="Auto">
+                                                <GridViewColumn Header="Участников" Width="100">
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
-                                                            <TextBlock Text="{Binding Path=Wrestlers.Count, Mode=OneWay}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                            <TextBlock Text="{Binding Path=Wrestlers.Count, Mode=OneWay}"
+                                                                       TextWrapping="NoWrap" FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
 
-                                                <GridViewColumn Header="Поединков" Width="Auto">
+                                                <GridViewColumn Header="Поединков" Width="100">
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
-                                                            <TextBlock Text="{Binding Path=PendingMatchesCount, Mode=OneWay}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                            <TextBlock Text="{Binding Path=PendingMatchesCount, Mode=OneWay}"
+                                                                       TextWrapping="NoWrap" FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
-                                                </GridViewColumn>                                                
-                                                
-                                                <GridViewColumn Width="Auto">
+                                                </GridViewColumn>
+
+                                                <GridViewColumn Header="Время раунда" Width="120">
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
-                                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0" Orientation="Horizontal">
-                                                                <Button ToolTip="Переместить группу выше по списку" Margin="20,0,0,0" Padding="0" Width="22" Height="22"
-                                                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                                            <TextBlock Text="{Binding Path=MaxRoundSecond, StringFormat='{}{0}с', Mode=OneWay}"
+                                                                       TextWrapping="NoWrap" FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                                        </DataTemplate>
+                                                    </GridViewColumn.CellTemplate>
+                                                </GridViewColumn>
+
+                                                <GridViewColumn Width="{Binding ActualWidth, ElementName=GroupsSource, Converter={StaticResource SubtractDouble}, ConverterParameter=620}">
+                                                    <GridViewColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0" Orientation="Horizontal">
+                                                                <Button ToolTip="Переместить группу выше по списку"
+                                                                        Margin="0" Padding="0" Width="22" Height="22"
+                                                                        Background="Transparent" BorderThickness="0"
+                                                                        Style="{DynamicResource MaterialDesignToolButton}"
                                                                         Command="{Binding ElementName=RootControl, Path=DataContext.UpGroupCommand}"
-                                                                        CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                                                    <materialDesign:PackIcon Kind="ArrowUp" Width="22" Height="22" Margin="0" Padding="0" />
+                                                                        CommandParameter="{Binding }" VerticalAlignment="Center">
+                                                                    <materialDesign:PackIcon Kind="ArrowUp" Width="18" Height="18" Margin="0" Padding="0" />
                                                                 </Button>
 
-                                                                <Button ToolTip="Переместить группу ниже по списку" Margin="20,0,0,0" Padding="0" Width="22" Height="22"
-                                                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                                                <Button ToolTip="Переместить группу ниже по списку"
+                                                                        Margin="6,0,0,0" Padding="0" Width="22" Height="22"
+                                                                        Background="Transparent" BorderThickness="0"
+                                                                        Style="{DynamicResource MaterialDesignToolButton}"
                                                                         Command="{Binding ElementName=RootControl, Path=DataContext.DownGroupCommand}"
-                                                                        CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                                                    <materialDesign:PackIcon Kind="ArrowDown" Width="22" Height="22" Margin="0" Padding="0" />
+                                                                        CommandParameter="{Binding }" VerticalAlignment="Center">
+                                                                    <materialDesign:PackIcon Kind="ArrowDown" Width="18" Height="18" Margin="0" Padding="0" />
                                                                 </Button>
 
-                                                                <Button ToolTip="Удалить группу из распределения на данный ковер" Margin="20,0,0,0" Padding="0" Width="22" Height="22"
-                                                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                                                <Button ToolTip="Удалить группу из распределения на данный ковер"
+                                                                        Margin="6,0,0,0" Padding="0" Width="22" Height="22"
+                                                                        Background="Transparent" BorderThickness="0"
+                                                                        Style="{DynamicResource MaterialDesignToolButton}"
                                                                         Command="{Binding ElementName=RootControl, Path=DataContext.UnbindGroupCommand}"
-                                                                        CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                                                    <materialDesign:PackIcon Kind="Close" Width="22" Height="22" Margin="0" Padding="0" />
+                                                                        CommandParameter="{Binding }" VerticalAlignment="Center">
+                                                                    <materialDesign:PackIcon Kind="Close" Width="18" Height="18" Margin="0" Padding="0" />
                                                                 </Button>
                                                             </StackPanel>
                                                         </DataTemplate>

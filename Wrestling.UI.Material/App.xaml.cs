@@ -16,8 +16,10 @@ using Wrestling.Entities.Results.Achievements;
 using Wrestling.Providers;
 using Wrestling.Providers.Network;
 using Wrestling.UI.Material.Home;
+using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
+using Wrestling.UI.Material.Settings;
 using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Material.Slider.Slides;
 using Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide;
@@ -25,9 +27,17 @@ using Wrestling.UI.Material.Slider.Slides.GroupBracketSlide;
 using Wrestling.UI.Material.Slider.Slides.ImageSlide;
 using Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide;
 using Wrestling.UI.Material.Slider.Slides.VideoSlide;
+using Wrestling.UI.Material.Tournament.Data;
+using Wrestling.UI.Material.Tournament.Phase5;
+using Wrestling.UI.Material.Tournament.Phase6;
 using Wrestling.UI.Material.Tournament.Print;
+using Wrestling.UI.Material.Tournament.Print.PrintBracket;
+using Wrestling.UI.Material.Tournament.Standing.Applications;
+using Wrestling.UI.Material.Tournament.Standing.Carpets;
 using Wrestling.UI.Material.Tournament.Standing.Details;
+using Wrestling.UI.Material.Tournament.Standing.Draw;
 using Wrestling.UI.Material.Utils;
+using MaterialDesignThemes.Wpf;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material
@@ -93,9 +103,54 @@ namespace Wrestling.UI.Material
                 };
             }
 
+            // Build the persistent left-rail items + overlay-parent mapping
+            // now that all phase VMs are registered. Done before Show() so the
+            // first frame already has the rail wired up (rail itself stays
+            // hidden on Home — IsRailVisible reacts to TournamentChanged).
+            if (shell != null)
+            {
+                shell.SetNavigationItems(BuildNavigationItems(navService));
+                shell.RegisterOverlayParent(typeof(MatchControlViewModel), typeof(Phase5ViewModel));
+                shell.RegisterOverlayParent(typeof(MatchResultsViewModel), typeof(Phase5ViewModel));
+                shell.RegisterOverlayParent(typeof(PrintBracketViewModel), typeof(Phase5ViewModel));
+            }
+
             app.Show();
 
             navService.NavigateToView<HomeViewModel>();
+        }
+
+        private static IList<INavigationItem> BuildNavigationItems(INavigationService navService)
+        {
+            var items = new List<INavigationItem>
+            {
+                new NavigationItem("Положение", PackIconKind.FileDocumentOutline,
+                    typeof(DetailsViewModel),
+                    new RelayCommand(_ => navService.NavigateToView<DetailsViewModel>())),
+                new NavigationItem("Регистрация", PackIconKind.ClipboardList,
+                    typeof(ApplicationsViewModel),
+                    new RelayCommand(_ => navService.NavigateToView<ApplicationsViewModel>())),
+                new NavigationItem("Жеребьёвка", PackIconKind.Shuffle,
+                    typeof(DrawViewModel),
+                    new RelayCommand(_ => navService.NavigateToView<DrawViewModel>())),
+                new NavigationItem("Расписание", PackIconKind.Calendar,
+                    typeof(CarpetsViewModel),
+                    new RelayCommand(_ => navService.NavigateToView<CarpetsViewModel>())),
+                new NavigationItem("Проведение", PackIconKind.Play,
+                    typeof(Phase5ViewModel),
+                    new RelayCommand(_ => navService.NavigateToView<Phase5ViewModel>())),
+                new NavigationItem("Результаты", PackIconKind.Trophy,
+                    typeof(Phase6ViewModel),
+                    new RelayCommand(_ => navService.NavigateToView<Phase6ViewModel>())),
+                NavigationItem.Separator(),
+                new NavigationItem("Данные", PackIconKind.Database,
+                    typeof(DataViewModel),
+                    new RelayCommand(_ => navService.NavigateToView<DataViewModel>())),
+                new NavigationItem("Настройки", PackIconKind.Cog,
+                    typeof(SettingsViewModel),
+                    new RelayCommand(_ => navService.NavigateToView<SettingsViewModel>()))
+            };
+            return items;
         }
 
         private void LoadSpecialViewModels(IDiContainer di)
@@ -378,6 +433,19 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             di.Add<PeerSyncStatusTracker>(new PeerSyncStatusTracker(discovery, dc, Current.Dispatcher));
 
             di.Add(new WwfScoreScreenView(), "ScoreScreen");
+
+            // Per-PC sticky UI preferences (e.g. selected carpet on the
+            // "Проведение → Ковер" sub-tab). Backed by a JSON file under
+            // %LocalAppData%/WrestlingAdmin/local_ui_settings.json. Kept out
+            // of the .wrt — peer-sync would otherwise overwrite each laptop's
+            // own carpet selection.
+            di.Add<ILocalUiSettingsService>(new LocalUiSettingsService(di.Resolve<IStorageDataAccess>()));
+
+            // Single entry point for the score-screen monitor window. Wraps
+            // the IPanelView("ScoreScreen") + MonitorPicker.PickAsync flow so
+            // MatchControlViewModel and the new Phase 5 → Ковер «Монитор»
+            // quick-action share one implementation.
+            di.Add<IMonitorWindowService>(new MonitorWindowService(di));
 
             di.Add<ISliderWindowManager>(new SliderWindowManager(di));
 

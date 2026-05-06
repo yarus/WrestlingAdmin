@@ -13,7 +13,6 @@ using Wrestling.UI.Material.Slider.Slides;
 using Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide;
 using Wrestling.UI.Material.Slider.Slides.GroupBracketSlide;
 using Wrestling.UI.Material.Tournament;
-using Wrestling.UI.Material.Tournament.Dashboard;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Slider
@@ -102,14 +101,10 @@ namespace Wrestling.UI.Material.Slider
             }
         }
 
-        public override bool IsBackButtonAvailable => true;
-
-        protected override void OnBackCommand()
-        {
-            base.OnBackCommand();
-
-            NavigateToView<DashboardViewModel>();
-        }
+        // Slider lives inside Phase 5 → Слайдер sub-tab. The wrapper has
+        // IsBackButtonAvailable=false; Slider itself doesn't need its own
+        // back-arrow because rail navigation always lands on the wrapper.
+        public override bool IsBackButtonAvailable => false;
 
         public ObservableCollection<SlideChannel> Channels
         {

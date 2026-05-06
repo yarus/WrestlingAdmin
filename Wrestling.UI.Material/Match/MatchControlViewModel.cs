@@ -661,19 +661,25 @@ namespace Wrestling.UI.Material.Match
 
             if (DataContext.Tournament != null)
             {
-                if (DataContext.IsBracketView)
-                {
-                    NavigateToView<BracketsViewModel>();
-                }
-                else
-                {
-                    NavigateToView<ScheduleViewModel>();
-                }
+                NavigateToReturnTarget();
             }
             else
             {
                 NavigateToView<HomeViewModel>();
             }
+        }
+
+        // Returns to whichever non-overlay screen the operator was on before
+        // we took over full-screen for match control. Falls back to Phase 5
+        // (Проведение) wrapper when no return target was captured (e.g. the
+        // shell was reset between captures).
+        private void NavigateToReturnTarget()
+        {
+            var shell = Resolve<INavigationService>().ShellVm;
+            var nav = Resolve<INavigationService>();
+            var target = shell?.GetReturnVmType();
+            if (target != null) nav.NavigateToView(target);
+            else nav.NavigateToView<Tournament.Phase5.Phase5ViewModel>();
         }
 
         private void CompleteMatch()

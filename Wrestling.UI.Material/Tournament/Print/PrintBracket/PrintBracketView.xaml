@@ -10,6 +10,11 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters1:ValueConverterGroup x:Key="InvBoolToVis"
+                                         xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils">
+            <converters1:BoolInverterConverter />
+            <converters1:GroupedBoolToVisConverter />
+        </converters1:ValueConverterGroup>
         <converters:BracketCellLineHeightConverter x:Key="BracketCellHeight" />
         <converters:BracketCellLeftLineVisConverter x:Key="LeftLineVis" />
         <converters:BracketColumnTopMarginConverter x:Key="BracketColTopMargin" />
@@ -66,7 +71,7 @@
         </Grid>
 
         <TextBlock
-            TextWrapping="NoWrap" Foreground="Black" Text="Протокол"
+            TextWrapping="NoWrap" Foreground="Black" Text="{Binding ProtocolTitle}"
             FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,5,10,0" />
 
         <Border BorderBrush="Black" BorderThickness="0,1,0,0" />
@@ -380,9 +385,12 @@
         </Grid>
 
         <Grid Margin="0, 10, 0, 0">
+            <!-- Results variant: Место first, no Жребий column hidden but Жребий
+                 still appears at the right for context. -->
             <ListView ItemsSource="{Binding Path=GroupWrestlers}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
               ScrollViewer.CanContentScroll="False" HorizontalContentAlignment="Stretch"
-              VirtualizingPanel.IsVirtualizing="False">
+              VirtualizingPanel.IsVirtualizing="False"
+              Visibility="{Binding IsDrawProtocol, Converter={StaticResource InvBoolToVis}}">
                 <ListView.View>
                     <GridView AllowsColumnReorder="false" ColumnHeaderContainerStyle="{StaticResource CompactColumnHeader}">
                         <GridViewColumn Header="Место" Width="60">
@@ -466,6 +474,90 @@
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Bottom"
                                       Margin="0,8,0,0"
+                                      FontSize="14"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+
+            <!-- Draw-protocol variant: Жребий first, Место column dropped. -->
+            <ListView ItemsSource="{Binding Path=GroupWrestlers}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+              ScrollViewer.CanContentScroll="False" HorizontalContentAlignment="Stretch"
+              VirtualizingPanel.IsVirtualizing="False"
+              Visibility="{Binding IsDrawProtocol, Converter={StaticResource BoolToVis}}">
+                <ListView.View>
+                    <GridView AllowsColumnReorder="false" ColumnHeaderContainerStyle="{StaticResource CompactColumnHeader}">
+                        <GridViewColumn Header="Жребий" Width="60">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding SeedNumber}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      FontSize="14"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="ФИО" Width="250">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding AthleteName}"
+                                      HorizontalAlignment="Left"
+                                      VerticalAlignment="Bottom"
+                                      Margin="8,8,0,0"
+                                      TextWrapping="Wrap"
+                                      FontSize="14"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="Команда" Width="120">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding TeamName}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      TextWrapping="Wrap"
+                                      FontSize="14"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="Г.р." Width="60">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding BirthYear}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      FontSize="14"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="Разряд" Width="60">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Level}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      FontSize="14"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="Вес" Width="60">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Weight}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,8,0"
                                       FontSize="14"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>

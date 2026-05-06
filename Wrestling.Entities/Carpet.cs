@@ -19,6 +19,24 @@ namespace Wrestling.Entities
         public int MatchesCount => _groups.Sum(g => g.PendingMatchesCount);
         public int WrestlersCount => _groups.Sum(g => g.Wrestlers.Count);
 
+        // Sum of (round * 2 + timeout) seconds across every pending match of
+        // every group on this carpet. Auto-completed FreeWin matches are
+        // excluded by PendingMatchesCount, so this represents work remaining.
+        public int ExpectedDurationSeconds => _groups.Sum(g => g.PendingMatchesCount * (g.MaxRoundSecond * 2 + g.MaxTimeoutSecond));
+
+        public string ExpectedDurationLabel
+        {
+            get
+            {
+                var ts = TimeSpan.FromSeconds(ExpectedDurationSeconds);
+                if ((int)ts.TotalHours >= 1)
+                {
+                    return $"{(int)ts.TotalHours}ч {ts.Minutes:D2}мин";
+                }
+                return $"{ts.Minutes}мин";
+            }
+        }
+
         public Guid? ID
         {
             get { return _id; }
@@ -53,6 +71,8 @@ namespace Wrestling.Entities
         {
             OnPropertyChanged("MatchesCount");
             OnPropertyChanged("WrestlersCount");
+            OnPropertyChanged("ExpectedDurationSeconds");
+            OnPropertyChanged("ExpectedDurationLabel");
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

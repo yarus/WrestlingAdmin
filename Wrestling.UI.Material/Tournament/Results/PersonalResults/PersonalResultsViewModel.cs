@@ -4,13 +4,16 @@ using System.Linq;
 using Wrestling.Entities;
 using Wrestling.Entities.Results;
 using Wrestling.Providers;
-using Wrestling.UI.Material.Tournament.Dashboard;
+using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
 {
-    public class PersonalResultsViewModel : TournamentViewModelBase
+    public class PersonalResultsViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
+        public string PageName => "Личные";
+
+
         private IResultsService _resultsService;
         private bool _resultsSubscribed;
 
@@ -107,7 +110,7 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
 
         protected override void OnBackCommand()
         {
-            NavigateToView<DashboardViewModel>();
+            // Phase 6 wrapper handles navigation; sub-page back is no-op.
         }
 
         private void OnResultsChanged()

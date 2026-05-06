@@ -50,20 +50,38 @@
                         Command="{Binding Path=DataContext.UnfixAllSeedsCommand, ElementName=RootControl}" />
             </TextBlock>
             
-            <TextBlock Grid.Row="0" Grid.Column="1" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Групп:" />
-                <Run Text="{Binding GroupsCount, Mode=OneWay}" />
-            </TextBlock>
+            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal"
+                        Margin="12,0,12,0" VerticalAlignment="Center"
+                        ToolTip="Количество весовых категорий">
+                <materialDesign:PackIcon Kind="FormatListBulleted" Width="20" Height="20"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                <TextBlock Text="{Binding GroupsCount, Mode=OneWay}"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="6,0,0,0" />
+            </StackPanel>
 
-            <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Допущено Участников:" />
-                <Run Text="{Binding WrestlersCount, Mode=OneWay}" />
-            </TextBlock>
+            <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal"
+                        Margin="12,0,12,0" VerticalAlignment="Center"
+                        ToolTip="Количество допущенных участников">
+                <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                <TextBlock Text="{Binding WrestlersCount, Mode=OneWay}"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="6,0,0,0" />
+            </StackPanel>
 
-            <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Схваток:" />
-                <Run Text="{Binding MatchesCount, Mode=OneWay}" />
-            </TextBlock>
+            <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal"
+                        Margin="12,0,20,0" VerticalAlignment="Center"
+                        ToolTip="Количество схваток">
+                <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                <TextBlock Text="{Binding MatchesCount, Mode=OneWay}"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="6,0,0,0" />
+            </StackPanel>
         </Grid>
         
         <ItemsControl Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Groups}">            
@@ -133,81 +151,92 @@
                             <Grid Background="White" Visibility="{Binding ElementName=GroupControl, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="5" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                                <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}" />
 
-                                <GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Width="5" VerticalAlignment="Stretch" HorizontalAlignment="Center"></GridSplitter>
-                                
-                                <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
-                                <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
-                                
-                                <TextBlock Grid.Row="0" Grid.Column="0" TextWrapping="NoWrap" Text="Посев"
-                                           FontSize="18" TextAlignment="Center" FontWeight="Normal" Margin="10" />
+                                <TextBlock Grid.Row="0" TextWrapping="NoWrap" Text="Посев"
+                                           FontSize="16" TextAlignment="Center" FontWeight="SemiBold" Margin="10,8,10,8" />
 
-                                <TextBlock Grid.Row="0" Grid.Column="2" TextWrapping="NoWrap" Text="Результаты Жеребьевки"
-                                           FontSize="18" TextAlignment="Center" FontWeight="Normal" Margin="10" />
-                                
-                                <ListView Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Path=Wrestlers}">
+                                <ListView Grid.Row="1" ItemsSource="{Binding Path=Wrestlers}"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          BorderThickness="0">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
                                     <ListView.View>
-                                        <GridView AllowsColumnReorder="true">
-                                            <GridViewColumn Width="Auto" Header="Фикс.">
+                                        <GridView AllowsColumnReorder="false">
+                                            <GridView.ColumnHeaderContainerStyle>
+                                                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+                                                    <Setter Property="Padding" Value="6,4,6,4" />
+                                                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                                </Style>
+                                            </GridView.ColumnHeaderContainerStyle>
+
+                                            <GridViewColumn Width="50" Header="Фикс.">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <CheckBox IsChecked="{Binding IsSeedFixed}" Margin="0,5,0,0" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+                                                        <CheckBox IsChecked="{Binding IsSeedFixed}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Width="Auto" Header="Посев">
+                                            <GridViewColumn Width="60" Header="Посев">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBox Text="{Binding SeedNumber}" Margin="0" MinWidth="20" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                                        <TextBox Text="{Binding SeedNumber}" MinWidth="36" TextWrapping="NoWrap" FontSize="13"
+                                                                 VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                                 HorizontalContentAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="ФИО" Width="Auto">
+                                            <GridViewColumn Header="ФИО" Width="220">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding FullNameShort}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="{Binding FullNameShort}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                                   FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Left" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Команда" Width="Auto">
+                                            <GridViewColumn Header="Команда" Width="160">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding TeamName}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                                                    </DataTemplate>
-                                                </GridViewColumn.CellTemplate>
-                                            </GridViewColumn>
-                                            
-                                            <GridViewColumn Header="Город" Width="Auto">
-                                                <GridViewColumn.CellTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding TeamCity}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                                                    </DataTemplate>
-                                                </GridViewColumn.CellTemplate>
-                                            </GridViewColumn>
-                                            
-                                            <GridViewColumn Header="Разряд" Width="Auto">
-                                                <GridViewColumn.CellTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding Level}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="{Binding TeamName}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                                   FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Left" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Г.р." Width="Auto">
+                                            <GridViewColumn Header="Город" Width="200">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding BirthDate, StringFormat={}{0:d}}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="{Binding TeamCity}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                                   FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
+
+                                            <GridViewColumn Header="Разряд" Width="80">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Level}" TextWrapping="NoWrap" FontSize="13"
+                                                                   VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
+
+                                            <GridViewColumn Header="Г.р." Width="90">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding BirthDate, StringFormat={}{0:d}}" TextWrapping="NoWrap"
+                                                                   FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
@@ -217,7 +246,13 @@
                                     </ListView.View>
                                 </ListView>
 
-                                <Viewbox Grid.Row="1" Grid.Column="2" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                <TextBlock Grid.Row="2" TextWrapping="NoWrap" Text="Результаты Жеребьевки"
+                                           FontSize="16" TextAlignment="Center" FontWeight="SemiBold" Margin="10,12,10,8"
+                                           Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}" />
+
+                                <Viewbox Grid.Row="3" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"
+                                         Margin="0,0,0,16"
+                                         Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}">
                                     <Grid Margin="0,0,10,0">
                                         <ItemsControl ItemsSource="{Binding Path=Bracket.Rounds}">
                                         <ItemsControl.ItemsPanel>

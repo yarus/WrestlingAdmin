@@ -70,6 +70,7 @@ namespace Wrestling.Entities
                 _weightMax = value;
                 OnPropertyChanged("WeightMax");
                 OnPropertyChanged("Name");
+                OnPropertyChanged("NameWithoutGender");
             }
         }
 
@@ -81,6 +82,7 @@ namespace Wrestling.Entities
                 _birthYearMax = value;
                 OnPropertyChanged("BirthYearMax");
                 OnPropertyChanged("Name");
+                OnPropertyChanged("NameWithoutGender");
             }
         }
 
@@ -92,6 +94,7 @@ namespace Wrestling.Entities
                 _birthYearMin = value;
                 OnPropertyChanged("BirthYearMin");
                 OnPropertyChanged("Name");
+                OnPropertyChanged("NameWithoutGender");
             }
         }
 
@@ -233,6 +236,20 @@ namespace Wrestling.Entities
                 result += WeightMax + " кг. " + IsFemaleLabel + ".";
 
                 return result;
+            }
+        }
+
+        // Name without the trailing gender suffix (e.g. "2018 г. 18 кг.").
+        // Used by UIs that surface gender separately when both genders are present.
+        public string NameWithoutGender
+        {
+            get
+            {
+                if (BirthYearMax == BirthYearMin)
+                {
+                    return BirthYearMax + " г. " + WeightMax + " кг.";
+                }
+                return $"{BirthYearMin}-{BirthYearMax} гг. {WeightMax} кг.";
             }
         }
 

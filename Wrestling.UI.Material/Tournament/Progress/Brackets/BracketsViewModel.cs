@@ -7,7 +7,6 @@ using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.Tournament.Dashboard;
 using Wrestling.UI.Material.Tournament.Print.PrintBracket;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
 using Wrestling.UI.Utils;
@@ -49,8 +48,6 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             Carpets = DataContext.Tournament.Carpets;
 
             if (Carpets.Count > 0 && _selectedCarpet == null || (Carpets.Count > 0 && !Carpets.Contains(SelectedCarpet))) SelectedCarpet = Carpets[0];
-
-            DataContext.IsBracketView = true;
         }
 
         public override IList<CommandButtonItem> QuickButtons
@@ -154,10 +151,8 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             NavigateToView<ScheduleViewModel>();
         }
 
-        protected override void OnBackCommand()
-        {
-            NavigateToView<DashboardViewModel>();
-        }
+        // Back-command no-op in the new shell — Brackets is hosted inside
+        // Phase5ViewModel which itself sets IsBackButtonAvailable=false.
 
         private void OpenMatch(WrestlingMatch match)
         {
@@ -167,14 +162,25 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             {
                 DataContext.Group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == match.GroupID);
                 DataContext.WrestlingMatch = match;
+                CaptureCarpetReturnState();
                 NavigateToView<MatchResultsViewModel>();
             }
             else if (match.IsMatchCanStart)
             {
                 DataContext.Group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == match.GroupID);
                 DataContext.WrestlingMatch = match;
+                CaptureCarpetReturnState();
                 NavigateToView<MatchControlViewModel>();
             }
+        }
+
+        private void CaptureCarpetReturnState()
+        {
+            var nav = Resolve<INavigationService>();
+            var phase5 = nav?.GetViewModel<Phase5.Phase5ViewModel>();
+            if (phase5 == null) return;
+            var carpet = SelectedCarpet?.ID;
+            if (carpet.HasValue) phase5.RememberCarpetReturn(carpet.Value, isBrackets: true);
         }
 
         #endregion

@@ -558,6 +558,42 @@
                 </Grid>
             </materialDesign:Card>
 
+            <!-- Tournament management — actions formerly tucked into the
+                 Dashboard hub. Lives here so they stay reachable when no
+                 phase rail item suits them. -->
+            <materialDesign:Card Margin="8" Padding="16" UniformCornerRadius="8" MaxWidth="500">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="0,0,0,8" Text="Управление турниром" />
+                    <TextBlock Grid.Row="1" Foreground="{DynamicResource MaterialDesignBodyLight}" TextWrapping="Wrap" Margin="0,0,0,12"
+                               Text="Закрытие турнира выполнит финальное сохранение и вернёт приложение на стартовый экран." />
+                    <Button Grid.Row="2"
+                            HorizontalAlignment="Left"
+                            Margin="0,0,0,12"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Command="{Binding CloseTournamentCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FolderRemove" Margin="0,0,6,0" />
+                            <TextBlock Text="Закрыть турнир" />
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Row="3"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Command="{Binding OpenErrorLogCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FileDocumentAlertOutline" Margin="0,0,6,0" />
+                            <TextBlock Text="Открыть журнал ошибок" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </materialDesign:Card>
+
         </WrapPanel>
     </ScrollViewer>
 

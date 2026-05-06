@@ -2,13 +2,16 @@ using System.Collections.Generic;
 using System.Linq;
 using Wrestling.Entities;
 using Wrestling.Providers;
-using Wrestling.UI.Material.Tournament.Dashboard;
+using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Results.Achievements
 {
-    public class AchievementsViewModel : TournamentViewModelBase
+    public class AchievementsViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
+        public string PageName => "Достижения";
+
+
         private IResultsService _resultsService;
         private bool _resultsSubscribed;
 
@@ -52,7 +55,7 @@ namespace Wrestling.UI.Material.Tournament.Results.Achievements
 
         protected override void OnBackCommand()
         {
-            NavigateToView<DashboardViewModel>();
+            // Phase 6 wrapper handles navigation; sub-page back is no-op.
         }
 
         private void OnResultsChanged()

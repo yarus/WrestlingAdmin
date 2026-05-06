@@ -13,7 +13,14 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
         private List<PrintWrestlerApplicationViewModel> _groupWrestlers = new List<PrintWrestlerApplicationViewModel>();
 
         public override string PageTitle => "Печать Протокола";
-        
+
+        // True when this bracket is being rendered as a draw protocol —
+        // changes the heading to «Протокол Жеребьевки» and swaps the wrestler
+        // table so Жребий replaces Место as the leading column.
+        public bool IsDrawProtocol { get; set; }
+
+        public string ProtocolTitle => IsDrawProtocol ? "Протокол Жеребьевки" : "Протокол";
+
         public PrintBracketViewModel(IDiContainer container) : base(container)
         {
         }
@@ -72,7 +79,11 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
 
             var results = new List<PrintWrestlerApplicationViewModel>();
 
-            var wrestlers = SelectedGroup.Wrestlers.OrderBy(x => x.FinalPlace).ThenBy(x => x.SeedNumber).ThenBy(x => x.LastFirstName).ToList();
+            // Draw protocol orders by Жребий (SeedNumber); итог orders by Место
+            // (FinalPlace) and falls back to SeedNumber/name for ties.
+            var wrestlers = IsDrawProtocol
+                ? SelectedGroup.Wrestlers.OrderBy(x => x.SeedNumber).ThenBy(x => x.LastFirstName).ToList()
+                : SelectedGroup.Wrestlers.OrderBy(x => x.FinalPlace).ThenBy(x => x.SeedNumber).ThenBy(x => x.LastFirstName).ToList();
             
             foreach (var wrestler in wrestlers)
             {

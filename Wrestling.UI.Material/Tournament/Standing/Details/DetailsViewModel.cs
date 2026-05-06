@@ -43,10 +43,40 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             get { return _groups; }
             set
             {
+                if (_groups != null) _groups.CollectionChanged -= OnGroupsCollectionChanged;
                 _groups = value;
+                if (_groups != null) _groups.CollectionChanged += OnGroupsCollectionChanged;
 
                 OnPropertyChanged("Groups");
+                OnPropertyChanged(nameof(HasMixedGenders));
+                OnPropertyChanged(nameof(GenderColumnWidth));
             }
+        }
+
+        public bool HasMixedGenders
+        {
+            get
+            {
+                if (_groups == null || _groups.Count == 0) return false;
+                bool anyMale = false;
+                bool anyFemale = false;
+                foreach (var g in _groups)
+                {
+                    if (g.IsFemale) anyFemale = true; else anyMale = true;
+                    if (anyMale && anyFemale) return true;
+                }
+                return false;
+            }
+        }
+
+        // Drives the Пол GridViewColumn.Width — 0 collapses the column entirely
+        // when the list is single-gender, so the trailing X column stays in view.
+        public double GenderColumnWidth => HasMixedGenders ? 40d : 0d;
+
+        private void OnGroupsCollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(HasMixedGenders));
+            OnPropertyChanged(nameof(GenderColumnWidth));
         }
 
         #region Command Properties
@@ -208,6 +238,9 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
                     // timing / age / weight / female / name on next import tick
                     // and cascade timing into their own pending matches.
                     item.FieldsVersion++;
+
+                    OnPropertyChanged(nameof(HasMixedGenders));
+                    OnPropertyChanged(nameof(GenderColumnWidth));
                 }
             }
         }

@@ -135,13 +135,9 @@ namespace Wrestling.UI.Material.Match
                 {
                     NavigateToView<HomeViewModel>();
                 }
-                else if (DataContext.IsBracketView)
-                {
-                    NavigateToView<BracketsViewModel>();
-                }
                 else
                 {
-                    NavigateToView<CompletedMatchesViewModel>();
+                    NavigateToReturnTarget();
                 }
             }
         }
@@ -576,14 +572,7 @@ namespace Wrestling.UI.Material.Match
             }
             else
             {
-                if (DataContext.IsBracketView)
-                {
-                    NavigateToView<BracketsViewModel>();
-                }
-                else
-                {
-                    NavigateToView<ScheduleViewModel>();
-                }
+                NavigateToReturnTarget();
             }
         }
 
@@ -649,14 +638,19 @@ namespace Wrestling.UI.Material.Match
 
         private void NavigateToMatches()
         {
-            if (DataContext.IsBracketView)
-            {
-                NavigateToView<BracketsViewModel>();
-            }
-            else
-            {
-                NavigateToView<ScheduleViewModel>();
-            }
+            NavigateToReturnTarget();
+        }
+
+        // Restores the screen the operator was on before MatchControl took
+        // over (Phase 5 wrapper for the carpet/schedule path, Phase 6 for the
+        // CompletedMatches path, etc.). Captured by MainWindowViewModel on
+        // the transition into the overlay.
+        private void NavigateToReturnTarget()
+        {
+            var nav = Resolve<INavigationService>();
+            var target = nav.ShellVm?.GetReturnVmType();
+            if (target != null) nav.NavigateToView(target);
+            else nav.NavigateToView<Tournament.Phase5.Phase5ViewModel>();
         }
 
         private void BackToNavigateToHome()

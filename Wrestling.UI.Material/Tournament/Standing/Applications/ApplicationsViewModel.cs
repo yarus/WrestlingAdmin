@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using CsvHelper;
 using MaterialDesignThemes.Wpf;
-using MvvmDialogs.FrameworkDialogs.SaveFile;
+using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using Wrestling.Entities;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Model;
+using Wrestling.UI.Material.Tournament.Print;
+using Wrestling.UI.Material.Tournament.Print.PrintApplications;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Standing.Applications
@@ -45,13 +45,28 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         {
             get
             {
-                return _quickButtons ??
-                       (
-                           _quickButtons = new List<CommandButtonItem>
-                           {
-                               new CommandButtonItem("Экспортировать список в Excel", PackIconKind.DatabaseExport, new RelayCommand(param => ExportData(), param => true))
-                           }
-                       );
+                if (_quickButtons == null)
+                {
+                    CommandButtonItem weighingBtn = null;
+                    var weighingCmd = new AsyncRelayCommand(
+                        execute: async _ =>
+                        {
+                            weighingBtn.IsBusy = true;
+                            try { await ExportWeighingProtocolsAsync(); }
+                            finally { weighingBtn.IsBusy = false; }
+                        },
+                        canExecute: _ => true);
+                    weighingBtn = new CommandButtonItem(
+                        "Сохранить протоколы взвешивания",
+                        PackIconKind.PrinterOutline,
+                        weighingCmd);
+
+                    _quickButtons = new List<CommandButtonItem>
+                    {
+                        weighingBtn
+                    };
+                }
+                return _quickButtons;
             }
         }
 
@@ -550,64 +565,82 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             OnPropertyChanged("WrestlersCount");            
         }
 
-        private void ExportData()
+        // Bulk-PDF export of weighing protocols, one PDF per group with wrestlers.
+        // Identical pipeline to the «Данные» card it replaces.
+        private async Task ExportWeighingProtocolsAsync()
         {
-            if (DataContext.Tournament == null)
+            var tournament = DataContext.Tournament;
+            var groupsWithWrestlers = tournament?.Groups?
+                .Where(g => g?.Wrestlers != null && g.Wrestlers.Count > 0).ToList() ?? new List<AgeWeightGroup>();
+            if (groupsWithWrestlers.Count == 0)
             {
+                Dialog.ShowMessageBox(this,
+                    "Нет групп с зарегистрированными участниками.",
+                    "Экспорт протоколов взвешивания", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            var settings = new SaveFileDialogSettings
+            var tournamentDir = !string.IsNullOrWhiteSpace(tournament.FileName)
+                ? Path.GetDirectoryName(tournament.FileName)
+                : null;
+            var defaultPath = !string.IsNullOrWhiteSpace(tournamentDir) && Directory.Exists(tournamentDir)
+                ? tournamentDir
+                : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            var settings = new FolderBrowserDialogSettings
             {
-                Title = "Экспортировать участников в файл",
-                CheckFileExists = false,
-                OverwritePrompt = true,
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                Filter = "CSV (*.csv)|*.csv|All Files (*.*)|*.*"
+                Description = "Выберите папку для сохранения протоколов взвешивания",
+                ShowNewFolderButton = true,
+                SelectedPath = defaultPath
             };
 
-            bool? success = Dialog.ShowSaveFileDialog(this, settings);
-            if (success == true)
+            if (Dialog.ShowFolderBrowserDialog(this, settings) != true) return;
+
+            try
             {
-                try
+                var jobs = new List<BulkPdfExportJob>();
+                foreach (var group in groupsWithWrestlers)
                 {
-                    using (var writer = new StreamWriter(settings.FileName))
-
-                    using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+                    var capturedGroup = group;
+                    jobs.Add(new BulkPdfExportJob
                     {
-                        var exportData = DataContext.Tournament.Wrestlers.Select(item =>
+                        FileName = "Взвешивание_" + BulkBracketPdfExporter.MakeSafeFileName(capturedGroup.Name) + ".pdf",
+                        Landscape = false,
+                        ViewFactory = () =>
                         {
-                            return new ExportedWrestler()
-                            {
-                                FullName = item.FullName,
-                                BirthDate = item.BirthDate.HasValue ? item.BirthDate.Value.ToString("dd/MM/yyyy") : string.Empty,
-                                GroupName = item.GroupName,
-                                TeamCity = item.TeamCity,
-                                TeamName = item.TeamName
-                            };
-                        }).OrderBy(x => x.GroupName).ThenBy(x => x.FullName);
-
-                        csv.WriteRecords(exportData);
-                    }
-
-                    ShowSnackMessage("Список участников экспортирован!");
+                            DataContext.Group = capturedGroup;
+                            var vm = new PrintApplicationsViewModel(DiContainer);
+                            vm.InitData();
+                            return new PrintApplicationsView { DataContext = vm };
+                        }
+                    });
                 }
-                catch (Exception ex)
+
+                ShowSnackMessage($"Идет создание протоколов взвешивания: {jobs.Count} файлов...");
+
+                var exporter = new BulkBracketPdfExporter();
+                var result = await exporter.ExportAsync(jobs, settings.SelectedPath);
+
+                var msg = $"Готово. Сохранено PDF: {result.Succeeded}";
+                if (result.Skipped > 0) msg += $", пропущено: {result.Skipped}";
+                if (result.Failures.Count > 0) msg += $", ошибок: {result.Failures.Count}";
+                ShowSnackMessage(msg);
+
+                if (result.Failures.Count > 0)
                 {
-                    ShowSnackMessage($"Произошла ошибка экспорта: {ex.Message}");
+                    Dialog.ShowMessageBox(this,
+                        "Не удалось сохранить часть протоколов:\n\n" + string.Join("\n", result.Failures),
+                        "Экспорт протоколов взвешивания", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
+            }
+            catch (Exception ex)
+            {
+                Dialog.ShowMessageBox(this,
+                    "Ошибка экспорта: " + ex.Message,
+                    "Экспорт протоколов взвешивания", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         #endregion
     }
-}
-
-public class ExportedWrestler
-{
-    public string GroupName { get; set; }
-    public string FullName { get; set; }
-    public string TeamName { get; set; }
-    public string TeamCity { get; set; }
-    public string BirthDate { get; set; }
 }

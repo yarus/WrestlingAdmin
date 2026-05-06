@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using MvvmDialogs;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
@@ -19,8 +20,20 @@ public sealed class FakeShellViewModel : IShellViewModel
     public List<string> Snackbar { get; } = new();
     public int CloseRequests { get; private set; }
 
+    public IList<INavigationItem> NavigationItems { get; private set; } = new List<INavigationItem>();
+    public INavigationItem ActiveItem { get; set; }
+    public bool IsRailVisible { get; set; }
+    public bool IsSaveCommandVisible { get; set; }
+    public ICommand SaveCommand { get; set; }
+
+    public Dictionary<Type, Type> OverlayParents { get; } = new Dictionary<Type, Type>();
+    public Type ReturnVmType { get; set; }
+
     public void ShowSnackbarMessage(string message) => Snackbar.Add(message);
     public void RequestClose() => CloseRequests++;
+    public void SetNavigationItems(IList<INavigationItem> items) => NavigationItems = items ?? new List<INavigationItem>();
+    public void RegisterOverlayParent(Type overlay, Type parent) { if (overlay != null && parent != null) OverlayParents[overlay] = parent; }
+    public Type GetReturnVmType() => ReturnVmType;
 }
 
 public sealed class FakeNavigationService : INavigationService
@@ -33,8 +46,11 @@ public sealed class FakeNavigationService : INavigationService
 
     public void LoadNavigation() { }
     public void NavigateToView<T>() where T : ViewModelBase => NavigatedTo.Add(typeof(T));
+    public void NavigateToView(Type t) { if (t != null) NavigatedTo.Add(t); }
     public T GetViewModel<T>() where T : ViewModelBase
         => RegisteredViewModels.TryGetValue(typeof(T), out var vm) ? vm as T : null;
+    public ViewModelBase GetViewModel(Type t)
+        => t != null && RegisteredViewModels.TryGetValue(t, out var vm) ? vm : null;
     public void ShowPrintPreview(ViewModelBase vm) => PrintPreviews.Add(vm);
     public void CloseApp() => CloseApps++;
 }

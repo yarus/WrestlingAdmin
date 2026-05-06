@@ -1,0 +1,38 @@
+<UserControl x:Class="Wrestling.UI.Material.Tournament.Phase5.Phase5View"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:phase5="clr-namespace:Wrestling.UI.Material.Tournament.Phase5"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="900">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <DataTemplate DataType="{x:Type phase5:CarpetSubViewModel}">
+                <phase5:CarpetSubView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type phase5:SliderTabViewModel}">
+                <phase5:SliderTabView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type phase5:Phase5AdminViewModel}">
+                <phase5:Phase5AdminView />
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <TabControl ItemsSource="{Binding SubTabs}"
+                SelectedItem="{Binding CurrentSubTab, Mode=TwoWay}"
+                Style="{StaticResource MaterialDesignTabControl}"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch">
+        <TabControl.ItemTemplate>
+            <DataTemplate>
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="{Binding IconKind}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding PageName}" VerticalAlignment="Center" />
+                </StackPanel>
+            </DataTemplate>
+        </TabControl.ItemTemplate>
+    </TabControl>
+</UserControl>

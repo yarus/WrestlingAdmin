@@ -17,6 +17,7 @@
         <converters:IndexConverter x:Key="IndexConverter" />
         <converters:IndexItemsConverter x:Key="ItemsIndexConverter" />
         <converters1:PathToImageConverter x:Key="PathToImageConverter" />
+        <converters:SubtractDoubleConverter x:Key="SubtractDouble" />
 
         <converters:ValueConverterGroup x:Key="InvBoolToVis">
             <converters:BoolInverterConverter />
@@ -34,18 +35,23 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Row="0" Grid.Column="0">
+            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
                 <Button Content="Новая заявка"
                         ToolTip="Добавить заявку на участие"
                         Width="160"
                         HorizontalAlignment="Left" Margin="20,10,0,10"
                         Command="{Binding AddAppCommand}" />
+                <Button Content="Автодопуск"
+                        ToolTip="Допустить всех участников"
+                        Width="120"
+                        HorizontalAlignment="Left" Margin="10,10,0,10"
+                        Command="{Binding ApproveAllCommand}" />
             </StackPanel>
 
             <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal"
@@ -65,35 +71,39 @@
 
                     <TextBox Grid.Column="1" Margin="8 0 0 0" materialDesign:HintAssist.Hint="Поиск по ФИО, команде или городу"
                              materialDesign:TextFieldAssist.DecorationVisibility="Hidden" BorderThickness="0"
-                             MinWidth="200" VerticalAlignment="Center"
+                             MinWidth="260" VerticalAlignment="Center"
                              Text="{Binding FilterString, UpdateSourceTrigger=PropertyChanged, Delay=1000}" />
                 </Grid>
-                <Button Style="{DynamicResource MaterialDesignToolForegroundButton}" Margin="8 0 0 0" Panel.ZIndex="0">
-                    <materialDesign:PackIcon Kind="Send" />
-                </Button>
             </StackPanel>
 
             <CheckBox Grid.Row="0" Grid.Column="2" HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      MinWidth="110"
+                      Margin="8,0,0,0"
                       IsChecked="{Binding IsOnlyUnapprovedVisible}">
-                Только недопущенные
+                Недопуск
             </CheckBox>
 
-            <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Заявок:" />
-                <Run Text="{Binding AppsCount, Mode=OneWay}" />
-            </TextBlock>
+            <StackPanel Grid.Row="0" Grid.Column="4" Orientation="Horizontal"
+                        Margin="20,0,8,0" VerticalAlignment="Center"
+                        ToolTip="Количество зарегистрированных команд">
+                <materialDesign:PackIcon Kind="AccountGroup" Width="20" Height="20"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                <TextBlock Text="{Binding AppsCount, Mode=OneWay}"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="6,0,0,0" />
+            </StackPanel>
 
-            <TextBlock Grid.Row="0" Grid.Column="4" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Участников:" />
-                <Run Text="{Binding WrestlersCount, Mode=OneWay}" />
-            </TextBlock>
-
-            <StackPanel Grid.Row="0" Grid.Column="5">
-                <Button Content="Автодопуск"
-                        ToolTip="Допустить всех участников"
-                        Width="120"
-                        HorizontalAlignment="Right" Margin="10,10,20,10"
-                        Command="{Binding ApproveAllCommand}" />
+            <StackPanel Grid.Row="0" Grid.Column="5" Orientation="Horizontal"
+                        Margin="8,0,20,0" VerticalAlignment="Center"
+                        ToolTip="Количество зарегистрированных участников">
+                <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                <TextBlock Text="{Binding WrestlersCount, Mode=OneWay}"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="6,0,0,0" />
             </StackPanel>
 
         </Grid>
@@ -197,11 +207,23 @@
                                         Command="{Binding Path=DataContext.AddWrestlerCommand, ElementName=RootControl}"
                                         CommandParameter="{Binding }" />
                                 <ListView ItemsSource="{Binding Wrestlers}" x:Name="WrestlersSource"
-                                          Margin="40,0,0,0"
+                                          Margin="10,0,10,0"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                           utils:GridViewSort.AutoSort="True">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
                                     <ListView.View>
                                         <GridView AllowsColumnReorder="true">
-                                            <GridViewColumn Header="#">
+                                            <GridView.ColumnHeaderContainerStyle>
+                                                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+                                                    <Setter Property="Padding" Value="6,4,6,4" />
+                                                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                                </Style>
+                                            </GridView.ColumnHeaderContainerStyle>
+                                            <GridViewColumn Header="#" Width="44">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Margin="0,5,0,0"
@@ -213,66 +235,68 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="ФИО" Width="Auto"
+                                            <GridViewColumn Header="ФИО" Width="300"
                                                             utils:GridViewSort.PropertyName="FullName">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding FullName}" Margin="0,5,0,0"
-                                                                   TextWrapping="NoWrap" FontSize="14"
-                                                                   VerticalAlignment="Bottom"
-                                                                   HorizontalAlignment="Center" />
+                                                                   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                                   FontSize="14"
+                                                                   VerticalAlignment="Center"
+                                                                   HorizontalAlignment="Left" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Г.р." Width="Auto" utils:GridViewSort.PropertyName="BirthDate">
+                                            <GridViewColumn Header="Г.р." Width="90" utils:GridViewSort.PropertyName="BirthDate">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding BirthDate, StringFormat={}{0:d}}"
                                                                    Margin="0,5,0,0" TextWrapping="NoWrap"
-                                                                   FontSize="14" VerticalAlignment="Bottom"
+                                                                   FontSize="14" VerticalAlignment="Center"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Вес" Width="Auto"
+                                            <GridViewColumn Header="Вес" Width="62"
                                                             utils:GridViewSort.PropertyName="Weight">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding Weight}" Margin="0,5,0,0"
                                                                    TextWrapping="NoWrap" FontSize="14"
-                                                                   VerticalAlignment="Bottom"
+                                                                   VerticalAlignment="Center"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Разряд" Width="Auto"
+                                            <GridViewColumn Header="Разряд" Width="82"
                                                             utils:GridViewSort.PropertyName="Level">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding Level}" Margin="0,5,0,0"
                                                                    TextWrapping="NoWrap" FontSize="14"
-                                                                   VerticalAlignment="Bottom"
+                                                                   VerticalAlignment="Center"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Группа" Width="Auto"
+                                            <GridViewColumn Header="Группа" Width="180"
                                                             utils:GridViewSort.PropertyName="GroupName">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding GroupName}" Margin="0,5,0,0"
-                                                                   TextWrapping="NoWrap" FontSize="14"
-                                                                   VerticalAlignment="Bottom"
-                                                                   HorizontalAlignment="Center" />
+                                                                   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                                   FontSize="14"
+                                                                   VerticalAlignment="Center"
+                                                                   HorizontalAlignment="Left" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Допуск" Width="Auto"
+                                            <GridViewColumn Header="Допуск" Width="110"
                                                             utils:GridViewSort.PropertyName="IsApplicationValid">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -286,33 +310,33 @@
                                                             </Grid.ColumnDefinitions>
 
                                                             <materialDesign:PackIcon Grid.Column="0"
-                                                                                     Foreground="Green" Width="26"
-                                                                                     Height="26" Margin="0"
+                                                                                     Foreground="Green" Width="20"
+                                                                                     Height="20" Margin="0"
                                                                                      Padding="0"
                                                                                      ToolTip="Данные о спортсмене заполнены верно."
                                                                                      Kind="AccountCheck"
                                                                                      Visibility="{Binding IsApplicationValid, Converter={StaticResource BoolToVis}}" />
                                                             <materialDesign:PackIcon Grid.Column="0"
                                                                                      Foreground="DarkRed"
-                                                                                     Width="26" Height="26"
+                                                                                     Width="20" Height="20"
                                                                                      Margin="0" Padding="0"
                                                                                      ToolTip="Данные о спортсмене заполнены не верно. Необходимо заполнить все обязательные поля."
                                                                                      Kind="AccountAlert"
                                                                                      Visibility="{Binding IsApplicationValid, Converter={StaticResource InvBoolToVis}}" />
 
-                                                            <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="26" Height="26" Margin="0" Padding="0" ToolTip="Спортсмен успешно прошел взвешивание." 
+                                                            <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="20" Height="20" Margin="0" Padding="0" ToolTip="Спортсмен успешно прошел взвешивание." 
                                                                                  Kind="WeightKilogram" Visibility="{Binding IsWeightApproved, Converter={StaticResource BoolToVis}}" />
-                                                            <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="26" Height="26" Margin="0" Padding="0" ToolTip="Спортсмену необходимо пройти взвешивание." 
+                                                            <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="20" Height="20" Margin="0" Padding="0" ToolTip="Спортсмену необходимо пройти взвешивание." 
                                                                                  Kind="WeightKilogram" Visibility="{Binding IsWeightApproved, Converter={StaticResource InvBoolToVis}}" />
 
-                                                            <materialDesign:PackIcon Grid.Column="2" Foreground="Green" Width="26" Height="26" Margin="5,0,0,0" Padding="0" ToolTip="Оплата вступительного взноса подтверждена." 
+                                                            <materialDesign:PackIcon Grid.Column="2" Foreground="Green" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="Оплата вступительного взноса подтверждена." 
                                                                                  Kind="Cash100" Visibility="{Binding IsEntryFeePaid, Converter={StaticResource BoolToVis}}" />
-                                                            <materialDesign:PackIcon Grid.Column="2" Foreground="DarkRed" Width="26" Height="26" Margin="5,0,0,0" Padding="0" ToolTip="Необходимо подтвердить оплату." 
+                                                            <materialDesign:PackIcon Grid.Column="2" Foreground="DarkRed" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="Необходимо подтвердить оплату." 
                                                                                  Kind="Cash100" Visibility="{Binding IsEntryFeePaid, Converter={StaticResource InvBoolToVis}}" />
 
-                                                            <materialDesign:PackIcon Grid.Column="3" Foreground="Green" Width="26" Height="26" Margin="5,0,0,0" Padding="0" ToolTip="Спортсмен допущен до соревнований." 
+                                                            <materialDesign:PackIcon Grid.Column="3" Foreground="Green" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="Спортсмен допущен до соревнований." 
                                                                                  Kind="CheckboxMarkedOutline" Visibility="{Binding IsRegistrationApproved, Converter={StaticResource BoolToVis}}" />
-                                                            <materialDesign:PackIcon Grid.Column="4" Foreground="DarkRed" Width="26" Height="26" Margin="5,0,0,0" Padding="0" ToolTip="Спортсмен не допущен до соревнований. Необходимо подтвердить вес, оплату и весовую категорию." 
+                                                            <materialDesign:PackIcon Grid.Column="4" Foreground="DarkRed" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="Спортсмен не допущен до соревнований. Необходимо подтвердить вес, оплату и весовую категорию." 
                                                                                  Kind="CloseBoxOutline" Visibility="{Binding IsRegistrationApproved, Converter={StaticResource InvBoolToVis}}" />
 
                                                         </Grid>
@@ -320,34 +344,37 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Width="Auto">
+                                            <GridViewColumn Width="{Binding ActualWidth, ElementName=WrestlersSource, Converter={StaticResource SubtractDouble}, ConverterParameter=912}">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <StackPanel VerticalAlignment="Center"
-                                                                    HorizontalAlignment="Center" Margin="0"
+                                                                    HorizontalAlignment="Right" Margin="0,0,8,0"
                                                                     Orientation="Horizontal">
                                                             <Button ToolTip="Редактировать данные спортсмена"
-                                                                    Margin="0" Padding="0" Width="22" Height="22"
-                                                                    Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                                                    Margin="0" Padding="0" Width="20" Height="20"
+                                                                    Background="Transparent"
+                                                                    BorderThickness="0"
+                                                                    Style="{DynamicResource MaterialDesignToolButton}"
                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.EditWrestlerCommand}"
                                                                     CommandParameter="{Binding }"
                                                                     VerticalAlignment="Center"
                                                                     HorizontalAlignment="Center">
                                                                 <materialDesign:PackIcon Kind="BorderColor"
-                                                                                         Width="22" Height="22"
+                                                                                         Width="16" Height="16"
                                                                                          Margin="0" Padding="0" />
                                                             </Button>
 
                                                             <Button ToolTip="Удалить спортсмена из заявки"
-                                                                    Margin="20,0,0,0" Padding="0" Width="22"
-                                                                    Height="22"
-                                                                    Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                                                    Margin="4,0,0,0" Padding="0" Width="20" Height="20"
+                                                                    Background="Transparent"
+                                                                    BorderThickness="0"
+                                                                    Style="{DynamicResource MaterialDesignToolButton}"
                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.DeleteWrestlerCommand}"
                                                                     CommandParameter="{Binding }"
                                                                     VerticalAlignment="Center"
                                                                     HorizontalAlignment="Center">
-                                                                <materialDesign:PackIcon Kind="Close" Width="22"
-                                                                                         Height="22" Margin="0"
+                                                                <materialDesign:PackIcon Kind="Close" Width="16"
+                                                                                         Height="16" Margin="0"
                                                                                          Padding="0" />
                                                             </Button>
                                                         </StackPanel>

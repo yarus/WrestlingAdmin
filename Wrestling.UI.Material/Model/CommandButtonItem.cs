@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+﻿using System;
+using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 
@@ -22,11 +23,26 @@ namespace Wrestling.UI.Material.Model
             Open = open;
         }
 
-        public string Label { get; set; }
+        private string _label;
+        public string Label
+        {
+            get => _label;
+            set { if (_label != value) { _label = value; OnPropertyChanged(nameof(Label)); } }
+        }
 
-        public string TooltipText { get; set; }
+        private string _tooltipText;
+        public string TooltipText
+        {
+            get => _tooltipText;
+            set { if (_tooltipText != value) { _tooltipText = value; OnPropertyChanged(nameof(TooltipText)); } }
+        }
 
-        public PackIconKind? IconKind { get; set; }
+        private PackIconKind? _iconKind;
+        public PackIconKind? IconKind
+        {
+            get => _iconKind;
+            set { if (!Nullable.Equals(_iconKind, value)) { _iconKind = value; OnPropertyChanged(nameof(IconKind)); } }
+        }
 
         public ICommand Open { get; }
 

@@ -7,15 +7,18 @@ using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.Tournament.Dashboard;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
 using Wrestling.UI.Material.Tournament.Results.PersonalResults;
+using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Results
 {
-    public class CompletedMatchesViewModel : TournamentViewModelBase
+    public class CompletedMatchesViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
+        public string PageName => "Журнал матчей";
+
+
         private ICommand _openMatchCommand;
 
         private ObservableCollection<Carpet> _carpets;
@@ -72,19 +75,8 @@ namespace Wrestling.UI.Material.Tournament.Results
             }
         }
 
-        public override IList<CommandButtonItem> QuickButtons
-        {
-            get
-            {
-                return _quickButtons ??
-                       (
-                           _quickButtons = new List<CommandButtonItem>
-                           {
-                               new CommandButtonItem("Перейти к итоговой таблице", PackIconKind.Trophy, new RelayCommand(param => OpenResults(), param => true))
-                           }
-                       );
-            }
-        }
+        public override IList<CommandButtonItem> QuickButtons =>
+            _quickButtons ?? (_quickButtons = new List<CommandButtonItem>());
 
         public ICommand OpenMatchCommand
         {
@@ -98,17 +90,8 @@ namespace Wrestling.UI.Material.Tournament.Results
             }
         }
 
-        protected override void OnBackCommand()
-        {
-            if (DataContext.IsBracketView)
-            {
-                NavigateToView<BracketsViewModel>();
-            }
-            else
-            {
-                NavigateToView<DashboardViewModel>();
-            }
-        }
+        // Back-command no-op in the new shell — CompletedMatches is hosted
+        // inside Phase6ViewModel which itself sets IsBackButtonAvailable=false.
         
         private void Filter(string filter)
         {
@@ -182,11 +165,6 @@ namespace Wrestling.UI.Material.Tournament.Results
                 DataContext.Group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == match.GroupID);
                 NavigateToView<MatchResultsViewModel>();
             }
-        }
-
-        private void OpenResults()
-        {
-            NavigateToView<PersonalResultsViewModel>();
         }
     }
 }

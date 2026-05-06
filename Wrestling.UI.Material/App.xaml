@@ -1,6 +1,8 @@
 ﻿<Application x:Class="Wrestling.UI.Material.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
         <ResourceDictionary>
@@ -9,6 +11,18 @@
 
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- App-wide converters — UserControls don't see Window.Resources
+                 via StaticResource at parse time, so the few converters used
+                 across multiple views (rail, phase wrappers, sub-views) live
+                 here. View-local resources still take precedence when
+                 redeclared. -->
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
+            <converters:BoolInverterConverter x:Key="BoolInverter" />
+            <converters:ValueConverterGroup x:Key="InvBoolToVis">
+                <converters:BoolInverterConverter />
+                <converters:GroupedBoolToVisConverter />
+            </converters:ValueConverterGroup>
 
             <Style x:Key="RotatedText" TargetType="TextBlock">
                 <Setter Property="LayoutTransform">

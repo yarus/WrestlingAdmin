@@ -47,7 +47,7 @@ namespace Wrestling.UI.Material.Tournament
             NavigateToView<HomeViewModel>();
         }
 
-        protected async Task SaveDataAsync()
+        public async Task SaveDataAsync()
         {
             if (!string.IsNullOrEmpty(DataContext.Tournament.FileName))
             {
