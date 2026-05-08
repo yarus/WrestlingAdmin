@@ -165,8 +165,13 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
             if (DataContext.Tournament == null)
             {
-                throw new ApplicationException("Tournament property is not set!");
+                throw new InvalidOperationException("Tournament is not set on the data context. Navigate to a tournament before opening this view.");
             }
+
+            // VM is a singleton (registered once in App.xaml.cs and reused across
+            // navigations). Reset cached QuickButtons so a returning visit
+            // re-evaluates conditional buttons (e.g. tournament-state checks).
+            _quickButtons = null;
 
             Filter(_filterString, _isOnlyUnapprovedVisible);
         }

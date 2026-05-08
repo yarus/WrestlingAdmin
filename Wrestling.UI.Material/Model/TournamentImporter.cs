@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Wrestling.DataAccess;
 using Wrestling.Entities;
@@ -43,7 +44,7 @@ namespace Wrestling.UI.Material.Model
             _matchNumbersGenerator = matchNumbersGenerator;
         }
 
-        public async Task<ImportPlan> PrepareAsync(Entities.Tournament target, string fileName)
+        public async Task<ImportPlan> PrepareAsync(Entities.Tournament target, string fileName, CancellationToken cancellationToken = default)
         {
             // Phase 1 — threadpool-safe. Loads + deserializes + runs the entity
             // adapter (the expensive 50-200ms CPU step) without touching the
@@ -61,10 +62,12 @@ namespace Wrestling.UI.Material.Model
 
             foreach (var rawCandidate in candidates)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var candidate = rawCandidate?.Trim();
                 if (string.IsNullOrEmpty(candidate)) continue;
 
-                var fetch = await FetchLocalCopyAsync(candidate).ConfigureAwait(false);
+                var fetch = await FetchLocalCopyAsync(candidate, cancellationToken).ConfigureAwait(false);
                 if (!fetch.Ok)
                 {
                     // FetchLocalCopyAsync logs the underlying exception itself;
@@ -157,7 +160,7 @@ namespace Wrestling.UI.Material.Model
         // FileUnavailable and forces the operator to wait for the next
         // hash-divergence cycle. 4xx responses are NOT retried (404 = peer
         // serves a different tournament; retry is futile).
-        private async Task<FetchOutcome> FetchLocalCopyAsync(string source)
+        private async Task<FetchOutcome> FetchLocalCopyAsync(string source, CancellationToken cancellationToken = default)
         {
             if (!IsHttpUri(source))
             {
@@ -169,10 +172,12 @@ namespace Wrestling.UI.Material.Model
 
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var tempPath = Path.Combine(Path.GetTempPath(), "wrt-import-" + Guid.NewGuid().ToString("N") + ".wrt");
                 try
                 {
-                    using (var response = await _httpClient.GetAsync(source, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+                    using (var response = await _httpClient.GetAsync(source, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false))
                     {
                         if (!response.IsSuccessStatusCode)
                         {
@@ -183,10 +188,16 @@ namespace Wrestling.UI.Material.Model
                         using (var netStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
                         using (var fileStream = File.Create(tempPath))
                         {
-                            await netStream.CopyToAsync(fileStream).ConfigureAwait(false);
+                            await netStream.CopyToAsync(fileStream, cancellationToken).ConfigureAwait(false);
                         }
                     }
                     return new FetchOutcome(ok: true, localPath: tempPath, isTemp: true);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    // Caller-driven cancellation — do not retry, do not swallow.
+                    SafeDeleteTempFile(tempPath);
+                    throw;
                 }
                 catch (Exception ex) when (IsTransientHttp(ex))
                 {
@@ -194,7 +205,14 @@ namespace Wrestling.UI.Material.Model
                     FileLogger.Log("Import.http", source, "attempt " + attempt + "/" + maxAttempts + ": " + ex.GetType().Name + " " + ex.Message);
                     if (attempt < maxAttempts)
                     {
-                        try { await Task.Delay(backoffMs[attempt - 1]).ConfigureAwait(false); } catch { }
+                        try
+                        {
+                            await Task.Delay(backoffMs[attempt - 1], cancellationToken).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                        {
+                            throw;
+                        }
                         continue;
                     }
                     return FetchOutcome.Failed;
@@ -341,7 +359,7 @@ namespace Wrestling.UI.Material.Model
                     if (importedMatch.Version <= baseMatch.Version) continue;
 
                     var processor = GetProcessorForGroup(localGroup.Bracket.BracketTypeCode);
-                    if (processor == null) throw new ApplicationException("Can't find processor!");
+                    if (processor == null) throw new InvalidOperationException($"No processor registered for bracket type '{localGroup.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
                     processor.Load(target, localGroup);
 
                     // Three observable transitions when remote is strictly newer.

@@ -82,7 +82,7 @@ namespace Wrestling.UI.Material.Match
 
             _scoreScreenVm = Resolve<ScoreScreenViewModel>();
 
-            if (WrestlingMatch == null) throw new ApplicationException("Матч не создан!");
+            if (WrestlingMatch == null) throw new InvalidOperationException("Match is not set on the data context — navigation reached MatchResultsView without a current match.");
 
             if (Tournament == null)
             {
@@ -99,7 +99,7 @@ namespace Wrestling.UI.Material.Match
             if (DataContext.Group?.Bracket != null)
             {
                 _processor = GetProcessorForGroup(DataContext.Group.Bracket.BracketTypeCode);
-                if (_processor == null) throw new ApplicationException("Can't find processor!");
+                if (_processor == null) throw new InvalidOperationException($"No processor registered for bracket type '{DataContext.Group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
 
                 _processor.Load(DataContext.Tournament, DataContext.Group);
                 CanRejectResult = _processor.CanMatchBeReverted(WrestlingMatch);
@@ -169,7 +169,7 @@ namespace Wrestling.UI.Material.Match
             {
                 if (_setWinTypeCommand == null)
                 {
-                    _setWinTypeCommand = new RelayCommand(param => SetWinType(), param => true);
+                    _setWinTypeCommand = new AsyncRelayCommand(async param => await SetWinTypeAsync(), param => true);
                 }
 
                 return _setWinTypeCommand;
@@ -435,7 +435,7 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        private async void SetWinType()
+        private async Task SetWinTypeAsync()
         {
             var availableWinTypes = new List<MatchWinTypeEnum>();
             
@@ -564,7 +564,7 @@ namespace Wrestling.UI.Material.Match
             // another peer.
             if (DataContext.Tournament != null)
             {
-                Resolve<IResultsService>().Recalculate(DataContext.Tournament);
+                ResultsService.Recalculate(DataContext.Tournament);
 
                 await SaveIfAutosaveEnabledAsync();
             }
@@ -617,7 +617,7 @@ namespace Wrestling.UI.Material.Match
 
             if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
             {
-                Resolve<IResultsService>().Recalculate(DataContext.Tournament);
+                ResultsService.Recalculate(DataContext.Tournament);
 
                 await SaveIfAutosaveEnabledAsync();
 
@@ -633,9 +633,9 @@ namespace Wrestling.UI.Material.Match
         {
             // Mutual DSQ: WinType is set, IsRedWon is null — that's the
             // canonical «no winner» encoding (see GroupBracketProcessorBase).
-            if (!WrestlingMatch.WinType.HasValue) throw new ApplicationException("Completed match does not have result provided!");
+            if (!WrestlingMatch.WinType.HasValue) throw new InvalidOperationException("Completed match must have IsRedWon and WinType set (or WinType=MutualDisqualify with IsRedWon=null).");
             if (!WrestlingMatch.IsRedWon.HasValue && WrestlingMatch.WinType != MatchWinTypeEnum.MutualDisqualify)
-                throw new ApplicationException("Completed match does not have result provided!");
+                throw new InvalidOperationException("Completed match must have IsRedWon and WinType set (or WinType=MutualDisqualify with IsRedWon=null).");
 
             if (DataContext.Tournament != null)
             {
@@ -686,10 +686,9 @@ namespace Wrestling.UI.Material.Match
         // the transition into the overlay.
         private void NavigateToReturnTarget()
         {
-            var nav = Resolve<INavigationService>();
-            var target = nav.ShellVm?.GetReturnVmType();
-            if (target != null) nav.NavigateToView(target);
-            else nav.NavigateToView<Tournament.Conducting.ConductingViewModel>();
+            var target = Navigation.ShellVm?.GetReturnVmType();
+            if (target != null) Navigation.NavigateToView(target);
+            else Navigation.NavigateToView<Tournament.Conducting.ConductingViewModel>();
         }
 
         private void BackToNavigateToHome()
@@ -721,10 +720,10 @@ namespace Wrestling.UI.Material.Match
             // Match already completed we just need to init binding properties
             if (WrestlingMatch.Status == MatchStatusEnum.Completed)
             {
-                if (!WrestlingMatch.WinType.HasValue) throw new ApplicationException("Completed match does not have result provided!");
+                if (!WrestlingMatch.WinType.HasValue) throw new InvalidOperationException("Completed match must have WinType set.");
                 // Mutual DSQ: completed without winner. Other completion types must have IsRedWon.
                 if (!WrestlingMatch.IsRedWon.HasValue && WrestlingMatch.WinType != MatchWinTypeEnum.MutualDisqualify)
-                    throw new ApplicationException("Completed match does not have result provided!");
+                    throw new InvalidOperationException("Completed match must have IsRedWon and WinType set (or WinType=MutualDisqualify with IsRedWon=null).");
 
                 WinType = WrestlingMatch.WinType.Value;
 

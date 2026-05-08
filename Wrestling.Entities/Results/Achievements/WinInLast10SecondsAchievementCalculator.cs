@@ -30,7 +30,7 @@ namespace Wrestling.Entities.Results.Achievements
                 var wonMatches = allMatches
                     .Where(m => 
                         (m.LastSecondInMatch >= (result.Group.MaxRoundSecond * 2) - 10) && 
-                        ((m.IsRedWon.HasValue && m.IsRedWon.Value && m.WrestlerInRed.SameAs(result.Wrestler)) || (m.IsRedWon.HasValue && !m.IsRedWon.Value && m.WrestlerInBlue.SameAs(result.Wrestler)))                        
+                        ((m.IsRedWinner && m.WrestlerInRed.SameAs(result.Wrestler)) || (m.IsBlueWon && m.WrestlerInBlue.SameAs(result.Wrestler)))
                     )
                     .ToList();                
 
@@ -59,8 +59,8 @@ namespace Wrestling.Entities.Results.Achievements
                         }
                     }
 
-                    if ((redPoints < bluePoints && match.WrestlerInRed.SameAs(result.Wrestler) && match.IsRedWon.HasValue && match.IsRedWon.Value)
-                        || (redPoints > bluePoints && match.WrestlerInBlue.SameAs(result.Wrestler) && match.IsRedWon.HasValue && !match.IsRedWon.Value))
+                    if ((redPoints < bluePoints && match.WrestlerInRed.SameAs(result.Wrestler) && match.IsRedWinner)
+                        || (redPoints > bluePoints && match.WrestlerInBlue.SameAs(result.Wrestler) && match.IsBlueWon))
                     {
                         response.Add(new WrestlerAchievement
                         {

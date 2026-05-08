@@ -52,6 +52,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         {
             base.InitData();
 
+            _quickButtons = null;
             _carpets = DataContext.Tournament.Carpets;
 
             if (_carpets.Count == 0 || (Stats != null && _carpets.Count != Stats.Count))

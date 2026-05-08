@@ -48,9 +48,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
             if (DataContext.Tournament == null)
             {
-                throw new ApplicationException("Tournament property is not set!");
+                throw new InvalidOperationException("Tournament is not set on the data context. Navigate to a tournament before opening this view.");
             }
 
+            _quickButtons = null;
             _matchNumbersGenerator = Resolve<IMatchNumbersGenerator>();
 
             _drawTypes = Resolve<List<IGroupBracketProcessor>>();
@@ -265,7 +266,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             if (result == null || !(bool)result) return;
 
             var drawType = _drawTypes.FirstOrDefault(d => d.Title == vm.SelectedDrawType.Title);
-            if (drawType == null) throw new ApplicationException("Wrong Bracket type!");
+            if (drawType == null) throw new ArgumentException($"Unknown bracket type code '{group.Bracket?.BracketTypeCode}' — no matching processor found.", nameof(group));
 
             SeedWrestlers(group);
 

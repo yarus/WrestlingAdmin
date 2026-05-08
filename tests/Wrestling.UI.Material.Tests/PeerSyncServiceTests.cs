@@ -38,9 +38,10 @@ public sealed class PeerSyncServiceTests
         // mutate state between Prepare and Apply.
         public Func<Task> BeforeApply { get; set; }
 
-        public Task<ImportPlan> PrepareAsync(Entities.Tournament target, string fileName)
+        public Task<ImportPlan> PrepareAsync(Entities.Tournament target, string fileName, System.Threading.CancellationToken cancellationToken = default)
         {
             PrepareCalls++;
+            cancellationToken.ThrowIfCancellationRequested();
             switch (NextOutcome)
             {
                 case ImportOutcome.FileUnavailable: return Task.FromResult(ImportPlan.Skip(ImportOutcome.FileUnavailable));
@@ -369,5 +370,84 @@ public sealed class PeerSyncServiceTests
         await svc.HandlePeerAsync(MakePeer(Guid.NewGuid(), "remote-hash"));
 
         rs.RecalculateCalls.Should().BeEmpty();
+    }
+
+    // ---------- Wave 2.3 cancellation ----------
+
+    // Stub that observes a CancellationToken and blocks until cancelled,
+    // then throws OperationCanceledException — models a real HTTP fetch
+    // that's been told to abort mid-flight.
+    private sealed class CancellingImporter : ITournamentImporter
+    {
+        public TaskCompletionSource<bool> Started { get; } = new TaskCompletionSource<bool>();
+        public bool WasCancelled { get; private set; }
+        public int ApplyCalls { get; private set; }
+
+        public async Task<ImportPlan> PrepareAsync(Entities.Tournament target, string fileName, System.Threading.CancellationToken cancellationToken = default)
+        {
+            Started.TrySetResult(true);
+            try
+            {
+                await Task.Delay(System.Threading.Timeout.Infinite, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                WasCancelled = true;
+                throw;
+            }
+            return ImportPlan.Skip(ImportOutcome.NoNewData);
+        }
+
+        public ImportResult Apply(Entities.Tournament target, ImportPlan plan)
+        {
+            ApplyCalls++;
+            return new ImportResult(ImportOutcome.NoNewData, 0);
+        }
+    }
+
+    [Fact]
+    public async Task Tournament_change_cancels_in_flight_pull()
+    {
+        var dc = new DataContext { Tournament = new Entities.Tournament(new GlobalSettings()) { Name = "T", FileName = "t.wrt" } };
+        var importer = new CancellingImporter();
+        var disc = new TestDiscovery();
+        var svc = new PeerSyncService(disc, dc, importer, new FakeTournamentsManager(),
+            resultsService: null, uiDispatcher: null);
+
+        var peer = MakePeer(Guid.NewGuid(), "remote-hash");
+        var pullTask = svc.HandlePeerAsync(peer);
+
+        // Wait until PrepareAsync is actually running.
+        await importer.Started.Task;
+
+        // Swap the tournament — should cancel the in-flight token.
+        dc.Tournament = new Entities.Tournament(new GlobalSettings()) { Name = "T2", FileName = "t2.wrt" };
+
+        await pullTask;
+
+        importer.WasCancelled.Should().BeTrue("OperationCanceledException must surface to importer");
+        importer.ApplyCalls.Should().Be(0, "Apply must not run when prepare was cancelled");
+    }
+
+    [Fact]
+    public async Task Dispose_cancels_in_flight_pull()
+    {
+        var dc = new DataContext { Tournament = new Entities.Tournament(new GlobalSettings()) { Name = "T", FileName = "t.wrt" } };
+        var importer = new CancellingImporter();
+        var disc = new TestDiscovery();
+        var svc = new PeerSyncService(disc, dc, importer, new FakeTournamentsManager(),
+            resultsService: null, uiDispatcher: null);
+
+        var peer = MakePeer(Guid.NewGuid(), "remote-hash");
+        var pullTask = svc.HandlePeerAsync(peer);
+
+        await importer.Started.Task;
+
+        svc.Dispose();
+
+        await pullTask;
+
+        importer.WasCancelled.Should().BeTrue();
+        importer.ApplyCalls.Should().Be(0);
     }
 }

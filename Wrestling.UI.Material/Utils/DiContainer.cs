@@ -22,11 +22,11 @@ namespace Wrestling.UI.Material.Utils
 
         public void Add(object item, string key)
         {
-            if (string.IsNullOrEmpty(key)) throw new ApplicationException("Key for IoC container should not be empty!");
+            if (string.IsNullOrEmpty(key)) throw new ArgumentException("Key for IoC container must not be empty.", nameof(key));
 
             if (!_container.TryAdd(key, item))
             {
-                throw new ApplicationException("Cant add item to container since such type already exists.");
+                throw new InvalidOperationException($"Cannot register '{key}' — it is already present in the container.");
             }
         }
 
@@ -34,7 +34,7 @@ namespace Wrestling.UI.Material.Utils
         {
             var fullName = typeof(T).FullName;
 
-            if (fullName == null) throw new ApplicationException("Can't get type name for IoC container!");
+            if (fullName == null) throw new InvalidOperationException($"Type '{typeof(T)}' has no FullName — cannot derive a container key.");
 
             Remove(fullName);
         }

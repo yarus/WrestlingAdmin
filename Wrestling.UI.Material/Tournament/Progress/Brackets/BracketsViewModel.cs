@@ -42,9 +42,10 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
 
             if (Tournament == null)
             {
-                throw new ApplicationException("Tournament property is not set!");
+                throw new InvalidOperationException("Tournament is not set on the data context. Navigate to a tournament before opening this view.");
             }
 
+            _quickButtons = null;
             Carpets = DataContext.Tournament.Carpets;
 
             if (Carpets.Count > 0 && _selectedCarpet == null || (Carpets.Count > 0 && !Carpets.Contains(SelectedCarpet))) SelectedCarpet = Carpets[0];

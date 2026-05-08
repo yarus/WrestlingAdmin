@@ -32,7 +32,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
             if (DataContext.Tournament == null)
             {
-                throw new ApplicationException("Tournament property is not set!");
+                throw new InvalidOperationException("Tournament is not set on the data context. Navigate to a tournament before opening this view.");
             }
 
             Groups = new ObservableCollection<AgeWeightGroup>(DataContext.Tournament.Groups.OrderBy(g => g.IsFemale).ThenByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax));

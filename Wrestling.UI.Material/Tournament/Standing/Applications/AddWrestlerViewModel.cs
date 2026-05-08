@@ -30,7 +30,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
             if (DataContext.Tournament == null)
             {
-                throw new ApplicationException("Tournament property is not set!");
+                throw new InvalidOperationException("Tournament is not set on the data context. Navigate to a tournament before opening this view.");
             }
 
             _levels = new ObservableCollection<string>()

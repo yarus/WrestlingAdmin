@@ -71,7 +71,7 @@ namespace Wrestling.UI.Material.Model
                     var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
                     if (processor == null)
                     {
-                        throw new ApplicationException("No Processor registered for bracket type " + group.Bracket.BracketTypeCode);
+                        throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
                     }
 
                     var rounds = processor.GetMainQualificationRounds(group);
@@ -98,7 +98,7 @@ namespace Wrestling.UI.Material.Model
                 var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
                 if (processor == null)
                 {
-                    throw new ApplicationException("No Processor registered for bracket type " + group.Bracket.BracketTypeCode);
+                    throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
                 }
 
                 var semiFinalRound = processor.GetSemiFinalRound(group);
@@ -127,7 +127,7 @@ namespace Wrestling.UI.Material.Model
                 var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
                 if (processor == null)
                 {
-                    throw new ApplicationException("No Processor registered for bracket type " + group.Bracket.BracketTypeCode);
+                    throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
                 }
 
                 var addQualMatches = processor.GetAdditionalQualificationRounds(group);
@@ -145,7 +145,7 @@ namespace Wrestling.UI.Material.Model
                     var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
                     if (processor == null)
                     {
-                        throw new ApplicationException("No Processor registered for bracket type " + group.Bracket.BracketTypeCode);
+                        throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
                     }
 
                     var addQualRounds = processor.GetAdditionalQualificationRounds(group);
@@ -176,7 +176,7 @@ namespace Wrestling.UI.Material.Model
                 var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
                 if (processor == null)
                 {
-                    throw new ApplicationException("No Processor registered for bracket type " + group.Bracket.BracketTypeCode);
+                    throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
                 }
 
                 var thirdPlaceRound = processor.Get3rdPlaceRound(group);
@@ -201,7 +201,7 @@ namespace Wrestling.UI.Material.Model
                 var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
                 if (processor == null)
                 {
-                    throw new ApplicationException("No Processor registered for bracket type " + group.Bracket.BracketTypeCode);
+                    throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
                 }
 
                 var finalRound = processor.GetFinalRound(group);

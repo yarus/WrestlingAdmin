@@ -264,6 +264,8 @@ namespace Wrestling.Entities
             {
                 _isRedWon = value;
                 OnPropertyChanged("IsRedWon");
+                OnPropertyChanged("IsBlueWon");
+                OnPropertyChanged("IsRedWinner");
             }
         }
 
@@ -275,8 +277,16 @@ namespace Wrestling.Entities
                 _isRedWon = !value;
                 OnPropertyChanged("IsBlueWon");
                 OnPropertyChanged("IsRedWon");
+                OnPropertyChanged("IsRedWinner");
             }
         }
+
+        // Null-safe red-winner check. Mirror of IsBlueWon: returns false for
+        // any state where the red corner did not strictly win — including
+        // mutual DSQ (IsRedWon=null) where neither wrestler won. Prefer this
+        // over `IsRedWon.HasValue && IsRedWon.Value` and over `IsRedWon.Value`
+        // (which throws NRE on mutual DSQ).
+        public bool IsRedWinner => _isRedWon == true;
 
         public int LastSecondInMatch
         {

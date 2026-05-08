@@ -12,6 +12,8 @@ namespace Wrestling.UI.Material.Tournament
     public abstract class TournamentViewModelBase : ViewModelBase
     {
         private ITournamentsManager _tournService;
+        private IResultsService _resultsService;
+        private ISliderWindowManager _sliderWindowManager;
 
         protected TournamentViewModelBase(IDiContainer container) : base(container)
         {
@@ -21,10 +23,17 @@ namespace Wrestling.UI.Material.Tournament
         {
             base.InitData();
 
+            // Cache infrastructure dependencies once. Per repo convention
+            // (CLAUDE.md, Wave 5.2 audit) all DI lookups happen in InitData;
+            // method-time Resolve<T> hides dependencies and complicates testing.
             _tournService = Resolve<ITournamentsManager>();
+            _resultsService = Resolve<IResultsService>();
+            _sliderWindowManager = Resolve<ISliderWindowManager>();
         }
 
         protected ITournamentsManager TournamentManager => _tournService;
+        protected IResultsService ResultsService => _resultsService;
+        protected ISliderWindowManager SliderWindowManager => _sliderWindowManager;
 
         public Entities.Tournament Tournament => DataContext.Tournament;
 
@@ -36,13 +45,13 @@ namespace Wrestling.UI.Material.Tournament
             // they don't hold stale references; the score screen stays registered
             // as a singleton and is simply hidden by its own CloseScreen() on next
             // navigation.
-            Resolve<ISliderWindowManager>()?.CloseAll();
+            _sliderWindowManager?.CloseAll();
 
             DataContext.Tournament = null;
             DataContext.Group = null;
             DataContext.WrestlingMatch = null;
 
-            Resolve<IResultsService>().Recalculate(null);
+            _resultsService?.Recalculate(null);
 
             NavigateToView<HomeViewModel>();
         }

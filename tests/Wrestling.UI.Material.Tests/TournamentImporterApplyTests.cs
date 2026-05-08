@@ -1350,6 +1350,123 @@ public sealed class TournamentImporterApplyTests
         local.WrestlerInBlue!.IsDisqualified.Should().BeFalse();
     }
 
+    // ---------- Apply edge cases (#17 audit) ----------
+
+    [Fact]
+    public void Apply_with_null_plan_returns_Error()
+    {
+        var (target, _, _) = BuildPair();
+        var importer = MakeImporter();
+
+        var result = importer.Apply(target, null);
+
+        result.Outcome.Should().Be(ImportOutcome.Error);
+    }
+
+    [Fact]
+    public void Apply_with_short_circuit_plan_returns_short_circuit_outcome()
+    {
+        var (target, _, _) = BuildPair();
+        var importer = MakeImporter();
+
+        var result = importer.Apply(target, ImportPlan.Skip(ImportOutcome.NoNewData));
+
+        result.Outcome.Should().Be(ImportOutcome.NoNewData);
+    }
+
+    [Fact]
+    public void Apply_with_proceed_plan_but_null_remote_returns_Error()
+    {
+        var (target, _, _) = BuildPair();
+        var importer = MakeImporter();
+
+        var result = importer.Apply(target, ImportPlan.Proceed(null!));
+
+        result.Outcome.Should().Be(ImportOutcome.Error);
+    }
+
+    [Fact]
+    public void Apply_skips_group_silently_when_bracket_type_changed()
+    {
+        // Models a peer that regenerated its bracket as a different type.
+        // The match-merge loop should skip without crashing — version-based
+        // BracketVersion path covers structural replacement instead.
+        var (target, tgtGroup, _) = BuildPair();
+        var (remote, remGroup, remProc) = Mirror(target);
+
+        // Mutate bracket type code on remote to simulate type mismatch
+        // without bumping BracketVersion (forcing the silent skip path).
+        remGroup.Bracket.BracketTypeCode = BracketTypeEnum.RoundRobin.ToString();
+
+        var remMatch = FirstPendingMatch(remGroup);
+        remProc.CompleteMatch(remMatch, true, MatchWinTypeEnum.PointsWin);
+        remMatch.Version = 1;
+
+        var importer = MakeImporter();
+        var result = importer.Apply(target, ImportPlan.Proceed(remote));
+
+        // Skipped silently — local stays Pending, no exception.
+        var local = tgtGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
+                            .First(m => m.MatchNumber == remMatch.MatchNumber);
+        local.Status.Should().Be(MatchStatusEnum.Pending);
+        result.Outcome.Should().Be(ImportOutcome.NoNewData);
+    }
+
+    [Fact]
+    public void Apply_with_equal_match_versions_keeps_local_state()
+    {
+        // Two peers that approved the same match. Remote arrives with V=1
+        // matching local V=1 — should NOT overwrite (avoid race-by-import-tick).
+        var (target, tgtGroup, _) = BuildPair();
+        var (remote, remGroup, remProc) = Mirror(target);
+
+        // Both peers complete locally at V=1 — but with DIFFERENT winners.
+        var localFirst = Mirror(target);
+        var localMatch = FirstPendingMatch(localFirst.Group);
+        localFirst.Proc.CompleteMatch(localMatch, true, MatchWinTypeEnum.PointsWin);
+        localMatch.Version = 1;
+        var importer = MakeImporter();
+        importer.Apply(target, ImportPlan.Proceed(localFirst.Remote));
+
+        var local = tgtGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
+                            .First(m => m.MatchNumber == localMatch.MatchNumber);
+        local.Version.Should().Be(1);
+        local.IsRedWon.Should().BeTrue();
+
+        // Remote has the SAME version but blue-won outcome.
+        var remMatch = FirstPendingMatch(remGroup);
+        remProc.CompleteMatch(remMatch, false, MatchWinTypeEnum.PointsWin);
+        remMatch.Version = 1;
+
+        importer.Apply(target, ImportPlan.Proceed(remote));
+
+        local.IsRedWon.Should().BeTrue("equal versions keep local state");
+    }
+
+    [Fact]
+    public void Apply_skips_group_silently_when_match_count_differs()
+    {
+        // Models a peer at a totally different bracket size (e.g., before
+        // re-generation). Match-count mismatch is the safety net.
+        var (target, tgtGroup, _) = BuildPair();
+        var (remote, remGroup, remProc) = Mirror(target);
+
+        // Strip a match from remote.
+        remGroup.Bracket.Rounds[0].RoundMatches.RemoveAt(0);
+
+        var remMatch = FirstPendingMatch(remGroup);
+        remProc.CompleteMatch(remMatch, true, MatchWinTypeEnum.PointsWin);
+        remMatch.Version = 1;
+
+        var importer = MakeImporter();
+        var result = importer.Apply(target, ImportPlan.Proceed(remote));
+
+        // Silent skip — no exception.
+        var local = tgtGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
+                            .First(m => m.MatchNumber == remMatch.MatchNumber);
+        local.Status.Should().Be(MatchStatusEnum.Pending);
+    }
+
     [Fact]
     public void Mutual_DSQ_then_edit_to_normal_completion_at_higher_version_replaces_state()
     {

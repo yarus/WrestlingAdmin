@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Media;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -33,6 +34,7 @@ namespace Wrestling.UI.Material.Match
         private IPanelView _scoreScreenView;
 
         private ScoreScreenViewModel _scoreScreen;
+        private IKeyHandler _keyHandler;
 
         private BitmapImage _action1Image;
         private BitmapImage _action2Image;
@@ -90,7 +92,7 @@ namespace Wrestling.UI.Material.Match
 
                     if (DataContext.Tournament == null)
                     {
-                        _quickButtons.Add(new CommandButtonItem("Настройки поединка", PackIconKind.Settings, new RelayCommand(param => ShowSettings(), param => true)));
+                        _quickButtons.Add(new CommandButtonItem("Настройки поединка", PackIconKind.Settings, new AsyncRelayCommand(async param => await ShowSettingsAsync(), param => true)));
                     }
                 }
 
@@ -104,6 +106,7 @@ namespace Wrestling.UI.Material.Match
 
             _scoreScreenView = Resolve<IPanelView>("ScoreScreen");
             _scoreScreen = Resolve<ScoreScreenViewModel>();
+            _keyHandler = Resolve<IKeyHandler>();
            
             _quickButtons = null;
 
@@ -131,11 +134,10 @@ namespace Wrestling.UI.Material.Match
 
             SetActionTimers();
 
-            var keyHandler = Resolve<IKeyHandler>();
-            if (keyHandler != null)
+            if (_keyHandler != null)
             {
-                keyHandler.KeyPressed -= KeyHandler_KeyPressed;
-                keyHandler.KeyPressed += KeyHandler_KeyPressed;
+                _keyHandler.KeyPressed -= KeyHandler_KeyPressed;
+                _keyHandler.KeyPressed += KeyHandler_KeyPressed;
             }
 
             ScoreScreenVm.IsTimeout = false;
@@ -436,7 +438,7 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        private async void ShowSettings()
+        private async Task ShowSettingsAsync()
         {
             var tmp = new ScoreScreenViewModel(DiContainer);
             tmp.InitData();
@@ -505,10 +507,9 @@ namespace Wrestling.UI.Material.Match
         {
             base.OnNavigatingOut();
 
-            var keyHandler = Resolve<IKeyHandler>();
-            if (keyHandler != null)
+            if (_keyHandler != null)
             {
-                keyHandler.KeyPressed -= KeyHandler_KeyPressed;
+                _keyHandler.KeyPressed -= KeyHandler_KeyPressed;
             }
         }
 
@@ -675,11 +676,9 @@ namespace Wrestling.UI.Material.Match
         // shell was reset between captures).
         private void NavigateToReturnTarget()
         {
-            var shell = Resolve<INavigationService>().ShellVm;
-            var nav = Resolve<INavigationService>();
-            var target = shell?.GetReturnVmType();
-            if (target != null) nav.NavigateToView(target);
-            else nav.NavigateToView<Tournament.Conducting.ConductingViewModel>();
+            var target = Navigation.ShellVm?.GetReturnVmType();
+            if (target != null) Navigation.NavigateToView(target);
+            else Navigation.NavigateToView<Tournament.Conducting.ConductingViewModel>();
         }
 
         private void CompleteMatch()

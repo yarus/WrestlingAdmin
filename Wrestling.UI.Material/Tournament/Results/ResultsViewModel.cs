@@ -113,6 +113,8 @@ namespace Wrestling.UI.Material.Tournament.Results
         {
             base.InitData();
 
+            _quickButtons = null;
+
             InitPages();
             SetupCurrentPage();
         }

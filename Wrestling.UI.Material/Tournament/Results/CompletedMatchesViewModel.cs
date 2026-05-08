@@ -45,6 +45,7 @@ namespace Wrestling.UI.Material.Tournament.Results
         {
             base.InitData();
 
+            _quickButtons = null;
             Stats = null;
 
             _carpets = DataContext.Tournament.Carpets;

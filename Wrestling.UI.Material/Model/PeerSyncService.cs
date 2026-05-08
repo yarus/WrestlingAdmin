@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using Wrestling.DataAccess;
@@ -53,6 +54,12 @@ namespace Wrestling.UI.Material.Model
         private readonly HashSet<Guid> _pendingPulls = new HashSet<Guid>();
         private readonly Dictionary<Guid, string> _lastPulledHashByPeer = new Dictionary<Guid, string>();
         private readonly Dictionary<Guid, FailureInfo> _failures = new Dictionary<Guid, FailureInfo>();
+        // Tournament-scoped cancellation. All in-flight pulls share this token;
+        // when the tournament changes (operator closed it / opened another),
+        // the source is cancelled so any HTTP fetch on the threadpool stops
+        // immediately instead of fighting through retries against an obsolete
+        // peer.
+        private CancellationTokenSource _tournamentCts = new CancellationTokenSource();
 
         public PeerSyncService(
             IPeerDiscoveryService discovery,
@@ -83,12 +90,21 @@ namespace Wrestling.UI.Material.Model
         // are meaningless against a new local state.
         private void OnTournamentChanged(object sender, Entities.Tournament tournament)
         {
+            CancellationTokenSource oldCts;
             lock (_lock)
             {
                 _pendingPulls.Clear();
                 _lastPulledHashByPeer.Clear();
                 _failures.Clear();
+
+                oldCts = _tournamentCts;
+                _tournamentCts = new CancellationTokenSource();
             }
+
+            // Cancel any in-flight HTTP fetches against the now-stale tournament
+            // graph. New peers will use the fresh token.
+            try { oldCts.Cancel(); } catch { /* already disposed */ }
+            try { oldCts.Dispose(); } catch { /* idempotent */ }
         }
 
         // W2.2: drop per-peer state when discovery declares the peer expired.
@@ -198,10 +214,18 @@ namespace Wrestling.UI.Material.Model
             if (string.IsNullOrEmpty(source)) return ImportOutcome.Error;
             if (target == null) return ImportOutcome.Error;
 
+            CancellationToken ct;
+            lock (_lock) ct = _tournamentCts.Token;
+
             ImportPlan plan;
             try
             {
-                plan = await Task.Run(() => _importer.PrepareAsync(target, source)).ConfigureAwait(true);
+                plan = await Task.Run(() => _importer.PrepareAsync(target, source, ct), ct).ConfigureAwait(true);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // Tournament closed/swapped during fetch — silent skip, no log spam.
+                return ImportOutcome.Error;
             }
             catch (Exception ex)
             {
@@ -271,6 +295,11 @@ namespace Wrestling.UI.Material.Model
                 _discovery.PeerExpired -= OnPeerExpired;
             }
             if (_dataContext != null) _dataContext.TournamentChanged -= OnTournamentChanged;
+
+            CancellationTokenSource cts;
+            lock (_lock) cts = _tournamentCts;
+            try { cts.Cancel(); } catch { }
+            try { cts.Dispose(); } catch { }
         }
 
         private sealed class FailureInfo

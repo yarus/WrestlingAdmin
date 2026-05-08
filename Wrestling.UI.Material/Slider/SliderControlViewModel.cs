@@ -55,6 +55,7 @@ namespace Wrestling.UI.Material.Slider
         {
             base.InitData();
 
+            _quickButtons = null;
             _windowManager = Resolve<ISliderWindowManager>();
 
             // Entering the page with a different tournament than last time means

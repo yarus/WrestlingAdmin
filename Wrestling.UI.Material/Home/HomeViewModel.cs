@@ -19,6 +19,7 @@ namespace Wrestling.UI.Material.Home
 
         private ITournamentsManager _tournManager;
         private ICacheManager _cacheManager;
+        private IResultsService _resultsService;
 
         private ICommand _newTournamentCommand;
         private ICommand _openTournamentCommand;
@@ -35,6 +36,7 @@ namespace Wrestling.UI.Material.Home
 
             _tournManager = Resolve<ITournamentsManager>();
             _cacheManager = Resolve<ICacheManager>();
+            _resultsService = Resolve<IResultsService>();
         }
 
         public override string PageTitle => "Вольная борьба - Администратор турниров версия 20260421";
@@ -98,7 +100,7 @@ namespace Wrestling.UI.Material.Home
 
                     UpdateCache();
 
-                    Resolve<IResultsService>().Recalculate(tournament);
+                    _resultsService.Recalculate(tournament);
 
                     // After opening / creating a tournament, land on the first
             // phase (Положение). The persistent rail then guides the
@@ -207,7 +209,7 @@ namespace Wrestling.UI.Material.Home
                 StartDate = DateTime.Now.AddDays(1)
             };
 
-            Resolve<IResultsService>().Recalculate(DataContext.Tournament);
+            _resultsService.Recalculate(DataContext.Tournament);
 
             // Prompt for save location up front so event-driven autosaves
             // (after each match approval / peer-sync merge) have a target.
@@ -224,9 +226,7 @@ namespace Wrestling.UI.Material.Home
             bool? success = Dialog.ShowSaveFileDialog(this, settings);
             if (success == true)
             {
-                var tournService = Resolve<ITournamentsManager>();
-
-                var result = tournService.SaveToFile(DataContext.Tournament, settings.FileName);
+                var result = _tournManager.SaveToFile(DataContext.Tournament, settings.FileName);
                 ShowSnackMessage(result ? "Турнир сохранен!" : "При сохранении произошла ошибка!");
 
                 if (!result)

@@ -73,13 +73,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
         {
             base.InitData();
 
+            _quickButtons = null;
             _matchNumbersGenerator = Resolve<IMatchNumbersGenerator>();
 
             Items = DataContext.Tournament.Carpets;
 
             _groups = DataContext.Tournament.Groups;
 
-            VerifyCarpets();            
+            VerifyCarpets();
         }
 
         private void VerifyCarpets()

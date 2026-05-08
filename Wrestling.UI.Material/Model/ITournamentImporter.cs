@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Wrestling.UI.Material.Model
@@ -8,7 +9,9 @@ namespace Wrestling.UI.Material.Model
         // thread — does not touch the target's ObservableCollection<T> graphs.
         // Returns a plan that either short-circuits (nothing to apply) or
         // carries the fully-loaded remote tournament for the apply phase.
-        Task<ImportPlan> PrepareAsync(Entities.Tournament target, string fileName);
+        // CancellationToken — caller can abort an in-flight HTTP fetch when
+        // the tournament is closed or replaced (PeerSyncService threads).
+        Task<ImportPlan> PrepareAsync(Entities.Tournament target, string fileName, CancellationToken cancellationToken = default);
 
         // Apply the prepared plan to the target. MUST run on the UI dispatcher
         // since it mutates ObservableCollection<T> entities that have views

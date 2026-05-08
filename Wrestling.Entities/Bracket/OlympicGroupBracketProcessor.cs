@@ -44,12 +44,12 @@ namespace Wrestling.Entities.Bracket
 
                 var thirdPlaceMatch = thirdPlaceRound.RoundMatches[0];
 
-                if (wrestlingMatch.IsRedWon.HasValue && wrestlingMatch.IsRedWon.Value)
+                if (wrestlingMatch.IsRedWinner)
                 {
                     if (thirdPlaceMatch.WrestlerInRed.SameAs(wrestlingMatch.WrestlerInBlue)) thirdPlaceMatch.WrestlerInRed = null;
                     else if (thirdPlaceMatch.WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInBlue)) thirdPlaceMatch.WrestlerInBlue = null;
                 }
-                else if (wrestlingMatch.IsRedWon.HasValue && !wrestlingMatch.IsRedWon.Value)
+                else if (wrestlingMatch.IsBlueWon)
                 {
                     if (thirdPlaceMatch.WrestlerInRed.SameAs(wrestlingMatch.WrestlerInRed)) thirdPlaceMatch.WrestlerInRed = null;
                     else if (thirdPlaceMatch.WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInRed)) thirdPlaceMatch.WrestlerInBlue = null;

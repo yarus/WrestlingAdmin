@@ -73,7 +73,7 @@ namespace Wrestling.Entities.Bracket
                 .Where(p => p.RoundType == GroupRoundTypeEnum.Main)
                 .SelectMany(x => x.RoundMatches)
                 .Where(o => o.Status == MatchStatusEnum.Completed
-                    && ((o.IsRedWon.HasValue && o.IsRedWon.Value && o.WrestlerInRed.SameAs(winner)) || (o.IsBlueWon && o.WrestlerInBlue.SameAs(winner))))
+                    && ((o.IsRedWinner && o.WrestlerInRed.SameAs(winner)) || (o.IsBlueWon && o.WrestlerInBlue.SameAs(winner))))
                 .Where(m => m.WrestlerInRed?.ID != looser.ID && m.WrestlerInBlue?.ID != looser.ID)
                 .OrderByDescending(a => a.RoundNumber)
                 .ToList();
@@ -161,7 +161,7 @@ namespace Wrestling.Entities.Bracket
             if (!string.IsNullOrEmpty(wrestlingMatch.NextMatchBracketFullNumber))
             {
                 var nextMatch = Group.Bracket.Rounds.SelectMany(p => p.RoundMatches).FirstOrDefault(x => x.BracketFullNumber == wrestlingMatch.NextMatchBracketFullNumber);
-                if (nextMatch == null) throw new ApplicationException("Next wrestlingMatch does not exist!");
+                if (nextMatch == null) throw new BracketStateException($"Next match '{wrestlingMatch.NextMatchBracketFullNumber}' referenced by match '{wrestlingMatch.BracketFullNumber}' does not exist in the bracket.");
 
                 baseCheck = nextMatch.Status == MatchStatusEnum.Pending;
             }

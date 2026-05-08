@@ -96,7 +96,7 @@ namespace Wrestling.Entities.Bracket
         {
             if (wrestlingMatch == null)
             {
-                throw new ApplicationException("WrestlingMatch not found!");
+                throw new ArgumentNullException(nameof(wrestlingMatch));
             }
 
             wrestlingMatch.IsRedWon = isRedWon;
@@ -176,8 +176,7 @@ namespace Wrestling.Entities.Bracket
                 var lostMatches = Group.Bracket.Rounds.SelectMany(r => r.RoundMatches)
                     .Where(m => m.IsMatchCompleted
                                 && (m.WinType == MatchWinTypeEnum.DisqualifyWin || m.WinType == MatchWinTypeEnum.NoShow)
-                                && ((m.IsRedWon.HasValue && m.IsRedWon.Value &&
-                                     m.WrestlerInBlue.ID == anotherWrestler.ID)
+                                && ((m.IsRedWinner && m.WrestlerInBlue.ID == anotherWrestler.ID)
                                     || (m.IsBlueWon && m.WrestlerInRed.ID == anotherWrestler.ID)))
                     .ToList();
 
@@ -199,7 +198,7 @@ namespace Wrestling.Entities.Bracket
             if (!string.IsNullOrEmpty(wrestlingMatch.NextMatchBracketFullNumber))
             {
                 var nextMatch = Group.Bracket.Rounds.SelectMany(p => p.RoundMatches).FirstOrDefault(x => x.BracketFullNumber == wrestlingMatch.NextMatchBracketFullNumber);
-                if (nextMatch == null) throw new ApplicationException("Next wrestlingMatch does not exist!");
+                if (nextMatch == null) throw new BracketStateException($"Next match '{wrestlingMatch.NextMatchBracketFullNumber}' referenced by match '{wrestlingMatch.BracketFullNumber}' does not exist in the bracket.");
 
                 return nextMatch.Status == MatchStatusEnum.Pending;
             }
@@ -209,7 +208,7 @@ namespace Wrestling.Entities.Bracket
 
         public virtual void RevertMatch(WrestlingMatch wrestlingMatch)
         {
-            if (!CanMatchBeReverted(wrestlingMatch)) throw new ApplicationException("WrestlingMatch can't be reverted!");
+            if (!CanMatchBeReverted(wrestlingMatch)) throw new InvalidOperationException("Match cannot be reverted in its current state (next match is already completed or it is a round-1 free win).");
 
             // Revert of mutual DSQ: clear IsDisqualified set by this match.
             // Cascaded DisqualifyWin matches (M4) keep their state — operator
@@ -225,7 +224,7 @@ namespace Wrestling.Entities.Bracket
             {
                 var nextMatch = Group.Bracket.Rounds.SelectMany(p => p.RoundMatches).FirstOrDefault(x => x.BracketFullNumber == wrestlingMatch.NextMatchBracketFullNumber);
 
-                if (nextMatch == null) throw new ApplicationException("Next wrestlingMatch does not exist!");
+                if (nextMatch == null) throw new BracketStateException($"Next match '{wrestlingMatch.NextMatchBracketFullNumber}' referenced by match '{wrestlingMatch.BracketFullNumber}' does not exist in the bracket.");
 
                 if (wrestlingMatch.IsRedWon.Value)
                 {
@@ -329,7 +328,7 @@ namespace Wrestling.Entities.Bracket
             if (string.IsNullOrEmpty(wrestlingMatch.NextMatchBracketFullNumber)) return;
 
             var nextMatch = Group.Bracket.Rounds.SelectMany(p => p.RoundMatches).FirstOrDefault(x => x.BracketFullNumber == wrestlingMatch.NextMatchBracketFullNumber);
-            if (nextMatch == null) throw new ApplicationException("Can't find next wrestlingMatch!");
+            if (nextMatch == null) throw new BracketStateException($"Next match '{wrestlingMatch.NextMatchBracketFullNumber}' referenced by match '{wrestlingMatch.BracketFullNumber}' does not exist in the bracket.");
 
             // Mutual DSQ (M1): neither wrestler advances. If the sibling
             // source for nextMatch is already completed with a real winner,

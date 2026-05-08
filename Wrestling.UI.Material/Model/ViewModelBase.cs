@@ -44,6 +44,7 @@ namespace Wrestling.UI.Material.Model
 
         protected IDiContainer DiContainer => _container;
 
+        protected INavigationService Navigation => _navService;
         protected GlobalSettings GlobalSettings => _settings;
 
         protected IDataContext DataContext => _dataContext;
