@@ -184,9 +184,14 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
         #endregion
 
-        // Back-command no-op in the new shell — Schedule is hosted inside
-        // Phase5ViewModel which itself sets IsBackButtonAvailable=false. Direct
-        // navigations to ScheduleViewModel are gone (legacy Dashboard removed).
+        // Schedule is a fullscreen overlay launched from Conducting — back returns
+        // to the admin landing. We don't read GetReturnVmType() here because
+        // that mechanism feeds the match-overlay chain (MatchControl/Results),
+        // which would loop us back into the just-completed match.
+        protected override void OnBackCommand()
+        {
+            NavigateToView<Conducting.ConductingViewModel>();
+        }
 
         private void ChangeCarpet(CarpetStats carpet)
         {
@@ -284,29 +289,14 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             {
                 DataContext.WrestlingMatch = match;
                 DataContext.Group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == match.GroupID);
-                CaptureCarpetReturnState(isBrackets: false);
                 NavigateToView<MatchResultsViewModel>();
             }
             else if (match.IsMatchCanStart)
             {
                 DataContext.WrestlingMatch = match;
                 DataContext.Group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == match.GroupID);
-                CaptureCarpetReturnState(isBrackets: false);
                 NavigateToView<MatchControlViewModel>();
             }
-        }
-
-        // Tells Phase5 wrapper which carpet+view we were on so InitData
-        // restores the same context after the match overlay closes. Harmless
-        // when the user reached this VM outside Phase5 — the wrapper just
-        // never gets re-entered in that case.
-        private void CaptureCarpetReturnState(bool isBrackets)
-        {
-            var nav = Resolve<INavigationService>();
-            var phase5 = nav?.GetViewModel<Phase5.Phase5ViewModel>();
-            if (phase5 == null) return;
-            var carpet = SelectedCarpet?.CarpetID;
-            if (carpet.HasValue) phase5.RememberCarpetReturn(carpet.Value, isBrackets);
         }
     }
 }

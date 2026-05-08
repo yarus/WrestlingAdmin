@@ -59,14 +59,16 @@
                   VirtualizingPanel.IsVirtualizing="False">
             <ListView.View>
                 <GridView AllowsColumnReorder="false" ColumnHeaderContainerStyle="{StaticResource CompactColumnHeader}">
-                    <GridViewColumn Header="#" Width="30" DisplayMemberBinding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
-                    <GridViewColumn DisplayMemberBinding="{Binding TeamName}" Header="Команда" Width="180" />
-                    <GridViewColumn DisplayMemberBinding="{Binding TeamCity}" Header="Город" Width="140" />
-                    <GridViewColumn DisplayMemberBinding="{Binding GoldMedals}" Header="1-е место" Width="70" />
-                    <GridViewColumn DisplayMemberBinding="{Binding SilverMedals}" Header="2-е место" Width="70" />
-                    <GridViewColumn DisplayMemberBinding="{Binding BronzeMedals}" Header="3-е место" Width="70" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Wrestlers.Count}" Header="Борцов" Width="60" />
-                    <GridViewColumn DisplayMemberBinding="{Binding GroupCount}" Header="Групп" Width="55" />
+                    <GridViewColumn Header="#" Width="25" DisplayMemberBinding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
+                    <GridViewColumn DisplayMemberBinding="{Binding TeamName}" Header="Команда" Width="160" />
+                    <GridViewColumn DisplayMemberBinding="{Binding TeamCity}" Header="Город" Width="180" />
+                    <GridViewColumn DisplayMemberBinding="{Binding GoldMedals}" Header="1-е" Width="35" />
+                    <GridViewColumn DisplayMemberBinding="{Binding SilverMedals}" Header="2-е" Width="35" />
+                    <GridViewColumn DisplayMemberBinding="{Binding BronzeMedals}" Header="3-е" Width="35" />
+                    <GridViewColumn DisplayMemberBinding="{Binding TotalMedals}" Header="Медалей" Width="60" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Wrestlers.Count}" Header="Борцов" Width="55" />
+                    <GridViewColumn DisplayMemberBinding="{Binding GroupCount}" Header="Групп" Width="50" />
+                    <GridViewColumn DisplayMemberBinding="{Binding TotalPoints}" Header="Рейтинг" Width="60" />
                 </GridView>
             </ListView.View>
         </ListView>

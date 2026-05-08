@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using CsvHelper;
 using MaterialDesignThemes.Wpf;
 using MvvmDialogs.FrameworkDialogs.FolderBrowser;
+using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Model;
@@ -61,9 +64,24 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                         PackIconKind.PrinterOutline,
                         weighingCmd);
 
+                    CommandButtonItem wrestlersCsvBtn = null;
+                    var wrestlersCsvCmd = new RelayCommand(
+                        execute: _ =>
+                        {
+                            wrestlersCsvBtn.IsBusy = true;
+                            try { ExportWrestlersCsv(); }
+                            finally { wrestlersCsvBtn.IsBusy = false; }
+                        },
+                        canExecute: _ => true);
+                    wrestlersCsvBtn = new CommandButtonItem(
+                        "Экспортировать список участников",
+                        PackIconKind.DatabaseExport,
+                        wrestlersCsvCmd);
+
                     _quickButtons = new List<CommandButtonItem>
                     {
-                        weighingBtn
+                        weighingBtn,
+                        wrestlersCsvBtn
                     };
                 }
                 return _quickButtons;
@@ -641,6 +659,61 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
         }
 
+        private void ExportWrestlersCsv()
+        {
+            var tournament = DataContext.Tournament;
+            if (tournament == null)
+            {
+                ShowSnackMessage("Турнир не открыт.");
+                return;
+            }
+
+            var settings = new SaveFileDialogSettings
+            {
+                Title = "Экспортировать участников в файл",
+                CheckFileExists = false,
+                OverwritePrompt = true,
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                Filter = "CSV (*.csv)|*.csv|All Files (*.*)|*.*"
+            };
+
+            if (Dialog.ShowSaveFileDialog(this, settings) != true) return;
+
+            try
+            {
+                using (var writer = new StreamWriter(settings.FileName))
+                using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+                {
+                    var exportData = tournament.Wrestlers.Select(item => new ExportedWrestler
+                    {
+                        FullName = item.FullName,
+                        BirthDate = item.BirthDate.HasValue ? item.BirthDate.Value.ToString("dd/MM/yyyy") : string.Empty,
+                        GroupName = item.GroupName,
+                        TeamCity = item.TeamCity,
+                        TeamName = item.TeamName
+                    }).OrderBy(x => x.GroupName).ThenBy(x => x.FullName);
+
+                    csv.WriteRecords(exportData);
+                }
+
+                ShowSnackMessage("Список участников экспортирован!");
+            }
+            catch (Exception ex)
+            {
+                ShowSnackMessage($"Произошла ошибка экспорта: {ex.Message}");
+            }
+        }
+
         #endregion
+
+        // CsvHelper writes by reflection on this POCO's properties.
+        private sealed class ExportedWrestler
+        {
+            public string GroupName { get; set; }
+            public string FullName { get; set; }
+            public string TeamName { get; set; }
+            public string TeamCity { get; set; }
+            public string BirthDate { get; set; }
+        }
     }
 }

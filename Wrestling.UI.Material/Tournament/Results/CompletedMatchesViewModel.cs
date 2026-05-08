@@ -91,7 +91,7 @@ namespace Wrestling.UI.Material.Tournament.Results
         }
 
         // Back-command no-op in the new shell — CompletedMatches is hosted
-        // inside Phase6ViewModel which itself sets IsBackButtonAvailable=false.
+        // inside ResultsViewModel which itself sets IsBackButtonAvailable=false.
         
         private void Filter(string filter)
         {

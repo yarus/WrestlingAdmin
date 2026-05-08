@@ -56,7 +56,7 @@
             </StackPanel>
         </Grid>
 
-        <ScrollViewer Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <ItemsControl ItemsSource="{Binding Items}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -65,7 +65,8 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Expander Background="LightGray" Margin="0" Padding="0">
+                        <Expander Background="LightGray" Margin="0" Padding="0"
+                                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                             <Expander.Header>
                                 <Grid Margin="0">
                                     <Grid.ColumnDefinitions>
@@ -142,18 +143,16 @@
                                              Command="{Binding Path=DataContext.BindGroupCommand, ElementName=RootControl}" CommandParameter="{Binding }" />
                                     <ListView ItemsSource="{Binding Groups}" x:Name="GroupsSource"
                                               Margin="10,0,10,0"
-                                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                        <ListView.ItemContainerStyle>
-                                            <Style TargetType="ListViewItem">
-                                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                            </Style>
-                                        </ListView.ItemContainerStyle>
+                                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                              HorizontalContentAlignment="Stretch"
+                                              TextElement.FontSize="15">
                                         <ListView.View>
                                             <GridView AllowsColumnReorder="false">
                                                 <GridView.ColumnHeaderContainerStyle>
                                                     <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
-                                                        <Setter Property="Padding" Value="6,4,6,4" />
+                                                        <Setter Property="Padding" Value="4,8,4,8" />
                                                         <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                                        <Setter Property="FontSize" Value="14" />
                                                     </Style>
                                                 </GridView.ColumnHeaderContainerStyle>
 
@@ -161,7 +160,7 @@
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock Text="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}"
-                                                                       TextWrapping="NoWrap" FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                                                       TextWrapping="NoWrap" FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
@@ -170,7 +169,7 @@
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock Text="{Binding Name}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
-                                                                       FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                                                                       FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Left" />
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
@@ -179,7 +178,7 @@
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock Text="{Binding Path=Wrestlers.Count, Mode=OneWay}"
-                                                                       TextWrapping="NoWrap" FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                                                       TextWrapping="NoWrap" FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
@@ -188,7 +187,7 @@
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock Text="{Binding Path=PendingMatchesCount, Mode=OneWay}"
-                                                                       TextWrapping="NoWrap" FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                                                       TextWrapping="NoWrap" FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
@@ -197,7 +196,7 @@
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock Text="{Binding Path=MaxRoundSecond, StringFormat='{}{0}с', Mode=OneWay}"
-                                                                       TextWrapping="NoWrap" FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                                                       TextWrapping="NoWrap" FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                                         </DataTemplate>
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>

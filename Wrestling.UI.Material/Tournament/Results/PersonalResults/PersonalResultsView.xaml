@@ -77,6 +77,7 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <Expander Background="LightGray" Margin="0" Padding="0" x:Name="Expander"
+                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
                               IsExpanded="{Binding Path=DataContext.ShouldAutoExpand, ElementName=RootControl, Mode=OneWay}">
                         <Expander.Header>
                             <Grid Margin="0">
@@ -106,27 +107,49 @@
                                     <Run Text="{Binding BracketLabel, Mode=OneWay}" />
                                 </TextBlock>
 
-                                <TextBlock Grid.Column="3" Margin="20,0,20,0" FontSize="14" VerticalAlignment="Center">
-                                    <Run Text="Участников:" />
-                                    <Run Text="{Binding WrestlersCount, Mode=OneWay}" />
-                                </TextBlock>
+                                <StackPanel Grid.Column="3" Orientation="Horizontal"
+                                            Margin="12,0,12,0" VerticalAlignment="Center"
+                                            ToolTip="Количество участников">
+                                    <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
+                                                             VerticalAlignment="Center"
+                                                             Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                    <TextBlock Text="{Binding WrestlersCount, Mode=OneWay}"
+                                               FontSize="14" VerticalAlignment="Center"
+                                               Margin="6,0,0,0" />
+                                </StackPanel>
 
-                                <TextBlock Grid.Column="4" Margin="20,0,20,0" FontSize="14" VerticalAlignment="Center">
-                                    <Run Text="Призёров:" />
-                                    <Run Text="{Binding MedalsCount, Mode=OneWay}" />
-                                </TextBlock>
+                                <StackPanel Grid.Column="4" Orientation="Horizontal"
+                                            Margin="12,0,12,0" VerticalAlignment="Center"
+                                            ToolTip="Количество призёров">
+                                    <materialDesign:PackIcon Kind="Medal" Width="20" Height="20"
+                                                             VerticalAlignment="Center"
+                                                             Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                    <TextBlock Text="{Binding MedalsCount, Mode=OneWay}"
+                                               FontSize="14" VerticalAlignment="Center"
+                                               Margin="6,0,0,0" />
+                                </StackPanel>
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
                             <StackPanel Background="White" Margin="0"
                                         Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <ListView ItemsSource="{Binding Wrestlers}"
-                                          Margin="40,10,40,10"
+                                          Margin="10,10,10,10"
                                           utils:GridViewSort.AutoSort="True"
-                                          ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          HorizontalContentAlignment="Stretch"
+                                          TextElement.FontSize="15">
                                     <ListView.View>
                                         <GridView AllowsColumnReorder="True">
-                                            <GridViewColumn Header="Место" Width="90"
+                                            <GridView.ColumnHeaderContainerStyle>
+                                                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+                                                    <Setter Property="Padding" Value="4,8,4,8" />
+                                                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                                    <Setter Property="FontSize" Value="14" />
+                                                </Style>
+                                            </GridView.ColumnHeaderContainerStyle>
+
+                                            <GridViewColumn Header="Место" Width="80"
                                                             utils:GridViewSort.PropertyName="Wrestler.FinalPlace">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -136,23 +159,29 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="ФИО" Width="280"
+                                            <GridViewColumn Header="ФИО" Width="290"
                                                             DisplayMemberBinding="{Binding Wrestler.FullName}"
                                                             utils:GridViewSort.PropertyName="Wrestler.FullName" />
 
-                                            <GridViewColumn Header="Команда" Width="220"
+                                            <GridViewColumn Header="Команда" Width="170"
                                                             DisplayMemberBinding="{Binding Wrestler.TeamName}"
                                                             utils:GridViewSort.PropertyName="Wrestler.TeamName" />
 
-                                            <GridViewColumn Header="Регион" Width="240"
+                                            <GridViewColumn Header="Регион" Width="190"
                                                             DisplayMemberBinding="{Binding Wrestler.TeamCity}"
                                                             utils:GridViewSort.PropertyName="Wrestler.TeamCity" />
 
-                                            <GridViewColumn Header="Разряд" Width="110"
-                                                            DisplayMemberBinding="{Binding Wrestler.Level}"
-                                                            utils:GridViewSort.PropertyName="Wrestler.Level" />
+                                            <GridViewColumn Header="Разряд" Width="100"
+                                                            utils:GridViewSort.PropertyName="Wrestler.Level">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Wrestler.Level}"
+                                                                   HorizontalAlignment="Center" />
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
 
-                                            <GridViewColumn Header="Квал. балл" Width="130"
+                                            <GridViewColumn Header="Квал. балл" Width="120"
                                                             utils:GridViewSort.PropertyName="OverallTournamentClassificationPoints">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>

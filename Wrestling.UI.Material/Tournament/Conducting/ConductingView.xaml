@@ -1,0 +1,266 @@
+<UserControl x:Class="Wrestling.UI.Material.Tournament.Conducting.ConductingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="900">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="340" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Main zone: aggregator dashboard.
+             Z1 — global progress + ETA, Z2 — per-carpet cards (pending > 0),
+             Z3 — last 3 results feed. All zones hide silently when empty. -->
+        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid Margin="16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Z1: tournament-wide progress + ETA -->
+                <materialDesign:Card Grid.Row="0" Margin="0,0,0,12" Padding="16"
+                                     Visibility="{Binding HasBrackets, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock FontSize="15" Margin="0,0,0,8">
+                            <Run Text="Завершено " />
+                            <Run Text="{Binding Tournament.CompletedMatchesCount, Mode=OneWay}" FontWeight="SemiBold" />
+                            <Run Text=" / " />
+                            <Run Text="{Binding Tournament.MatchesCount, Mode=OneWay}" FontWeight="SemiBold" />
+                            <Run Text=" (" />
+                            <Run Text="{Binding Tournament.ProgressPercent, Mode=OneWay}" FontWeight="SemiBold" />
+                            <Run Text="%) · ~" />
+                            <Run Text="{Binding TournamentDurationLabel, Mode=OneWay}" FontWeight="SemiBold" />
+                            <Run Text=" до завершения" />
+                        </TextBlock>
+                        <ProgressBar Minimum="0" Maximum="100"
+                                     Value="{Binding Tournament.ProgressPercent, Mode=OneWay}"
+                                     Height="6" />
+                    </StackPanel>
+                </materialDesign:Card>
+
+                <!-- Z2: per-carpet cards (only carpets with pending matches) -->
+                <ItemsControl Grid.Row="1" ItemsSource="{Binding PendingCarpets}" Margin="0,0,0,12"
+                              Visibility="{Binding HasPendingCarpets, Converter={StaticResource BoolToVis}}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <materialDesign:Card Width="220" Margin="0,0,12,12" Padding="12">
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,8" />
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4"
+                                                ToolTip="Завершено / всего схваток на ковре">
+                                        <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
+                                                                 VerticalAlignment="Center"
+                                                                 Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                        <TextBlock Text="{Binding ProgressLabel, Mode=OneWay}"
+                                                   FontSize="15" VerticalAlignment="Center"
+                                                   Margin="6,0,0,0" />
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal"
+                                                ToolTip="Ожидаемое время до завершения ковра">
+                                        <materialDesign:PackIcon Kind="ClockOutline" Width="20" Height="20"
+                                                                 VerticalAlignment="Center"
+                                                                 Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                        <TextBlock Text="{Binding ExpectedDurationLabel, Mode=OneWay}"
+                                                   FontSize="15" VerticalAlignment="Center"
+                                                   Margin="6,0,0,0" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </materialDesign:Card>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Z3: last 3 results feed -->
+                <materialDesign:Card Grid.Row="2" Padding="12"
+                                     Visibility="{Binding HasRecentResults, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock Text="Последние результаты" FontWeight="SemiBold" FontSize="14"
+                                   Margin="0,0,0,8"
+                                   Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                        <ItemsControl ItemsSource="{Binding LastThreeResults}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,0,8" Padding="0,4,0,8"
+                                            BorderThickness="0,0,0,1"
+                                            BorderBrush="{DynamicResource MaterialDesignDivider}">
+                                        <StackPanel Orientation="Vertical">
+                                            <TextBlock FontSize="14" TextTrimming="CharacterEllipsis">
+                                                <Run Text="{Binding Time, Mode=OneWay}" FontWeight="SemiBold" />
+                                                <Run Text=" · " />
+                                                <Run Text="{Binding CarpetName, Mode=OneWay}" />
+                                                <Run Text=" · " />
+                                                <Run Text="{Binding WeightLabel, Mode=OneWay}" />
+                                                <Run Text=" · " />
+                                                <Run Text="{Binding Pair, Mode=OneWay}" />
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding ResultLine, Mode=OneWay}"
+                                                       FontSize="13"
+                                                       Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </materialDesign:Card>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- Side rail: navigation cards + peer status -->
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      BorderThickness="1 0 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}">
+            <StackPanel Orientation="Vertical" Margin="12">
+
+                <!-- Расписание матчей -->
+                <materialDesign:Card Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="72" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="CalendarClock" Width="48" Height="48"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,12,12,12">
+                            <TextBlock Margin="0 0 0 4" FontWeight="SemiBold" Text="Расписание матчей" />
+                            <TextBlock TextWrapping="Wrap"
+                                       Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                       Text="Просмотр расписания и запуск матчей." />
+                        </StackPanel>
+
+                        <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0"
+                                BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="12">
+                            <Button HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Command="{Binding OpenScheduleCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ArrowRight" Margin="0,0,6,0" />
+                                    <TextBlock Text="Открыть" />
+                                </StackPanel>
+                            </Button>
+                        </Border>
+                    </Grid>
+                </materialDesign:Card>
+
+                <!-- Слайдер -->
+                <materialDesign:Card Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="72" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="ImageMultiple" Width="48" Height="48"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,12,12,12">
+                            <TextBlock Margin="0 0 0 4" FontWeight="SemiBold" Text="Слайдер" />
+                            <TextBlock TextWrapping="Wrap"
+                                       Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                       Text="Слайд-шоу для трансляции на проектор." />
+                        </StackPanel>
+
+                        <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0"
+                                BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="12">
+                            <Button HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Command="{Binding OpenSliderCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ArrowRight" Margin="0,0,6,0" />
+                                    <TextBlock Text="Открыть" />
+                                </StackPanel>
+                            </Button>
+                        </Border>
+                    </Grid>
+                </materialDesign:Card>
+
+                <!-- Соседние компьютеры (peer-sync status) -->
+                <materialDesign:Card Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="72" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="LanConnect" Width="48" Height="48"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,12,12,12">
+                            <TextBlock Margin="0 0 0 4" FontWeight="SemiBold" Text="Соседние компьютеры" />
+                            <TextBlock TextWrapping="Wrap"
+                                       Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                       Text="Узлы сети турнира." />
+                        </StackPanel>
+
+                        <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0"
+                                BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="12" MinHeight="48">
+                            <Grid>
+                                <ItemsControl ItemsSource="{Binding PeerStatuses}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,3,0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="28" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding StatusGlyph}" FontSize="18" />
+                                                <TextBlock Grid.Column="1" Text="{Binding NodeName}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="2" Text="{Binding StatusText}" Opacity="0.7" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="Узлы не обнаружены"
+                                           Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontStyle="Italic">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PeerStatuses.Count}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </materialDesign:Card>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

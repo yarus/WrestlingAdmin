@@ -17,15 +17,21 @@ namespace Wrestling.UI.Material
 
         private ViewModelBase _currentViewModel;
         private IList<INavigationItem> _navigationItems = EmptyItems.ToList();
+        private IList<INavigationItem> _footerNavigationItems = EmptyItems.ToList();
         private INavigationItem _activeItem;
         private bool _isDrawerOpen;
         private ICommand _saveCommand;
 
         // Maps overlay/print VMs to the rail item that should appear "active"
         // while they are on screen. Populated externally via SetOverlayParent
-        // so we don't hard-code phase-VM types in the shell. Step 6 wires it
-        // up once Phase4/Phase5 etc. are real types.
+        // so we don't hard-code phase-VM types in the shell.
         private readonly Dictionary<Type, Type> _overlayParents = new Dictionary<Type, Type>();
+
+        // VMs that participate in the dynamic return-source chain — back
+        // returns to whichever non-match-overlay screen launched them. Set is
+        // populated externally via RegisterMatchOverlay so we don't hard-code
+        // MatchControl/MatchResults/PrintBracket types in the shell.
+        private readonly HashSet<Type> _matchOverlays = new HashSet<Type>();
 
         public MainWindowViewModel(ISnackbarMessageQueue snackbarMessageQueue, IDiContainer di) : base(di)
         {
@@ -62,14 +68,17 @@ namespace Wrestling.UI.Material
             {
                 if (_currentViewModel == value) return;
 
-                // Capture the outgoing screen type if the incoming one is a
-                // full-screen overlay (MatchControl/MatchResults/PrintBracket).
-                // OnBackCommand on those VMs reads GetReturnVmType() to decide
-                // where to navigate back to — replaces the legacy
-                // IDataContext.IsBracketView Boolean flag.
+                // Capture the outgoing screen type when entering a match
+                // overlay (MatchControl/MatchResults/PrintBracket) from
+                // anything that ISN'T already a match overlay. This lets the
+                // chain MatchControl→MatchResults preserve the screen that
+                // launched MatchControl (e.g. Schedule), so back from
+                // MatchResults lands there. Schedule/Brackets/Slider count as
+                // "non-match-overlay" sources here even though they hide the
+                // rail — their own OnBackCommand goes to Conducting explicitly.
                 if (_currentViewModel != null
-                    && IsOverlayType(value?.GetType())
-                    && !IsOverlayType(_currentViewModel.GetType()))
+                    && IsMatchOverlay(value?.GetType())
+                    && !IsMatchOverlay(_currentViewModel.GetType()))
                 {
                     _returnVmType = _currentViewModel.GetType();
                 }
@@ -88,6 +97,8 @@ namespace Wrestling.UI.Material
 
         private bool IsOverlayType(System.Type t) => t != null && _overlayParents.ContainsKey(t);
 
+        private bool IsMatchOverlay(System.Type t) => t != null && _matchOverlays.Contains(t);
+
         // Legacy property — bound by the current MainWindow.xaml DrawerHost
         // and hamburger ToggleButton. Removed entirely in Step 6 when the
         // hideable drawer is replaced by the persistent NavigationRail.
@@ -103,6 +114,8 @@ namespace Wrestling.UI.Material
         }
 
         public IList<INavigationItem> NavigationItems => _navigationItems;
+
+        public IList<INavigationItem> FooterNavigationItems => _footerNavigationItems;
 
         public INavigationItem ActiveItem
         {
@@ -144,21 +157,32 @@ namespace Wrestling.UI.Material
             }
         }
 
-        public void SetNavigationItems(IList<INavigationItem> items)
+        public void SetNavigationItems(IList<INavigationItem> mainItems, IList<INavigationItem> footerItems)
         {
-            _navigationItems = items ?? new List<INavigationItem>();
+            _navigationItems = mainItems ?? new List<INavigationItem>();
+            _footerNavigationItems = footerItems ?? new List<INavigationItem>();
             OnPropertyChanged(nameof(NavigationItems));
+            OnPropertyChanged(nameof(FooterNavigationItems));
             UpdateActiveItem();
         }
 
-        // Step 6 will call this so MatchControl/MatchResults stay highlighted
-        // under "Проведение" while they're full-screen, etc. Step 2 just
-        // exposes the API.
+        // Called from App.xaml.cs to map overlay VMs to their rail-tile parent
+        // (e.g. MatchControl → Conducting). Drives both rail visibility and the
+        // active-item highlight while the overlay is on screen.
         public void RegisterOverlayParent(Type overlayVm, Type parentVm)
         {
             if (overlayVm == null || parentVm == null) return;
             _overlayParents[overlayVm] = parentVm;
             UpdateActiveItem();
+        }
+
+        // Marks a VM as a match overlay — only these participate in the
+        // dynamic return-source chain (back to whichever screen launched the
+        // chain). Wired in App.xaml.cs alongside RegisterOverlayParent.
+        public void RegisterMatchOverlay(Type matchOverlayVm)
+        {
+            if (matchOverlayVm == null) return;
+            _matchOverlays.Add(matchOverlayVm);
         }
 
         private void OnTournamentChanged(object sender, Wrestling.Entities.Tournament tournament)
@@ -174,12 +198,6 @@ namespace Wrestling.UI.Material
 
         private void UpdateActiveItem()
         {
-            if (_navigationItems == null || _navigationItems.Count == 0)
-            {
-                ActiveItem = null;
-                return;
-            }
-
             var vmType = _currentViewModel?.GetType();
             if (vmType == null)
             {
@@ -187,8 +205,10 @@ namespace Wrestling.UI.Material
                 return;
             }
 
+            var allItems = _navigationItems.Concat(_footerNavigationItems);
+
             // Direct match — current VM is exactly one of the rail targets.
-            var direct = _navigationItems.FirstOrDefault(i => !i.IsSeparator && i.TargetViewModel == vmType);
+            var direct = allItems.FirstOrDefault(i => !i.IsSeparator && i.TargetViewModel == vmType);
             if (direct != null)
             {
                 ActiveItem = direct;
@@ -200,7 +220,7 @@ namespace Wrestling.UI.Material
             var probe = vmType;
             while (probe != null && _overlayParents.TryGetValue(probe, out var parent))
             {
-                var parentItem = _navigationItems.FirstOrDefault(i => !i.IsSeparator && i.TargetViewModel == parent);
+                var parentItem = allItems.FirstOrDefault(i => !i.IsSeparator && i.TargetViewModel == parent);
                 if (parentItem != null)
                 {
                     ActiveItem = parentItem;

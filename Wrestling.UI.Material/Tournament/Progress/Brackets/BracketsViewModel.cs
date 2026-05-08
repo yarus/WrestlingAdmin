@@ -151,8 +151,13 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             NavigateToView<ScheduleViewModel>();
         }
 
-        // Back-command no-op in the new shell — Brackets is hosted inside
-        // Phase5ViewModel which itself sets IsBackButtonAvailable=false.
+        // Brackets is a fullscreen overlay launched from Conducting (and reachable
+        // via the toggle from Schedule). Back goes to the admin landing — same
+        // reasoning as ScheduleViewModel.OnBackCommand.
+        protected override void OnBackCommand()
+        {
+            NavigateToView<Conducting.ConductingViewModel>();
+        }
 
         private void OpenMatch(WrestlingMatch match)
         {
@@ -162,25 +167,14 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             {
                 DataContext.Group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == match.GroupID);
                 DataContext.WrestlingMatch = match;
-                CaptureCarpetReturnState();
                 NavigateToView<MatchResultsViewModel>();
             }
             else if (match.IsMatchCanStart)
             {
                 DataContext.Group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == match.GroupID);
                 DataContext.WrestlingMatch = match;
-                CaptureCarpetReturnState();
                 NavigateToView<MatchControlViewModel>();
             }
-        }
-
-        private void CaptureCarpetReturnState()
-        {
-            var nav = Resolve<INavigationService>();
-            var phase5 = nav?.GetViewModel<Phase5.Phase5ViewModel>();
-            if (phase5 == null) return;
-            var carpet = SelectedCarpet?.ID;
-            if (carpet.HasValue) phase5.RememberCarpetReturn(carpet.Value, isBrackets: true);
         }
 
         #endregion

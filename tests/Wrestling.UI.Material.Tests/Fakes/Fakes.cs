@@ -21,18 +21,25 @@ public sealed class FakeShellViewModel : IShellViewModel
     public int CloseRequests { get; private set; }
 
     public IList<INavigationItem> NavigationItems { get; private set; } = new List<INavigationItem>();
+    public IList<INavigationItem> FooterNavigationItems { get; private set; } = new List<INavigationItem>();
     public INavigationItem ActiveItem { get; set; }
     public bool IsRailVisible { get; set; }
     public bool IsSaveCommandVisible { get; set; }
     public ICommand SaveCommand { get; set; }
 
     public Dictionary<Type, Type> OverlayParents { get; } = new Dictionary<Type, Type>();
+    public HashSet<Type> MatchOverlays { get; } = new HashSet<Type>();
     public Type ReturnVmType { get; set; }
 
     public void ShowSnackbarMessage(string message) => Snackbar.Add(message);
     public void RequestClose() => CloseRequests++;
-    public void SetNavigationItems(IList<INavigationItem> items) => NavigationItems = items ?? new List<INavigationItem>();
+    public void SetNavigationItems(IList<INavigationItem> mainItems, IList<INavigationItem> footerItems)
+    {
+        NavigationItems = mainItems ?? new List<INavigationItem>();
+        FooterNavigationItems = footerItems ?? new List<INavigationItem>();
+    }
     public void RegisterOverlayParent(Type overlay, Type parent) { if (overlay != null && parent != null) OverlayParents[overlay] = parent; }
+    public void RegisterMatchOverlay(Type matchOverlay) { if (matchOverlay != null) MatchOverlays.Add(matchOverlay); }
     public Type GetReturnVmType() => ReturnVmType;
 }
 

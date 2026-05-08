@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:utils="clr-namespace:Wrestling.UI.Utils;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d"
@@ -49,13 +50,24 @@
         <Border Grid.Row="0" BorderThickness="0,0,0,1"
                 BorderBrush="{DynamicResource MaterialDesignDivider}" />
 
-        <ListView Grid.Row="1" Margin="20,10,20,20"
-                  ItemsSource="{Binding Items}"
+        <Border Grid.Row="1" Background="White" Margin="20,10,0,0">
+        <ListView ItemsSource="{Binding Items}"
                   utils:GridViewSort.AutoSort="True"
-                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                  HorizontalContentAlignment="Stretch"
+                  TextElement.FontSize="15"
+                  VirtualizingPanel.IsVirtualizing="False">
             <ListView.View>
                 <GridView AllowsColumnReorder="True">
-                    <GridViewColumn Header="Место" Width="80">
+                    <GridView.ColumnHeaderContainerStyle>
+                        <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+                            <Setter Property="Padding" Value="4,8,4,8" />
+                            <Setter Property="HorizontalContentAlignment" Value="Center" />
+                            <Setter Property="FontSize" Value="14" />
+                        </Style>
+                    </GridView.ColumnHeaderContainerStyle>
+
+                    <GridViewColumn Header="Место" Width="70">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock HorizontalAlignment="Center"
@@ -64,16 +76,19 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <GridViewColumn Header="Команда" Width="240"
+                    <GridViewColumn Header="Команда" Width="Auto"
                                     DisplayMemberBinding="{Binding TeamName}"
                                     utils:GridViewSort.PropertyName="TeamName" />
 
-                    <GridViewColumn Header="Город" Width="200"
+                    <GridViewColumn Header="Город" Width="Auto"
                                     DisplayMemberBinding="{Binding TeamCity}"
                                     utils:GridViewSort.PropertyName="TeamCity" />
 
-                    <GridViewColumn Header="Золото" Width="100"
-                                    utils:GridViewSort.PropertyName="GoldMedals">
+                    <GridViewColumn Width="60" utils:GridViewSort.PropertyName="GoldMedals">
+                        <GridViewColumn.Header>
+                            <materialDesign:PackIcon Kind="Medal" Width="22" Height="22"
+                                                     Foreground="#FFB300" ToolTip="Золото" />
+                        </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding GoldMedals}" HorizontalAlignment="Center" />
@@ -81,8 +96,11 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <GridViewColumn Header="Серебро" Width="100"
-                                    utils:GridViewSort.PropertyName="SilverMedals">
+                    <GridViewColumn Width="60" utils:GridViewSort.PropertyName="SilverMedals">
+                        <GridViewColumn.Header>
+                            <materialDesign:PackIcon Kind="Medal" Width="22" Height="22"
+                                                     Foreground="#9E9E9E" ToolTip="Серебро" />
+                        </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding SilverMedals}" HorizontalAlignment="Center" />
@@ -90,8 +108,11 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <GridViewColumn Header="Бронза" Width="100"
-                                    utils:GridViewSort.PropertyName="BronzeMedals">
+                    <GridViewColumn Width="60" utils:GridViewSort.PropertyName="BronzeMedals">
+                        <GridViewColumn.Header>
+                            <materialDesign:PackIcon Kind="Medal" Width="22" Height="22"
+                                                     Foreground="#8D6E63" ToolTip="Бронза" />
+                        </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding BronzeMedals}" HorizontalAlignment="Center" />
@@ -99,8 +120,11 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <GridViewColumn Header="Всего медалей" Width="150"
-                                    utils:GridViewSort.PropertyName="TotalMedals">
+                    <GridViewColumn Width="60" utils:GridViewSort.PropertyName="TotalMedals">
+                        <GridViewColumn.Header>
+                            <materialDesign:PackIcon Kind="MedalOutline" Width="22" Height="22"
+                                                     ToolTip="Всего медалей" />
+                        </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding TotalMedals}" HorizontalAlignment="Center" />
@@ -108,8 +132,11 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <GridViewColumn Header="Очки" Width="90"
-                                    utils:GridViewSort.PropertyName="TotalPoints">
+                    <GridViewColumn Width="60" utils:GridViewSort.PropertyName="TotalPoints">
+                        <GridViewColumn.Header>
+                            <materialDesign:PackIcon Kind="Star" Width="22" Height="22"
+                                                     ToolTip="Очки" />
+                        </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding TotalPoints}" HorizontalAlignment="Center" />
@@ -117,8 +144,11 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <GridViewColumn Header="Категорий" Width="120"
-                                    utils:GridViewSort.PropertyName="GroupCount">
+                    <GridViewColumn Width="60" utils:GridViewSort.PropertyName="GroupCount">
+                        <GridViewColumn.Header>
+                            <materialDesign:PackIcon Kind="FormatListBulleted" Width="22" Height="22"
+                                                     ToolTip="Категорий" />
+                        </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding GroupCount}" HorizontalAlignment="Center" />
@@ -126,7 +156,11 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <GridViewColumn Header="Борцов" Width="110">
+                    <GridViewColumn Width="60">
+                        <GridViewColumn.Header>
+                            <materialDesign:PackIcon Kind="AccountMultiple" Width="22" Height="22"
+                                                     ToolTip="Борцов" />
+                        </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Wrestlers.Count}" HorizontalAlignment="Center" />
@@ -136,5 +170,6 @@
                 </GridView>
             </ListView.View>
         </ListView>
+        </Border>
     </Grid>
 </UserControl>

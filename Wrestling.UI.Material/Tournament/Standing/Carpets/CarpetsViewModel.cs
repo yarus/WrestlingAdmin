@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
+using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.UI.Material.Model;
+using Wrestling.UI.Material.Tournament.Print;
+using Wrestling.UI.Material.Tournament.Print.PrintSchedule;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Standing.Carpets
@@ -18,7 +23,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
 
         private ObservableCollection<AgeWeightGroup> _groups;
         private ObservableCollection<Carpet> _items;
-        
+
         private ICommand _addCarpetCommand;
         private ICommand _deleteCarpetCommand;
         private ICommand _editCarpetCommand;
@@ -27,6 +32,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
         private ICommand _upGroupCommand;
         private ICommand _downGroupCommand;
 
+        private IList<CommandButtonItem> _quickButtons;
+
         public string PageName => "Расписание";
         public override string PageTitle => "Очередность схваток по коврам и группам";
         public int UnbindedGroups => _groups != null && _items != null ? _groups.Count - _items.SelectMany(c => c.Groups).Count() : 0;
@@ -34,6 +41,32 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
         public CarpetsViewModel(IDiContainer container) : base(container)
         {
 
+        }
+
+        public override IList<CommandButtonItem> QuickButtons
+        {
+            get
+            {
+                if (_quickButtons == null)
+                {
+                    CommandButtonItem printBtn = null;
+                    var printCmd = new AsyncRelayCommand(
+                        execute: async _ =>
+                        {
+                            printBtn.IsBusy = true;
+                            try { await ExportSchedulesAsync(); }
+                            finally { printBtn.IsBusy = false; }
+                        },
+                        canExecute: _ => true);
+                    printBtn = new CommandButtonItem(
+                        "Скачать расписания ковров PDF",
+                        PackIconKind.PrinterOutline,
+                        printCmd);
+
+                    _quickButtons = new List<CommandButtonItem> { printBtn };
+                }
+                return _quickButtons;
+            }
         }
 
         public override void InitData()
@@ -283,6 +316,94 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
         private void GenerateMatchNumbers()
         {
             _matchNumbersGenerator.Generate(DataContext.Tournament, Resolve<List<IGroupBracketProcessor>>());
+        }
+
+        private async Task ExportSchedulesAsync()
+        {
+            var tournament = DataContext.Tournament;
+            var carpets = tournament?.Carpets;
+            if (carpets == null || carpets.Count == 0)
+            {
+                Dialog.ShowMessageBox(this,
+                    "Нет ковров для печати расписания.",
+                    "Расписание ковров", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var carpetsWithPending = carpets
+                .Where(c => tournament.Groups
+                    .Where(g => g.Bracket != null && g.CarpetID == c.ID)
+                    .SelectMany(g => g.Bracket.Rounds)
+                    .SelectMany(r => r.RoundMatches)
+                    .Any(rm => !rm.IsMatchCompleted))
+                .ToList();
+
+            if (carpetsWithPending.Count == 0)
+            {
+                Dialog.ShowMessageBox(this,
+                    "На коврах нет непройденных схваток.",
+                    "Расписание ковров", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var tournamentDir = !string.IsNullOrWhiteSpace(tournament.FileName)
+                ? Path.GetDirectoryName(tournament.FileName)
+                : null;
+            var defaultPath = !string.IsNullOrWhiteSpace(tournamentDir) && Directory.Exists(tournamentDir)
+                ? tournamentDir
+                : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            var settings = new FolderBrowserDialogSettings
+            {
+                Description = "Выберите папку для сохранения расписаний ковров",
+                ShowNewFolderButton = true,
+                SelectedPath = defaultPath
+            };
+
+            if (Dialog.ShowFolderBrowserDialog(this, settings) != true) return;
+
+            try
+            {
+                var jobs = new List<BulkPdfExportJob>();
+                foreach (var carpet in carpetsWithPending)
+                {
+                    var capturedCarpet = carpet;
+                    jobs.Add(new BulkPdfExportJob
+                    {
+                        FileName = "Расписание_" + BulkBracketPdfExporter.MakeSafeFileName(capturedCarpet.Name) + ".pdf",
+                        Landscape = false,
+                        ViewFactory = () =>
+                        {
+                            var vm = new PrintScheduleViewModel(DiContainer, capturedCarpet);
+                            vm.InitData();
+                            return new PrintScheduleView { DataContext = vm };
+                        }
+                    });
+                }
+
+                ShowSnackMessage($"Идет создание расписаний ковров: {jobs.Count} файлов...");
+
+                var exporter = new BulkBracketPdfExporter();
+                var result = await exporter.ExportAsync(jobs, settings.SelectedPath);
+
+                var msg = $"Готово. Сохранено PDF: {result.Succeeded}";
+                if (result.Skipped > 0) msg += $", пропущено: {result.Skipped}";
+                if (result.Failures.Count > 0) msg += $", ошибок: {result.Failures.Count}";
+                ShowSnackMessage(msg);
+
+                if (result.Failures.Count > 0)
+                {
+                    Dialog.ShowMessageBox(this,
+                        "Не удалось сохранить часть расписаний:\n\n" + string.Join("\n", result.Failures),
+                        "Расписание ковров", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                Dialog.ShowMessageBox(this,
+                    "Ошибка экспорта: " + ex.Message,
+                    "Расписание ковров", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

@@ -33,7 +33,8 @@
 
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Expander Background="LightGray" Margin="0" Padding="0" x:Name="Expander" IsExpanded="False">
+                    <Expander Background="LightGray" Margin="0" Padding="0" x:Name="Expander" IsExpanded="False"
+                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                         <Expander.Header>
                             <Grid Margin="0">
                                 <Grid.ColumnDefinitions>
@@ -73,9 +74,11 @@
                             <StackPanel Background="White" Margin="0"
                                         Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <ListView ItemsSource="{Binding Winners}"
-                                          Margin="40,10,40,10"
+                                          Margin="10,10,10,10"
                                           utils:GridViewSort.AutoSort="True"
-                                          ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          HorizontalContentAlignment="Stretch"
+                                          TextElement.FontSize="15">
                                     <ListView.View>
                                         <GridView AllowsColumnReorder="True">
                                             <GridViewColumn Header="#" Width="48"

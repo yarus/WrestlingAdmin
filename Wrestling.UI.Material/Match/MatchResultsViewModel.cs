@@ -650,7 +650,7 @@ namespace Wrestling.UI.Material.Match
             var nav = Resolve<INavigationService>();
             var target = nav.ShellVm?.GetReturnVmType();
             if (target != null) nav.NavigateToView(target);
-            else nav.NavigateToView<Tournament.Phase5.Phase5ViewModel>();
+            else nav.NavigateToView<Tournament.Conducting.ConductingViewModel>();
         }
 
         private void BackToNavigateToHome()

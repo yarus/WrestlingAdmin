@@ -27,9 +27,8 @@ using Wrestling.UI.Material.Slider.Slides.GroupBracketSlide;
 using Wrestling.UI.Material.Slider.Slides.ImageSlide;
 using Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide;
 using Wrestling.UI.Material.Slider.Slides.VideoSlide;
-using Wrestling.UI.Material.Tournament.Data;
-using Wrestling.UI.Material.Tournament.Phase5;
-using Wrestling.UI.Material.Tournament.Phase6;
+using Wrestling.UI.Material.Tournament.Conducting;
+using Wrestling.UI.Material.Tournament.Results;
 using Wrestling.UI.Material.Tournament.Print;
 using Wrestling.UI.Material.Tournament.Print.PrintBracket;
 using Wrestling.UI.Material.Tournament.Standing.Applications;
@@ -109,10 +108,20 @@ namespace Wrestling.UI.Material
             // hidden on Home — IsRailVisible reacts to TournamentChanged).
             if (shell != null)
             {
-                shell.SetNavigationItems(BuildNavigationItems(navService));
-                shell.RegisterOverlayParent(typeof(MatchControlViewModel), typeof(Phase5ViewModel));
-                shell.RegisterOverlayParent(typeof(MatchResultsViewModel), typeof(Phase5ViewModel));
-                shell.RegisterOverlayParent(typeof(PrintBracketViewModel), typeof(Phase5ViewModel));
+                shell.SetNavigationItems(BuildNavigationItems(navService), BuildFooterNavigationItems(navService));
+
+                // Match overlays — full-screen + dynamic back to launching screen.
+                shell.RegisterOverlayParent(typeof(MatchControlViewModel), typeof(ConductingViewModel));
+                shell.RegisterOverlayParent(typeof(MatchResultsViewModel), typeof(ConductingViewModel));
+                shell.RegisterOverlayParent(typeof(PrintBracketViewModel), typeof(ConductingViewModel));
+                shell.RegisterMatchOverlay(typeof(MatchControlViewModel));
+                shell.RegisterMatchOverlay(typeof(MatchResultsViewModel));
+                shell.RegisterMatchOverlay(typeof(PrintBracketViewModel));
+
+                // Conducting fullscreen views — full-screen + static back to Conducting.
+                shell.RegisterOverlayParent(typeof(Wrestling.UI.Material.Tournament.Progress.Schedule.ScheduleViewModel), typeof(ConductingViewModel));
+                shell.RegisterOverlayParent(typeof(Wrestling.UI.Material.Tournament.Progress.Brackets.BracketsViewModel), typeof(ConductingViewModel));
+                shell.RegisterOverlayParent(typeof(Wrestling.UI.Material.Slider.SliderControlViewModel), typeof(ConductingViewModel));
             }
 
             app.Show();
@@ -137,20 +146,23 @@ namespace Wrestling.UI.Material
                     typeof(CarpetsViewModel),
                     new RelayCommand(_ => navService.NavigateToView<CarpetsViewModel>())),
                 new NavigationItem("Проведение", PackIconKind.Play,
-                    typeof(Phase5ViewModel),
-                    new RelayCommand(_ => navService.NavigateToView<Phase5ViewModel>())),
+                    typeof(ConductingViewModel),
+                    new RelayCommand(_ => navService.NavigateToView<ConductingViewModel>())),
                 new NavigationItem("Результаты", PackIconKind.Trophy,
-                    typeof(Phase6ViewModel),
-                    new RelayCommand(_ => navService.NavigateToView<Phase6ViewModel>())),
-                NavigationItem.Separator(),
-                new NavigationItem("Данные", PackIconKind.Database,
-                    typeof(DataViewModel),
-                    new RelayCommand(_ => navService.NavigateToView<DataViewModel>())),
+                    typeof(ResultsViewModel),
+                    new RelayCommand(_ => navService.NavigateToView<ResultsViewModel>()))
+            };
+            return items;
+        }
+
+        private static IList<INavigationItem> BuildFooterNavigationItems(INavigationService navService)
+        {
+            return new List<INavigationItem>
+            {
                 new NavigationItem("Настройки", PackIconKind.Cog,
                     typeof(SettingsViewModel),
                     new RelayCommand(_ => navService.NavigateToView<SettingsViewModel>()))
             };
-            return items;
         }
 
         private void LoadSpecialViewModels(IDiContainer di)
@@ -433,13 +445,6 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             di.Add<PeerSyncStatusTracker>(new PeerSyncStatusTracker(discovery, dc, Current.Dispatcher));
 
             di.Add(new WwfScoreScreenView(), "ScoreScreen");
-
-            // Per-PC sticky UI preferences (e.g. selected carpet on the
-            // "Проведение → Ковер" sub-tab). Backed by a JSON file under
-            // %LocalAppData%/WrestlingAdmin/local_ui_settings.json. Kept out
-            // of the .wrt — peer-sync would otherwise overwrite each laptop's
-            // own carpet selection.
-            di.Add<ILocalUiSettingsService>(new LocalUiSettingsService(di.Resolve<IStorageDataAccess>()));
 
             // Single entry point for the score-screen monitor window. Wraps
             // the IPanelView("ScoreScreen") + MonitorPicker.PickAsync flow so

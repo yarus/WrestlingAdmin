@@ -101,10 +101,14 @@ namespace Wrestling.UI.Material.Slider
             }
         }
 
-        // Slider lives inside Phase 5 → Слайдер sub-tab. The wrapper has
-        // IsBackButtonAvailable=false; Slider itself doesn't need its own
-        // back-arrow because rail navigation always lands on the wrapper.
-        public override bool IsBackButtonAvailable => false;
+        // Slider is a fullscreen overlay launched from Conducting — back returns
+        // to the admin landing.
+        public override bool IsBackButtonAvailable => true;
+
+        protected override void OnBackCommand()
+        {
+            NavigateToView<Tournament.Conducting.ConductingViewModel>();
+        }
 
         public ObservableCollection<SlideChannel> Channels
         {

@@ -19,6 +19,10 @@ namespace Wrestling.Entities
         public int MatchesCount => _groups.Sum(g => g.PendingMatchesCount);
         public int WrestlersCount => _groups.Sum(g => g.Wrestlers.Count);
 
+        public int TotalMatchesCount => _groups.Where(g => g.Bracket != null).Sum(g => g.Bracket.MatchesCount);
+        public int CompletedMatchesCount => _groups.Where(g => g.Bracket != null).Sum(g => g.Bracket.CompletedMatchesCount);
+        public string ProgressLabel => $"{CompletedMatchesCount} / {TotalMatchesCount}";
+
         // Sum of (round * 2 + timeout) seconds across every pending match of
         // every group on this carpet. Auto-completed FreeWin matches are
         // excluded by PendingMatchesCount, so this represents work remaining.
@@ -71,6 +75,9 @@ namespace Wrestling.Entities
         {
             OnPropertyChanged("MatchesCount");
             OnPropertyChanged("WrestlersCount");
+            OnPropertyChanged("TotalMatchesCount");
+            OnPropertyChanged("CompletedMatchesCount");
+            OnPropertyChanged("ProgressLabel");
             OnPropertyChanged("ExpectedDurationSeconds");
             OnPropertyChanged("ExpectedDurationLabel");
         }

@@ -4,9 +4,7 @@ using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Settings;
 using Wrestling.UI.Material.Slider;
-using Wrestling.UI.Material.Tournament.Data;
-using Wrestling.UI.Material.Tournament.Phase5;
-using Wrestling.UI.Material.Tournament.Phase6;
+using Wrestling.UI.Material.Tournament.Conducting;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
 using Wrestling.UI.Material.Tournament.Results;
@@ -44,19 +42,18 @@ namespace Wrestling.UI.Material.Model
                 new ApplicationsViewModel(_container),
                 new DrawViewModel(_container),
                 new CarpetsViewModel(_container),
-                // Phase 5 hosts these as inner content via CarpetSubViewModel.
+                // Conducting navigates to these as full-screen overlays.
                 new BracketsViewModel(_container),
                 new ScheduleViewModel(_container),
                 new SliderControlViewModel(_container),
-                // Phase 6 hosts these as next/prev sub-pages.
+                // Results hosts these as next/prev sub-pages.
                 new PersonalResultsViewModel(_container),
                 new TeamResultsViewModel(_container),
                 new AchievementsViewModel(_container),
                 new CompletedMatchesViewModel(_container),
-                // Phase / utility wrappers.
-                new Phase5ViewModel(_container),
-                new Phase6ViewModel(_container),
-                new DataViewModel(_container)
+                // Section wrappers.
+                new ConductingViewModel(_container),
+                new ResultsViewModel(_container)
             };
         }
 

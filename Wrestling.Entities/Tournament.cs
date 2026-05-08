@@ -301,6 +301,15 @@ namespace Wrestling.Entities
 
         public Guid? ID { get; set; }
 
+        public void RefreshAggregates()
+        {
+            OnPropertyChanged(nameof(MatchesCount));
+            OnPropertyChanged(nameof(CompletedMatchesCount));
+            OnPropertyChanged(nameof(PendingMatchesCount));
+            OnPropertyChanged(nameof(ProgressPercent));
+            OnPropertyChanged(nameof(ExpectedDurationInSeconds));
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)

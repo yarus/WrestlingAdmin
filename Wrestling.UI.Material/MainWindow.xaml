@@ -21,9 +21,8 @@
         xmlns:carpets1="clr-namespace:Wrestling.UI.Material.Tournament.Standing.Carpets"
         xmlns:printBracket="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintBracket"
         xmlns:slider="clr-namespace:Wrestling.UI.Material.Slider"
-        xmlns:phase5="clr-namespace:Wrestling.UI.Material.Tournament.Phase5"
-        xmlns:phase6="clr-namespace:Wrestling.UI.Material.Tournament.Phase6"
-        xmlns:dataPhase="clr-namespace:Wrestling.UI.Material.Tournament.Data"
+        xmlns:conducting="clr-namespace:Wrestling.UI.Material.Tournament.Conducting"
+        xmlns:resultsRoot="clr-namespace:Wrestling.UI.Material.Tournament.Results"
         xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
@@ -95,15 +94,12 @@
                 <slider:SliderControlView />
             </DataTemplate>
 
-            <!-- New phase wrappers (step 6) -->
-            <DataTemplate DataType="{x:Type phase5:Phase5ViewModel}">
-                <phase5:Phase5View />
+            <!-- Section wrappers -->
+            <DataTemplate DataType="{x:Type conducting:ConductingViewModel}">
+                <conducting:ConductingView />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type phase6:Phase6ViewModel}">
-                <phase6:Phase6View />
-            </DataTemplate>
-            <DataTemplate DataType="{x:Type dataPhase:DataViewModel}">
-                <dataPhase:DataView />
+            <DataTemplate DataType="{x:Type resultsRoot:ResultsViewModel}">
+                <resultsRoot:ResultsView />
             </DataTemplate>
 
         </ResourceDictionary>
@@ -118,91 +114,109 @@
 
             <!-- Persistent left navigation rail. Hidden on the pre-tournament
                  Home screen and on full-screen overlays (MatchControl/MatchResults
-                 set IsBackButtonAvailable=true, which gates IsRailVisible). -->
+                 set IsBackButtonAvailable=true, which gates IsRailVisible).
+                 Top group = tournament phases. Footer (Settings) is pinned to
+                 the bottom via DockPanel.Dock="Bottom"; the empty space between
+                 provides the visual separation. -->
             <Border Grid.Column="0"
                     Width="96"
                     Background="{DynamicResource MaterialDesignBackground}"
                     BorderBrush="{DynamicResource MaterialDesignDivider}"
                     BorderThickness="0,0,1,0"
                     Visibility="{Binding IsRailVisible, Converter={StaticResource BoolToVis}}">
-                <ItemsControl ItemsSource="{Binding NavigationItems}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Vertical" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <!-- Separator for the gap between phases and utility items -->
-                                <Separator Margin="12,8,12,8"
-                                           Visibility="{Binding IsSeparator, Converter={StaticResource BoolToVis}}" />
+                <Border.Resources>
+                    <DataTemplate x:Key="NavigationItemTemplate">
+                        <Grid>
+                            <!-- Separator for the gap between phases and utility items.
+                                 Currently unused (footer slot replaced it); kept so an
+                                 in-section divider can be added without re-templating. -->
+                            <Separator Margin="12,8,12,8"
+                                       Visibility="{Binding IsSeparator, Converter={StaticResource BoolToVis}}" />
 
-                                <!-- Highlight Border (visible fill on active) wraps a transparent
-                                     Button that hosts the click + ripple. The Border paints the
-                                     active-state color; the Button's tool-button template doesn't
-                                     reliably paint Background, so it's delegated outward. -->
-                                <Border Margin="6,2"
-                                        CornerRadius="12"
-                                        Visibility="{Binding IsSeparator, Converter={StaticResource InvBoolToVis}}">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Background" Value="Transparent" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                    <Setter Property="Background" Value="#D1C4E9" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <Button Padding="0,10"
-                                            Height="64"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            HorizontalAlignment="Stretch"
-                                            HorizontalContentAlignment="Center"
-                                            Style="{StaticResource MaterialDesignToolButton}"
-                                            Command="{Binding ActivateCommand}">
-                                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="{Binding Icon}"
-                                                                     Width="24" Height="24"
-                                                                     HorizontalAlignment="Center"
-                                                                     VerticalAlignment="Center">
-                                                <materialDesign:PackIcon.Style>
-                                                    <Style TargetType="materialDesign:PackIcon">
-                                                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryHueDarkBrush}" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </materialDesign:PackIcon.Style>
-                                            </materialDesign:PackIcon>
-                                            <TextBlock Text="{Binding Label}"
-                                                       FontSize="11"
-                                                       Margin="0,4,0,0"
-                                                       HorizontalAlignment="Center">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="FontWeight" Value="Normal" />
-                                                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                                <Setter Property="FontWeight" Value="SemiBold" />
-                                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryHueDarkBrush}" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </StackPanel>
-                                    </Button>
-                                </Border>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                            <!-- Highlight Border (visible fill on active) wraps a transparent
+                                 Button that hosts the click + ripple. The Border paints the
+                                 active-state color; the Button's tool-button template doesn't
+                                 reliably paint Background, so it's delegated outward. -->
+                            <Border Margin="6,2"
+                                    CornerRadius="12"
+                                    Visibility="{Binding IsSeparator, Converter={StaticResource InvBoolToVis}}">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                <Setter Property="Background" Value="#D1C4E9" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Button Padding="0,10"
+                                        Height="64"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Style="{StaticResource MaterialDesignToolButton}"
+                                        Command="{Binding ActivateCommand}">
+                                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="{Binding Icon}"
+                                                                 Width="24" Height="24"
+                                                                 HorizontalAlignment="Center"
+                                                                 VerticalAlignment="Center">
+                                            <materialDesign:PackIcon.Style>
+                                                <Style TargetType="materialDesign:PackIcon">
+                                                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryHueDarkBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </materialDesign:PackIcon.Style>
+                                        </materialDesign:PackIcon>
+                                        <TextBlock Text="{Binding Label}"
+                                                   FontSize="11"
+                                                   Margin="0,4,0,0"
+                                                   HorizontalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontWeight" Value="Normal" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryHueDarkBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Button>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </Border.Resources>
+                <DockPanel LastChildFill="True">
+                    <ItemsControl DockPanel.Dock="Bottom"
+                                  ItemsSource="{Binding FooterNavigationItems}"
+                                  ItemTemplate="{StaticResource NavigationItemTemplate}"
+                                  Margin="0,0,0,8">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Vertical" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                    <ItemsControl ItemsSource="{Binding NavigationItems}"
+                                  ItemTemplate="{StaticResource NavigationItemTemplate}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Vertical" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </DockPanel>
             </Border>
 
             <DockPanel Grid.Column="1">

@@ -209,18 +209,16 @@
                                 <ListView ItemsSource="{Binding Wrestlers}" x:Name="WrestlersSource"
                                           Margin="10,0,10,0"
                                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          HorizontalContentAlignment="Stretch"
+                                          TextElement.FontSize="15"
                                           utils:GridViewSort.AutoSort="True">
-                                    <ListView.ItemContainerStyle>
-                                        <Style TargetType="ListViewItem">
-                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                        </Style>
-                                    </ListView.ItemContainerStyle>
                                     <ListView.View>
                                         <GridView AllowsColumnReorder="true">
                                             <GridView.ColumnHeaderContainerStyle>
                                                 <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
-                                                    <Setter Property="Padding" Value="6,4,6,4" />
+                                                    <Setter Property="Padding" Value="4,8,4,8" />
                                                     <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                                    <Setter Property="FontSize" Value="14" />
                                                 </Style>
                                             </GridView.ColumnHeaderContainerStyle>
                                             <GridViewColumn Header="#" Width="44">
@@ -228,7 +226,7 @@
                                                     <DataTemplate>
                                                         <TextBlock Margin="0,5,0,0"
                                                                    Text="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}"
-                                                                   TextWrapping="NoWrap" FontSize="14"
+                                                                   TextWrapping="NoWrap" FontSize="15"
                                                                    VerticalAlignment="Center"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
@@ -241,7 +239,7 @@
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding FullName}" Margin="0,5,0,0"
                                                                    TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
-                                                                   FontSize="14"
+                                                                   FontSize="15"
                                                                    VerticalAlignment="Center"
                                                                    HorizontalAlignment="Left" />
                                                     </DataTemplate>
@@ -253,7 +251,7 @@
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding BirthDate, StringFormat={}{0:d}}"
                                                                    Margin="0,5,0,0" TextWrapping="NoWrap"
-                                                                   FontSize="14" VerticalAlignment="Center"
+                                                                   FontSize="15" VerticalAlignment="Center"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
@@ -264,7 +262,7 @@
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding Weight}" Margin="0,5,0,0"
-                                                                   TextWrapping="NoWrap" FontSize="14"
+                                                                   TextWrapping="NoWrap" FontSize="15"
                                                                    VerticalAlignment="Center"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
@@ -276,7 +274,7 @@
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding Level}" Margin="0,5,0,0"
-                                                                   TextWrapping="NoWrap" FontSize="14"
+                                                                   TextWrapping="NoWrap" FontSize="15"
                                                                    VerticalAlignment="Center"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
@@ -289,7 +287,7 @@
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding GroupName}" Margin="0,5,0,0"
                                                                    TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
-                                                                   FontSize="14"
+                                                                   FontSize="15"
                                                                    VerticalAlignment="Center"
                                                                    HorizontalAlignment="Left" />
                                                     </DataTemplate>
