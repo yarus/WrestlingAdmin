@@ -1283,4 +1283,102 @@ public sealed class TournamentImporterApplyTests
         tgtGroup.FieldsVersion.Should().Be(5);
         tgtGroup.BracketVersion.Should().Be(5);
     }
+
+    // ---------- Mutual DSQ import roundtrip (#12) ----------
+
+    // Mutual DSQ has IsRedWon=null on the wire. The importer used to do
+    // baseMatch.IsRedWon.Value at the apply call — would NRE for mutual.
+    // After the fix, the nullable is passed straight through to CompleteMatch
+    // and the cascade runs identically on the receiving peer.
+    [Fact]
+    public void Mutual_DSQ_imports_without_NRE_and_marks_both_wrestlers_disqualified()
+    {
+        var (target, tgtGroup, _) = BuildPair();
+        var (remote, remGroup, remProc) = Mirror(target);
+
+        var remMatch = FirstPendingMatch(remGroup);
+        var redId = remMatch.WrestlerInRed!.ID;
+        var blueId = remMatch.WrestlerInBlue!.ID;
+        remProc.CompleteMatch(remMatch, null, MatchWinTypeEnum.MutualDisqualify);
+        remMatch.Version = 1;
+
+        var importer = MakeImporter();
+        var result = importer.Apply(target, ImportPlan.Proceed(remote));
+
+        result.Outcome.Should().Be(ImportOutcome.Imported);
+        var localMatch = tgtGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
+                                 .First(m => m.MatchNumber == remMatch.MatchNumber);
+        localMatch.Status.Should().Be(MatchStatusEnum.Completed);
+        localMatch.WinType.Should().Be(MatchWinTypeEnum.MutualDisqualify);
+        localMatch.IsRedWon.Should().BeNull();
+
+        tgtGroup.Wrestlers.First(w => w.ID == redId).IsDisqualified.Should().BeTrue();
+        tgtGroup.Wrestlers.First(w => w.ID == blueId).IsDisqualified.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Mutual_DSQ_revert_propagates_via_higher_version()
+    {
+        var (target, tgtGroup, _) = BuildPair();
+
+        // Step 1: remote completes mutual DSQ at V=1 — local imports.
+        var (remote1, remG1, remP1) = Mirror(target);
+        var remM1 = FirstPendingMatch(remG1);
+        remP1.CompleteMatch(remM1, null, MatchWinTypeEnum.MutualDisqualify);
+        remM1.Version = 1;
+
+        var importer = MakeImporter();
+        importer.Apply(target, ImportPlan.Proceed(remote1));
+
+        var local = tgtGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
+                            .First(m => m.MatchNumber == remM1.MatchNumber);
+        local.WinType.Should().Be(MatchWinTypeEnum.MutualDisqualify);
+        local.WrestlerInRed!.IsDisqualified.Should().BeTrue();
+
+        // Step 2: remote reverts at V=2 (Pending) — import drives local back to Pending
+        // and IsDisqualified is cleared on local wrestlers.
+        var (remote2, remG2, _) = Mirror(target);
+        var remM2 = remG2.Bracket.Rounds.SelectMany(r => r.RoundMatches)
+                              .First(m => m.MatchNumber == remM1.MatchNumber);
+        remM2.Version = 2; // Pending state from fresh Mirror
+
+        importer.Apply(target, ImportPlan.Proceed(remote2));
+
+        local.Status.Should().Be(MatchStatusEnum.Pending);
+        local.WinType.Should().BeNull();
+        local.WrestlerInRed!.IsDisqualified.Should().BeFalse();
+        local.WrestlerInBlue!.IsDisqualified.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Mutual_DSQ_then_edit_to_normal_completion_at_higher_version_replaces_state()
+    {
+        var (target, tgtGroup, _) = BuildPair();
+        var (remote1, remG1, remP1) = Mirror(target);
+        var remM1 = FirstPendingMatch(remG1);
+        remP1.CompleteMatch(remM1, null, MatchWinTypeEnum.MutualDisqualify);
+        remM1.Version = 1;
+
+        var importer = MakeImporter();
+        importer.Apply(target, ImportPlan.Proceed(remote1));
+
+        var local = tgtGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
+                            .First(m => m.MatchNumber == remM1.MatchNumber);
+        local.WrestlerInRed!.IsDisqualified.Should().BeTrue();
+
+        // Remote did revert + re-approve as a normal red win at V=3.
+        var (remote2, remG2, remP2) = Mirror(target);
+        var remM2 = FirstPendingMatch(remG2);
+        remP2.CompleteMatch(remM2, true, MatchWinTypeEnum.PointsWin);
+        remM2.Version = 3;
+
+        importer.Apply(target, ImportPlan.Proceed(remote2));
+
+        local.Status.Should().Be(MatchStatusEnum.Completed);
+        local.WinType.Should().Be(MatchWinTypeEnum.PointsWin);
+        local.IsRedWon.Should().BeTrue();
+        // After revert step inside Apply (Case 3), IsDisqualified should have been cleared.
+        local.WrestlerInRed.IsDisqualified.Should().BeFalse();
+        local.WrestlerInBlue!.IsDisqualified.Should().BeFalse();
+    }
 }

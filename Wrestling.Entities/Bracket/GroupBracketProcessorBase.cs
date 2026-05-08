@@ -92,7 +92,7 @@ namespace Wrestling.Entities.Bracket
             SetMatchesCount();
         }
 
-        public virtual void CompleteMatch(WrestlingMatch wrestlingMatch, bool isRedWon, MatchWinTypeEnum winType)
+        public virtual void CompleteMatch(WrestlingMatch wrestlingMatch, bool? isRedWon, MatchWinTypeEnum winType)
         {
             if (wrestlingMatch == null)
             {
@@ -103,6 +103,15 @@ namespace Wrestling.Entities.Bracket
             wrestlingMatch.WinType = winType;
             wrestlingMatch.Status = MatchStatusEnum.Completed;
 
+            // Mutual DSQ for brutality (UWW): both wrestlers placed last with
+            // no rank — FinalPlace stays null, IsDisqualified is set so UI
+            // shows the «DSQ» badge and team scoring contributes 0.
+            if (winType == MatchWinTypeEnum.MutualDisqualify)
+            {
+                if (wrestlingMatch.WrestlerInRed != null) wrestlingMatch.WrestlerInRed.IsDisqualified = true;
+                if (wrestlingMatch.WrestlerInBlue != null) wrestlingMatch.WrestlerInBlue.IsDisqualified = true;
+            }
+
             ProceedToNextMatch(wrestlingMatch);
 
             var round = Group.Bracket.Rounds.FirstOrDefault(r => r.RoundNumber == wrestlingMatch.RoundNumber);
@@ -110,16 +119,29 @@ namespace Wrestling.Entities.Bracket
             {
                 ProceedToAdditionalBracket(wrestlingMatch);
             }
-            
+
             // If wintype is Disqualification or NoShow we should set results of this wrestler matches automatically
             if (winType == MatchWinTypeEnum.DisqualifyWin || winType == MatchWinTypeEnum.NoShow)
             {
-                var looser = isRedWon ? wrestlingMatch.WrestlerInBlue : wrestlingMatch.WrestlerInRed;
+                var looser = isRedWon.Value ? wrestlingMatch.WrestlerInBlue : wrestlingMatch.WrestlerInRed;
 
                 CompleteFullLooserMatches(looser, winType);
-                CompleteWinnerMatchesIfOtherWrestlersDisqualOrNoShow(isRedWon
+                CompleteWinnerMatchesIfOtherWrestlersDisqualOrNoShow(isRedWon.Value
                     ? wrestlingMatch.WrestlerInRed
                     : wrestlingMatch.WrestlerInBlue);
+            }
+            else if (winType == MatchWinTypeEnum.MutualDisqualify)
+            {
+                // Round-robin (M4): cascade DisqualifyWin to BOTH wrestlers'
+                // remaining pending matches. Opponents get +5 CP — they did
+                // not contribute to the brutality. In Olympic (M1), the only
+                // pending matches for these two are downstream and unfilled,
+                // so this loop is a no-op there; M1 propagation is handled
+                // by ProceedToNextMatch via the sibling check.
+                if (wrestlingMatch.WrestlerInRed != null)
+                    CompleteFullLooserMatches(wrestlingMatch.WrestlerInRed, MatchWinTypeEnum.DisqualifyWin);
+                if (wrestlingMatch.WrestlerInBlue != null)
+                    CompleteFullLooserMatches(wrestlingMatch.WrestlerInBlue, MatchWinTypeEnum.DisqualifyWin);
             }
 
             SetMatchesCount();
@@ -188,6 +210,16 @@ namespace Wrestling.Entities.Bracket
         public virtual void RevertMatch(WrestlingMatch wrestlingMatch)
         {
             if (!CanMatchBeReverted(wrestlingMatch)) throw new ApplicationException("WrestlingMatch can't be reverted!");
+
+            // Revert of mutual DSQ: clear IsDisqualified set by this match.
+            // Cascaded DisqualifyWin matches (M4) keep their state — operator
+            // reverts those individually if needed (matches existing single-
+            // DSQ revert behavior).
+            if (wrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify)
+            {
+                if (wrestlingMatch.WrestlerInRed != null) wrestlingMatch.WrestlerInRed.IsDisqualified = false;
+                if (wrestlingMatch.WrestlerInBlue != null) wrestlingMatch.WrestlerInBlue.IsDisqualified = false;
+            }
 
             if (!string.IsNullOrEmpty(wrestlingMatch.NextMatchBracketFullNumber) && wrestlingMatch.IsRedWon.HasValue)
             {
@@ -294,22 +326,61 @@ namespace Wrestling.Entities.Bracket
         protected virtual void ProceedToNextMatch(WrestlingMatch wrestlingMatch)
         {
             // Proceed to next stage
-            if (!string.IsNullOrEmpty(wrestlingMatch.NextMatchBracketFullNumber))
+            if (string.IsNullOrEmpty(wrestlingMatch.NextMatchBracketFullNumber)) return;
+
+            var nextMatch = Group.Bracket.Rounds.SelectMany(p => p.RoundMatches).FirstOrDefault(x => x.BracketFullNumber == wrestlingMatch.NextMatchBracketFullNumber);
+            if (nextMatch == null) throw new ApplicationException("Can't find next wrestlingMatch!");
+
+            // Mutual DSQ (M1): neither wrestler advances. If the sibling
+            // source for nextMatch is already completed with a real winner,
+            // that wrestler will stand alone — auto-FreeWin nextMatch for
+            // them. Otherwise leave nextMatch pending; the sibling's own
+            // ProceedToNextMatch will detect this via the symmetric branch
+            // below when it eventually completes.
+            if (wrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify)
             {
-                var nextMatch = Group.Bracket.Rounds.SelectMany(p => p.RoundMatches).FirstOrDefault(x => x.BracketFullNumber == wrestlingMatch.NextMatchBracketFullNumber);
-                if (nextMatch == null) throw new ApplicationException("Can't find next wrestlingMatch!");
-
-                var winner = wrestlingMatch.IsRedWon.HasValue && wrestlingMatch.IsRedWon.Value ? wrestlingMatch.WrestlerInRed : wrestlingMatch.WrestlerInBlue;
-
-                if (wrestlingMatch.BracketNumber % 2 == 0 || nextMatch.WrestlerInRed != null)
+                var sibling = FindSiblingInBracket(wrestlingMatch);
+                if (sibling != null && sibling.Status == MatchStatusEnum.Completed && sibling.IsRedWon.HasValue)
                 {
-                    nextMatch.WrestlerInBlue = winner;
+                    var siblingWinner = sibling.IsRedWon.Value ? sibling.WrestlerInRed : sibling.WrestlerInBlue;
+                    var isRedTheWinner = nextMatch.WrestlerInRed != null && nextMatch.WrestlerInRed.SameAs(siblingWinner);
+                    CompleteMatch(nextMatch, isRedTheWinner, MatchWinTypeEnum.FreeWin);
                 }
-                else
-                {
-                    nextMatch.WrestlerInRed = winner;
-                }
+                return;
             }
+
+            var winner = wrestlingMatch.IsRedWon.HasValue && wrestlingMatch.IsRedWon.Value ? wrestlingMatch.WrestlerInRed : wrestlingMatch.WrestlerInBlue;
+
+            if (wrestlingMatch.BracketNumber % 2 == 0 || nextMatch.WrestlerInRed != null)
+            {
+                nextMatch.WrestlerInBlue = winner;
+            }
+            else
+            {
+                nextMatch.WrestlerInRed = winner;
+            }
+
+            // M1 reverse direction: if our sibling source was a mutual DSQ,
+            // the other slot in nextMatch will never be filled — auto-FreeWin
+            // for the wrestler we just placed.
+            var sib = FindSiblingInBracket(wrestlingMatch);
+            if (sib != null && sib.Status == MatchStatusEnum.Completed && sib.WinType == MatchWinTypeEnum.MutualDisqualify)
+            {
+                var isRedTheWinner = nextMatch.WrestlerInRed != null && nextMatch.WrestlerInRed.SameAs(winner);
+                CompleteMatch(nextMatch, isRedTheWinner, MatchWinTypeEnum.FreeWin);
+            }
+        }
+
+        // Finds the parallel match in the same round that feeds the same
+        // next-round match. In a standard elimination bracket, every two
+        // matches in round R feed one match in R+1 — those two are siblings.
+        protected WrestlingMatch FindSiblingInBracket(WrestlingMatch match)
+        {
+            if (string.IsNullOrEmpty(match.NextMatchBracketFullNumber)) return null;
+            var round = Group.Bracket.Rounds.FirstOrDefault(r => r.RoundNumber == match.RoundNumber);
+            if (round == null) return null;
+            return round.RoundMatches.FirstOrDefault(m =>
+                m != match && m.NextMatchBracketFullNumber == match.NextMatchBracketFullNumber);
         }
 
         private bool IsDoubleInteger(double value)

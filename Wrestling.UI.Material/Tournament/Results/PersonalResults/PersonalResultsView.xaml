@@ -153,8 +153,16 @@
                                                             utils:GridViewSort.PropertyName="Wrestler.FinalPlace">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding Wrestler.FinalPlace}"
-                                                                   HorizontalAlignment="Center" />
+                                                        <Grid>
+                                                            <TextBlock Text="{Binding Wrestler.FinalPlace}"
+                                                                       HorizontalAlignment="Center"
+                                                                       Visibility="{Binding Wrestler.IsDisqualified, Converter={StaticResource InvBoolToVis}}" />
+                                                            <TextBlock Text="DSQ"
+                                                                       Foreground="Red" FontWeight="Bold"
+                                                                       HorizontalAlignment="Center"
+                                                                       ToolTip="Дисквалификация"
+                                                                       Visibility="{Binding Wrestler.IsDisqualified, Converter={StaticResource BoolToVis}}" />
+                                                        </Grid>
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>

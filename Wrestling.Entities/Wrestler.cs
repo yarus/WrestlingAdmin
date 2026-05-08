@@ -27,6 +27,7 @@ namespace Wrestling.Entities
         private bool _isWeightApproved;
         private string _level;
         private DateTime? _timestamp;
+        private bool _isDisqualified;
         public bool IsApplicationValid => !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(FirstName) && BirthDate.HasValue && GroupID.HasValue;
         public bool IsRegistrationApproved => IsApplicationValid && Weight.HasValue && IsEntryFeePaid && IsWeightApproved;
 
@@ -254,6 +255,19 @@ namespace Wrestling.Entities
             }
         }
 
+        // Set to true when the wrestler is mutually disqualified for brutality
+        // (UWW: «остается без места с отметкой дисквалификация»). FinalPlace
+        // stays null on these wrestlers so team scoring naturally awards 0.
+        public bool IsDisqualified
+        {
+            get { return _isDisqualified; }
+            set
+            {
+                _isDisqualified = value;
+                OnPropertyChanged("IsDisqualified");
+            }
+        }
+
         public string FullName => string.Format("{0}{1}{2}", !string.IsNullOrEmpty(LastName) ? LastName : string.Empty,
             !string.IsNullOrEmpty(FirstName) ? " " + FirstName : string.Empty,
             !string.IsNullOrEmpty(MiddleName) ? " " + MiddleName : string.Empty);
@@ -296,6 +310,7 @@ namespace Wrestling.Entities
             Level = wr.Level;
             IsWeightApproved = wr.IsWeightApproved;
             Timestamp = wr.Timestamp;
+            IsDisqualified = wr.IsDisqualified;
         }
 
         public object Clone()

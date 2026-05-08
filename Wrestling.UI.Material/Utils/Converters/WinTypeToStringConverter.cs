@@ -19,6 +19,7 @@ namespace Wrestling.UI.Material.Utils.Converters
         private const string POINTSWIN_WITH_POINTS = "Победа по Баллам (VPO 3:1)";
         private const string ACTIONWIN = "Последнее Действие (VPO 3:1)";
         private const string FREEWIN = "Автопобеда";
+        private const string MUTUAL_DSQ = "Обоюдная дисквалификация (DSQ × DSQ)";
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
@@ -39,6 +40,7 @@ namespace Wrestling.UI.Material.Utils.Converters
                 case MatchWinTypeEnum.PointsWinWithPoints: return POINTSWIN_WITH_POINTS;
                 case MatchWinTypeEnum.ActionWin: return ACTIONWIN;
                 case MatchWinTypeEnum.FreeWin: return FREEWIN;
+                case MatchWinTypeEnum.MutualDisqualify: return MUTUAL_DSQ;
             }
 
             return string.Empty;
@@ -61,6 +63,7 @@ namespace Wrestling.UI.Material.Utils.Converters
                 case POINTSWIN_WITH_POINTS: return MatchWinTypeEnum.PointsWinWithPoints;
                 case ACTIONWIN: return MatchWinTypeEnum.ActionWin;
                 case FREEWIN: return MatchWinTypeEnum.FreeWin;
+                case MUTUAL_DSQ: return MatchWinTypeEnum.MutualDisqualify;
             }
 
             return null;

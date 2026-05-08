@@ -50,6 +50,9 @@ namespace Wrestling.Entities.Bracket
             var mainRounds = Group.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Main).ToList();
             if (addRounds.Count == 0 || wrestlingMatch.RoundNumber != (mainRounds.Count - 1)) return;
 
+            // Mutual DSQ in semifinal (M2): consolation rebuild is manual.
+            if (!wrestlingMatch.IsRedWon.HasValue) return;
+
             var winner = wrestlingMatch.IsRedWon.Value ? wrestlingMatch.WrestlerInRed : wrestlingMatch.WrestlerInBlue;
             var looser = wrestlingMatch.IsRedWon.Value ? wrestlingMatch.WrestlerInBlue : wrestlingMatch.WrestlerInRed;
 
@@ -69,8 +72,8 @@ namespace Wrestling.Entities.Bracket
             var looseMatches = Group.Bracket.Rounds
                 .Where(p => p.RoundType == GroupRoundTypeEnum.Main)
                 .SelectMany(x => x.RoundMatches)
-                .Where(o => o.Status == MatchStatusEnum.Completed 
-                    && (o.IsRedWon.Value && o.WrestlerInRed.SameAs(winner) || o.IsBlueWon && o.WrestlerInBlue.SameAs(winner)))
+                .Where(o => o.Status == MatchStatusEnum.Completed
+                    && ((o.IsRedWon.HasValue && o.IsRedWon.Value && o.WrestlerInRed.SameAs(winner)) || (o.IsBlueWon && o.WrestlerInBlue.SameAs(winner))))
                 .Where(m => m.WrestlerInRed?.ID != looser.ID && m.WrestlerInBlue?.ID != looser.ID)
                 .OrderByDescending(a => a.RoundNumber)
                 .ToList();
@@ -180,9 +183,11 @@ namespace Wrestling.Entities.Bracket
         private void DefineWinnerAndLoserPlace(WrestlingMatch match, int winnerPlance, int looserPlace)
         {
             if (match == null || !match.IsMatchCompleted) return;
-            
-            if (match.WrestlerInRed != null) match.WrestlerInRed.FinalPlace = match.IsRedWon.Value ? winnerPlance : looserPlace;
-            if (match.WrestlerInBlue != null) match.WrestlerInBlue.FinalPlace = match.IsBlueWon ? winnerPlance : looserPlace;
+            // Mutual DSQ: neither wrestler gets a rank — IsDisqualified flag drives UI.
+            if (!match.IsRedWon.HasValue) return;
+
+            if (match.WrestlerInRed != null && !match.WrestlerInRed.IsDisqualified) match.WrestlerInRed.FinalPlace = match.IsRedWon.Value ? winnerPlance : looserPlace;
+            if (match.WrestlerInBlue != null && !match.WrestlerInBlue.IsDisqualified) match.WrestlerInBlue.FinalPlace = match.IsBlueWon ? winnerPlance : looserPlace;
         }
         
         private void DefineGoldAndSilver(GroupBracket bracket)

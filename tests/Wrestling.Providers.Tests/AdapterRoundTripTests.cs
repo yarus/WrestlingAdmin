@@ -147,6 +147,60 @@ public class AdapterRoundTripTests
     }
 
     [Fact]
+    public void Round_trip_preserves_IsDisqualified_flag_on_wrestler()
+    {
+        var group = new AgeWeightGroup { ID = Guid.NewGuid(), BirthYearMin = 2005, BirthYearMax = 2006, WeightMax = 60, MaxRoundSecond = 180 };
+        var w = new Wrestler
+        {
+            ID = Guid.NewGuid(),
+            FirstName = "Иван",
+            LastName = "Иванов",
+            BirthDate = new DateTime(2005, 3, 1),
+            GroupID = group.ID,
+            IsDisqualified = true
+        };
+        group.Wrestlers = new System.Collections.Generic.List<Wrestler> { w };
+        var t = new Tournament(new GlobalSettings()) { ID = Guid.NewGuid(), Name = "T" };
+        t.Groups.Add(group);
+        t.Wrestlers.Add(w);
+
+        var info = _adapter.GetInfoFromEntity(t);
+        var restored = _adapter.GetEntityFromInfo(info);
+
+        restored.Wrestlers[0].IsDisqualified.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Legacy_wrt_without_IsDisqualified_field_loads_as_false()
+    {
+        // Simulate a DTO that came from old JSON: IsDisqualified defaults to
+        // false (Newtonsoft fills missing fields from the parameterless ctor
+        // / default(bool)). The adapter must not require the field to be set.
+        var info = new TournamentInfo
+        {
+            ID = Guid.NewGuid(),
+            Name = "Legacy",
+            Groups = new ObservableCollection<AgeWeightGroupInfo>(),
+            Wrestlers = new ObservableCollection<WrestlerInfo>
+            {
+                new WrestlerInfo
+                {
+                    ID = Guid.NewGuid(),
+                    FirstName = "Иван",
+                    LastName = "Иванов",
+                    BirthDate = new DateTime(2005, 3, 1)
+                    // IsDisqualified not set — defaults to false
+                }
+            },
+            TeamApplications = new ObservableCollection<TeamApplicationInfo>(),
+            Settings = new GlobalSettingsInfo()
+        };
+
+        var restored = _adapter.GetEntityFromInfo(info);
+        restored.Wrestlers[0].IsDisqualified.Should().BeFalse();
+    }
+
+    [Fact]
     public void Round_trip_assigns_a_new_Guid_when_tournament_has_none()
     {
         var t = new Tournament(new GlobalSettings()) { Name = "No-ID" };

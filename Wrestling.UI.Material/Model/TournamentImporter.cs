@@ -351,7 +351,7 @@ namespace Wrestling.UI.Material.Model
                     {
                         // Case 1: applied completion (Pending → Completed).
                         ApplyResultFields(baseMatch, importedMatch);
-                        processor.CompleteMatch(baseMatch, baseMatch.IsRedWon.Value, baseMatch.WinType.Value);
+                        processor.CompleteMatch(baseMatch, baseMatch.IsRedWon, baseMatch.WinType.Value);
                         result++;
                     }
                     else if (baseMatch.Status == MatchStatusEnum.Completed && importedMatch.Status == MatchStatusEnum.Pending)
@@ -367,7 +367,7 @@ namespace Wrestling.UI.Material.Model
                         // back to clean Pending, then apply the new completion.
                         processor.RevertMatch(baseMatch);
                         ApplyResultFields(baseMatch, importedMatch);
-                        processor.CompleteMatch(baseMatch, baseMatch.IsRedWon.Value, baseMatch.WinType.Value);
+                        processor.CompleteMatch(baseMatch, baseMatch.IsRedWon, baseMatch.WinType.Value);
                         result++;
                     }
                     // else: both Pending — bracket already correct, no-op.
@@ -593,7 +593,7 @@ namespace Wrestling.UI.Material.Model
                         if (match.Status == MatchStatusEnum.Pending && localOld.Status == MatchStatusEnum.Completed)
                         {
                             ApplyResultFields(match, localOld);
-                            processor.CompleteMatch(match, match.IsRedWon.Value, match.WinType.Value);
+                            processor.CompleteMatch(match, match.IsRedWon, match.WinType.Value);
                         }
                         else if (match.Status == MatchStatusEnum.Completed && localOld.Status == MatchStatusEnum.Pending)
                         {
@@ -603,7 +603,7 @@ namespace Wrestling.UI.Material.Model
                         {
                             processor.RevertMatch(match);
                             ApplyResultFields(match, localOld);
-                            processor.CompleteMatch(match, match.IsRedWon.Value, match.WinType.Value);
+                            processor.CompleteMatch(match, match.IsRedWon, match.WinType.Value);
                         }
 
                         match.Version = localOld.Version;

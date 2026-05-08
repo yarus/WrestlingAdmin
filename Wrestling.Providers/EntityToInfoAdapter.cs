@@ -337,7 +337,8 @@ namespace Wrestling.Providers
                 Level = info.Level,
                 PaidAmount = info.PaidAmount,
                 IsWeightApproved = info.IsWeightApproved,
-                Timestamp = info.Timestamp
+                Timestamp = info.Timestamp,
+                IsDisqualified = info.IsDisqualified
             };
 
             return wrestler;
@@ -573,7 +574,8 @@ namespace Wrestling.Providers
                 IsWeightApproved = entity.IsWeightApproved,
                 HashTag = entity.HashTag,
                 Level = entity.Level,
-                Timestamp = entity.Timestamp
+                Timestamp = entity.Timestamp,
+                IsDisqualified = entity.IsDisqualified
             };
 
             return info;

@@ -67,7 +67,9 @@ namespace Wrestling.UI.Material.Match
                 {
                     _completeMatch = new AsyncRelayCommand(
                         execute: async _ => await ApproveAsync(),
-                        canExecute: _ => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Pending && Winner.HasValue && WinType.HasValue
+                        // Mutual DSQ has no winner — allow complete when only WinType is set.
+                        canExecute: _ => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Pending && WinType.HasValue
+                            && (Winner.HasValue || WinType == MatchWinTypeEnum.MutualDisqualify)
                     );
                 }
                 return _completeMatch;
@@ -445,6 +447,7 @@ namespace Wrestling.UI.Material.Match
             
             if (IsNoShowWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.NoShow);
             if (IsDisqualifyWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.DisqualifyWin);
+            if (IsDisqualifyWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.MutualDisqualify);
 
             if (IsDominationWinEnabled)
             {
@@ -578,7 +581,9 @@ namespace Wrestling.UI.Material.Match
 
         private async Task ApproveAsync()
         {
-            if (WrestlingMatch == null || WrestlingMatch.Status != MatchStatusEnum.Pending || !Winner.HasValue || !WinType.HasValue)
+            var isMutual = WinType == MatchWinTypeEnum.MutualDisqualify;
+            if (WrestlingMatch == null || WrestlingMatch.Status != MatchStatusEnum.Pending || !WinType.HasValue
+                || (!Winner.HasValue && !isMutual))
             {
                 Dialog.ShowMessageBox(this,
                         "Ошибка завершения мачта! Возможно матч уже завершен.",
@@ -591,7 +596,7 @@ namespace Wrestling.UI.Material.Match
                 WrestlingMatch.StartDateTime = Tournament?.StartDate ?? DateTime.Now;
             }
 
-            WrestlingMatch.IsRedWon = Winner == WrestlingMatch.WrestlerInRed.ID;
+            WrestlingMatch.IsRedWon = isMutual ? (bool?)null : Winner == WrestlingMatch.WrestlerInRed.ID;
             WrestlingMatch.WinType = WinType;
             WrestlingMatch.Note = Note;
             // Bump version — this is the only state-change point that turns a
@@ -626,14 +631,48 @@ namespace Wrestling.UI.Material.Match
 
         private void CompleteMatch()
         {
-            if (!WrestlingMatch.IsRedWon.HasValue || !WrestlingMatch.WinType.HasValue) throw new ApplicationException("Completed match does not have result provided!");
+            // Mutual DSQ: WinType is set, IsRedWon is null — that's the
+            // canonical «no winner» encoding (see GroupBracketProcessorBase).
+            if (!WrestlingMatch.WinType.HasValue) throw new ApplicationException("Completed match does not have result provided!");
+            if (!WrestlingMatch.IsRedWon.HasValue && WrestlingMatch.WinType != MatchWinTypeEnum.MutualDisqualify)
+                throw new ApplicationException("Completed match does not have result provided!");
 
             if (DataContext.Tournament != null)
             {
-                _processor.CompleteMatch(WrestlingMatch, WrestlingMatch.IsRedWon.Value, WrestlingMatch.WinType.Value);
+                _processor.CompleteMatch(WrestlingMatch, WrestlingMatch.IsRedWon, WrestlingMatch.WinType.Value);
 
-                _scoreScreenVm.ShowWinner(WrestlingMatch);
+                if (WrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify)
+                {
+                    // M2/M3 alert: mutual DSQ in semifinal/final requires
+                    // manual rebuild (UWW). For other rounds the cascade in
+                    // GroupBracketProcessorBase is sufficient.
+                    if (IsMutualDsqRequiringManualRebuild(WrestlingMatch))
+                    {
+                        ShowSnackMessage("Обоюдная DSQ в полуфинале/финале — требуется ручная перестройка сетки (правила УВВ).");
+                    }
+                }
+                else
+                {
+                    _scoreScreenVm.ShowWinner(WrestlingMatch);
+                }
             }
+        }
+
+        // SF or F detection: only Olympic-style brackets have these slots.
+        // Round-robin doesn't, so the alert never fires for it.
+        private bool IsMutualDsqRequiringManualRebuild(WrestlingMatch match)
+        {
+            if (DataContext.Group?.Bracket == null || _processor == null) return false;
+            var sf = _processor.GetSemiFinalRound(DataContext.Group);
+            var f = _processor.GetFinalRound(DataContext.Group);
+            // Round-robin's GetSemiFinalRound returns the second-to-last main
+            // round (base implementation) — gate by bracket type code.
+            var code = DataContext.Group.Bracket.BracketTypeCode;
+            var isElim = code != BracketTypeEnum.RoundRobin.ToString();
+            if (!isElim) return false;
+            if (f != null && f.RoundMatches.Contains(match)) return true;
+            if (sf != null && sf.RoundMatches.Contains(match)) return true;
+            return false;
         }
 
         private void NavigateToMatches()
@@ -655,7 +694,8 @@ namespace Wrestling.UI.Material.Match
 
         private void BackToNavigateToHome()
         {
-            WrestlingMatch.IsRedWon = Winner == WrestlingMatch.WrestlerInRed.ID;
+            var isMutual = WinType == MatchWinTypeEnum.MutualDisqualify;
+            WrestlingMatch.IsRedWon = isMutual ? (bool?)null : (Winner == WrestlingMatch.WrestlerInRed.ID);
             WrestlingMatch.WinType = WinType;
             WrestlingMatch.Note = Note;
             WrestlingMatch.Version++;
@@ -681,21 +721,27 @@ namespace Wrestling.UI.Material.Match
             // Match already completed we just need to init binding properties
             if (WrestlingMatch.Status == MatchStatusEnum.Completed)
             {
-                if (!WrestlingMatch.IsRedWon.HasValue || !WrestlingMatch.WinType.HasValue) throw new ApplicationException("Completed match does not have result provided!");
+                if (!WrestlingMatch.WinType.HasValue) throw new ApplicationException("Completed match does not have result provided!");
+                // Mutual DSQ: completed without winner. Other completion types must have IsRedWon.
+                if (!WrestlingMatch.IsRedWon.HasValue && WrestlingMatch.WinType != MatchWinTypeEnum.MutualDisqualify)
+                    throw new ApplicationException("Completed match does not have result provided!");
 
                 WinType = WrestlingMatch.WinType.Value;
 
-                if (WrestlingMatch.IsRedWon.Value && WrestlingMatch.WrestlerInRed != null)
+                if (WrestlingMatch.IsRedWon.HasValue)
                 {
-                    Winner = WrestlingMatch.WrestlerInRed.ID;
-                }
-                else if (!WrestlingMatch.IsRedWon.Value && WrestlingMatch.WrestlerInBlue != null)
-                {
-                    Winner = WrestlingMatch.WrestlerInBlue.ID;
+                    if (WrestlingMatch.IsRedWon.Value && WrestlingMatch.WrestlerInRed != null)
+                    {
+                        Winner = WrestlingMatch.WrestlerInRed.ID;
+                    }
+                    else if (!WrestlingMatch.IsRedWon.Value && WrestlingMatch.WrestlerInBlue != null)
+                    {
+                        Winner = WrestlingMatch.WrestlerInBlue.ID;
+                    }
                 }
 
                 Note = WrestlingMatch.Note;
-                
+
                 return;
             }
             

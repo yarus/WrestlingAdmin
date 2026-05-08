@@ -12,6 +12,7 @@
         PointsWin,
         PointsWinWithPoints,
         ActionWin,
-        FreeWin
+        FreeWin,
+        MutualDisqualify
     }
 }

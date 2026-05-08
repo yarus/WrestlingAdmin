@@ -248,7 +248,7 @@ namespace Wrestling.Entities.Bracket
             if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue)
             {
                 var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
-                if (winner != null)
+                if (winner != null && !winner.IsDisqualified)
                 {
                     finalists.Add(winner);
                     winner.FinalPlace = currentPlace;
@@ -256,13 +256,13 @@ namespace Wrestling.Entities.Bracket
                 }
 
                 var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
-                if (looser != null)
+                if (looser != null && !looser.IsDisqualified)
                 {
                     finalists.Add(looser);
                     looser.FinalPlace = currentPlace;
                     currentPlace++;
                 }
-            } 
+            }
             else
             {
                 // can't calculate yet
@@ -275,7 +275,7 @@ namespace Wrestling.Entities.Bracket
             if (thirdPlace.Status == MatchStatusEnum.Completed && thirdPlace.IsRedWon.HasValue)
             {
                 var bronzeWinner = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
-                if (bronzeWinner != null)
+                if (bronzeWinner != null && !bronzeWinner.IsDisqualified)
                 {
                     finalists.Add(bronzeWinner);
                     bronzeWinner.FinalPlace = currentPlace;
@@ -283,7 +283,7 @@ namespace Wrestling.Entities.Bracket
                 }
 
                 var bronzeLooser = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
-                if (bronzeLooser != null)
+                if (bronzeLooser != null && !bronzeLooser.IsDisqualified)
                 {
                     finalists.Add(bronzeLooser);
                     bronzeLooser.FinalPlace = currentPlace;
@@ -309,8 +309,8 @@ namespace Wrestling.Entities.Bracket
             }
 
             var comparedResults = new List<TournamentResult>();
-            comparedResults.AddRange(resultsA.Where(r => !finalists.Contains(r.Wrestler)).Distinct());
-            comparedResults.AddRange(resultsB.Where(r => !finalists.Contains(r.Wrestler)).Distinct());
+            comparedResults.AddRange(resultsA.Where(r => !finalists.Contains(r.Wrestler) && !r.Wrestler.IsDisqualified).Distinct());
+            comparedResults.AddRange(resultsB.Where(r => !finalists.Contains(r.Wrestler) && !r.Wrestler.IsDisqualified).Distinct());
 
             var finalOrder = comparedResults
                 .OrderByDescending(x => x.Wins)
@@ -337,10 +337,14 @@ namespace Wrestling.Entities.Bracket
             var matchRound = Group.Bracket.Rounds.First(r => r.RoundType == GroupRoundTypeEnum.Additional);
             if (matchRound != null && matchRound.RoundNumber == wrestlingMatch.RoundNumber)
             {
+                // Mutual DSQ in semifinal (M2): UWW requires manual rebuild —
+                // don't auto-place anyone in the third-place match.
+                if (!wrestlingMatch.IsRedWon.HasValue) return;
+
                 var thirdfPlaceRound = Group.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
                 if (thirdfPlaceRound != null)
                 {
-                    var matchLooser = wrestlingMatch.IsRedWon.HasValue && wrestlingMatch.IsRedWon.Value
+                    var matchLooser = wrestlingMatch.IsRedWon.Value
                         ? wrestlingMatch.WrestlerInBlue
                         : wrestlingMatch.WrestlerInRed;
 

@@ -195,17 +195,33 @@ UI-удобство «опубликовать сейчас» (форс-flush в
 
 ---
 
-### #12 — Дисквалификация спортсмена с турнира
-**Симптом:** по правилам — все предыдущие результаты дисквалифицированного аннулируются. Также сценарий обоюдной дисквалификации.
+### ✅ #12 — Обоюдная дисквалификация спортсменов (DONE 2026-05-08)
+**Уточнение по правилам УВВ (после проработки):** при одиночной DSQ предыдущие результаты борца **не аннулируются** — он переносится на последнее место с отметкой `DSQ`, прошлые победы соперников остаются. Аннулирование «всё назад» — это WADA-кейс (постфактум), не операторская функция. Текущая single-DSQ логика (каскад через `CompleteFullLooserMatches`) этому соответствует и оставлена без изменений.
 
-**Действие:**
-- В `Wrestling.Entities/Bracket/...` найти, как сейчас обрабатывается дисквалификация (вероятно как тип победы).
-- Добавить операцию «дисквалифицировать спортсмена с турнира» (в отличие от «дисквалификация в одном матче»).
-- Каскад: пройти по всем матчам спортсмена, пометить их как аннулированные, пересчитать места группы, пересчитать командный зачёт.
-- Обоюдная дисквалификация: оба борца теряют все результаты.
-- Раскатить через push-канал.
+Реальная задача — поддержка **обоюдной дисквалификации** за грубость в одном матче (M1/M4 авто, M2/M3 алерт + ручная правка):
 
-**Сложность:** L. Требует аккуратной работы с уже посчитанными местами и командными очками.
+**Реализовано:**
+- Новый `MatchWinTypeEnum.MutualDisqualify` (значение 11, в конце enum — старые `.wrt` грузятся, Newtonsoft дропает неизвестные).
+- Сигнатура `IGroupBracketProcessor.CompleteMatch` ослаблена до `bool? isRedWon` — для mutual передаётся `null`, контракт: `Status=Completed && WinType=MutualDisqualify ⇒ IsRedWon=null`.
+- Новый флаг `Wrestler.IsDisqualified` (поле + DTO + adapter обе ветки + Sync/Clone). `FinalPlace` остаётся `null` для DSQ-борцов → командные очки 0 через существующий `GetPlacePoints(null)=0`.
+- В `GroupBracketProcessorBase.CompleteMatch` для mutual: оба борца получают `IsDisqualified=true`, дважды вызывается `CompleteFullLooserMatches` (для red и blue) с типом `DisqualifyWin` → каскад в round-robin (M4) на все pending-матчи каждого с другими борцами.
+- В `ProceedToNextMatch` двунаправленный auto-FreeWin (M1): новая утилита `FindSiblingInBracket`. Если sibling уже завершён обычной победой — текущий mutual триггерит auto-FreeWin в next-match для победителя sibling'а. Если sibling завершается ПОСЛЕ mutual — то его пропагация ловит mutual-сосед и тоже триггерит auto-FreeWin. Каскадирование через все раунды бесплатно за счёт рекурсии существующего `CompleteMatch`.
+- В `RevertMatch` при mutual очищаем `IsDisqualified` обоим. Каскадные DisqualifyWin-матчи остаются (наследованное поведение single-DSQ revert) — `CanMatchBeReverted` блокирует revert mutual в M1, пока next-match auto-FreeWin'нутый не сброшен.
+- Алерт SF/F: `MatchResultsViewModel.IsMutualDsqRequiringManualRebuild` детектит элиминационную сетку (не RoundRobin) + матч в `GetSemiFinalRound`/`GetFinalRound` → `ShowSnackMessage` «Обоюдная DSQ в полуфинале/финале — требуется ручная перестройка сетки (правила УВВ)». M2/M3 авто-логика **не** реализована (правило: «бронзовые медалисты борются за 1-2», «проигравшие в QF проводят SF» — слишком инвазивно для частоты ~1 на 10000 матчей).
+- Audit `IsRedWon.Value` сайтов в 4 концретных процессорах: добавлены `HasValue`-guard'ы; mutual-DSQ матчи пропускаются в `CalculateResults` (FinalPlace остаётся null), `ProceedToAdditionalBracket` рано выходит для mutual SF, auto-FreeWin третьего места подавлен при mutual SF.
+- `TournamentImporter`: 4 строки `processor.CompleteMatch(..., IsRedWon.Value, ...)` → `IsRedWon` (nullable), без `.Value`. Без этого фикса — NRE при попытке импорта mutual-DSQ матча.
+- UI: `WinTypeToStringConverter` лейбл «Обоюдная дисквалификация (DSQ × DSQ)»; `WrestlingMatch.IsMutualDisqualify` computed property с notify; `CompleteMatchCommand.canExecute` пропускает требование Winner для mutual; в `CompletedMatchesView`, `BracketsView`, `PrintBracketView`, `GroupBracketView` (slider) — иконка `CloseOctagon` (Red) на ячейке матча; в `PersonalResultsView` колонка «Место» показывает «DSQ» вместо номера для дисквалифицированных.
+- Sync через `WrestlingMatch.Version` работает естественно — mutual-DSQ это просто очередное состояние матча; пиры применяют его так же, как любой Pending→Completed/Completed→Pending переход. `ApplyResultFields` копирует `IsRedWon` (nullable) корректно.
+
+**Тесты (28 новых, всего 298 проходят):**
+- `tests/Wrestling.Entities.Tests/MutualDisqualifyTests.cs` (23 теста): M1 Olympic 8 wrestlers (mutual + sibling completed before/after, FreeWin propagation cascade), M2 Olympic 4 (alert path: SF mutual не пропагирует в final/3rd-place, не auto-FreeWin'ит при completed sibling), M3 Olympic 4 (final mutual: оба DSQ, FinalPlace=null), M4 RoundRobin 2/3/4 wrestlers (cascade DisqualifyWin для соперников, C/D unaffected, FinalPlace=null для DSQ), TournamentResult.Wins не считает mutual, revert clears IsDisqualified, CanMatchBeReverted блокируется при auto-FreeWin'нутом next-match, IsDisqualified default+Sync+Clone, IsMutualDisqualify property, OlympicWithConsolation + SubGroupsToOlympic smoke включая SF mutual.
+- `tests/Wrestling.Providers.Tests/AdapterRoundTripTests.cs` (+2): IsDisqualified roundtrip, legacy DTO без поля → false.
+- `tests/Wrestling.UI.Material.Tests/TournamentImporterApplyTests.cs` (+3): mutual DSQ import без NRE, revert через Version, edit-after-mutual (Case 3) на нормальную победу очищает IsDisqualified.
+
+**Где живёт код:**
+- `Wrestling.Entities/MatchWinTypeEnum.cs`, `Wrestler.cs`, `WrestlingMatch.cs` (IsMutualDisqualify property), `Bracket/GroupBracketProcessorBase.cs` (CompleteMatch + ProceedToNextMatch + FindSiblingInBracket + RevertMatch), `Bracket/OlympicGroupBracketProcessor.cs`, `Bracket/OlympicWithConsolationFromFinalistsGroupBracketProcessor.cs`, `Bracket/RoundRobinGroupBracketProcessor.cs`, `Bracket/SubGroupsToOlympicBracketProcessor.cs`, `Results/TournamentResults.cs` (HasValue guards в Wins/Loses queries).
+- `Wrestling.Data/WrestlerInfo.cs`, `Wrestling.Providers/EntityToInfoAdapter.cs`.
+- `Wrestling.UI.Material/Match/MatchResultsViewModel.cs`, `Utils/Converters/WinTypeToStringConverter.cs`, `Model/TournamentImporter.cs` + 4 XAML view'а.
 
 ---
 
@@ -214,7 +230,6 @@ UI-удобство «опубликовать сейчас» (форс-flush в
 | # | Пункт | Сложность |
 |---|-------|-----------|
 | **#7** | Карточка «Расписание» + паузы | M |
-| **#12** | Дисквалификация спортсмена с турнира с каскадом | L |
 
 Всё остальное закрыто. «Сквозная архитектурная тема» (админ-панель + push-канал) снята: версионная модель + расширенный `Apply` уже покрывают раскатку структурных правок через обычный pull-импорт.
 

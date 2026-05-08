@@ -93,6 +93,10 @@ namespace Wrestling.Entities.Bracket
 
             var addMatch = additionalRound.RoundMatches[0];
 
+            // Mutual DSQ in semifinal (M2): per UWW the consolation match
+            // requires manual rebuild; don't auto-fill the 3rd-place slot.
+            if (wrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify) return;
+
             var looser = wrestlingMatch.IsRedWon.Value ? wrestlingMatch.WrestlerInBlue : wrestlingMatch.WrestlerInRed;
             if (looser != null)
             {
@@ -116,12 +120,18 @@ namespace Wrestling.Entities.Bracket
                 var semifinals = mainRounds[mainRounds.Count - 2];
                 if (semifinals.RoundMatches.FirstOrDefault(p => p.Status == MatchStatusEnum.Pending) == null)
                 {
-                    if (addMatch.WrestlerInRed == null && addMatch.WrestlerInBlue != null)
+                    // Don't auto-FreeWin 3rd-place when an SF was mutual DSQ —
+                    // M2 demands manual rebuild per UWW.
+                    var anyMutualSf = semifinals.RoundMatches.Any(p => p.WinType == MatchWinTypeEnum.MutualDisqualify);
+                    if (!anyMutualSf)
                     {
-                        CompleteMatch(addMatch, false, MatchWinTypeEnum.FreeWin);
-                    } else if (addMatch.WrestlerInBlue == null && addMatch.WrestlerInRed != null)
-                    {
-                        CompleteMatch(addMatch, true, MatchWinTypeEnum.FreeWin);
+                        if (addMatch.WrestlerInRed == null && addMatch.WrestlerInBlue != null)
+                        {
+                            CompleteMatch(addMatch, false, MatchWinTypeEnum.FreeWin);
+                        } else if (addMatch.WrestlerInBlue == null && addMatch.WrestlerInRed != null)
+                        {
+                            CompleteMatch(addMatch, true, MatchWinTypeEnum.FreeWin);
+                        }
                     }
                 }
             }
@@ -134,16 +144,16 @@ namespace Wrestling.Entities.Bracket
             var mainRounds = Group.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Main).ToList();
             var final = mainRounds[mainRounds.Count - 1].RoundMatches[0];
 
-            if (final.Status == MatchStatusEnum.Completed)
+            if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue)
             {
                 var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
-                if (winner != null)
+                if (winner != null && !winner.IsDisqualified)
                 {
                     winner.FinalPlace = 1;
                 }
 
                 var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
-                if (looser != null)
+                if (looser != null && !looser.IsDisqualified)
                 {
                     looser.FinalPlace = 2;
                 }
@@ -154,19 +164,19 @@ namespace Wrestling.Entities.Bracket
             {
                 var addFinal = addRounds[0].RoundMatches[0];
 
-                if (addFinal.Status == MatchStatusEnum.Completed)
+                if (addFinal.Status == MatchStatusEnum.Completed && addFinal.IsRedWon.HasValue)
                 {
                     var addWinner = addFinal.IsRedWon.Value ? addFinal.WrestlerInRed : addFinal.WrestlerInBlue;
-                    if (addWinner != null)
+                    if (addWinner != null && !addWinner.IsDisqualified)
                     {
                         addWinner.FinalPlace = 3;
                     }
 
                     var addLooser = addFinal.IsRedWon.Value ? addFinal.WrestlerInBlue : addFinal.WrestlerInRed;
-                    if (addLooser != null)
+                    if (addLooser != null && !addLooser.IsDisqualified)
                     {
                         addLooser.FinalPlace = 4;
-                    }                    
+                    }
                 }
             }
 
@@ -174,20 +184,18 @@ namespace Wrestling.Entities.Bracket
 
             foreach (var match in mainRounds.OrderByDescending(p => p.RoundNumber).SelectMany(x => x.RoundMatches))
             {
-                if (match.Status != MatchStatusEnum.Completed)
-                {
-                    continue;
-                }
-            
+                if (match.Status != MatchStatusEnum.Completed) continue;
+                if (!match.IsRedWon.HasValue) continue; // mutual DSQ — no rank for either wrestler
+
                 var matchWinner = match.IsRedWon.Value ? match.WrestlerInRed : match.WrestlerInBlue;
-                if (matchWinner != null && !matchWinner.FinalPlace.HasValue)
+                if (matchWinner != null && !matchWinner.FinalPlace.HasValue && !matchWinner.IsDisqualified)
                 {
                     matchWinner.FinalPlace = currentPlace;
                     currentPlace++;
                 }
 
                 var matchLooser = match.IsRedWon.Value ? match.WrestlerInBlue : match.WrestlerInRed;
-                if (matchLooser != null && !matchLooser.FinalPlace.HasValue)
+                if (matchLooser != null && !matchLooser.FinalPlace.HasValue && !matchLooser.IsDisqualified)
                 {
                     matchLooser.FinalPlace = currentPlace;
                     currentPlace++;

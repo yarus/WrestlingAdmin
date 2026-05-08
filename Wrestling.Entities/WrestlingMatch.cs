@@ -181,6 +181,7 @@ namespace Wrestling.Entities
             {
                 _winType = value;
                 OnPropertyChanged("WinType");
+                OnPropertyChanged("IsMutualDisqualify");
             }
         }
 
@@ -319,6 +320,7 @@ namespace Wrestling.Entities
         }
 
         public bool IsMatchCompleted => _status == MatchStatusEnum.Completed;
+        public bool IsMutualDisqualify => _winType == MatchWinTypeEnum.MutualDisqualify;
 
         // Monotonic per-match counter. Bumped exactly once on every state
         // transition the importer propagates (Pending→Completed by ApproveAsync,
