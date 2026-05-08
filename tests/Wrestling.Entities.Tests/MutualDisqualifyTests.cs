@@ -402,6 +402,42 @@ public class MutualDisqualifyTests
         blue!.IsDisqualified.Should().BeTrue();
     }
 
+    // Regression: subgroup-stage mutual DSQ used to promote disqualified
+    // wrestlers to the SF because GetResults() ordered by nullable FinalPlace
+    // (nulls first) and the promotion code took resultsA[0]/[1] blindly.
+    [Fact]
+    public void SubGroupsToOlympic_MutualDsq_in_subgroup_does_not_promote_DSQ_wrestlers_to_semifinal()
+    {
+        // 6 wrestlers split into A/B subgroups of 3 each.
+        var group = TestHelpers.MakeGroup(6);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new SubGroupsToOlympicBracketProcessor();
+        proc.Generate(t, group);
+
+        // Mutual DSQ in subgroup A's first match. Cascade auto-completes the
+        // two DSQ wrestlers' remaining subgroup-A matches.
+        var allMain = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).SelectMany(r => r.RoundMatches).ToList();
+        var mutualMatch = allMain[0];
+        var redDsq = mutualMatch.WrestlerInRed;
+        var blueDsq = mutualMatch.WrestlerInBlue;
+        proc.CompleteMatch(mutualMatch, null, MatchWinTypeEnum.MutualDisqualify);
+
+        // Complete every remaining pending main-round match normally.
+        foreach (var m in allMain.Where(x => x.Status == MatchStatusEnum.Pending).ToList())
+        {
+            proc.CompleteMatch(m, true, MatchWinTypeEnum.PointsWin);
+        }
+
+        // Now the SF round should be populated. DSQ wrestlers must NOT appear.
+        var sfRound = group.Bracket.Rounds.First(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        var sfWrestlers = sfRound.RoundMatches
+            .SelectMany(m => new[] { m.WrestlerInRed, m.WrestlerInBlue })
+            .Where(w => w != null)
+            .ToList();
+        sfWrestlers.Should().NotContain(redDsq);
+        sfWrestlers.Should().NotContain(blueDsq);
+    }
+
     [Fact]
     public void SubGroupsToOlympic_MutualDsq_in_semifinal_does_not_advance_to_third_place()
     {
@@ -455,6 +491,334 @@ public class MutualDisqualifyTests
         c.FinalPlace.Should().NotBeNull();
         a!.FinalPlace.Should().BeNull();
         b!.FinalPlace.Should().BeNull();
+    }
+
+    // ---------- Consolation final rebuild (UWW: bronze winners promoted) ----------
+    //
+    // 8-wrestler consolation layout:
+    //   Main: QF (4) → SF (2) → F (1)
+    //   Additional: 1 round = "3-е место" with 2 matches (upper, lower).
+    // Per UWW rule, when both finalists are mutually DSQ'd, the two bronze
+    // medalists move into the (now reset) final and play for places 1-2; the
+    // bronze losers take the two 3rd places; everyone below shifts up.
+
+    private static (Tournament, AgeWeightGroup, OlympicWithConsolationFromFinalistsGroupBracketProcessor) SetupConsolation(int wrestlers)
+    {
+        var group = TestHelpers.MakeGroup(wrestlers);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+        return (t, group, proc);
+    }
+
+    private static void DriveConsolationToBronzeReady(AgeWeightGroup g, OlympicWithConsolationFromFinalistsGroupBracketProcessor proc)
+    {
+        // Drive QF and SF with red wins. Final and bronze matches stay pending.
+        foreach (var qf in g.Bracket.Rounds[0].RoundMatches.ToList())
+            proc.CompleteMatch(qf, true, MatchWinTypeEnum.PointsWin);
+        foreach (var sf in g.Bracket.Rounds[1].RoundMatches.ToList())
+            proc.CompleteMatch(sf, true, MatchWinTypeEnum.PointsWin);
+    }
+
+    [Fact]
+    public void Consolation_MutualDsq_in_Final_then_bronzes_completes_rebuilds_final_with_bronze_winners()
+    {
+        var (_, g, proc) = SetupConsolation(8);
+        DriveConsolationToBronzeReady(g, proc);
+
+        var finalMatch = g.Bracket.Rounds[2].RoundMatches[0];
+        var origRed = finalMatch.WrestlerInRed;
+        var origBlue = finalMatch.WrestlerInBlue;
+
+        proc.CompleteMatch(finalMatch, null, MatchWinTypeEnum.MutualDisqualify);
+        // Bronzes are still pending — rebuild not yet fired.
+        finalMatch.WinType.Should().Be(MatchWinTypeEnum.MutualDisqualify);
+
+        var bronzeRound = g.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        var b1 = bronzeRound.RoundMatches[0];
+        var b2 = bronzeRound.RoundMatches[1];
+        proc.CompleteMatch(b1, true, MatchWinTypeEnum.PointsWin);
+        // After only one bronze, rebuild still must not fire.
+        finalMatch.WinType.Should().Be(MatchWinTypeEnum.MutualDisqualify);
+        proc.CompleteMatch(b2, true, MatchWinTypeEnum.PointsWin);
+
+        // Now both bronzes done — rebuild should have fired.
+        finalMatch.Status.Should().Be(MatchStatusEnum.Pending);
+        finalMatch.WinType.Should().BeNull();
+        finalMatch.IsRedWon.Should().BeNull();
+        finalMatch.PointsRed.Should().Be(0);
+        finalMatch.PointsBlue.Should().Be(0);
+        finalMatch.WrestlerInRed.Should().Be(b1.WrestlerInRed); // bronze1 winner (red wins)
+        finalMatch.WrestlerInBlue.Should().Be(b2.WrestlerInRed); // bronze2 winner (red wins)
+
+        // Original DSQ'd finalists must keep IsDisqualified flag.
+        origRed!.IsDisqualified.Should().BeTrue();
+        origBlue!.IsDisqualified.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Consolation_bronzes_first_then_MutualDsq_in_Final_rebuilds_immediately()
+    {
+        var (_, g, proc) = SetupConsolation(8);
+        DriveConsolationToBronzeReady(g, proc);
+
+        var bronzeRound = g.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        var b1 = bronzeRound.RoundMatches[0];
+        var b2 = bronzeRound.RoundMatches[1];
+        proc.CompleteMatch(b1, true, MatchWinTypeEnum.PointsWin);
+        proc.CompleteMatch(b2, true, MatchWinTypeEnum.PointsWin);
+
+        var finalMatch = g.Bracket.Rounds[2].RoundMatches[0];
+        proc.CompleteMatch(finalMatch, null, MatchWinTypeEnum.MutualDisqualify);
+
+        // Rebuild fires inside the same CompleteMatch call.
+        finalMatch.Status.Should().Be(MatchStatusEnum.Pending);
+        finalMatch.WinType.Should().BeNull();
+        finalMatch.WrestlerInRed.Should().Be(b1.WrestlerInRed);
+        finalMatch.WrestlerInBlue.Should().Be(b2.WrestlerInRed);
+    }
+
+    [Fact]
+    public void Consolation_rebuilt_final_replayed_yields_places_1_2_3_3()
+    {
+        var (_, g, proc) = SetupConsolation(8);
+        DriveConsolationToBronzeReady(g, proc);
+
+        var finalMatch = g.Bracket.Rounds[2].RoundMatches[0];
+        var origRed = finalMatch.WrestlerInRed;
+        var origBlue = finalMatch.WrestlerInBlue;
+
+        proc.CompleteMatch(finalMatch, null, MatchWinTypeEnum.MutualDisqualify);
+        var bronzeRound = g.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        var b1 = bronzeRound.RoundMatches[0];
+        var b2 = bronzeRound.RoundMatches[1];
+        proc.CompleteMatch(b1, true, MatchWinTypeEnum.PointsWin);
+        proc.CompleteMatch(b2, true, MatchWinTypeEnum.PointsWin);
+
+        // Rebuilt final: replay with red winning.
+        var newGold = finalMatch.WrestlerInRed;     // bronze1 winner
+        var newSilver = finalMatch.WrestlerInBlue;  // bronze2 winner
+        var bronze1Loser = b1.WrestlerInBlue;       // lost to newGold
+        var bronze2Loser = b2.WrestlerInBlue;       // lost to newSilver
+        proc.CompleteMatch(finalMatch, true, MatchWinTypeEnum.PointsWin);
+
+        proc.GetResults();
+
+        newGold!.FinalPlace.Should().Be(1);
+        newSilver!.FinalPlace.Should().Be(2);
+        bronze1Loser!.FinalPlace.Should().Be(3, "5th-place finishers move up to 3rd per UWW");
+        bronze2Loser!.FinalPlace.Should().Be(3);
+        origRed!.FinalPlace.Should().BeNull("DSQ'd original finalists stay placeless");
+        origBlue!.FinalPlace.Should().BeNull();
+
+        // Remaining wrestlers (8 - 6 = 2) take 5th and 6th — points-based start
+        // is 5 (not 7) after the rebuild because the «остальные поднимаются»
+        // shift removes 5th-place slot.
+        var ranked = g.Wrestlers.Where(w => !w.IsDisqualified && w.FinalPlace.HasValue).OrderBy(w => w.FinalPlace).ToList();
+        ranked.Should().HaveCount(6);
+        ranked.Select(w => w.FinalPlace).Should().BeEquivalentTo(new int?[] { 1, 2, 3, 3, 5, 6 });
+    }
+
+    [Fact]
+    public void Consolation_bronze_revert_allowed_when_rebuilt_final_is_pending()
+    {
+        var (_, g, proc) = SetupConsolation(8);
+        DriveConsolationToBronzeReady(g, proc);
+
+        proc.CompleteMatch(g.Bracket.Rounds[2].RoundMatches[0], null, MatchWinTypeEnum.MutualDisqualify);
+        var bronzeRound = g.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        proc.CompleteMatch(bronzeRound.RoundMatches[0], true, MatchWinTypeEnum.PointsWin);
+        proc.CompleteMatch(bronzeRound.RoundMatches[1], true, MatchWinTypeEnum.PointsWin);
+
+        // Rebuilt final is Pending — operator can revert a bronze.
+        proc.CanMatchBeReverted(bronzeRound.RoundMatches[0]).Should().BeTrue();
+        proc.CanMatchBeReverted(bronzeRound.RoundMatches[1]).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Consolation_bronze_revert_blocked_when_rebuilt_final_is_completed()
+    {
+        var (_, g, proc) = SetupConsolation(8);
+        DriveConsolationToBronzeReady(g, proc);
+
+        proc.CompleteMatch(g.Bracket.Rounds[2].RoundMatches[0], null, MatchWinTypeEnum.MutualDisqualify);
+        var bronzeRound = g.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        proc.CompleteMatch(bronzeRound.RoundMatches[0], true, MatchWinTypeEnum.PointsWin);
+        proc.CompleteMatch(bronzeRound.RoundMatches[1], true, MatchWinTypeEnum.PointsWin);
+
+        // Replay the rebuilt final
+        proc.CompleteMatch(g.Bracket.Rounds[2].RoundMatches[0], true, MatchWinTypeEnum.PointsWin);
+
+        // Rebuilt final has been completed → bronze revert blocked. Operator
+        // must revert the final first.
+        proc.CanMatchBeReverted(bronzeRound.RoundMatches[0]).Should().BeFalse();
+        proc.CanMatchBeReverted(bronzeRound.RoundMatches[1]).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Consolation_bronze_revert_unrebuilds_final_back_to_mutual_DSQ()
+    {
+        var (_, g, proc) = SetupConsolation(8);
+        DriveConsolationToBronzeReady(g, proc);
+
+        // Capture original SF winners before mutual DSQ — these are the
+        // original finalists that should be restored on un-rebuild.
+        var sfRound = g.Bracket.Rounds[1];
+        var origRed = sfRound.RoundMatches[0].WrestlerInRed; // SF1 red won
+        var origBlue = sfRound.RoundMatches[1].WrestlerInRed; // SF2 red won
+
+        var finalMatch = g.Bracket.Rounds[2].RoundMatches[0];
+        proc.CompleteMatch(finalMatch, null, MatchWinTypeEnum.MutualDisqualify);
+        var bronzeRound = g.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        proc.CompleteMatch(bronzeRound.RoundMatches[0], true, MatchWinTypeEnum.PointsWin);
+        proc.CompleteMatch(bronzeRound.RoundMatches[1], true, MatchWinTypeEnum.PointsWin);
+
+        // Sanity: rebuild fired
+        finalMatch.WrestlerInRed.Should().Be(bronzeRound.RoundMatches[0].WrestlerInRed);
+        finalMatch.Status.Should().Be(MatchStatusEnum.Pending);
+
+        // Revert one bronze
+        proc.RevertMatch(bronzeRound.RoundMatches[0]);
+
+        // Final should be un-rebuilt: original DSQ'd finalists back, mutual
+        // DSQ Completed state restored.
+        finalMatch.WrestlerInRed.Should().Be(origRed);
+        finalMatch.WrestlerInBlue.Should().Be(origBlue);
+        finalMatch.Status.Should().Be(MatchStatusEnum.Completed);
+        finalMatch.WinType.Should().Be(MatchWinTypeEnum.MutualDisqualify);
+        finalMatch.IsRedWon.Should().BeNull();
+        origRed!.IsDisqualified.Should().BeTrue();
+        origBlue!.IsDisqualified.Should().BeTrue();
+
+        // Reverted bronze itself is back to pending
+        bronzeRound.RoundMatches[0].Status.Should().Be(MatchStatusEnum.Pending);
+    }
+
+    [Fact]
+    public void Consolation_full_revert_replay_sequence_leaves_consistent_state()
+    {
+        // Reproduces the operator's reported sequence (2026-05-08):
+        //   1. revert both bronzes
+        //   2. revert the final's mutual DSQ
+        //   3. re-complete both bronzes
+        //   4. re-mark the final mutual DSQ
+        // After step 4 the rebuild must fire, the final must end up Pending
+        // with the bronze winners populated, and the original DSQ'd finalists
+        // must keep IsDisqualified=true. This is what the VM relies on; if
+        // any of those invariants fail the operator gets kicked to home.
+        var (_, g, proc) = SetupConsolation(8);
+        DriveConsolationToBronzeReady(g, proc);
+
+        var sfRound = g.Bracket.Rounds[1];
+        var origRed = sfRound.RoundMatches[0].WrestlerInRed;   // SF1 winner
+        var origBlue = sfRound.RoundMatches[1].WrestlerInRed;  // SF2 winner
+
+        var finalMatch = g.Bracket.Rounds[2].RoundMatches[0];
+        var bronzeRound = g.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        var bronze1 = bronzeRound.RoundMatches[0];
+        var bronze2 = bronzeRound.RoundMatches[1];
+
+        // Initial: mutual DSQ in final + both bronzes done → rebuild fires
+        proc.CompleteMatch(finalMatch, null, MatchWinTypeEnum.MutualDisqualify);
+        proc.CompleteMatch(bronze1, true, MatchWinTypeEnum.PointsWin);
+        proc.CompleteMatch(bronze2, true, MatchWinTypeEnum.PointsWin);
+        finalMatch.Status.Should().Be(MatchStatusEnum.Pending, "rebuild fired");
+
+        // Step 1: revert both bronzes (first revert un-rebuilds the final)
+        proc.RevertMatch(bronze1);
+        finalMatch.WinType.Should().Be(MatchWinTypeEnum.MutualDisqualify, "un-rebuild restored mutual DSQ");
+        proc.RevertMatch(bronze2);
+
+        // Step 2: revert the final mutual DSQ
+        proc.CanMatchBeReverted(finalMatch).Should().BeTrue();
+        proc.RevertMatch(finalMatch);
+        origRed!.IsDisqualified.Should().BeFalse("revert clears DSQ flags on originals");
+        origBlue!.IsDisqualified.Should().BeFalse();
+
+        // Step 3: re-complete both bronzes
+        proc.CompleteMatch(bronze1, true, MatchWinTypeEnum.PointsWin);
+        proc.CompleteMatch(bronze2, true, MatchWinTypeEnum.PointsWin);
+        finalMatch.WinType.Should().BeNull("rebuild guard: only fires when final is mutual DSQ");
+
+        // Step 4: re-mark the final mutual DSQ — rebuild must fire again
+        proc.CompleteMatch(finalMatch, null, MatchWinTypeEnum.MutualDisqualify);
+
+        // Final invariants — the VM's ApproveAsync depends on these holding:
+        finalMatch.Status.Should().Be(MatchStatusEnum.Pending, "rebuild reset to pending for replay");
+        finalMatch.WinType.Should().BeNull();
+        finalMatch.WrestlerInRed.Should().Be(bronze1.WrestlerInRed, "bronze1 winner promoted");
+        finalMatch.WrestlerInBlue.Should().Be(bronze2.WrestlerInRed, "bronze2 winner promoted");
+        origRed.IsDisqualified.Should().BeTrue("originals are DSQ'd by step-4 mutual DSQ");
+        origBlue.IsDisqualified.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Consolation_replay_bronze_after_revert_re_triggers_rebuild_with_new_winner()
+    {
+        var (_, g, proc) = SetupConsolation(8);
+        DriveConsolationToBronzeReady(g, proc);
+
+        var finalMatch = g.Bracket.Rounds[2].RoundMatches[0];
+        proc.CompleteMatch(finalMatch, null, MatchWinTypeEnum.MutualDisqualify);
+        var bronzeRound = g.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        proc.CompleteMatch(bronzeRound.RoundMatches[0], true, MatchWinTypeEnum.PointsWin);
+        proc.CompleteMatch(bronzeRound.RoundMatches[1], true, MatchWinTypeEnum.PointsWin);
+
+        // Revert bronze1 and replay it with the OTHER side winning
+        proc.RevertMatch(bronzeRound.RoundMatches[0]);
+        var newBronze1Winner = bronzeRound.RoundMatches[0].WrestlerInBlue;
+        proc.CompleteMatch(bronzeRound.RoundMatches[0], false, MatchWinTypeEnum.PointsWin);
+
+        // Rebuild auto-fires: new bronze1 winner takes the finalist slot.
+        finalMatch.Status.Should().Be(MatchStatusEnum.Pending);
+        finalMatch.WrestlerInRed.Should().Be(newBronze1Winner);
+        finalMatch.WrestlerInBlue.Should().Be(bronzeRound.RoundMatches[1].WrestlerInRed);
+    }
+
+    [Fact]
+    public void Consolation_rebuilt_final_can_be_reverted_back_to_pending_with_bronze_winners()
+    {
+        var (_, g, proc) = SetupConsolation(8);
+        DriveConsolationToBronzeReady(g, proc);
+
+        var finalMatch = g.Bracket.Rounds[2].RoundMatches[0];
+        proc.CompleteMatch(finalMatch, null, MatchWinTypeEnum.MutualDisqualify);
+        var bronzeRound = g.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        proc.CompleteMatch(bronzeRound.RoundMatches[0], true, MatchWinTypeEnum.PointsWin);
+        proc.CompleteMatch(bronzeRound.RoundMatches[1], true, MatchWinTypeEnum.PointsWin);
+
+        var newRed = finalMatch.WrestlerInRed;
+        var newBlue = finalMatch.WrestlerInBlue;
+
+        // Replay rebuilt final
+        proc.CompleteMatch(finalMatch, true, MatchWinTypeEnum.PointsWin);
+        proc.CanMatchBeReverted(finalMatch).Should().BeTrue();
+        proc.RevertMatch(finalMatch);
+
+        // After revert: pending again, bronze winners still in place.
+        finalMatch.Status.Should().Be(MatchStatusEnum.Pending);
+        finalMatch.WrestlerInRed.Should().Be(newRed);
+        finalMatch.WrestlerInBlue.Should().Be(newBlue);
+    }
+
+    [Fact]
+    public void Consolation_bronze_mutual_DSQ_does_not_trigger_rebuild()
+    {
+        // Edge case: if a bronze match is itself mutual DSQ, neither side
+        // has a candidate winner — the rebuild bails out and stays pending.
+        var (_, g, proc) = SetupConsolation(8);
+        DriveConsolationToBronzeReady(g, proc);
+
+        var finalMatch = g.Bracket.Rounds[2].RoundMatches[0];
+        proc.CompleteMatch(finalMatch, null, MatchWinTypeEnum.MutualDisqualify);
+
+        var bronzeRound = g.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        proc.CompleteMatch(bronzeRound.RoundMatches[0], null, MatchWinTypeEnum.MutualDisqualify);
+        proc.CompleteMatch(bronzeRound.RoundMatches[1], true, MatchWinTypeEnum.PointsWin);
+
+        // Final stayed mutual DSQ — not rebuilt.
+        finalMatch.WinType.Should().Be(MatchWinTypeEnum.MutualDisqualify);
+        finalMatch.Status.Should().Be(MatchStatusEnum.Completed);
     }
 
     // ---------- Helper ----------

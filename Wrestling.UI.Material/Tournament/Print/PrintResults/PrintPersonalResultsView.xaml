@@ -9,7 +9,12 @@
              d:DesignHeight="800" d:DesignWidth="800">
 
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:IndexConverter x:Key="IndexConverter" />
+        <converters:ValueConverterGroup x:Key="InvBoolToVis">
+            <converters:BoolInverterConverter />
+            <converters:GroupedBoolToVisConverter />
+        </converters:ValueConverterGroup>
         <matConverters:OptionalImagePathConverter x:Key="OptionalImage" />
         <matConverters:FullNameToShortConverter x:Key="ShortName" />
 
@@ -86,7 +91,21 @@
 
             <ListView.View>
                 <GridView AllowsColumnReorder="false" ColumnHeaderContainerStyle="{StaticResource CompactColumnHeader}">
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.FinalPlace}" Header="#" Width="30" />
+                    <GridViewColumn Header="#" Width="40">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <TextBlock Text="{Binding Wrestler.FinalPlace}"
+                                               HorizontalAlignment="Center"
+                                               Visibility="{Binding Wrestler.IsDisqualified, Converter={StaticResource InvBoolToVis}}" />
+                                    <TextBlock Text="DSQ"
+                                               Foreground="Black" FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               Visibility="{Binding Wrestler.IsDisqualified, Converter={StaticResource BoolToVis}}" />
+                                </Grid>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LastFirstName}" Header="ФИО" Width="180" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="Команда" Width="100" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamCity}" Header="Регион" Width="115" />

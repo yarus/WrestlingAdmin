@@ -84,7 +84,7 @@ namespace Wrestling.Entities.Bracket
 
         protected abstract void CalculateResults();
 
-        public void Load(Tournament tournament, AgeWeightGroup group)
+        public virtual void Load(Tournament tournament, AgeWeightGroup group)
         {
             Tournament = tournament;
             Group = group;

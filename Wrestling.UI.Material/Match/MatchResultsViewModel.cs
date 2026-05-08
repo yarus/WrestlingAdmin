@@ -8,7 +8,6 @@ using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Providers;
-using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Tournament;
@@ -133,14 +132,7 @@ namespace Wrestling.UI.Material.Match
                 WrestlingMatch = null;
                 Note = string.Empty;
 
-                if (Tournament == null)
-                {
-                    NavigateToView<HomeViewModel>();
-                }
-                else
-                {
-                    NavigateToReturnTarget();
-                }
+                NavigateToReturnTarget();
             }
         }
 
@@ -569,14 +561,7 @@ namespace Wrestling.UI.Material.Match
                 await SaveIfAutosaveEnabledAsync();
             }
 
-            if (Tournament == null)
-            {
-                NavigateToView<HomeViewModel>();
-            }
-            else
-            {
-                NavigateToReturnTarget();
-            }
+            NavigateToReturnTarget();
         }
 
         private async Task ApproveAsync()
@@ -615,18 +600,18 @@ namespace Wrestling.UI.Material.Match
 
             CompleteMatch();
 
-            if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
+            // ResultsService and autosave both need a Tournament — gate them
+            // on that. Always return the operator to their previous screen
+            // (carpet/schedule/etc) via NavigateToMatches; there is no
+            // legitimate path where completing a match should drop the user
+            // back to the «open tournament» chooser.
+            if (DataContext.Tournament != null)
             {
                 ResultsService.Recalculate(DataContext.Tournament);
-
                 await SaveIfAutosaveEnabledAsync();
+            }
 
-                NavigateToMatches();
-            }
-            else
-            {
-                BackToNavigateToHome();
-            }
+            NavigateToMatches();
         }
 
         private void CompleteMatch()
@@ -643,13 +628,8 @@ namespace Wrestling.UI.Material.Match
 
                 if (WrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify)
                 {
-                    // M2/M3 alert: mutual DSQ in semifinal/final requires
-                    // manual rebuild (UWW). For other rounds the cascade in
-                    // GroupBracketProcessorBase is sufficient.
-                    if (IsMutualDsqRequiringManualRebuild(WrestlingMatch))
-                    {
-                        ShowSnackMessage("Обоюдная DSQ в полуфинале/финале — требуется ручная перестройка сетки (правила УВВ).");
-                    }
+                    var msg = GetMutualDsqAdvisoryMessage(WrestlingMatch);
+                    if (!string.IsNullOrEmpty(msg)) ShowSnackMessage(msg);
                 }
                 else
                 {
@@ -658,21 +638,41 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        // SF or F detection: only Olympic-style brackets have these slots.
-        // Round-robin doesn't, so the alert never fires for it.
-        private bool IsMutualDsqRequiringManualRebuild(WrestlingMatch match)
+        // Returns a Russian advisory message for a mutual-DSQ outcome, tailored
+        // to the round and bracket type. Returns null/empty when no message is
+        // needed (e.g. mutual DSQ in an early round of an Olympic bracket — the
+        // cascade in GroupBracketProcessorBase handles it without operator
+        // intervention).
+        private string GetMutualDsqAdvisoryMessage(WrestlingMatch match)
         {
-            if (DataContext.Group?.Bracket == null || _processor == null) return false;
+            if (DataContext.Group?.Bracket == null || _processor == null) return null;
             var sf = _processor.GetSemiFinalRound(DataContext.Group);
             var f = _processor.GetFinalRound(DataContext.Group);
-            // Round-robin's GetSemiFinalRound returns the second-to-last main
-            // round (base implementation) — gate by bracket type code.
             var code = DataContext.Group.Bracket.BracketTypeCode;
             var isElim = code != BracketTypeEnum.RoundRobin.ToString();
-            if (!isElim) return false;
-            if (f != null && f.RoundMatches.Contains(match)) return true;
-            if (sf != null && sf.RoundMatches.Contains(match)) return true;
-            return false;
+            if (!isElim) return null;
+
+            var isFinal = f != null && f.RoundMatches.Contains(match);
+            var isSemiFinal = sf != null && sf.RoundMatches.Contains(match);
+            if (!isFinal && !isSemiFinal) return null;
+
+            // Final-mutual-DSQ in the consolation bracket type is auto-handled:
+            // bronze winners are promoted into the final once both bronzes have
+            // completed (any order). The alert tells the operator what to expect.
+            if (isFinal && code == BracketTypeEnum.OlympicConsilationFinalists.ToString())
+            {
+                // After CompleteMatch returns, the rebuild has either already
+                // fired (bronzes were done first) or it'll fire when bronzes
+                // complete. Detect by checking whether the final is now Pending —
+                // the rebuild resets it.
+                if (match.Status == MatchStatusEnum.Pending)
+                {
+                    return "Обоюдная DSQ в финале: в финал переведены победители схваток за 3-е место. Финал сыгран заново.";
+                }
+                return "Обоюдная DSQ в финале: после завершения схваток за 3-е место их победители будут переведены в финал.";
+            }
+
+            return "Обоюдная DSQ в полуфинале/финале — требуется ручная перестройка сетки (правила УВВ).";
         }
 
         private void NavigateToMatches()
@@ -689,19 +689,6 @@ namespace Wrestling.UI.Material.Match
             var target = Navigation.ShellVm?.GetReturnVmType();
             if (target != null) Navigation.NavigateToView(target);
             else Navigation.NavigateToView<Tournament.Conducting.ConductingViewModel>();
-        }
-
-        private void BackToNavigateToHome()
-        {
-            var isMutual = WinType == MatchWinTypeEnum.MutualDisqualify;
-            WrestlingMatch.IsRedWon = isMutual ? (bool?)null : (Winner == WrestlingMatch.WrestlerInRed.ID);
-            WrestlingMatch.WinType = WinType;
-            WrestlingMatch.Note = Note;
-            WrestlingMatch.Version++;
-            WrestlingMatch.Status = MatchStatusEnum.Completed;
-            WrestlingMatch = null;
-
-            NavigateToView<HomeViewModel>();
         }
 
         private IGroupBracketProcessor GetProcessorForGroup(string processorType)

@@ -23,6 +23,7 @@
                 <converters:BoolInverterConverter />
                 <converters:GroupedBoolToVisConverter />
             </converters:ValueConverterGroup>
+            <converters:MultiBoolAndToVisConverter x:Key="MultiBoolAndToVis" />
 
             <Style x:Key="RotatedText" TargetType="TextBlock">
                 <Setter Property="LayoutTransform">

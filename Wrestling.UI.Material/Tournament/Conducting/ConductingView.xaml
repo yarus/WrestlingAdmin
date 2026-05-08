@@ -6,91 +6,122 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="900">
-    <Grid>
+    <Grid x:Name="RootControl">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="340" />
         </Grid.ColumnDefinitions>
 
         <!-- Main zone: aggregator dashboard.
-             Z1 — global progress + ETA, Z2 — per-carpet cards (pending > 0),
-             Z3 — last 3 results feed. All zones hide silently when empty. -->
-        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <Grid Margin="16">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+             Z1 — global progress + ETA, Z2 — carpets card (natural height,
+             grows to fit all carpet cards), Z3 — recent results feed.
+             Z3 fills the remaining space (`*` row) and runs its own inner
+             ScrollViewer when the result list doesn't fit; this is the only
+             scroll on the main zone, and on short windows Z3 simply shrinks
+             (and may end up at 0 height — acceptable per spec). -->
+        <Grid Grid.Column="0" Margin="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-                <!-- Z1: tournament-wide progress + ETA -->
-                <materialDesign:Card Grid.Row="0" Margin="0,0,0,12" Padding="16"
-                                     Visibility="{Binding HasBrackets, Converter={StaticResource BoolToVis}}">
-                    <StackPanel Orientation="Vertical">
-                        <TextBlock FontSize="15" Margin="0,0,0,8">
-                            <Run Text="Завершено " />
-                            <Run Text="{Binding Tournament.CompletedMatchesCount, Mode=OneWay}" FontWeight="SemiBold" />
-                            <Run Text=" / " />
-                            <Run Text="{Binding Tournament.MatchesCount, Mode=OneWay}" FontWeight="SemiBold" />
-                            <Run Text=" (" />
-                            <Run Text="{Binding Tournament.ProgressPercent, Mode=OneWay}" FontWeight="SemiBold" />
-                            <Run Text="%) · ~" />
-                            <Run Text="{Binding TournamentDurationLabel, Mode=OneWay}" FontWeight="SemiBold" />
-                            <Run Text=" до завершения" />
-                        </TextBlock>
-                        <ProgressBar Minimum="0" Maximum="100"
-                                     Value="{Binding Tournament.ProgressPercent, Mode=OneWay}"
-                                     Height="6" />
-                    </StackPanel>
-                </materialDesign:Card>
+            <!-- Z1: tournament-wide progress + ETA -->
+            <materialDesign:Card Grid.Row="0" Margin="0,0,0,12" Padding="16"
+                                 Visibility="{Binding HasBrackets, Converter={StaticResource BoolToVis}}">
+                <StackPanel Orientation="Vertical">
+                    <TextBlock FontSize="15" Margin="0,0,0,8">
+                        <Run Text="Завершено " />
+                        <Run Text="{Binding Tournament.CompletedMatchesCount, Mode=OneWay}" FontWeight="SemiBold" />
+                        <Run Text=" / " />
+                        <Run Text="{Binding Tournament.MatchesCount, Mode=OneWay}" FontWeight="SemiBold" />
+                        <Run Text=" (" />
+                        <Run Text="{Binding Tournament.ProgressPercent, Mode=OneWay}" FontWeight="SemiBold" />
+                        <Run Text="%) · ~" />
+                        <Run Text="{Binding TournamentDurationLabel, Mode=OneWay}" FontWeight="SemiBold" />
+                        <Run Text=" до завершения" />
+                    </TextBlock>
+                    <ProgressBar Minimum="0" Maximum="100"
+                                 Value="{Binding Tournament.ProgressPercent, Mode=OneWay}"
+                                 Height="14"
+                                 Foreground="{DynamicResource SecondaryHueMidBrush}"
+                                 Background="#E0E0E0" />
+                </StackPanel>
+            </materialDesign:Card>
 
-                <!-- Z2: per-carpet cards (only carpets with pending matches) -->
-                <ItemsControl Grid.Row="1" ItemsSource="{Binding PendingCarpets}" Margin="0,0,0,12"
-                              Visibility="{Binding HasPendingCarpets, Converter={StaticResource BoolToVis}}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <materialDesign:Card Width="220" Margin="0,0,12,12" Padding="12">
-                                <StackPanel Orientation="Vertical">
-                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,8" />
+            <!-- Z2: «Ковры Турнира» — per-carpet status cards in a titled card.
+                 Each inner card is a button; click opens Schedule with the
+                 clicked carpet pre-selected. WrapPanel left-aligns naturally. -->
+            <materialDesign:Card Grid.Row="1" Margin="0,0,0,12" Padding="0"
+                                 Visibility="{Binding HasPendingCarpets, Converter={StaticResource BoolToVis}}">
+                <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Ковры Турнира" FontWeight="SemiBold" FontSize="14"
+                               Margin="16,16,16,8"
+                               Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                    <ItemsControl ItemsSource="{Binding PendingCarpets}" Margin="16,0,16,16">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Padding="0" Margin="0,0,12,12" Cursor="Hand"
+                                        Background="Transparent" BorderThickness="0"
+                                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                        Style="{x:Null}"
+                                        ToolTip="Открыть расписание схваток на этом ковре"
+                                        Command="{Binding ElementName=RootControl, Path=DataContext.OpenCarpetScheduleCommand}"
+                                        CommandParameter="{Binding}">
+                                    <materialDesign:Card Width="220" Padding="12"
+                                                         BorderThickness="1"
+                                                         BorderBrush="{DynamicResource MaterialDesignDivider}"
+                                                         UniformCornerRadius="6">
+                                        <StackPanel Orientation="Vertical">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,8" />
 
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4"
-                                                ToolTip="Завершено / всего схваток на ковре">
-                                        <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
-                                                                 VerticalAlignment="Center"
-                                                                 Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                                        <TextBlock Text="{Binding ProgressLabel, Mode=OneWay}"
-                                                   FontSize="15" VerticalAlignment="Center"
-                                                   Margin="6,0,0,0" />
-                                    </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4"
+                                                        ToolTip="Завершено / всего схваток на ковре">
+                                                <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
+                                                                         VerticalAlignment="Center"
+                                                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                                <TextBlock Text="{Binding ProgressLabel, Mode=OneWay}"
+                                                           FontSize="15" VerticalAlignment="Center"
+                                                           Margin="6,0,0,0" />
+                                            </StackPanel>
 
-                                    <StackPanel Orientation="Horizontal"
-                                                ToolTip="Ожидаемое время до завершения ковра">
-                                        <materialDesign:PackIcon Kind="ClockOutline" Width="20" Height="20"
-                                                                 VerticalAlignment="Center"
-                                                                 Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                                        <TextBlock Text="{Binding ExpectedDurationLabel, Mode=OneWay}"
-                                                   FontSize="15" VerticalAlignment="Center"
-                                                   Margin="6,0,0,0" />
-                                    </StackPanel>
-                                </StackPanel>
-                            </materialDesign:Card>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                                            <StackPanel Orientation="Horizontal"
+                                                        ToolTip="Ожидаемое время до завершения ковра">
+                                                <materialDesign:PackIcon Kind="ClockOutline" Width="20" Height="20"
+                                                                         VerticalAlignment="Center"
+                                                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                                <TextBlock Text="{Binding ExpectedDurationLabel, Mode=OneWay}"
+                                                           FontSize="15" VerticalAlignment="Center"
+                                                           Margin="6,0,0,0" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </materialDesign:Card>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DockPanel>
+            </materialDesign:Card>
 
-                <!-- Z3: last 3 results feed -->
-                <materialDesign:Card Grid.Row="2" Padding="12"
-                                     Visibility="{Binding HasRecentResults, Converter={StaticResource BoolToVis}}">
-                    <StackPanel Orientation="Vertical">
-                        <TextBlock Text="Последние результаты" FontWeight="SemiBold" FontSize="14"
-                                   Margin="0,0,0,8"
-                                   Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                        <ItemsControl ItemsSource="{Binding LastThreeResults}">
+            <!-- Z3: recent results feed — fills the remaining `*` row down to
+                 the card bottom; the inner ScrollViewer kicks in when items
+                 don't fit. Card.Padding=0 + per-area margins so the scrollbar
+                 can sit flush at the right edge of the card. -->
+            <materialDesign:Card Grid.Row="2" Padding="0"
+                                 Visibility="{Binding HasRecentResults, Converter={StaticResource BoolToVis}}">
+                <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Последние результаты" FontWeight="SemiBold" FontSize="14"
+                               Margin="12,12,12,8"
+                               Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding RecentResults}" Margin="12,4,4,12">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Margin="0,0,0,8" Padding="0,4,0,8"
@@ -116,17 +147,22 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                    </StackPanel>
-                </materialDesign:Card>
-            </Grid>
-        </ScrollViewer>
+                    </ScrollViewer>
+                </DockPanel>
+            </materialDesign:Card>
+        </Grid>
 
-        <!-- Side rail: navigation cards + peer status -->
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                      BorderThickness="1 0 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}">
+        <!-- Side rail: navigation + composition + peer status. No own
+             ScrollViewer — Состав is moved to the bottom on purpose so it's
+             the first thing clipped on short windows (per spec, hiding it is
+             acceptable). The cards above are operationally important and
+             should always be visible. -->
+        <Border Grid.Column="1" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource MaterialDesignDivider}">
             <StackPanel Orientation="Vertical" Margin="12">
 
-                <!-- Расписание матчей -->
+                <!-- Режим Проведения — entry points to the two operator-facing
+                     fullscreen overlays. "Ковёр" → Schedule (per-carpet match
+                     queue), "Слайдер" → projector slideshow. -->
                 <materialDesign:Card Margin="0,0,0,12">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -138,31 +174,47 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="CalendarClock" Width="48" Height="48"
+                        <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="PlayCircleOutline" Width="48" Height="48"
                                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,12,12,12">
-                            <TextBlock Margin="0 0 0 4" FontWeight="SemiBold" Text="Расписание матчей" />
+                            <TextBlock Margin="0 0 0 4" FontWeight="SemiBold" Text="Режим Проведения" />
                             <TextBlock TextWrapping="Wrap"
                                        Foreground="{DynamicResource MaterialDesignBodyLight}"
-                                       Text="Просмотр расписания и запуск матчей." />
+                                       Text="Запуск режимов Проведения." />
                         </StackPanel>
 
                         <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0"
                                 BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="12">
-                            <Button HorizontalAlignment="Left" VerticalAlignment="Center"
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
-                                    Command="{Binding OpenScheduleCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="ArrowRight" Margin="0,0,6,0" />
-                                    <TextBlock Text="Открыть" />
-                                </StackPanel>
-                            </Button>
+                            <StackPanel Orientation="Horizontal">
+                                <Button VerticalAlignment="Center"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Command="{Binding OpenScheduleCommand}"
+                                        ToolTip="Очередь схваток на ковре, запуск поединков">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Wrestling" Margin="0,0,6,0" />
+                                        <TextBlock Text="Ковёр" />
+                                    </StackPanel>
+                                </Button>
+
+                                <Button VerticalAlignment="Center" Margin="8,0,0,0"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Command="{Binding OpenSliderCommand}"
+                                        ToolTip="Слайд-шоу для трансляции на проектор">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="ImageMultiple" Margin="0,0,6,0" />
+                                        <TextBlock Text="Слайдер" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
                         </Border>
                     </Grid>
                 </materialDesign:Card>
 
-                <!-- Слайдер -->
+                <!-- Сеть — имя узла, тоггл синхронизации, публичный URL.
+                     UDP/HTTP-порты в UI не выставлены: дефолты из GlobalSettings
+                     работают на любой обычной локалке турнира; правка через .wrt
+                     при реальном конфликте портов. -->
                 <materialDesign:Card Margin="0,0,0,12">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -174,26 +226,71 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="ImageMultiple" Width="48" Height="48"
+                        <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="LanConnect" Width="48" Height="48"
                                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,12,12,12">
-                            <TextBlock Margin="0 0 0 4" FontWeight="SemiBold" Text="Слайдер" />
+                            <TextBlock Margin="0 0 0 4" FontWeight="SemiBold" Text="Сеть" />
                             <TextBlock TextWrapping="Wrap"
                                        Foreground="{DynamicResource MaterialDesignBodyLight}"
-                                       Text="Слайд-шоу для трансляции на проектор." />
+                                       Text="Настройки сетевого обнаружения." />
                         </StackPanel>
 
                         <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0"
                                 BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="12">
-                            <Button HorizontalAlignment="Left" VerticalAlignment="Center"
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
-                                    Command="{Binding OpenSliderCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="ArrowRight" Margin="0,0,6,0" />
-                                    <TextBlock Text="Открыть" />
-                                </StackPanel>
-                            </Button>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="AccountBox" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                <TextBox Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="10,5,0,5"
+                                         Text="{Binding Path=Settings.NodeName, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="Имя узла (Ковёр 1, Стенд у входа...)" />
+
+                                <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0 8 0 0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <ToggleButton Grid.Column="0" VerticalAlignment="Center"
+                                                  ToolTip="Выключи, если делаешь экспериментальные изменения и не хочешь, чтобы соседи их подхватили"
+                                                  IsChecked="{Binding Path=Settings.IsHttpServerEnabled, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Grid.Column="1" Margin="12 0 0 0" VerticalAlignment="Center" TextWrapping="Wrap"
+                                               Text="Синхронизация с соседями" />
+                                </Grid>
+
+                                <!-- Visible only when the laptop has more than one IPv4 (or
+                                     a stale override is saved). The frame says exactly when
+                                     to use it: "if neighbors don't see this node, try
+                                     another address" — operators don't need to know what
+                                     NIC means to recognize that symptom. -->
+                                <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0 8 0 0" Padding="8"
+                                        Background="{DynamicResource MaterialDesignChipBackground}"
+                                        Visibility="{Binding IsAnnounceAddressPickerVisible, Converter={StaticResource BoolToVis}}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <materialDesign:PackIcon Grid.Column="0" Kind="AlertCircleOutline" Width="20" Height="20" VerticalAlignment="Top" Margin="0 2 10 0" Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBodyLight}">
+                                                У этого ноута несколько IP-адресов. Если соседи не видят этот узел в списке обнаружения — попробуйте сменить адрес ниже на тот, что в их подсети.
+                                            </TextBlock>
+                                            <ComboBox Margin="0 8 0 0"
+                                                      ItemsSource="{Binding AnnounceAddressOptions}"
+                                                      SelectedItem="{Binding SelectedAnnounceAddress, UpdateSourceTrigger=PropertyChanged}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Grid>
                         </Border>
                     </Grid>
                 </materialDesign:Card>
@@ -260,7 +357,75 @@
                     </Grid>
                 </materialDesign:Card>
 
+                <!-- Состав турнира — три счётчика: участники, команды, уникальные
+                     города/регионы. Информационная карточка, без кликов. Стоит
+                     последней в правой панели — на коротких экранах безопасно
+                     уезжает за нижний край (per spec). -->
+                <materialDesign:Card Margin="0,0,0,12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="72" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="ChartBox" Width="48" Height="48"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,12,12,12">
+                            <TextBlock Margin="0 0 0 4" FontWeight="SemiBold" Text="Состав" />
+                            <TextBlock TextWrapping="Wrap"
+                                       Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                       Text="Зарегистрированные участники, команды и регионы." />
+                        </StackPanel>
+
+                        <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0"
+                                BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Center"
+                                            ToolTip="Количество зарегистрированных участников">
+                                    <materialDesign:PackIcon Kind="AccountMultiple" Width="22" Height="22"
+                                                             HorizontalAlignment="Center"
+                                                             Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                    <TextBlock Text="{Binding WrestlersCount, Mode=OneWay}"
+                                               FontSize="20" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Center"
+                                            ToolTip="Количество зарегистрированных команд">
+                                    <materialDesign:PackIcon Kind="AccountGroup" Width="22" Height="22"
+                                                             HorizontalAlignment="Center"
+                                                             Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                    <TextBlock Text="{Binding TeamsCount, Mode=OneWay}"
+                                               FontSize="20" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Center"
+                                            ToolTip="Количество регионов (уникальных городов команд)">
+                                    <materialDesign:PackIcon Kind="MapMarkerOutline" Width="22" Height="22"
+                                                             HorizontalAlignment="Center"
+                                                             Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                    <TextBlock Text="{Binding RegionsCount, Mode=OneWay}"
+                                               FontSize="20" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </materialDesign:Card>
+
             </StackPanel>
-        </ScrollViewer>
+        </Border>
     </Grid>
 </UserControl>

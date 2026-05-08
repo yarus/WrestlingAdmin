@@ -380,13 +380,19 @@ namespace Wrestling.Entities.Bracket
             // Promote 2 best athletes to semi-final
             InitInternalProcessors();
 
-            var resultsA = _groupAProcessor.GetResults().ToList();
-            var resultsB = _groupBProcessor.GetResults().ToList();
+            // Filter DSQ wrestlers explicitly. RoundRobin's GetStats() orders
+            // results by nullable FinalPlace ascending, which puts null (=DSQ)
+            // FIRST — so [0]/[1] would be the disqualified pair if a mutual DSQ
+            // happened in a subgroup. Mutual DSQ in any subgroup match cascades
+            // auto-wins to the third wrestler, who legitimately becomes that
+            // subgroup's gold; silver simply doesn't exist.
+            var resultsA = _groupAProcessor.GetResults().Where(r => !r.Wrestler.IsDisqualified).ToList();
+            var resultsB = _groupBProcessor.GetResults().Where(r => !r.Wrestler.IsDisqualified).ToList();
 
-            var groupAGold = resultsA[0].Wrestler;
-            var groupASilver = resultsA[1].Wrestler;
-            var groupBGold = resultsB[0].Wrestler;
-            var groupBSilver = resultsB[1].Wrestler;
+            var groupAGold = resultsA.Count > 0 ? resultsA[0].Wrestler : null;
+            var groupASilver = resultsA.Count > 1 ? resultsA[1].Wrestler : null;
+            var groupBGold = resultsB.Count > 0 ? resultsB[0].Wrestler : null;
+            var groupBSilver = resultsB.Count > 1 ? resultsB[1].Wrestler : null;
 
             var semiFinalMatch1 = semiFinalRound.RoundMatches[0];
             semiFinalMatch1.WrestlerInRed = groupAGold;
@@ -395,6 +401,23 @@ namespace Wrestling.Entities.Bracket
             var semiFinalMatch2 = semiFinalRound.RoundMatches[1];
             semiFinalMatch2.WrestlerInRed = groupBGold;
             semiFinalMatch2.WrestlerInBlue = groupASilver;
+
+            // SFs that ended up with one slot filled and one empty (because a
+            // subgroup had < 2 clean finishers after mutual DSQ) auto-FreeWin
+            // for the lone wrestler so the final still progresses normally.
+            TryAutoFreeWinSemiFinal(semiFinalMatch1);
+            TryAutoFreeWinSemiFinal(semiFinalMatch2);
+        }
+
+        private void TryAutoFreeWinSemiFinal(WrestlingMatch sf)
+        {
+            if (sf.Status != MatchStatusEnum.Pending) return;
+            var hasRed = sf.WrestlerInRed != null;
+            var hasBlue = sf.WrestlerInBlue != null;
+            // Both empty (subgroup degenerate): leave pending, operator must
+            // rebuild the bracket. Both filled: nothing to auto-resolve.
+            if (hasRed == hasBlue) return;
+            CompleteMatch(sf, hasRed, MatchWinTypeEnum.FreeWin);
         }
 
         protected override void RevertAdditionalBracket(WrestlingMatch wrestlingMatch)

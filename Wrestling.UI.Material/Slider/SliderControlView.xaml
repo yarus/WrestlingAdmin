@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:utils="clr-namespace:Wrestling.UI.Utils;assembly=Wrestling.UI.Utils"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
@@ -131,49 +132,70 @@
 
                 <TextBlock Grid.Column="2" Margin="20,0,30,0" FontSize="16" VerticalAlignment="Center" Text="{Binding SelectedChannel.Name, StringFormat={}Канал: {0}}" />
 
-                <TextBlock Grid.Column="3" Margin="10,0,20,0" FontSize="14" VerticalAlignment="Center">
-                    <Run Text="Слайдов:" />
-                    <Run Text="{Binding Path=Slides.Count, Mode=OneWay}" />
-                </TextBlock>
+                <StackPanel Grid.Column="3" Orientation="Horizontal"
+                            Margin="10,0,20,0" VerticalAlignment="Center"
+                            ToolTip="Количество слайдов в канале">
+                    <materialDesign:PackIcon Kind="ViewCarousel" Width="20" Height="20"
+                                             VerticalAlignment="Center"
+                                             Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                    <TextBlock Text="{Binding Path=Slides.Count, Mode=OneWay}"
+                               FontSize="14" VerticalAlignment="Center"
+                               Margin="6,0,0,0" />
+                </StackPanel>
 
                 <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="10,0,20,0">
                     <ToggleButton Style="{DynamicResource MaterialDesignSwitchToggleButton}" VerticalAlignment="Center" ToolTip="Вкл/выкл переключение слайдов в превью" IsChecked="{Binding Path=Host.IsTimerEnabled}" IsEnabled="{Binding CanToggleTimer}" />
-                    <TextBlock FontSize="14" VerticalAlignment="Center" Text="Превью:" Margin="10,0,10,0" />
-                    <TextBlock FontSize="14" VerticalAlignment="Center" Text="{Binding Path=Host.CurrentSecond, Mode=OneWay}" MinWidth="20" />
+                    <StackPanel Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center"
+                                ToolTip="Секунд до показа следующего слайда в превью">
+                        <materialDesign:PackIcon Kind="TimerOutline" Width="20" Height="20"
+                                                 VerticalAlignment="Center"
+                                                 Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                        <TextBlock Text="{Binding Path=Host.CurrentSecond, Mode=OneWay}"
+                                   FontSize="14" VerticalAlignment="Center"
+                                   Margin="6,0,0,0" MinWidth="20" />
+                    </StackPanel>
                 </StackPanel>
             </Grid>
 
-            <ListView Grid.Row="1" ItemsSource="{Binding Slides}" SelectedItem="{Binding Path=Host.CurrentSlide}" x:Name="SlidesSource">
+            <Border Grid.Row="1" Background="White" Margin="0,10,0,0">
+            <ListView ItemsSource="{Binding Slides}" SelectedItem="{Binding Path=Host.CurrentSlide}" x:Name="SlidesSource"
+                      utils:GridViewSort.AutoSort="True"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                      HorizontalContentAlignment="Stretch"
+                      TextElement.FontSize="15"
+                      VirtualizingPanel.IsVirtualizing="False">
                 <ListView.View>
-                    <GridView AllowsColumnReorder="true">
-                        <GridViewColumn Header="#">
+                    <GridView AllowsColumnReorder="True">
+                        <GridView.ColumnHeaderContainerStyle>
+                            <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+                                <Setter Property="Padding" Value="4,8,4,8" />
+                                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                <Setter Property="FontSize" Value="14" />
+                            </Style>
+                        </GridView.ColumnHeaderContainerStyle>
+
+                        <GridViewColumn Header="#" Width="44">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Margin="0,5,0,0" Text="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}"
+                                               TextWrapping="NoWrap" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Название" Width="Auto">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Title}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
+                        <GridViewColumn Header="Название" Width="Auto"
+                                        DisplayMemberBinding="{Binding Title}"
+                                        utils:GridViewSort.PropertyName="Title" />
 
-                        <GridViewColumn Header="Тип" Width="Auto">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding SlideType}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
+                        <GridViewColumn Header="Тип" Width="Auto"
+                                        DisplayMemberBinding="{Binding SlideType}"
+                                        utils:GridViewSort.PropertyName="SlideType" />
 
                         <GridViewColumn Header="Длительность (с)" Width="Auto">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Duration}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding Duration}" TextWrapping="NoWrap"
+                                               VerticalAlignment="Center" HorizontalAlignment="Center" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -181,33 +203,41 @@
                         <GridViewColumn Width="Auto">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0" Orientation="Horizontal">
-                                        <Button ToolTip="Переместить слайд выше по списку" Margin="20,0,0,0" Padding="0" Width="22" Height="22"
-                                                Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0" Orientation="Horizontal">
+                                        <Button ToolTip="Переместить слайд выше по списку"
+                                                Margin="0" Padding="0" Width="22" Height="22"
+                                                Background="Transparent" BorderThickness="0"
+                                                Style="{DynamicResource MaterialDesignToolButton}"
                                                 Command="{Binding ElementName=RootControl, Path=DataContext.UpSlideCommand}"
-                                                CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="ArrowUp" Width="22" Height="22" Margin="0" Padding="0" />
+                                                CommandParameter="{Binding }" VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="ArrowUp" Width="18" Height="18" Margin="0" Padding="0" />
                                         </Button>
 
-                                        <Button ToolTip="Переместить слайд ниже по списку" Margin="20,0,0,0" Padding="0" Width="22" Height="22"
-                                                Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                        <Button ToolTip="Переместить слайд ниже по списку"
+                                                Margin="6,0,0,0" Padding="0" Width="22" Height="22"
+                                                Background="Transparent" BorderThickness="0"
+                                                Style="{DynamicResource MaterialDesignToolButton}"
                                                 Command="{Binding ElementName=RootControl, Path=DataContext.DownSlideCommand}"
-                                                CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="ArrowDown" Width="22" Height="22" Margin="0" Padding="0" />
+                                                CommandParameter="{Binding }" VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="ArrowDown" Width="18" Height="18" Margin="0" Padding="0" />
                                         </Button>
 
-                                        <Button ToolTip="Редактировать слайд" Margin="20,0,0,0" Padding="0" Width="22" Height="22"
-                                                Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                        <Button ToolTip="Редактировать слайд"
+                                                Margin="6,0,0,0" Padding="0" Width="22" Height="22"
+                                                Background="Transparent" BorderThickness="0"
+                                                Style="{DynamicResource MaterialDesignToolButton}"
                                                 Command="{Binding ElementName=RootControl, Path=DataContext.EditSlideCommand}"
-                                                CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="BorderColor" Width="22" Height="22" Margin="0" Padding="0" />
+                                                CommandParameter="{Binding }" VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="BorderColor" Width="18" Height="18" Margin="0" Padding="0" />
                                         </Button>
 
-                                        <Button ToolTip="Удалить слайд" Margin="20,0,0,0" Padding="0" Width="22" Height="22"
-                                                Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                        <Button ToolTip="Удалить слайд"
+                                                Margin="6,0,0,0" Padding="0" Width="22" Height="22"
+                                                Background="Transparent" BorderThickness="0"
+                                                Style="{DynamicResource MaterialDesignToolButton}"
                                                 Command="{Binding ElementName=RootControl, Path=DataContext.DeleteSlideCommand}"
-                                                CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="Close" Width="22" Height="22" Margin="0" Padding="0" />
+                                                CommandParameter="{Binding }" VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="Close" Width="18" Height="18" Margin="0" Padding="0" />
                                         </Button>
                                     </StackPanel>
                                 </DataTemplate>
@@ -224,6 +254,7 @@
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
             </ListView>
+            </Border>
         </Grid>
     </Grid>
 </UserControl>

@@ -108,7 +108,7 @@ namespace Wrestling.UI.Material
             // hidden on Home — IsRailVisible reacts to TournamentChanged).
             if (shell != null)
             {
-                shell.SetNavigationItems(BuildNavigationItems(navService), BuildFooterNavigationItems(navService));
+                shell.SetNavigationItems(BuildNavigationItems(navService), BuildFooterNavigationItems(navService, shell));
 
                 // Match overlays — full-screen + dynamic back to launching screen.
                 shell.RegisterOverlayParent(typeof(MatchControlViewModel), typeof(ConductingViewModel));
@@ -145,7 +145,7 @@ namespace Wrestling.UI.Material
                 new NavigationItem("Расписание", PackIconKind.Calendar,
                     typeof(CarpetsViewModel),
                     new RelayCommand(_ => navService.NavigateToView<CarpetsViewModel>())),
-                new NavigationItem("Проведение", PackIconKind.Play,
+                new NavigationItem("Проведение", PackIconKind.Scoreboard,
                     typeof(ConductingViewModel),
                     new RelayCommand(_ => navService.NavigateToView<ConductingViewModel>())),
                 new NavigationItem("Результаты", PackIconKind.Trophy,
@@ -155,13 +155,22 @@ namespace Wrestling.UI.Material
             return items;
         }
 
-        private static IList<INavigationItem> BuildFooterNavigationItems(INavigationService navService)
+        private static IList<INavigationItem> BuildFooterNavigationItems(INavigationService navService, IShellViewModel shell)
         {
+            // "Закрыть" sits last so it ends up at the very bottom of the rail's
+            // footer group. TargetViewModel=null keeps it out of the active-item
+            // highlight (it's an action, not a destination); ActivateCommand
+            // delegates to the shell so the close flow shares the same dialog
+            // owner (MainWindow) as the app-exit confirmation.
+            var shellVm = (MainWindowViewModel)shell;
             return new List<INavigationItem>
             {
                 new NavigationItem("Настройки", PackIconKind.Cog,
                     typeof(SettingsViewModel),
-                    new RelayCommand(_ => navService.NavigateToView<SettingsViewModel>()))
+                    new RelayCommand(_ => navService.NavigateToView<SettingsViewModel>())),
+                new NavigationItem("Закрыть", PackIconKind.LogoutVariant,
+                    null,
+                    shellVm.CloseTournamentCommand)
             };
         }
 

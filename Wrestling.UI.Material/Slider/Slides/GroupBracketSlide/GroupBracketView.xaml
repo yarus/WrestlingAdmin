@@ -8,6 +8,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters1:UpperCaseConverter x:Key="converter" />
+        <converters1:MultiBoolAndToVisConverter x:Key="MultiBoolAndToVis" />
         <converters:BracketCellLineHeightConverter x:Key="BracketCellHeight" />
         <converters:BracketCellLeftLineVisConverter x:Key="LeftLineVis" />
         <converters:BracketColumnTopMarginConverter x:Key="BracketColTopMargin"  />
@@ -155,26 +156,60 @@
                                                     <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding PointsRed}" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                                     <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding PointsBlue}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 
-                                                    <Grid Grid.Row="0" Grid.Column="4" Visibility="{Binding IsMatchCompleted, Converter={StaticResource BoolToVis}}" 
+                                                    <Grid Grid.Row="0" Grid.Column="4" Visibility="{Binding IsMatchCompleted, Converter={StaticResource BoolToVis}}"
                                                             VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0">
 
                                                         <materialDesign:PackIcon Kind="CheckboxMarkedOutline" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                                                     Margin="0" Padding="0" Foreground="White"
-                                                                                    Visibility="{Binding IsRedWon, Converter={StaticResource BoolToVis}}" Height="16" Width="16"/>
+                                                                                    Height="16" Width="16">
+                                                            <materialDesign:PackIcon.Visibility>
+                                                                <MultiBinding Converter="{StaticResource MultiBoolAndToVis}" ConverterParameter="1">
+                                                                    <Binding Path="IsRedWon" />
+                                                                    <Binding Path="WrestlerInRed.IsDisqualified" />
+                                                                </MultiBinding>
+                                                            </materialDesign:PackIcon.Visibility>
+                                                        </materialDesign:PackIcon>
+                                                        <materialDesign:PackIcon Kind="CloseOctagon" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                                    Margin="0" Padding="0" Foreground="DarkOrange"
+                                                                                    Height="20" Width="20">
+                                                            <materialDesign:PackIcon.Visibility>
+                                                                <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
+                                                                    <Binding Path="IsRedWon" />
+                                                                    <Binding Path="WrestlerInRed.IsDisqualified" />
+                                                                </MultiBinding>
+                                                            </materialDesign:PackIcon.Visibility>
+                                                        </materialDesign:PackIcon>
                                                     </Grid>
 
                                                     <Grid Grid.Row="1" Grid.Column="4" Visibility="{Binding IsMatchCompleted, Converter={StaticResource BoolToVis}}"
                                                             VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0">
                                                         <materialDesign:PackIcon Kind="CheckboxMarkedOutline" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                                                     Margin="0" Padding="0" Foreground="White"
-                                                                                    Visibility="{Binding IsBlueWon, Converter={StaticResource BoolToVis}}" Height="16" Width="16"/>
+                                                                                    Height="16" Width="16">
+                                                            <materialDesign:PackIcon.Visibility>
+                                                                <MultiBinding Converter="{StaticResource MultiBoolAndToVis}" ConverterParameter="1">
+                                                                    <Binding Path="IsBlueWon" />
+                                                                    <Binding Path="WrestlerInBlue.IsDisqualified" />
+                                                                </MultiBinding>
+                                                            </materialDesign:PackIcon.Visibility>
+                                                        </materialDesign:PackIcon>
+                                                        <materialDesign:PackIcon Kind="CloseOctagon" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                                    Margin="0" Padding="0" Foreground="DarkOrange"
+                                                                                    Height="20" Width="20">
+                                                            <materialDesign:PackIcon.Visibility>
+                                                                <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
+                                                                    <Binding Path="IsBlueWon" />
+                                                                    <Binding Path="WrestlerInBlue.IsDisqualified" />
+                                                                </MultiBinding>
+                                                            </materialDesign:PackIcon.Visibility>
+                                                        </materialDesign:PackIcon>
                                                     </Grid>
 
                                                     <Grid Grid.Row="0" Grid.Column="4" Grid.RowSpan="2"
                                                             Visibility="{Binding IsMutualDisqualify, Converter={StaticResource BoolToVis}}"
                                                             VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0">
                                                         <materialDesign:PackIcon Kind="CloseOctagon" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                                    Margin="0" Padding="0" Foreground="Red" Height="20" Width="20"/>
+                                                                                    Margin="0" Padding="0" Foreground="DarkOrange" Height="20" Width="20"/>
                                                     </Grid>
 
                                                 </Grid>

@@ -190,10 +190,10 @@
                                             </GridViewColumn>
 
                                             <GridViewColumn Header="Квал. балл" Width="120"
-                                                            utils:GridViewSort.PropertyName="OverallTournamentClassificationPoints">
+                                                            utils:GridViewSort.PropertyName="TotalPoints">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding OverallTournamentClassificationPoints}"
+                                                        <TextBlock Text="{Binding TotalPoints}"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>

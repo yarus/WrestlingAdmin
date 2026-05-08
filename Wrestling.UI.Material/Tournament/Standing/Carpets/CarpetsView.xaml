@@ -15,7 +15,6 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:IndexConverter x:Key="IndexConverter"/>
         <converters:IndexItemsConverter x:Key="ItemsIndexConverter" />
-        <converters:SubtractDoubleConverter x:Key="SubtractDouble" />
 
         <converters:ValueConverterGroup x:Key="InvBoolToVis">
             <converters:BoolInverterConverter />
@@ -57,7 +56,7 @@
         </Grid>
 
         <ScrollViewer Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <ItemsControl ItemsSource="{Binding Items}">
+            <ItemsControl ItemsSource="{Binding Items}" Grid.IsSharedSizeScope="True">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Margin="0" />
@@ -72,11 +71,11 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="40" />
                                         <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="StatParticipants" />
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="StatMatches" />
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="StatDuration" />
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="ActionEdit" />
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="ActionDelete" />
                                     </Grid.ColumnDefinitions>
 
                                     <TextBlock Grid.Column="0" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -165,7 +164,7 @@
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
 
-                                                <GridViewColumn Header="Группа" Width="240">
+                                                <GridViewColumn Header="Группа" Width="220">
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock Text="{Binding Name}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
@@ -174,7 +173,7 @@
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
 
-                                                <GridViewColumn Header="Участников" Width="100">
+                                                <GridViewColumn Header="Участников" Width="110">
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock Text="{Binding Path=Wrestlers.Count, Mode=OneWay}"
@@ -183,7 +182,7 @@
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
 
-                                                <GridViewColumn Header="Поединков" Width="100">
+                                                <GridViewColumn Header="Поединков" Width="90">
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <TextBlock Text="{Binding Path=PendingMatchesCount, Mode=OneWay}"
@@ -201,35 +200,32 @@
                                                     </GridViewColumn.CellTemplate>
                                                 </GridViewColumn>
 
-                                                <GridViewColumn Width="{Binding ActualWidth, ElementName=GroupsSource, Converter={StaticResource SubtractDouble}, ConverterParameter=620}">
+                                                <GridViewColumn Width="120">
                                                     <GridViewColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0" Orientation="Horizontal">
                                                                 <Button ToolTip="Переместить группу выше по списку"
-                                                                        Margin="0" Padding="0" Width="22" Height="22"
-                                                                        Background="Transparent" BorderThickness="0"
-                                                                        Style="{DynamicResource MaterialDesignToolButton}"
+                                                                        Margin="0" Padding="0" Width="28" Height="28"
+                                                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                                                         Command="{Binding ElementName=RootControl, Path=DataContext.UpGroupCommand}"
                                                                         CommandParameter="{Binding }" VerticalAlignment="Center">
-                                                                    <materialDesign:PackIcon Kind="ArrowUp" Width="18" Height="18" Margin="0" Padding="0" />
+                                                                    <materialDesign:PackIcon Kind="ArrowUp" Width="16" Height="16" Margin="0" Padding="0" />
                                                                 </Button>
 
                                                                 <Button ToolTip="Переместить группу ниже по списку"
-                                                                        Margin="6,0,0,0" Padding="0" Width="22" Height="22"
-                                                                        Background="Transparent" BorderThickness="0"
-                                                                        Style="{DynamicResource MaterialDesignToolButton}"
+                                                                        Margin="6,0,0,0" Padding="0" Width="28" Height="28"
+                                                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                                                         Command="{Binding ElementName=RootControl, Path=DataContext.DownGroupCommand}"
                                                                         CommandParameter="{Binding }" VerticalAlignment="Center">
-                                                                    <materialDesign:PackIcon Kind="ArrowDown" Width="18" Height="18" Margin="0" Padding="0" />
+                                                                    <materialDesign:PackIcon Kind="ArrowDown" Width="16" Height="16" Margin="0" Padding="0" />
                                                                 </Button>
 
                                                                 <Button ToolTip="Удалить группу из распределения на данный ковер"
-                                                                        Margin="6,0,0,0" Padding="0" Width="22" Height="22"
-                                                                        Background="Transparent" BorderThickness="0"
-                                                                        Style="{DynamicResource MaterialDesignToolButton}"
+                                                                        Margin="6,0,0,0" Padding="0" Width="28" Height="28"
+                                                                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                                                         Command="{Binding ElementName=RootControl, Path=DataContext.UnbindGroupCommand}"
                                                                         CommandParameter="{Binding }" VerticalAlignment="Center">
-                                                                    <materialDesign:PackIcon Kind="Close" Width="18" Height="18" Margin="0" Padding="0" />
+                                                                    <materialDesign:PackIcon Kind="Close" Width="16" Height="16" Margin="0" Padding="0" />
                                                                 </Button>
                                                             </StackPanel>
                                                         </DataTemplate>

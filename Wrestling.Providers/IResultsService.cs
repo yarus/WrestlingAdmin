@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Wrestling.Entities;
 using Wrestling.Entities.Results;
-using Wrestling.Entities.Results.Achievements;
 
 namespace Wrestling.Providers
 {

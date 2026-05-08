@@ -7,7 +7,6 @@ using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.Tournament.Print.PrintBracket;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
 using Wrestling.UI.Utils;
 
@@ -19,10 +18,11 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
 
         private Carpet _selectedCarpet;
         private ObservableCollection<Carpet> _carpets;
-        
+        private ObservableCollection<AgeWeightGroup> _filteredGroups;
+        private string _filterString;
+
         private ICommand _openMatchCommand;
         private ICommand _changeCarpetCommand;
-        private ICommand _printBracketCommand;
 
         private IList<CommandButtonItem> _quickButtons;
 
@@ -49,6 +49,8 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             Carpets = DataContext.Tournament.Carpets;
 
             if (Carpets.Count > 0 && _selectedCarpet == null || (Carpets.Count > 0 && !Carpets.Contains(SelectedCarpet))) SelectedCarpet = Carpets[0];
+
+            RefreshFilteredGroups();
         }
 
         public override IList<CommandButtonItem> QuickButtons
@@ -59,7 +61,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
                        (
                            _quickButtons = new List<CommandButtonItem>
                            {
-                               new CommandButtonItem("Открыть расписание схваток", PackIconKind.Receipt, new RelayCommand(param => OpenSchedule(), param => true))
+                               new CommandButtonItem("Открыть расписание схваток", PackIconKind.Timetable, new RelayCommand(param => OpenSchedule(), param => true))
                            }
                        );
             }
@@ -84,11 +86,36 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             set
             {
                 _selectedCarpet = value;
-                
+
                 OnPropertyChanged("SelectedCarpet");
+                RefreshFilteredGroups();
             }
         }
-        
+
+        public string FilterString
+        {
+            get => _filterString;
+            set
+            {
+                if (_filterString == value) return;
+                _filterString = value;
+
+                OnPropertyChanged(nameof(FilterString));
+                RefreshFilteredGroups();
+            }
+        }
+
+        public ObservableCollection<AgeWeightGroup> FilteredGroups
+        {
+            get => _filteredGroups;
+            private set
+            {
+                _filteredGroups = value;
+
+                OnPropertyChanged(nameof(FilteredGroups));
+            }
+        }
+
         #endregion
 
         #region Command Properties
@@ -102,18 +129,6 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
                     _openMatchCommand = new RelayCommand(param => OpenMatch(param as WrestlingMatch), param => param != null);
                 }
                 return _openMatchCommand;
-            }
-        }
-
-        public ICommand PrintBracketCommand
-        {
-            get
-            {
-                if (_printBracketCommand == null)
-                {
-                    _printBracketCommand = new RelayCommand(param => PrintBracket(param as AgeWeightGroup), param => param != null);
-                }
-                return _printBracketCommand;
             }
         }
 
@@ -138,14 +153,54 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             SelectedCarpet = carpet;
         }
 
-        private void PrintBracket(AgeWeightGroup group)
+        // Mirrors Schedule's filter behavior: case-insensitive substring match across
+        // wrestler FullName + team name + city, ignored until at least 3 characters.
+        // When active, shows only groups whose bracket contains a passing match and
+        // auto-expands those groups so the operator sees the result immediately.
+        private void RefreshFilteredGroups()
         {
-            if (group?.Bracket == null) return;
+            if (_selectedCarpet == null)
+            {
+                FilteredGroups = new ObservableCollection<AgeWeightGroup>();
+                return;
+            }
 
-            DataContext.Group = group;
+            var hasTextFilter = !string.IsNullOrEmpty(_filterString) && _filterString.Length > 2;
 
-            ShowPrintPreview(new PrintBracketViewModel(DiContainer));
+            if (!hasTextFilter)
+            {
+                FilteredGroups = new ObservableCollection<AgeWeightGroup>(_selectedCarpet.Groups);
+                return;
+            }
+
+            var matched = _selectedCarpet.Groups
+                .Where(g => g.Bracket != null && BracketHasMatchPassingFilter(g.Bracket, _filterString))
+                .ToList();
+
+            foreach (var group in matched)
+            {
+                group.IsExpanded = true;
+            }
+
+            FilteredGroups = new ObservableCollection<AgeWeightGroup>(matched);
         }
+
+        private static bool BracketHasMatchPassingFilter(GroupBracket bracket, string filter)
+            => bracket.Rounds.SelectMany(r => r.RoundMatches).Any(m => MatchPassesFilter(m, filter));
+
+        private static bool MatchPassesFilter(WrestlingMatch match, string filter)
+            => WrestlerPassesFilter(match.WrestlerInRed, filter)
+               || WrestlerPassesFilter(match.WrestlerInBlue, filter);
+
+        private static bool WrestlerPassesFilter(Wrestler wrestler, string filter)
+            => wrestler != null
+               && (ContainsCi(wrestler.FullName, filter)
+                   || ContainsCi(wrestler.TeamName, filter)
+                   || ContainsCi(wrestler.TeamCity, filter));
+
+        private static bool ContainsCi(string source, string value)
+            => !string.IsNullOrEmpty(source)
+               && source.IndexOf(value, StringComparison.InvariantCultureIgnoreCase) >= 0;
 
         private void OpenSchedule()
         {

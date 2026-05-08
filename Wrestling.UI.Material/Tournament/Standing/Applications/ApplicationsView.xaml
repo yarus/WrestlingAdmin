@@ -17,7 +17,6 @@
         <converters:IndexConverter x:Key="IndexConverter" />
         <converters:IndexItemsConverter x:Key="ItemsIndexConverter" />
         <converters1:PathToImageConverter x:Key="PathToImageConverter" />
-        <converters:SubtractDoubleConverter x:Key="SubtractDouble" />
 
         <converters:ValueConverterGroup x:Key="InvBoolToVis">
             <converters:BoolInverterConverter />
@@ -233,7 +232,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="ФИО" Width="300"
+                                            <GridViewColumn Header="ФИО" Width="240"
                                                             utils:GridViewSort.PropertyName="FullName">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -257,7 +256,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Вес" Width="62"
+                                            <GridViewColumn Header="Вес" Width="60"
                                                             utils:GridViewSort.PropertyName="Weight">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -269,7 +268,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Разряд" Width="82"
+                                            <GridViewColumn Header="Разряд" Width="70"
                                                             utils:GridViewSort.PropertyName="Level">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -342,38 +341,32 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Width="{Binding ActualWidth, ElementName=WrestlersSource, Converter={StaticResource SubtractDouble}, ConverterParameter=912}">
+                                            <GridViewColumn Width="100">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <StackPanel VerticalAlignment="Center"
                                                                     HorizontalAlignment="Right" Margin="0,0,8,0"
                                                                     Orientation="Horizontal">
                                                             <Button ToolTip="Редактировать данные спортсмена"
-                                                                    Margin="0" Padding="0" Width="20" Height="20"
-                                                                    Background="Transparent"
-                                                                    BorderThickness="0"
-                                                                    Style="{DynamicResource MaterialDesignToolButton}"
+                                                                    Margin="0" Padding="0" Width="28" Height="28"
+                                                                    Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.EditWrestlerCommand}"
                                                                     CommandParameter="{Binding }"
-                                                                    VerticalAlignment="Center"
-                                                                    HorizontalAlignment="Center">
-                                                                <materialDesign:PackIcon Kind="BorderColor"
+                                                                    VerticalAlignment="Center">
+                                                                <materialDesign:PackIcon Kind="Pencil"
                                                                                          Width="16" Height="16"
                                                                                          Margin="0" Padding="0" />
                                                             </Button>
 
                                                             <Button ToolTip="Удалить спортсмена из заявки"
-                                                                    Margin="4,0,0,0" Padding="0" Width="20" Height="20"
-                                                                    Background="Transparent"
-                                                                    BorderThickness="0"
-                                                                    Style="{DynamicResource MaterialDesignToolButton}"
+                                                                    Margin="8,0,0,0" Padding="0" Width="28" Height="28"
+                                                                    Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.DeleteWrestlerCommand}"
                                                                     CommandParameter="{Binding }"
-                                                                    VerticalAlignment="Center"
-                                                                    HorizontalAlignment="Center">
-                                                                <materialDesign:PackIcon Kind="Close" Width="16"
-                                                                                         Height="16" Margin="0"
-                                                                                         Padding="0" />
+                                                                    VerticalAlignment="Center">
+                                                                <materialDesign:PackIcon Kind="Close"
+                                                                                         Width="16" Height="16"
+                                                                                         Margin="0" Padding="0" />
                                                             </Button>
                                                         </StackPanel>
                                                     </DataTemplate>

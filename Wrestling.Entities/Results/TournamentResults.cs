@@ -60,11 +60,20 @@ namespace Wrestling.Entities.Results
         {
             get
             {
+                // DSQ'd wrestlers contribute 0 to classification points — UWW
+                // «остаётся без места с отметкой дисквалификация». Earlier wins
+                // they did rack up are voided when the disqualification flag
+                // flips on (e.g. mutual DSQ in the final, where the wrestler
+                // was promoted there from a real semifinal win). The flag is
+                // sticky after that, so this short-circuit is the right place
+                // to zero them out for both display and tie-break ordering.
+                if (_wrestler != null && _wrestler.IsDisqualified) return 0;
+
                 var fivePoints = FivePointWins * 5;
                 var fourPoints = FourPointWins * 4;
                 var threePoints = ThreePointWin * 3;
                 var losePoints = LoseByAction + LoseByDomination + LoseByPoints;
-                
+
                 var result = fivePoints + fourPoints + threePoints + losePoints;
                 return result;
             }

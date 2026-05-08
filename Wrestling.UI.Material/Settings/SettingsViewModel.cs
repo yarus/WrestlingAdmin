@@ -4,20 +4,14 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Media;
-using System.Net;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
 using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using Wrestling.Entities;
-using Wrestling.Providers;
-using Wrestling.Providers.Network;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Settings
@@ -32,9 +26,6 @@ namespace Wrestling.UI.Material.Settings
         private ICommand _browseBackupFolderCommand;
         private ICommand _browseSignatureFooterImageCommand;
         private ICommand _removeSignatureFooterImageCommand;
-        private ICommand _copyPublicUrlCommand;
-        private ICommand _closeTournamentCommand;
-        private ICommand _openErrorLogCommand;
 
         private string _validation;
         private GlobalSettings _subscribedItem;
@@ -135,88 +126,6 @@ namespace Wrestling.UI.Material.Settings
             else
             {
                 // Settings closes via the rail — no programmatic back nav.
-            }
-        }
-
-        // Tournament-management actions live here (Step 10) instead of on
-        // the bygone Dashboard. Close-tournament is a destructive action;
-        // we save first (best-effort) before clearing state and bouncing
-        // back to Home, where the operator can pick a new file.
-        public bool IsTournamentLoaded => DataContext?.Tournament != null;
-
-        public ICommand CloseTournamentCommand =>
-            _closeTournamentCommand ?? (_closeTournamentCommand = new AsyncRelayCommand(
-                execute: _ => CloseTournamentAsync(),
-                canExecute: _ => DataContext?.Tournament != null));
-
-        public ICommand OpenErrorLogCommand =>
-            _openErrorLogCommand ?? (_openErrorLogCommand = new RelayCommand(
-                p => OpenErrorLog(),
-                p => true));
-
-        private async Task CloseTournamentAsync()
-        {
-            var tournament = DataContext?.Tournament;
-            if (tournament == null) return;
-
-            // Confirm — closing wipes in-memory state. A successful save
-            // still happens first, but the operator may have a half-edited
-            // form they didn't mean to commit. Mirror the spirit of the
-            // old Dashboard close-tournament flow.
-            if (Dialog.ShowMessageBox(this,
-                    "Закрыть текущий турнир и вернуться на стартовый экран?",
-                    "Подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
-            {
-                return;
-            }
-
-            // Best-effort save (no-op if FileName isn't set yet).
-            try
-            {
-                if (!string.IsNullOrEmpty(tournament.FileName))
-                {
-                    var manager = Resolve<ITournamentsManager>();
-                    if (manager != null)
-                    {
-                        var ok = await manager.SaveToFileAsync(tournament, tournament.FileName);
-                        if (!ok) ShowSnackMessage("При сохранении произошла ошибка!");
-                    }
-                }
-            }
-            catch
-            {
-                // Swallow — closing must succeed even if the save path failed.
-            }
-
-            // Tear down anything tied to the open tournament: slider windows,
-            // match-state, computed results. Mirrors TournamentViewModelBase.
-            Resolve<ISliderWindowManager>()?.CloseAll();
-            DataContext.Tournament = null;
-            DataContext.Group = null;
-            DataContext.WrestlingMatch = null;
-            Resolve<IResultsService>()?.Recalculate(null);
-            OnPropertyChanged(nameof(IsTournamentLoaded));
-
-            NavigateToView<HomeViewModel>();
-        }
-
-        private void OpenErrorLog()
-        {
-            try
-            {
-                var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                var appName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
-                var logsDir = Path.Combine(appData, appName, "Logs");
-                if (!Directory.Exists(logsDir))
-                {
-                    ShowSnackMessage("Папка журналов ещё не создана.");
-                    return;
-                }
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(logsDir) { UseShellExecute = true });
-            }
-            catch (Exception ex)
-            {
-                ShowSnackMessage($"Не удалось открыть журнал: {ex.Message}");
             }
         }
 
@@ -508,130 +417,5 @@ namespace Wrestling.UI.Material.Settings
             }
         }
 
-        #region Network settings
-
-        public string LocalIpAddressesLine
-        {
-            get
-            {
-                var list = LocalIpAddressProbe.EnumerateLanAddresses();
-                if (list.Count == 0) return "не обнаружены";
-                return string.Join(", ", list.Select(ip => ip.ToString()));
-            }
-        }
-
-        // The override picker is shown only when the operator actually has a
-        // choice to make — a single-NIC laptop has no ambiguity and the
-        // control would be pure noise. Stale overrides from a previous
-        // session also count: keep the picker visible so the operator can
-        // see (and clear) a value that no longer matches reality.
-        public bool IsAnnounceAddressPickerVisible
-        {
-            get
-            {
-                if (LocalIpAddressProbe.EnumerateLanAddresses().Count > 1) return true;
-                return Item != null && !string.IsNullOrEmpty(Item.AnnounceIpOverride);
-            }
-        }
-
-        // ComboBox source: a sentinel "(Авто)" entry plus every IPv4 address
-        // found on the machine. Empty selection (the sentinel) means "fall
-        // back to LocalIpAddressProbe.PickDefault()" — same behavior the app
-        // had before the override was added.
-        public const string AnnounceAuto = "(Авто)";
-
-        public IList<string> AnnounceAddressOptions
-        {
-            get
-            {
-                var options = new List<string> { AnnounceAuto };
-                foreach (var ip in LocalIpAddressProbe.EnumerateLanAddresses())
-                {
-                    options.Add(ip.ToString());
-                }
-                // If the stored override no longer matches any current NIC
-                // (laptop moved networks, NIC unplugged) keep it visible
-                // anyway — otherwise the ComboBox would fail to render the
-                // current selection and the operator would be confused about
-                // why the override silently went away. PickAnnounceAddress
-                // already falls back to auto in this case at runtime.
-                var saved = Item?.AnnounceIpOverride;
-                if (!string.IsNullOrWhiteSpace(saved) && !options.Contains(saved))
-                {
-                    options.Add(saved);
-                }
-                return options;
-            }
-        }
-
-        // Two-way binding glue: the entity stores empty string for "auto",
-        // but the ComboBox needs a non-null SelectedItem to render its label,
-        // so we map empty ↔ "(Авто)" here. Setter also re-broadcasts
-        // PublicHttpUrl because the displayed URL depends on this value.
-        public string SelectedAnnounceAddress
-        {
-            get
-            {
-                if (Item == null) return AnnounceAuto;
-                return string.IsNullOrEmpty(Item.AnnounceIpOverride) ? AnnounceAuto : Item.AnnounceIpOverride;
-            }
-            set
-            {
-                if (Item == null) return;
-                Item.AnnounceIpOverride = (string.IsNullOrEmpty(value) || value == AnnounceAuto) ? string.Empty : value;
-                OnPropertyChanged(nameof(SelectedAnnounceAddress));
-                OnPropertyChanged(nameof(PublicHttpUrl));
-                OnPropertyChanged(nameof(IsAnnounceAddressPickerVisible));
-            }
-        }
-
-        public string PublicHttpUrl
-        {
-            get
-            {
-                var t = DataContext?.Tournament;
-                if (t == null || !t.ID.HasValue) return string.Empty;
-                var server = Resolve<ITournamentHttpServer>();
-                if (server == null || !server.ActualPort.HasValue) return string.Empty;
-                var ip = LocalIpAddressProbe.PickAnnounceAddress(Item?.AnnounceIpOverride);
-                if (IPAddress.IsLoopback(ip)) return string.Empty;
-                return "http://" + ip + ":" + server.ActualPort.Value + "/tournament/" + t.ID.Value + ".wrt";
-            }
-        }
-
-        public ICommand CopyPublicUrlCommand
-        {
-            get
-            {
-                if (_copyPublicUrlCommand == null)
-                {
-                    _copyPublicUrlCommand = new RelayCommand(
-                        param => CopyPublicUrl(),
-                        param => !string.IsNullOrEmpty(PublicHttpUrl)
-                    );
-                }
-                return _copyPublicUrlCommand;
-            }
-        }
-
-        private void CopyPublicUrl()
-        {
-            var url = PublicHttpUrl;
-            if (string.IsNullOrEmpty(url)) return;
-            try
-            {
-                Clipboard.SetText(url);
-                ShowSnackMessage("Адрес скопирован в буфер обмена.");
-            }
-            catch
-            {
-                // Clipboard can transiently fail when another app holds it open;
-                // surfacing a snackbar still helps the operator understand what
-                // happened without crashing the settings page.
-                ShowSnackMessage("Не удалось скопировать — попробуйте ещё раз.");
-            }
-        }
-
-        #endregion
     }
 }

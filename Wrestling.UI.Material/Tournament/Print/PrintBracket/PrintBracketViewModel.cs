@@ -80,16 +80,25 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
             var results = new List<PrintWrestlerApplicationViewModel>();
 
             // Draw protocol orders by Жребий (SeedNumber); итог orders by Место
-            // (FinalPlace) and falls back to SeedNumber/name for ties.
+            // (FinalPlace) and falls back to SeedNumber/name for ties. DSQ'd
+            // wrestlers go to the bottom of the итог table — without the
+            // IsDisqualified guard their null FinalPlace would sort above 1st
+            // place by default null-first ordering.
             var wrestlers = IsDrawProtocol
                 ? SelectedGroup.Wrestlers.OrderBy(x => x.SeedNumber).ThenBy(x => x.LastFirstName).ToList()
-                : SelectedGroup.Wrestlers.OrderBy(x => x.FinalPlace).ThenBy(x => x.SeedNumber).ThenBy(x => x.LastFirstName).ToList();
-            
+                : SelectedGroup.Wrestlers
+                    .OrderBy(x => x.IsDisqualified)
+                    .ThenBy(x => x.FinalPlace ?? int.MaxValue)
+                    .ThenBy(x => x.SeedNumber)
+                    .ThenBy(x => x.LastFirstName)
+                    .ToList();
+
             foreach (var wrestler in wrestlers)
             {
                 results.Add(new PrintWrestlerApplicationViewModel
                 {
                     Order = wrestler.FinalPlace,
+                    IsDisqualified = wrestler.IsDisqualified,
                     SeedNumber = wrestler.SeedNumber,
                     AthleteName = wrestler.LastFirstName,
                     BirthYear = wrestler.BirthDate?.Year,
@@ -107,6 +116,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
     public class PrintWrestlerApplicationViewModel
     {
         public int? Order { get; set; }
+        public bool IsDisqualified { get; set; }
         public int? SeedNumber { get; set; }
         public string AthleteName { get; set; }
         public int? BirthYear { get; set; }

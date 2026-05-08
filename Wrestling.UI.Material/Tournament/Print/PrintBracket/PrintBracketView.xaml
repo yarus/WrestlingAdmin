@@ -15,6 +15,8 @@
             <converters1:BoolInverterConverter />
             <converters1:GroupedBoolToVisConverter />
         </converters1:ValueConverterGroup>
+        <converters2:MultiBoolAndToVisConverter x:Key="MultiBoolAndToVis"
+                                                xmlns:converters2="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils" />
         <converters:BracketCellLineHeightConverter x:Key="BracketCellHeight" />
         <converters:BracketCellLeftLineVisConverter x:Key="LeftLineVis" />
         <converters:BracketColumnTopMarginConverter x:Key="BracketColTopMargin" />
@@ -193,8 +195,28 @@
                                                                              HorizontalAlignment="Center"
                                                                              VerticalAlignment="Center"
                                                                              Margin="0" Padding="0"
-                                                                             Visibility="{Binding IsRedWon, Converter={StaticResource BoolToVis}}"
-                                                                             Height="16" Width="16" />
+                                                                             Height="16" Width="16">
+                                                        <materialDesign:PackIcon.Visibility>
+                                                            <MultiBinding Converter="{StaticResource MultiBoolAndToVis}" ConverterParameter="1">
+                                                                <Binding Path="IsRedWon" />
+                                                                <Binding Path="WrestlerInRed.IsDisqualified" />
+                                                            </MultiBinding>
+                                                        </materialDesign:PackIcon.Visibility>
+                                                    </materialDesign:PackIcon>
+                                                    <materialDesign:PackIcon Kind="CloseOctagon"
+                                                                             HorizontalAlignment="Center"
+                                                                             VerticalAlignment="Center"
+                                                                             Margin="0" Padding="0"
+                                                                             Foreground="Black"
+                                                                             ToolTip="Спортсмен дисквалифицирован"
+                                                                             Height="20" Width="20">
+                                                        <materialDesign:PackIcon.Visibility>
+                                                            <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
+                                                                <Binding Path="IsRedWon" />
+                                                                <Binding Path="WrestlerInRed.IsDisqualified" />
+                                                            </MultiBinding>
+                                                        </materialDesign:PackIcon.Visibility>
+                                                    </materialDesign:PackIcon>
                                                 </Grid>
 
                                                 <Grid Grid.Row="1" Grid.Column="4"
@@ -205,8 +227,28 @@
                                                                              HorizontalAlignment="Center"
                                                                              VerticalAlignment="Center"
                                                                              Margin="0" Padding="0"
-                                                                             Visibility="{Binding IsBlueWon, Converter={StaticResource BoolToVis}}"
-                                                                             Height="16" Width="16" />
+                                                                             Height="16" Width="16">
+                                                        <materialDesign:PackIcon.Visibility>
+                                                            <MultiBinding Converter="{StaticResource MultiBoolAndToVis}" ConverterParameter="1">
+                                                                <Binding Path="IsBlueWon" />
+                                                                <Binding Path="WrestlerInBlue.IsDisqualified" />
+                                                            </MultiBinding>
+                                                        </materialDesign:PackIcon.Visibility>
+                                                    </materialDesign:PackIcon>
+                                                    <materialDesign:PackIcon Kind="CloseOctagon"
+                                                                             HorizontalAlignment="Center"
+                                                                             VerticalAlignment="Center"
+                                                                             Margin="0" Padding="0"
+                                                                             Foreground="Black"
+                                                                             ToolTip="Спортсмен дисквалифицирован"
+                                                                             Height="20" Width="20">
+                                                        <materialDesign:PackIcon.Visibility>
+                                                            <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
+                                                                <Binding Path="IsBlueWon" />
+                                                                <Binding Path="WrestlerInBlue.IsDisqualified" />
+                                                            </MultiBinding>
+                                                        </materialDesign:PackIcon.Visibility>
+                                                    </materialDesign:PackIcon>
                                                 </Grid>
 
                                                 <Grid Grid.Row="0" Grid.Column="4" Grid.RowSpan="2"
@@ -217,7 +259,7 @@
                                                                              HorizontalAlignment="Center"
                                                                              VerticalAlignment="Center"
                                                                              Margin="0" Padding="0"
-                                                                             Foreground="Red"
+                                                                             Foreground="Black"
                                                                              Height="20" Width="20" />
                                                 </Grid>
                                             </Grid>
@@ -370,8 +412,28 @@
                                                                          HorizontalAlignment="Center"
                                                                          VerticalAlignment="Center"
                                                                          Margin="0" Padding="0"
-                                                                         Visibility="{Binding IsRedWon, Converter={StaticResource BoolToVis}}"
-                                                                         Height="16" Width="16" />
+                                                                         Height="16" Width="16">
+                                                    <materialDesign:PackIcon.Visibility>
+                                                        <MultiBinding Converter="{StaticResource MultiBoolAndToVis}" ConverterParameter="1">
+                                                            <Binding Path="IsRedWon" />
+                                                            <Binding Path="WrestlerInRed.IsDisqualified" />
+                                                        </MultiBinding>
+                                                    </materialDesign:PackIcon.Visibility>
+                                                </materialDesign:PackIcon>
+                                                <materialDesign:PackIcon Kind="CloseOctagon"
+                                                                         HorizontalAlignment="Center"
+                                                                         VerticalAlignment="Center"
+                                                                         Margin="0" Padding="0"
+                                                                         Foreground="Black"
+                                                                         ToolTip="Спортсмен дисквалифицирован"
+                                                                         Height="20" Width="20">
+                                                    <materialDesign:PackIcon.Visibility>
+                                                        <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
+                                                            <Binding Path="IsRedWon" />
+                                                            <Binding Path="WrestlerInRed.IsDisqualified" />
+                                                        </MultiBinding>
+                                                    </materialDesign:PackIcon.Visibility>
+                                                </materialDesign:PackIcon>
                                             </Grid>
 
                                             <Grid Grid.Row="1" Grid.Column="4"
@@ -381,8 +443,28 @@
                                                                          HorizontalAlignment="Center"
                                                                          VerticalAlignment="Center"
                                                                          Margin="0" Padding="0"
-                                                                         Visibility="{Binding IsBlueWon, Converter={StaticResource BoolToVis}}"
-                                                                         Height="16" Width="16" />
+                                                                         Height="16" Width="16">
+                                                    <materialDesign:PackIcon.Visibility>
+                                                        <MultiBinding Converter="{StaticResource MultiBoolAndToVis}" ConverterParameter="1">
+                                                            <Binding Path="IsBlueWon" />
+                                                            <Binding Path="WrestlerInBlue.IsDisqualified" />
+                                                        </MultiBinding>
+                                                    </materialDesign:PackIcon.Visibility>
+                                                </materialDesign:PackIcon>
+                                                <materialDesign:PackIcon Kind="CloseOctagon"
+                                                                         HorizontalAlignment="Center"
+                                                                         VerticalAlignment="Center"
+                                                                         Margin="0" Padding="0"
+                                                                         Foreground="Black"
+                                                                         ToolTip="Спортсмен дисквалифицирован"
+                                                                         Height="20" Width="20">
+                                                    <materialDesign:PackIcon.Visibility>
+                                                        <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
+                                                            <Binding Path="IsBlueWon" />
+                                                            <Binding Path="WrestlerInBlue.IsDisqualified" />
+                                                        </MultiBinding>
+                                                    </materialDesign:PackIcon.Visibility>
+                                                </materialDesign:PackIcon>
                                             </Grid>
                                         </Grid>
 
@@ -408,11 +490,21 @@
                         <GridViewColumn Header="Место" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Order}"
-                                      HorizontalAlignment="Center"
-                                      VerticalAlignment="Bottom"
-                                      Margin="0,8,0,0"
-                                      FontSize="14"/>
+                                    <Grid>
+                                        <TextBlock Text="{Binding Order}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Bottom"
+                                          Margin="0,8,0,0"
+                                          FontSize="14"
+                                          Visibility="{Binding IsDisqualified, Converter={StaticResource InvBoolToVis}}"/>
+                                        <TextBlock Text="DSQ"
+                                          Foreground="Black" FontWeight="Bold"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Bottom"
+                                          Margin="0,8,0,0"
+                                          FontSize="14"
+                                          Visibility="{Binding IsDisqualified, Converter={StaticResource BoolToVis}}"/>
+                                    </Grid>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>

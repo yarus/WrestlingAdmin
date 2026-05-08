@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Linq;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
@@ -24,6 +23,10 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         // by Phase 5 → Ковер wrapper so the operator only sees their own
         // carpet's queue. GenerateStats() uses it to scope iteration.
         private Guid? _carpetIdFilter;
+        // One-shot preselection — set by callers (e.g. Conducting carpet
+        // cards) before navigation; consumed in InitData and immediately
+        // cleared so it doesn't leak into later visits.
+        private Guid? _preselectedCarpetId;
 
         private ICommand _openMatchCommand;
         private ICommand _changeCarpetCommand;
@@ -84,6 +87,24 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
                 var newCarpet = _filteredStats.First(x => x.CarpetID == SelectedCarpet.CarpetID);
                 SelectedCarpet = newCarpet;
             }
+
+            // One-shot preselection wins over the previously-selected carpet —
+            // a Conducting card click should always land the operator on the
+            // requested carpet's queue.
+            if (_preselectedCarpetId.HasValue && _filteredStats?.Count > 0)
+            {
+                var preselect = _filteredStats.FirstOrDefault(x => x.CarpetID == _preselectedCarpetId.Value);
+                if (preselect != null) SelectedCarpet = preselect;
+                _preselectedCarpetId = null;
+            }
+        }
+
+        // Caller sets this immediately before NavigateToView<ScheduleViewModel>().
+        // The next InitData consumes and clears it.
+        public Guid? PreselectedCarpetId
+        {
+            get => _preselectedCarpetId;
+            set => _preselectedCarpetId = value;
         }
 
         // Set by Phase 5 → Ковер wrapper before navigation. Switching
@@ -257,6 +278,11 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
         private void FilterStats(string filter)
         {
+            // Mirrors registration-screen filter (TeamApplicationViewModel.Wrestlers):
+            // case-insensitive substring match across wrestler FullName + team name + city,
+            // skipped entirely until the user has typed at least 3 characters.
+            var hasTextFilter = !string.IsNullOrEmpty(filter) && filter.Length > 2;
+
             foreach (var stat in Stats)
             {
                 var carpet = _carpets.FirstOrDefault(c => c.ID == stat.CarpetID);
@@ -265,17 +291,29 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
                 stat.Matches = new ObservableCollection<WrestlingMatch>(carpet.Groups.Where(x => x.Bracket != null).SelectMany(g => g.Bracket.Rounds)
                     .SelectMany(r => r.RoundMatches)
-                    .Where(m => (string.IsNullOrEmpty(filter) ||
-                                    (m.WrestlerInRed != null && m.WrestlerInRed.LastName.StartsWith(filter, true, CultureInfo.InvariantCulture)) ||
-                                    (m.WrestlerInBlue != null && m.WrestlerInBlue.LastName.StartsWith(filter, true, CultureInfo.InvariantCulture))))
+                    .Where(m => !hasTextFilter || MatchPassesFilter(m, filter))
                     .OrderBy(m => m.MatchNumber));
 
-                if (!string.IsNullOrEmpty(filter) && stat.Matches.Count > 0)
+                if (hasTextFilter && stat.Matches.Count > 0)
                 {
                     stat.IsExpanded = true;
                 }
             }
         }
+
+        private static bool MatchPassesFilter(WrestlingMatch match, string filter)
+            => WrestlerPassesFilter(match.WrestlerInRed, filter)
+               || WrestlerPassesFilter(match.WrestlerInBlue, filter);
+
+        private static bool WrestlerPassesFilter(Wrestler wrestler, string filter)
+            => wrestler != null
+               && (ContainsCi(wrestler.FullName, filter)
+                   || ContainsCi(wrestler.TeamName, filter)
+                   || ContainsCi(wrestler.TeamCity, filter));
+
+        private static bool ContainsCi(string source, string value)
+            => !string.IsNullOrEmpty(source)
+               && source.IndexOf(value, StringComparison.InvariantCultureIgnoreCase) >= 0;
 
         private void OpenBrackets()
         {            

@@ -35,9 +35,11 @@ namespace Wrestling.Entities
                 var ts = TimeSpan.FromSeconds(ExpectedDurationSeconds);
                 if ((int)ts.TotalHours >= 1)
                 {
-                    return $"{(int)ts.TotalHours}ч {ts.Minutes:D2}мин";
+                    // (int)TotalHours auto-widens for 10+ hour tournaments — no
+                    // pad on hours, two-digit pad on minutes for alignment.
+                    return $"{(int)ts.TotalHours}ч {ts.Minutes:D2}м";
                 }
-                return $"{ts.Minutes}мин";
+                return $"{ts.Minutes}м";
             }
         }
 

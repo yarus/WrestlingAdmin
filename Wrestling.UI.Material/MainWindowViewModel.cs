@@ -1,9 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
+using Wrestling.Providers;
+using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
+using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Material.Tournament;
 using Wrestling.UI.Utils;
 
@@ -21,6 +26,7 @@ namespace Wrestling.UI.Material
         private INavigationItem _activeItem;
         private bool _isDrawerOpen;
         private ICommand _saveCommand;
+        private ICommand _closeTournamentCommand;
 
         // Maps overlay/print VMs to the rail item that should appear "active"
         // while they are on screen. Populated externally via SetOverlayParent
@@ -155,6 +161,58 @@ namespace Wrestling.UI.Material
                     },
                     canExecute: _ => IsSaveCommandVisible));
             }
+        }
+
+        // Wired to the bottom-most rail item ("Закрыть"). The rail itself is only
+        // visible when a tournament is open, so canExecute is a belt-and-braces
+        // guard — the user can't realistically click it without one loaded.
+        public ICommand CloseTournamentCommand =>
+            _closeTournamentCommand ?? (_closeTournamentCommand = new AsyncRelayCommand(
+                execute: _ => CloseTournamentAsync(),
+                canExecute: _ => DataContext?.Tournament != null));
+
+        private async Task CloseTournamentAsync()
+        {
+            var tournament = DataContext?.Tournament;
+            if (tournament == null) return;
+
+            // Confirm — closing wipes in-memory state. A successful save
+            // still happens first, but the operator may have a half-edited
+            // form they didn't mean to commit.
+            if (Dialog.ShowMessageBox(this,
+                    "Закрыть текущий турнир и вернуться на стартовый экран?",
+                    "Подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+            {
+                return;
+            }
+
+            // Best-effort save (no-op if FileName isn't set yet).
+            try
+            {
+                if (!string.IsNullOrEmpty(tournament.FileName))
+                {
+                    var manager = Resolve<ITournamentsManager>();
+                    if (manager != null)
+                    {
+                        var ok = await manager.SaveToFileAsync(tournament, tournament.FileName);
+                        if (!ok) ShowSnackMessage("При сохранении произошла ошибка!");
+                    }
+                }
+            }
+            catch
+            {
+                // Swallow — closing must succeed even if the save path failed.
+            }
+
+            // Tear down anything tied to the open tournament: slider windows,
+            // match-state, computed results. Mirrors TournamentViewModelBase.
+            Resolve<ISliderWindowManager>()?.CloseAll();
+            DataContext.Tournament = null;
+            DataContext.Group = null;
+            DataContext.WrestlingMatch = null;
+            Resolve<IResultsService>()?.Recalculate(null);
+
+            NavigateToView<HomeViewModel>();
         }
 
         public void SetNavigationItems(IList<INavigationItem> mainItems, IList<INavigationItem> footerItems)
