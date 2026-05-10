@@ -65,8 +65,7 @@ namespace Wrestling.Entities.Bracket
             // fill an already-Completed slot. Single-wrestler resolution is
             // always safe — that match is physically unplayable regardless
             // of upstream state.
-            var allMainCompleted = Group.Bracket.Rounds
-                .Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+            var allMainCompleted = Group.Bracket.MainRounds()
                 .SelectMany(r => r.RoundMatches)
                 .All(m => m.Status == MatchStatusEnum.Completed);
 
@@ -76,8 +75,7 @@ namespace Wrestling.Entities.Bracket
             {
                 changed = false;
                 safety--;
-                var matches = Group.Bracket.Rounds
-                    .Where(r => r.RoundType == GroupRoundTypeEnum.Additional)
+                var matches = Group.Bracket.AdditionalRounds()
                     .SelectMany(r => r.RoundMatches)
                     .ToList();
                 foreach (var m in matches)
@@ -124,7 +122,7 @@ namespace Wrestling.Entities.Bracket
         {
             if (Group?.Bracket == null) return;
 
-            var mainRounds = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            var mainRounds = Group.Bracket.MainRounds().ToList();
             if (mainRounds.Count < 2) return;
             var sfRound = mainRounds[mainRounds.Count - 2];
 
@@ -136,8 +134,7 @@ namespace Wrestling.Entities.Bracket
                 // NextMatchBracketFullNumber points back at it). Both must be
                 // completed with a clear winner — otherwise we can't determine
                 // which wrestlers were the QF losers.
-                var sources = Group.Bracket.Rounds
-                    .Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+                var sources = Group.Bracket.MainRounds()
                     .SelectMany(r => r.RoundMatches)
                     .Where(m => m != sfMatch
                                 && m.NextMatchBracketFullNumber == sfMatch.BracketFullNumber
@@ -180,12 +177,12 @@ namespace Wrestling.Entities.Bracket
         {
             if (Group?.Bracket == null) return;
 
-            var mainRounds = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            var mainRounds = Group.Bracket.MainRounds().ToList();
             if (mainRounds.Count == 0) return;
             var finalMatch = mainRounds[mainRounds.Count - 1].RoundMatches.FirstOrDefault();
             if (finalMatch == null || finalMatch.WinType != MatchWinTypeEnum.MutualDisqualify) return;
 
-            var addRounds = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+            var addRounds = Group.Bracket.AdditionalRounds().ToList();
             if (addRounds.Count == 0) return;
             var bronzeRound = addRounds[addRounds.Count - 1];
             if (bronzeRound.RoundMatches.Count != 2) return;
@@ -224,12 +221,12 @@ namespace Wrestling.Entities.Bracket
         // and to guard revert paths.
         private bool IsFinalRebuiltAfterMutualDsq(GroupBracket bracket)
         {
-            var mainRounds = bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            var mainRounds = bracket.MainRounds().ToList();
             if (mainRounds.Count == 0) return false;
             var finalMatch = mainRounds[mainRounds.Count - 1].RoundMatches.FirstOrDefault();
             if (finalMatch?.WrestlerInRed == null || finalMatch.WrestlerInBlue == null) return false;
 
-            var addRounds = bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+            var addRounds = bracket.AdditionalRounds().ToList();
             if (addRounds.Count == 0) return false;
             var bronzeRound = addRounds[addRounds.Count - 1];
             if (bronzeRound.RoundMatches.Count != 2) return false;
@@ -253,7 +250,7 @@ namespace Wrestling.Entities.Bracket
         {
             if (Group?.Bracket == null || wrestler == null) return null;
 
-            var mainRounds = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            var mainRounds = Group.Bracket.MainRounds().ToList();
             if (mainRounds.Count < 2) return null;
             var sfRound = mainRounds[mainRounds.Count - 2];
 
@@ -261,8 +258,7 @@ namespace Wrestling.Entities.Bracket
             {
                 if (!IsSemifinalPendingAfterRebuild(sf)) continue;
 
-                var sources = Group.Bracket.Rounds
-                    .Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+                var sources = Group.Bracket.MainRounds()
                     .SelectMany(r => r.RoundMatches)
                     .Where(m => m != sf
                                 && m.NextMatchBracketFullNumber == sf.BracketFullNumber
@@ -281,7 +277,7 @@ namespace Wrestling.Entities.Bracket
 
         private bool IsBronzeMatch(WrestlingMatch wrestlingMatch)
         {
-            var addRounds = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+            var addRounds = Group.Bracket.AdditionalRounds().ToList();
             if (addRounds.Count == 0) return false;
             var bronzeRound = addRounds[addRounds.Count - 1];
             return bronzeRound.RoundMatches.Contains(wrestlingMatch);
@@ -289,7 +285,7 @@ namespace Wrestling.Entities.Bracket
 
         private bool IsSemifinalMatch(WrestlingMatch wrestlingMatch)
         {
-            var mainRounds = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            var mainRounds = Group.Bracket.MainRounds().ToList();
             if (mainRounds.Count < 2) return false;
             return mainRounds[mainRounds.Count - 2].RoundMatches.Contains(wrestlingMatch);
         }
@@ -302,8 +298,7 @@ namespace Wrestling.Entities.Bracket
             if (sf.Status != MatchStatusEnum.Pending) return false;
             if (sf.WrestlerInRed == null || sf.WrestlerInBlue == null) return false;
 
-            var sources = Group.Bracket.Rounds
-                .Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+            var sources = Group.Bracket.MainRounds()
                 .SelectMany(r => r.RoundMatches)
                 .Where(m => m != sf
                             && m.NextMatchBracketFullNumber == sf.BracketFullNumber
@@ -378,8 +373,8 @@ namespace Wrestling.Entities.Bracket
 
         protected override void ProceedToAdditionalBracket(WrestlingMatch wrestlingMatch)
         {
-            var addRounds = Group.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Additional).ToList();
-            var mainRounds = Group.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Main).ToList();
+            var addRounds = Group.Bracket.AdditionalRounds().ToList();
+            var mainRounds = Group.Bracket.MainRounds().ToList();
             if (addRounds.Count == 0 || wrestlingMatch.RoundNumber != (mainRounds.Count - 1)) return;
 
             // Mutual DSQ in semifinal (M2): consolation rebuild is manual.
@@ -401,8 +396,7 @@ namespace Wrestling.Entities.Bracket
             targetMatch.WrestlerInRed = looser;
 
             // Get all previous loosers and fill other additional rounds with them
-            var looseMatches = Group.Bracket.Rounds
-                .Where(p => p.RoundType == GroupRoundTypeEnum.Main)
+            var looseMatches = Group.Bracket.MainRounds()
                 .SelectMany(x => x.RoundMatches)
                 .Where(o => o.Status == MatchStatusEnum.Completed
                     && ((o.IsRedWinner && o.WrestlerInRed.SameAs(winner)) || (o.IsBlueWon && o.WrestlerInBlue.SameAs(winner))))
@@ -486,8 +480,7 @@ namespace Wrestling.Entities.Bracket
 
         private void UnRebuildSemifinal(WrestlingMatch sf)
         {
-            var sources = Group.Bracket.Rounds
-                .Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+            var sources = Group.Bracket.MainRounds()
                 .SelectMany(r => r.RoundMatches)
                 .Where(m => m != sf
                             && m.NextMatchBracketFullNumber == sf.BracketFullNumber
@@ -523,12 +516,12 @@ namespace Wrestling.Entities.Bracket
             var bronzeRevertInRebuiltScenario =
                 IsBronzeMatch(wrestlingMatch) && IsFinalRebuiltAfterMutualDsq(Group.Bracket);
 
-            if (wrestlingMatch.RoundNumber == Group.Bracket.Rounds.Count(p => p.RoundType == GroupRoundTypeEnum.Main) - 1)
+            if (wrestlingMatch.RoundNumber == Group.Bracket.MainRounds().Count() - 1)
             {
                 // If it is semi-final, we need to clean Additional bracket which was build based on this wrestlingMatch result
                 bool isUpperBracket = wrestlingMatch.BracketNumber % 2 != 0;
 
-                var matches = Group.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Additional).SelectMany(m => m.RoundMatches).Where(x => x.BracketNumber == (isUpperBracket ? 1 : 2)).ToList();
+                var matches = Group.Bracket.AdditionalRounds().SelectMany(m => m.RoundMatches).Where(x => x.BracketNumber == (isUpperBracket ? 1 : 2)).ToList();
                 foreach (var addMatch in matches)
                 {
                     addMatch.WrestlerInRed = null;
@@ -563,7 +556,7 @@ namespace Wrestling.Entities.Bracket
         // through the un-rebuild (they are still disqualified).
         private void UnRebuildFinal()
         {
-            var mainRounds = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            var mainRounds = Group.Bracket.MainRounds().ToList();
             if (mainRounds.Count < 2) return;
 
             var sfRound = mainRounds[mainRounds.Count - 2];
@@ -629,7 +622,7 @@ namespace Wrestling.Entities.Bracket
             // revert the final first to free the bronze.
             if (IsBronzeMatch(wrestlingMatch) && IsFinalRebuiltAfterMutualDsq(Group.Bracket))
             {
-                var rebuiltMain = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+                var rebuiltMain = Group.Bracket.MainRounds().ToList();
                 var rebuiltFinal = rebuiltMain.LastOrDefault()?.RoundMatches.FirstOrDefault();
                 if (rebuiltFinal != null && rebuiltFinal.Status == MatchStatusEnum.Completed) return false;
                 return true;
@@ -648,11 +641,11 @@ namespace Wrestling.Entities.Bracket
             if(!baseCheck) return false;
 
             // If it is semi-final we need to check all additional rounds too which were build based on this wrestlingMatch result
-            if (wrestlingMatch.RoundNumber == Group.Bracket.Rounds.Count(p => p.RoundType == GroupRoundTypeEnum.Main) - 1)
+            if (wrestlingMatch.RoundNumber == Group.Bracket.MainRounds().Count() - 1)
             {
                 bool isUpperBracket = wrestlingMatch.BracketNumber % 2 != 0;
 
-                var matches = Group.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Additional).SelectMany(m => m.RoundMatches).Where(x => x.BracketNumber == (isUpperBracket ? 1 : 2)).ToList();
+                var matches = Group.Bracket.AdditionalRounds().SelectMany(m => m.RoundMatches).Where(x => x.BracketNumber == (isUpperBracket ? 1 : 2)).ToList();
                 return matches.FirstOrDefault(m => m.Status == MatchStatusEnum.Completed && m.WinType != MatchWinTypeEnum.FreeWin) == null;
             }
 
@@ -671,7 +664,7 @@ namespace Wrestling.Entities.Bracket
 
         private void DefineGoldAndSilver(GroupBracket bracket)
         {
-            var mainRounds = bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Main).OrderBy(x => x.RoundNumber).ToList();
+            var mainRounds = bracket.MainRounds().OrderBy(x => x.RoundNumber).ToList();
 
             if (mainRounds.Count == 0) return;
 
@@ -689,7 +682,7 @@ namespace Wrestling.Entities.Bracket
 
         private void DefineBronzeAndFifth(GroupBracket bracket)
         {
-            var addRounds = bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Additional).OrderBy(x => x.RoundNumber).ToList();
+            var addRounds = bracket.AdditionalRounds().OrderBy(x => x.RoundNumber).ToList();
 
             if (addRounds.Count == 0) return;
 
@@ -713,7 +706,7 @@ namespace Wrestling.Entities.Bracket
         // in CalculateResults.
         private void DefineThirdPlaceFromBronzeLosers(GroupBracket bracket)
         {
-            var addRounds = bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Additional).OrderBy(x => x.RoundNumber).ToList();
+            var addRounds = bracket.AdditionalRounds().OrderBy(x => x.RoundNumber).ToList();
             if (addRounds.Count == 0) return;
             var bronzeRound = addRounds[addRounds.Count - 1];
 
@@ -735,7 +728,7 @@ namespace Wrestling.Entities.Bracket
         // Returns true when this special distribution was applied.
         private bool TryDefinePlacesForFinalSingleDsq(GroupBracket bracket)
         {
-            var mainRounds = bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            var mainRounds = bracket.MainRounds().ToList();
             if (mainRounds.Count < 2) return false;
             var final = mainRounds[mainRounds.Count - 1].RoundMatches.FirstOrDefault();
             if (final == null || !final.IsMatchCompleted || !final.IsRedWon.HasValue) return false;
@@ -757,7 +750,7 @@ namespace Wrestling.Entities.Bracket
             var dsqSfLoser = dsqSf.IsRedWon.Value ? dsqSf.WrestlerInBlue : dsqSf.WrestlerInRed;
             if (dsqSfLoser == null) return false;
 
-            var addRounds = bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+            var addRounds = bracket.AdditionalRounds().ToList();
             if (addRounds.Count == 0) return false;
             var bronzeRound = addRounds[addRounds.Count - 1];
             if (bronzeRound.RoundMatches.Count != 2) return false;
@@ -842,7 +835,7 @@ namespace Wrestling.Entities.Bracket
         {
             if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
 
-            var addRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+            var addRounds = group.Bracket.AdditionalRounds().ToList();
 
             if (addRounds.Count == 0) return null;
 
@@ -853,7 +846,7 @@ namespace Wrestling.Entities.Bracket
         {
             if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
 
-            var addRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+            var addRounds = group.Bracket.AdditionalRounds().ToList();
 
             if (addRounds.Count == 0) return null;
 

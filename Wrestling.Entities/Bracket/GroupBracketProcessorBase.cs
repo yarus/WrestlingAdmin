@@ -75,9 +75,6 @@ namespace Wrestling.Entities.Bracket
                 wr.FinalPlace = null;
             }
 
-            //var matches = Group.Bracket.Rounds.SelectMany(p => p.RoundMatches).ToList();
-            //if (matches.FirstOrDefault(x => x.Status == MatchStatusEnum.Pending) != null) return null;
-
             CalculateResults();
             return GetStats();
         }
@@ -542,9 +539,9 @@ namespace Wrestling.Entities.Bracket
 
         public virtual GroupRound GetSemiFinalRound(AgeWeightGroup group)
         {
-            if (group == null || group.Bracket == null || group.Bracket.Rounds == null || group.Bracket.Rounds.Count < 2) return null;
+            if (group?.Bracket?.Rounds == null || group.Bracket.Rounds.Count < 2) return null;
 
-            var mainRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            var mainRounds = group.Bracket.MainRounds().ToList();
 
             if (mainRounds.Count < 2) return null;
 
@@ -584,15 +581,13 @@ namespace Wrestling.Entities.Bracket
 
         public virtual GroupRound GetFinalRound(AgeWeightGroup group)
         {
-            if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
+            if (group?.Bracket?.Rounds == null) return null;
 
-            var mainRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            var mainRounds = group.Bracket.MainRounds().ToList();
 
             if (mainRounds.Count == 0) return null;
 
-            var finalRound = mainRounds[mainRounds.Count - 1];
-
-            return finalRound;
+            return mainRounds[mainRounds.Count - 1];
         }
     }
 }

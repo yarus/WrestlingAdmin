@@ -88,8 +88,20 @@ namespace Wrestling.UI.Material.Match
 
             _scoreScreen = Resolve<ScoreScreenViewModel>();
             _keyHandler = Resolve<IKeyHandler>();
-           
+
             _quickButtons = null;
+
+            // Reset every per-match field upfront — the VM is a singleton, so
+            // anything not explicitly cleared here would carry over from the
+            // previously-opened match. Pull the new match's persisted state
+            // below.
+            _startDateTime = null;
+            _matchActions = new List<MatchAction>();
+            IsRunning = false;
+            Action1Image = null;
+            Action2Image = null;
+            Action1Visibility = Visibility.Collapsed;
+            Action2Visibility = Visibility.Collapsed;
 
             if (DataContext.WrestlingMatch == null)
             {
@@ -100,21 +112,15 @@ namespace Wrestling.UI.Material.Match
 
             SetupTimer();
 
-            // Sync local _startDateTime with the match's persisted value.
-            // The VM is a singleton, so without this the previous match's
-            // start time leaks into a freshly-opened (or reverted) match —
-            // Start() guards on `!_startDateTime.HasValue` and would skip
-            // updating, then CopyDataFromViewToMatch writes the stale value.
+            // Pull the per-match persisted state into the singleton VM. Start()
+            // guards on `!_startDateTime.HasValue`, so without this assignment
+            // a re-entered in-progress match would re-set its start time on
+            // the next Start.
             _startDateTime = DataContext.WrestlingMatch.StartDateTime;
 
-            if (DataContext.WrestlingMatch.LastSecondInMatch == 0)
-            {
-                _matchActions = new List<MatchAction>();
-            }
-            else
-            {
-                _matchActions = DataContext.WrestlingMatch.MatchActions;
-            }
+            _matchActions = DataContext.WrestlingMatch.LastSecondInMatch == 0
+                ? new List<MatchAction>()
+                : DataContext.WrestlingMatch.MatchActions;
 
             _scoreScreen.InitData();
 

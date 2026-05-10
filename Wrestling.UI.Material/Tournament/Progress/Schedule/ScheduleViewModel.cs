@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
@@ -206,7 +207,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
                        (
                            _quickButtons = new List<CommandButtonItem>
                            {
-                               new CommandButtonItem("Открыть электронное табло", PackIconKind.Monitor, new RelayCommand(param => ShowScoreScreen(), param => true)),
+                               new CommandButtonItem("Открыть электронное табло", PackIconKind.Monitor, new AsyncRelayCommand(_ => ShowScoreScreenAsync(), _ => true)),
                                new CommandButtonItem("Открыть турнирную сетку", PackIconKind.Dns, new RelayCommand(param => OpenBrackets(), param => true)),
                            }
                        );
@@ -361,7 +362,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         // across matches — no need to re-open it every time MatchControl is
         // entered. Both _scoreScreenView and _scoreScreen are DI singletons,
         // so the same instances stay alive throughout the session.
-        private async void ShowScoreScreen()
+        private async Task ShowScoreScreenAsync()
         {
             if (_scoreScreenView == null) _scoreScreenView = Resolve<IPanelView>("ScoreScreen");
             if (_scoreScreen == null) _scoreScreen = Resolve<ScoreScreenViewModel>();

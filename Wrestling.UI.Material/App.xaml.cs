@@ -55,12 +55,21 @@ namespace Wrestling.UI.Material
             // flushes final announce/response cycles and frees the UDP/TCP
             // ports faster for restarts.
             var di = DiContainer.Instance;
-            try { di.Resolve<PeerSyncStatusTracker>()?.Dispose(); } catch { }
-            try { di.Resolve<PeerSyncService>()?.Dispose(); } catch { }
-            try { di.Resolve<NetworkServicesLifecycle>()?.Dispose(); } catch { }
-            try { (di.Resolve<IPeerDiscoveryService>() as IDisposable)?.Dispose(); } catch { }
-            try { (di.Resolve<ITournamentHttpServer>() as IDisposable)?.Dispose(); } catch { }
+            SafeDispose(() => di.Resolve<PeerSyncStatusTracker>()?.Dispose(), nameof(PeerSyncStatusTracker));
+            SafeDispose(() => di.Resolve<PeerSyncService>()?.Dispose(), nameof(PeerSyncService));
+            SafeDispose(() => di.Resolve<NetworkServicesLifecycle>()?.Dispose(), nameof(NetworkServicesLifecycle));
+            SafeDispose(() => (di.Resolve<IPeerDiscoveryService>() as IDisposable)?.Dispose(), nameof(IPeerDiscoveryService));
+            SafeDispose(() => (di.Resolve<ITournamentHttpServer>() as IDisposable)?.Dispose(), nameof(ITournamentHttpServer));
             base.OnExit(e);
+        }
+
+        // Shutdown disposes are best-effort: the OS reclaims sockets anyway,
+        // so a missing service or a disposal failure must never block exit.
+        // Logging keeps DI-wiring bugs visible during development.
+        private static void SafeDispose(Action dispose, string label)
+        {
+            try { dispose(); }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"OnExit dispose of {label} failed: {ex}"); }
         }
 
         protected override void OnStartup(StartupEventArgs e)

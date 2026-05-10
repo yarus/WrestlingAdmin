@@ -28,7 +28,7 @@ public sealed class TournamentImporterHttpTests
         public Entities.Tournament Response { get; set; }
 
         public Entities.Tournament LoadFromFile(string fileName) => Capture(fileName);
-        public Task<Entities.Tournament> LoadFromFileAsync(string fileName) => Task.FromResult(Capture(fileName));
+        public Task<Entities.Tournament> LoadFromFileAsync(string fileName, System.Threading.CancellationToken cancellationToken = default) => Task.FromResult(Capture(fileName));
 
         private Entities.Tournament Capture(string path)
         {
@@ -39,7 +39,7 @@ public sealed class TournamentImporterHttpTests
         }
 
         public bool SaveToFile(Entities.Tournament item, string fileName) => throw new NotSupportedException();
-        public Task<bool> SaveToFileAsync(Entities.Tournament item, string fileName) => throw new NotSupportedException();
+        public Task<bool> SaveToFileAsync(Entities.Tournament item, string fileName, System.Threading.CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
     private static int FindFreePort()

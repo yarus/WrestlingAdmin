@@ -262,7 +262,7 @@ namespace Wrestling.UI.Material.Model
             {
                 _resultsService?.Recalculate(target);
 
-                await SaveAfterMergeAsync(target);
+                await SaveAfterMergeAsync(target, ct);
             }
 
             return result.Outcome;
@@ -272,14 +272,18 @@ namespace Wrestling.UI.Material.Model
         // SaveIfAutosaveEnabledAsync hook: no FileName means the operator
         // never picked a save path, so we skip silently rather than pop a
         // dialog from a background sync tick.
-        private async Task SaveAfterMergeAsync(Entities.Tournament target)
+        private async Task SaveAfterMergeAsync(Entities.Tournament target, CancellationToken cancellationToken)
         {
             if (target == null) return;
             if (string.IsNullOrEmpty(target.FileName)) return;
 
             try
             {
-                await _tournService.SaveToFileAsync(target, target.FileName);
+                await _tournService.SaveToFileAsync(target, target.FileName, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Tournament closed while autosave was in flight — silent skip.
             }
             catch (Exception ex)
             {

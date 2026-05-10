@@ -69,7 +69,7 @@ public sealed class FakeTournamentsManager : ITournamentsManager
     public int SaveAsyncCount { get; private set; }
 
     public WTournament LoadFromFile(string fileName) => Store.TryGetValue(fileName, out var t) ? t : null;
-    public Task<WTournament> LoadFromFileAsync(string fileName) => Task.FromResult(LoadFromFile(fileName));
+    public Task<WTournament> LoadFromFileAsync(string fileName, System.Threading.CancellationToken cancellationToken = default) => Task.FromResult(LoadFromFile(fileName));
 
     public bool SaveToFile(WTournament item, string fileName)
     {
@@ -79,7 +79,7 @@ public sealed class FakeTournamentsManager : ITournamentsManager
         return true;
     }
 
-    public Task<bool> SaveToFileAsync(WTournament item, string fileName)
+    public Task<bool> SaveToFileAsync(WTournament item, string fileName, System.Threading.CancellationToken cancellationToken = default)
     {
         Store[fileName] = item;
         item.FileName = fileName;

@@ -235,10 +235,10 @@ public sealed class TournamentImporterApplyTests
     private sealed class NullTournamentsManager : Wrestling.Providers.ITournamentsManager
     {
         public WTournament LoadFromFile(string fileName) => null;
-        public System.Threading.Tasks.Task<WTournament> LoadFromFileAsync(string fileName) =>
+        public System.Threading.Tasks.Task<WTournament> LoadFromFileAsync(string fileName, System.Threading.CancellationToken cancellationToken = default) =>
             System.Threading.Tasks.Task.FromResult<WTournament>(null);
         public bool SaveToFile(WTournament item, string fileName) => true;
-        public System.Threading.Tasks.Task<bool> SaveToFileAsync(WTournament item, string fileName) =>
+        public System.Threading.Tasks.Task<bool> SaveToFileAsync(WTournament item, string fileName, System.Threading.CancellationToken cancellationToken = default) =>
             System.Threading.Tasks.Task.FromResult(true);
     }
 

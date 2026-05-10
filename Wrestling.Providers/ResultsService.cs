@@ -18,6 +18,12 @@ namespace Wrestling.Providers
         private readonly ITeamResultsCalculator _teamCalculator;
         private readonly List<IAchievementCalculator> _achievementCalculators;
 
+        // Per-orderer cache. Keyed by orderer instance — orderers are DI
+        // singletons, so reference equality is sufficient. Cleared on every
+        // Recalculate so stale orderings never escape past a match approve.
+        private readonly Dictionary<ITeamResultsOrderer, IReadOnlyList<TournamentTeamResult>> _orderedTeamCache
+            = new Dictionary<ITeamResultsOrderer, IReadOnlyList<TournamentTeamResult>>();
+
         public ResultsService(
             List<IGroupBracketProcessor> bracketProcessors,
             ITeamResultsCalculator teamCalculator,
@@ -40,6 +46,8 @@ namespace Wrestling.Providers
 
         public void Recalculate(Tournament tournament)
         {
+            _orderedTeamCache.Clear();
+
             if (tournament == null)
             {
                 AllResults = EmptyResults;
@@ -56,6 +64,18 @@ namespace Wrestling.Providers
             Achievements = CalculateAchievements(tournament, AllResults);
 
             RaiseChanged();
+        }
+
+        public IReadOnlyList<TournamentTeamResult> GetOrderedTeamResults(ITeamResultsOrderer orderer)
+        {
+            if (orderer == null) return TeamResults;
+            if (TeamResults.Count == 0) return TeamResults;
+
+            if (_orderedTeamCache.TryGetValue(orderer, out var cached)) return cached;
+
+            var ordered = orderer.GetOrderedResults(TeamResults.ToList()) ?? new List<TournamentTeamResult>();
+            _orderedTeamCache[orderer] = ordered;
+            return ordered;
         }
 
         private List<TournamentResult> CalculateAllResults(Tournament tournament)
@@ -77,9 +97,16 @@ namespace Wrestling.Providers
                 }
             }
 
+            // DSQ'd / no-show wrestlers (FinalPlace == null) go to the bottom
+            // of each weight category. Without IsPlaceless / null-coalesce
+            // tiebreakers, default null-first ordering puts them above the
+            // gold medalist. LastName is the final stable tiebreaker so
+            // re-runs produce a deterministic list.
             return tmpResults
                 .OrderBy(x => x.Group.Name)
-                .ThenBy(p => p.Wrestler.FinalPlace)
+                .ThenBy(p => p.Wrestler.IsPlaceless)
+                .ThenBy(p => p.Wrestler.FinalPlace ?? int.MaxValue)
+                .ThenBy(p => p.Wrestler.LastName)
                 .ToList();
         }
 

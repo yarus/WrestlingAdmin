@@ -138,6 +138,9 @@ public sealed class TeamResultsViewModelTests
 
         public void Recalculate(Entities.Tournament tournament) { }
 
+        public IReadOnlyList<TournamentTeamResult> GetOrderedTeamResults(ITeamResultsOrderer orderer)
+            => orderer == null ? TeamResults : orderer.GetOrderedResults(TeamResults);
+
         public void ReplaceTeams(IList<TournamentTeamResult> next)
         {
             TeamResults = next.ToList();

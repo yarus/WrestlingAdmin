@@ -106,6 +106,8 @@ public sealed class AchievementsViewModelTests
 
         public void Recalculate(Entities.Tournament tournament) { }
 
+        public IReadOnlyList<TournamentTeamResult> GetOrderedTeamResults(ITeamResultsOrderer orderer) => TeamResults;
+
         public void Replace(IEnumerable<WrestlerAchievement> next)
         {
             Achievements = next.ToList();

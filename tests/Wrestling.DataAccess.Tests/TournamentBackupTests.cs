@@ -285,9 +285,9 @@ public sealed class TournamentBackupTests : IDisposable
             File.WriteAllText(fileName, "{ this is: not json");
             return true;
         }
-        public Task<bool> SaveToFileAsync<T>(T item, string fileName) => Task.FromResult(SaveToFile(item, fileName));
+        public Task<bool> SaveToFileAsync<T>(T item, string fileName, System.Threading.CancellationToken cancellationToken = default) => Task.FromResult(SaveToFile(item, fileName));
         public T ReadFromFile<T>(string path) => _inner.ReadFromFile<T>(path);
-        public Task<T> ReadFromFileAsync<T>(string path) => _inner.ReadFromFileAsync<T>(path);
+        public Task<T> ReadFromFileAsync<T>(string path, System.Threading.CancellationToken cancellationToken = default) => _inner.ReadFromFileAsync<T>(path, cancellationToken);
         public System.Collections.Generic.IEnumerable<string> GetFileNamesInDirectory(string path, string mask)
             => _inner.GetFileNamesInDirectory(path, mask);
         public void ProcessDirectory<T>(string targetDirectory, ref System.Collections.Generic.List<T> list, string mask)

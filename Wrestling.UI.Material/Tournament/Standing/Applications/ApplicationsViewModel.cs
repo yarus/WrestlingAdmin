@@ -196,7 +196,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_addAppCommand == null)
                 {
-                    _addAppCommand = new RelayCommand(async (param) => await AddApplication(), param => true);
+                    _addAppCommand = new AsyncRelayCommand(_ => AddApplication(), _ => true);
                 }
                 return _addAppCommand;
             }
@@ -208,7 +208,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_editAppCommand == null)
                 {
-                    _editAppCommand = new RelayCommand(async (param) => await EditApplication(param as TeamApplicationViewModel), param => param != null);
+                    _editAppCommand = new AsyncRelayCommand(param => EditApplication(param as TeamApplicationViewModel), param => param != null);
                 }
                 return _editAppCommand;
             }
@@ -232,7 +232,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_addWrestlerCommand == null)
                 {
-                    _addWrestlerCommand = new RelayCommand(async (param) => await AddWrestler(param as TeamApplicationViewModel), param => param != null);
+                    _addWrestlerCommand = new AsyncRelayCommand(param => AddWrestler(param as TeamApplicationViewModel), param => param != null);
                 }
                 return _addWrestlerCommand;
             }
@@ -244,7 +244,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_editWrestlerCommand == null)
                 {
-                    _editWrestlerCommand = new RelayCommand(async (param) => await EditWrestler(param as Wrestler), param => param != null);
+                    _editWrestlerCommand = new AsyncRelayCommand(param => EditWrestler(param as Wrestler), param => param != null);
                 }
                 return _editWrestlerCommand;
             }

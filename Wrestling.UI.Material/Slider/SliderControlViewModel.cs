@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
@@ -262,7 +263,7 @@ namespace Wrestling.UI.Material.Slider
             {
                 if (_addSlideCommand == null)
                 {
-                    _addSlideCommand = new RelayCommand(param => AddSlide(), param => _selectedChannel != null);
+                    _addSlideCommand = new AsyncRelayCommand(param => AddSlideAsync(), param => _selectedChannel != null);
                 }
                 return _addSlideCommand;
             }
@@ -274,7 +275,7 @@ namespace Wrestling.UI.Material.Slider
             {
                 if (_editSlideCommand == null)
                 {
-                    _editSlideCommand = new RelayCommand(param => EditSlide(param as ScreenSlide), param => param != null);
+                    _editSlideCommand = new AsyncRelayCommand(param => EditSlideAsync(param as ScreenSlide), param => param != null);
                 }
                 return _editSlideCommand;
             }
@@ -290,7 +291,7 @@ namespace Wrestling.UI.Material.Slider
             {
                 if (_addChannelCommand == null)
                 {
-                    _addChannelCommand = new RelayCommand(param => AddChannel(), param => true);
+                    _addChannelCommand = new AsyncRelayCommand(param => AddChannelAsync(), param => true);
                 }
                 return _addChannelCommand;
             }
@@ -302,7 +303,7 @@ namespace Wrestling.UI.Material.Slider
             {
                 if (_renameChannelCommand == null)
                 {
-                    _renameChannelCommand = new RelayCommand(param => RenameChannel(param as SlideChannel), param => param is SlideChannel);
+                    _renameChannelCommand = new AsyncRelayCommand(param => RenameChannelAsync(param as SlideChannel), param => param is SlideChannel);
                 }
                 return _renameChannelCommand;
             }
@@ -326,7 +327,7 @@ namespace Wrestling.UI.Material.Slider
             {
                 if (_toggleChannelCommand == null)
                 {
-                    _toggleChannelCommand = new RelayCommand(param => ToggleChannel(param as SlideChannel), param => param is SlideChannel);
+                    _toggleChannelCommand = new AsyncRelayCommand(param => ToggleChannelAsync(param as SlideChannel), param => param is SlideChannel);
                 }
                 return _toggleChannelCommand;
             }
@@ -334,7 +335,7 @@ namespace Wrestling.UI.Material.Slider
 
         #endregion
 
-        private async void ToggleChannel(SlideChannel channel)
+        private async Task ToggleChannelAsync(SlideChannel channel)
         {
             if (channel == null) return;
 
@@ -378,7 +379,7 @@ namespace Wrestling.UI.Material.Slider
             return _windowManager?.HasAnyRunningTimer() ?? false;
         }
 
-        private async void AddChannel()
+        private async Task AddChannelAsync()
         {
             var channel = new SlideChannel
             {
@@ -404,7 +405,7 @@ namespace Wrestling.UI.Material.Slider
             }
         }
 
-        private async void RenameChannel(SlideChannel channel)
+        private async Task RenameChannelAsync(SlideChannel channel)
         {
             if (channel == null) return;
 
@@ -450,7 +451,7 @@ namespace Wrestling.UI.Material.Slider
             }
         }
 
-        private async void EditSlide(ScreenSlide slide)
+        private async Task EditSlideAsync(ScreenSlide slide)
         {
             var tmpSlide = slide.Clone() as ScreenSlide;
 
@@ -474,7 +475,7 @@ namespace Wrestling.UI.Material.Slider
             }
         }
 
-        private async void AddSlide()
+        private async Task AddSlideAsync()
         {
             if (_selectedChannel == null) return;
 

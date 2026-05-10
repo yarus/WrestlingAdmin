@@ -217,7 +217,8 @@ namespace Wrestling.Entities
 
         public bool IsBracketGenerated => Bracket != null;
 
-        public bool IsBracketCompleted => Bracket != null && Bracket.Rounds.SelectMany(r => r.RoundMatches.Where(m => m.Status == MatchStatusEnum.Pending)).FirstOrDefault() == null;
+        public bool IsBracketCompleted => Bracket != null
+            && !Bracket.Rounds.SelectMany(r => r.RoundMatches).Any(m => m.Status == MatchStatusEnum.Pending);
         public string Name
         {
             get
@@ -253,7 +254,6 @@ namespace Wrestling.Entities
             }
         }
 
-        // TODO: Remove after refactoring
         public string IsFemaleLabel => IsFemale ? "Ж" : "М";
 
         #endregion

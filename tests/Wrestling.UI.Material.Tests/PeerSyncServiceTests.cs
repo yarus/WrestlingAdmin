@@ -122,6 +122,7 @@ public sealed class PeerSyncServiceTests
         public event Action ResultsChanged;
 #pragma warning restore CS0067
         public void Recalculate(Entities.Tournament tournament) => RecalculateCalls.Add(tournament);
+        public IReadOnlyList<Entities.Results.TournamentTeamResult> GetOrderedTeamResults(Entities.Results.ITeamResultsOrderer orderer) => TeamResults;
     }
 
     private sealed class FuncClock { public DateTime Now { get; set; } = DateTime.UtcNow; }

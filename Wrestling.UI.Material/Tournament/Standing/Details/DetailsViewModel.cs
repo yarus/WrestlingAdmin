@@ -87,20 +87,20 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             {
                 if (_generateGroupsCommand == null)
                 {
-                    _generateGroupsCommand = new RelayCommand(async (param) => await GenerateGroups());
+                    _generateGroupsCommand = new AsyncRelayCommand(_ => GenerateGroups());
                 }
 
                 return _generateGroupsCommand;
             }
         }
-        
+
         public ICommand AddGroupCommand
         {
             get
             {
                 if (_addGroupCommand == null)
                 {
-                    _addGroupCommand = new RelayCommand(async (param) => await AddGroup());
+                    _addGroupCommand = new AsyncRelayCommand(_ => AddGroup());
                 }
                 return _addGroupCommand;
             }
@@ -127,8 +127,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             {
                 if (_editGroupCommand == null)
                 {
-                    _editGroupCommand = new RelayCommand(
-                        param => EditGroup(param as AgeWeightGroup),
+                    _editGroupCommand = new AsyncRelayCommand(
+                        param => EditGroupAsync(param as AgeWeightGroup),
                         param => param != null
                     );
                 }
@@ -211,7 +211,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             Groups.Remove(group);
         }
 
-        private async void EditGroup(AgeWeightGroup group)
+        private async Task EditGroupAsync(AgeWeightGroup group)
         {
             var tmp = group.Clone() as AgeWeightGroup;
 

@@ -217,7 +217,13 @@ namespace Wrestling.UI.Material.Tournament.Results
         {
             var jobs = new List<BulkPdfExportJob>();
 
-            var (personalResults, olympicTeamResults) = ComputeTournamentResults(tournament);
+            // Read straight from the cached ResultsService — Recalculate fires
+            // on tournament open, match approve, and peer-sync merge, so the
+            // cache is current whenever the user can click Export.
+            var resultsService = Resolve<IResultsService>();
+            var olympicOrderer = Resolve<ITeamResultsOrderer>("OlympicOrderer");
+            var personalResults = resultsService.AllResults.ToList();
+            var olympicTeamResults = resultsService.GetOrderedTeamResults(olympicOrderer).ToList();
 
             if (olympicTeamResults != null && olympicTeamResults.Count > 0)
             {
@@ -252,7 +258,7 @@ namespace Wrestling.UI.Material.Tournament.Results
             foreach (var group in groupsWithBrackets)
             {
                 var capturedGroup = group;
-                var mainRounds = capturedGroup.Bracket.Rounds.Count(r => r.RoundType == GroupRoundTypeEnum.Main);
+                var mainRounds = capturedGroup.Bracket.MainRounds().Count();
                 jobs.Add(new BulkPdfExportJob
                 {
                     FileName = BulkBracketPdfExporter.MakeSafeFileName(capturedGroup.Name) + ".pdf",
@@ -268,44 +274,6 @@ namespace Wrestling.UI.Material.Tournament.Results
             }
 
             return jobs;
-        }
-
-        private (List<TournamentResult> personal, List<TournamentTeamResult> olympicTeam) ComputeTournamentResults(
-            Wrestling.Entities.Tournament tournament)
-        {
-            var processors = Resolve<List<IGroupBracketProcessor>>();
-            var teamCalculator = Resolve<ITeamResultsCalculator>();
-            var olympicOrderer = Resolve<ITeamResultsOrderer>("OlympicOrderer");
-
-            var allResults = new List<TournamentResult>();
-            foreach (var group in tournament.Groups)
-            {
-                if (group.Bracket == null) continue;
-
-                var processor = processors.FirstOrDefault(p => p.Code == group.Bracket.BracketTypeCode);
-                if (processor == null) continue;
-
-                processor.Load(tournament, group);
-                var groupResults = processor.GetResults();
-                if (groupResults != null) allResults.AddRange(groupResults);
-            }
-
-            var ordered = allResults
-                .OrderBy(x => x.Group.Name)
-                // DSQ'd / no-show wrestlers go to the bottom of each weight
-                // category — FinalPlace is null on them (UWW «без места»), so
-                // without an explicit guard they would sort to the top via
-                // default null-first ordering. ThenBy(IsPlaceless) puts false
-                // (0) before true (1) — placed wrestlers first, DSQ/NoShow last.
-                .ThenBy(p => p.Wrestler.IsPlaceless)
-                .ThenBy(p => p.Wrestler.FinalPlace ?? int.MaxValue)
-                .ThenBy(p => p.Wrestler.LastName)
-                .ToList();
-
-            var teamResults = teamCalculator.GetTeamResults(ordered, null);
-            var olympicTeam = olympicOrderer.GetOrderedResults(teamResults);
-
-            return (ordered, olympicTeam);
         }
 
         private void ExportResultsCsv()

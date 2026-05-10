@@ -5,6 +5,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Security;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Wrestling.DataAccess
@@ -35,33 +36,45 @@ namespace Wrestling.DataAccess
             SaveToFile(item, storageFolder + fileName);
         }
 
-        public async Task<bool> SaveToFileAsync<T>(T item, string fileName)
+        public async Task<bool> SaveToFileAsync<T>(T item, string fileName, CancellationToken cancellationToken = default)
         {
             // Atomic write: serialize to a sibling tmp file, then swap into place.
             // Keeps the prior-good .wrt intact if serialization or I/O throws
             // mid-stream, which matters for tournaments synced across carpets.
             var tmpPath = GetTempSiblingPath(fileName);
 
-            using (var stream = new MemoryStream())
+            try
             {
-                using (var writer = new StreamWriter(stream, new UTF8Encoding(false), 4096, leaveOpen: true))
+                using (var stream = new MemoryStream())
                 {
-                    var serializer = JsonSerializer.CreateDefault();
-                    serializer.Serialize(writer, item);
-                    await writer.FlushAsync().ConfigureAwait(false);
+                    using (var writer = new StreamWriter(stream, new UTF8Encoding(false), 4096, leaveOpen: true))
+                    {
+                        var serializer = JsonSerializer.CreateDefault();
+                        serializer.Serialize(writer, item);
+                        await writer.FlushAsync().ConfigureAwait(false);
+                    }
+
+                    cancellationToken.ThrowIfCancellationRequested();
+                    stream.Seek(0, SeekOrigin.Begin);
+
+                    using (var file = new FileStream(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                    {
+                        await stream.CopyToAsync(file, 81920, cancellationToken).ConfigureAwait(false);
+                        await file.FlushAsync(cancellationToken).ConfigureAwait(false);
+                    }
                 }
 
-                stream.Seek(0, SeekOrigin.Begin);
-
-                using (var file = new FileStream(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
-                {
-                    await stream.CopyToAsync(file).ConfigureAwait(false);
-                    await file.FlushAsync().ConfigureAwait(false);
-                }
+                AtomicReplace(tmpPath, fileName);
+                return true;
             }
-
-            AtomicReplace(tmpPath, fileName);
-            return true;
+            catch (OperationCanceledException)
+            {
+                // Caller asked to bail out — drop the half-written tmp before
+                // propagating. The destination file is untouched (atomic swap
+                // hasn't run), so the existing .wrt remains the last good copy.
+                TryDelete(tmpPath);
+                throw;
+            }
         }
 
         public bool SaveToFile<T>(T item, string fileName)
@@ -165,8 +178,12 @@ namespace Wrestling.DataAccess
             return default(T);
         }
 
-        public async Task<T> ReadFromFileAsync<T>(string path)
+        public async Task<T> ReadFromFileAsync<T>(string path, CancellationToken cancellationToken = default)
         {
+            // Load paths never throw for expected I/O / parse errors — see
+            // ReadFromFile above for the full policy. OperationCanceledException
+            // is the one exception: cancellation is an explicit caller signal,
+            // not an I/O failure, so it propagates.
             if (!File.Exists(path))
             {
                 return default(T);
@@ -177,6 +194,8 @@ namespace Wrestling.DataAccess
 
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 try
                 {
                     using (var stream = new FileStream(
@@ -188,7 +207,13 @@ namespace Wrestling.DataAccess
                         useAsync: true))
                     using (var reader = new StreamReader(stream))
                     {
+                        // StreamReader.ReadToEndAsync has no CT overload on
+                        // netstandard2.0 — but the FileStream above honors the
+                        // OS-level cancellation through async I/O completion
+                        // ports, and we re-check the token between retries
+                        // and after the read completes.
                         string jsonContent = await reader.ReadToEndAsync().ConfigureAwait(false);
+                        cancellationToken.ThrowIfCancellationRequested();
                         return JsonConvert.DeserializeObject<T>(jsonContent);
                     }
                 }
@@ -197,7 +222,7 @@ namespace Wrestling.DataAccess
                     if (attempt < maxRetries)
                     {
                         var delayMs = initialDelayMs * (int)Math.Pow(2, attempt - 1);
-                        await Task.Delay(delayMs).ConfigureAwait(false);
+                        await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
                         continue;
                     }
 

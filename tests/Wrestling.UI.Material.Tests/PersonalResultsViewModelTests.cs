@@ -200,6 +200,8 @@ public sealed class PersonalResultsViewModelTests
             // Not driven from these tests — Replace() is the explicit hook.
         }
 
+        public IReadOnlyList<TournamentTeamResult> GetOrderedTeamResults(ITeamResultsOrderer orderer) => TeamResults;
+
         public void Replace(IList<TournamentResult> next)
         {
             AllResults = next.ToList();

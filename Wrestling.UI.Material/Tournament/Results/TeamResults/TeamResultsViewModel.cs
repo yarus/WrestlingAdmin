@@ -106,14 +106,7 @@ namespace Wrestling.UI.Material.Tournament.Results.TeamResults
             }
 
             var orderer = Resolve<ITeamResultsOrderer>(_selectedSystem.OrdererKey);
-            if (orderer == null)
-            {
-                Items = _resultsService.TeamResults.ToList();
-                return;
-            }
-
-            var ordered = orderer.GetOrderedResults(_resultsService.TeamResults.ToList());
-            Items = ordered ?? new List<TournamentTeamResult>();
+            Items = _resultsService.GetOrderedTeamResults(orderer).ToList();
         }
     }
 

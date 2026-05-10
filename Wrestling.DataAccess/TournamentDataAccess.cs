@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Security;
+using System.Threading;
 using System.Threading.Tasks;
 using Wrestling.Data;
 
@@ -52,13 +53,13 @@ namespace Wrestling.DataAccess
             return true;
         }
 
-        public async Task<bool> SaveToFileAsync(TournamentInfo item, string fileName)
+        public async Task<bool> SaveToFileAsync(TournamentInfo item, string fileName, CancellationToken cancellationToken = default)
         {
             TryCreateBackup(fileName, item?.Settings);
 
-            await _storageDataAccess.SaveToFileAsync(item, fileName).ConfigureAwait(false);
+            await _storageDataAccess.SaveToFileAsync(item, fileName, cancellationToken).ConfigureAwait(false);
 
-            if (!await VerifySavedFileAsync(fileName).ConfigureAwait(false))
+            if (!await VerifySavedFileAsync(fileName, cancellationToken).ConfigureAwait(false))
             {
                 TryRestoreLatestBackup(fileName, item?.Settings);
                 FileLogger.Log("TournamentDataAccess.SaveToFileAsync [Corrupt]", fileName,
@@ -75,9 +76,9 @@ namespace Wrestling.DataAccess
             return _storageDataAccess.ReadFromFile<TournamentInfo>(fileName);
         }
 
-        public async Task<TournamentInfo> LoadFromFileAsync(string fileName)
+        public async Task<TournamentInfo> LoadFromFileAsync(string fileName, CancellationToken cancellationToken = default)
         {
-            return await _storageDataAccess.ReadFromFileAsync<TournamentInfo>(fileName).ConfigureAwait(false);
+            return await _storageDataAccess.ReadFromFileAsync<TournamentInfo>(fileName, cancellationToken).ConfigureAwait(false);
         }
 
         private static bool IsBackupEnabled(GlobalSettingsInfo settings) => settings == null || settings.IsBackupEnabled;
@@ -162,11 +163,11 @@ namespace Wrestling.DataAccess
             }
         }
 
-        private async Task<bool> VerifySavedFileAsync(string fileName)
+        private async Task<bool> VerifySavedFileAsync(string fileName, CancellationToken cancellationToken)
         {
             try
             {
-                var info = await _storageDataAccess.ReadFromFileAsync<TournamentInfo>(fileName).ConfigureAwait(false);
+                var info = await _storageDataAccess.ReadFromFileAsync<TournamentInfo>(fileName, cancellationToken).ConfigureAwait(false);
                 return info != null;
             }
             catch (Exception ex) when (IsExpectedBackupException(ex))

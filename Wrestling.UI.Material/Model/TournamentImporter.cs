@@ -81,7 +81,7 @@ namespace Wrestling.UI.Material.Model
 
                 try
                 {
-                    var tournament = await _tournService.LoadFromFileAsync(fetch.LocalPath).ConfigureAwait(false);
+                    var tournament = await _tournService.LoadFromFileAsync(fetch.LocalPath, cancellationToken).ConfigureAwait(false);
                     if (tournament == null)
                     {
                         // ReadFromFile already classified and logged the cause

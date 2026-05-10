@@ -172,7 +172,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             {
                 if (_generateBracketCommand == null)
                 {
-                    _generateBracketCommand = new RelayCommand(param => GenerateBracket(param as AgeWeightGroup), param => param != null);
+                    _generateBracketCommand = new AsyncRelayCommand(param => GenerateBracketAsync(param as AgeWeightGroup), param => param != null);
                 }
                 return _generateBracketCommand;
             }
@@ -250,7 +250,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             return drawType;
         }
 
-        private async void GenerateBracket(AgeWeightGroup group)
+        private async Task GenerateBracketAsync(AgeWeightGroup group)
         {
             if (group == null) return;
 

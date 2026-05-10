@@ -28,9 +28,9 @@ namespace Wrestling.Providers
             return entity;
         }
 
-        public async Task<Tournament> LoadFromFileAsync(string fileName)
+        public async Task<Tournament> LoadFromFileAsync(string fileName, CancellationToken cancellationToken = default)
         {
-            var info = await _dataAccess.LoadFromFileAsync(fileName);
+            var info = await _dataAccess.LoadFromFileAsync(fileName, cancellationToken).ConfigureAwait(false);
 
             if (info == null) return null;
 
@@ -41,11 +41,11 @@ namespace Wrestling.Providers
 
             return entity;
         }
-        
-        public async Task<bool> SaveToFileAsync(Tournament item, string fileName)
+
+        public async Task<bool> SaveToFileAsync(Tournament item, string fileName, CancellationToken cancellationToken = default)
         {
             var info = _adapter.GetInfoFromEntity(item);
-            var result = await _dataAccess.SaveToFileAsync(info, fileName);
+            var result = await _dataAccess.SaveToFileAsync(info, fileName, cancellationToken).ConfigureAwait(false);
             if (result)
             {
                 item.FileName = fileName;

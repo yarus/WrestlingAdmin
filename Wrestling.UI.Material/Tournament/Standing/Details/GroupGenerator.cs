@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using FluentResults;
 using Wrestling.Entities;
 
@@ -80,7 +81,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             }
             catch (Exception ex)
             {
-                // TODO: Log exception
+                Debug.WriteLine($"GroupGenerator.Generate failed for input: '{statement}'. {ex}");
                 return Result.Fail(new Error($"Ошибка генерации весовых категорий: {ex.Message}"));
             }
         }

@@ -123,7 +123,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             {
                 if (_addCarpetCommand == null)
                 {
-                    _addCarpetCommand = new RelayCommand(param => AddCarpet(), param => true);
+                    _addCarpetCommand = new AsyncRelayCommand(param => AddCarpetAsync(), param => true);
                 }
                 return _addCarpetCommand;
             }
@@ -135,7 +135,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             {
                 if (_editCarpetCommand == null)
                 {
-                    _editCarpetCommand = new RelayCommand(param => EditCarpet(param as Carpet), param => param != null);
+                    _editCarpetCommand = new AsyncRelayCommand(param => EditCarpetAsync(param as Carpet), param => param != null);
                 }
                 return _editCarpetCommand;
             }
@@ -159,7 +159,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             {
                 if (_bindGroupCommand == null)
                 {
-                    _bindGroupCommand = new RelayCommand(param => BindGroup(param as Carpet), param => param != null);
+                    _bindGroupCommand = new AsyncRelayCommand(param => BindGroupAsync(param as Carpet), param => param != null);
                 }
                 return _bindGroupCommand;
             }
@@ -216,7 +216,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             }
         }
 
-        private async void AddCarpet()
+        private async Task AddCarpetAsync()
         {
             var tmpCarpet = new Carpet
             {
@@ -236,7 +236,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             }
         }
 
-        private async void EditCarpet(Carpet carpet)
+        private async Task EditCarpetAsync(Carpet carpet)
         {
             var tmpCarpet = carpet.Clone() as Carpet;
 
@@ -269,7 +269,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             Items.Remove(carpet);
         }
 
-        private async void BindGroup(Carpet carpet)
+        private async Task BindGroupAsync(Carpet carpet)
         {
             var vm = new BindGroupViewModel(DiContainer);
             vm.InitData();
