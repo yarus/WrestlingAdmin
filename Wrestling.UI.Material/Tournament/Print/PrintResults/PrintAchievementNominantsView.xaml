@@ -78,10 +78,10 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <GridViewColumn Header="ФИО" Width="Auto">
+                    <GridViewColumn Header="Фамилия Имя" Width="Auto">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Wrestler.FullName}" 
+                                <TextBlock Text="{Binding Wrestler.LastFirstName}"
                                            Margin="0,10,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>

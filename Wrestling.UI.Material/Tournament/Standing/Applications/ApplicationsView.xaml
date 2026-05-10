@@ -124,7 +124,7 @@
 
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Expander Background="LightGray" Margin="0" Padding="0" x:Name="Expander"
+                    <Expander Background="{DynamicResource MaterialDesignToolBarBackground}" Margin="0" Padding="0" x:Name="Expander"
                               IsExpanded="{Binding Path=DataContext.ShouldAutoExpand, ElementName=RootControl, Mode=OneWay}">
                         <Expander.Header>
                             <Grid Margin="0">
@@ -199,7 +199,7 @@
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
-                            <StackPanel Background="White" Margin="0" Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Background="{DynamicResource MaterialDesignPaper}" Margin="0" Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <Button Content="Новый спортсмен" Width="160" HorizontalAlignment="Left"
                                         Margin="20,10,0,10"
                                         ToolTip="Добавить спортсмена в заявку"

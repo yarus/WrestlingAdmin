@@ -83,6 +83,15 @@ namespace Wrestling.UI.Material
 
             var di = GetContainer();
 
+            // Apply the operator-chosen theme before any window is shown so
+            // the first rendered frame already matches the saved preference.
+            // Defaults (Light / DeepPurple / Lime) kick in for first launch
+            // or a missing prefs file — visually identical to the historical
+            // hardcoded BundledTheme.
+            var themeManager = di.Resolve<Wrestling.UI.Material.Theme.IThemeManager>();
+            var uiStorage = di.Resolve<Wrestling.UI.Material.Theme.ILocalUiSettingsStorage>();
+            themeManager?.Apply(uiStorage?.Load() ?? new Wrestling.UI.Material.Theme.LocalUiSettings());
+
             SetupExceptionHandling(di);
 
             var navService = LoadNavigation(di);
@@ -475,6 +484,14 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             di.Add(new PrintView(), "PrintHost");
 
             di.Add<IKeyHandler>(new KeyHandler());
+
+            // Per-machine UI prefs (theme) — stored in
+            // %LocalAppData%/WrestlingAdmin/local_ui_settings.json, separate
+            // from .wrt so the operator's chosen theme does not change when
+            // opening a tournament authored on another machine.
+            var localUiStorage = new Wrestling.UI.Material.Theme.LocalUiSettingsStorage(di.Resolve<IStorageDataAccess>());
+            di.Add<Wrestling.UI.Material.Theme.ILocalUiSettingsStorage>(localUiStorage);
+            di.Add<Wrestling.UI.Material.Theme.IThemeManager>(new Wrestling.UI.Material.Theme.ThemeManager(localUiStorage));
 
             return di;
         }

@@ -50,7 +50,9 @@
         <Border Grid.Row="0" BorderThickness="0,0,0,1"
                 BorderBrush="{DynamicResource MaterialDesignDivider}" />
 
-        <Border Grid.Row="1" Background="White" Margin="20,10,0,0">
+        <materialDesign:Card Grid.Row="1" Margin="20,10,0,0"
+                             UniformCornerRadius="4"
+                             materialDesign:ElevationAssist.Elevation="Dp4">
         <ListView ItemsSource="{Binding Items}"
                   utils:GridViewSort.AutoSort="True"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -170,6 +172,6 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        </Border>
+        </materialDesign:Card>
     </Grid>
 </UserControl>

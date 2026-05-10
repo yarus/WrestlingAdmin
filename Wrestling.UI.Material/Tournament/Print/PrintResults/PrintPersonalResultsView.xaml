@@ -106,7 +106,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LastFirstName}" Header="ФИО" Width="180" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LastFirstName}" Header="Фамилия Имя" Width="180" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="Команда" Width="100" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamCity}" Header="Регион" Width="115" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.Level}" Header="Разряд" Width="50" />

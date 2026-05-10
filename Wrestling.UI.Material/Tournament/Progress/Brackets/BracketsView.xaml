@@ -78,7 +78,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Expander Background="LightGray" Margin="0" Padding="0" IsExpanded="{Binding IsExpanded}">
+                            <Expander Background="{DynamicResource MaterialDesignToolBarBackground}" Margin="0" Padding="0" IsExpanded="{Binding IsExpanded}">
                                 <Expander.Header>
                                     <Grid Margin="0">
                                         <Grid.ColumnDefinitions>
@@ -132,7 +132,7 @@
                                     </Grid>
                                 </Expander.Header>
                                 <Expander.Content>                                    
-                                    <Grid x:Name="GroupPanel" Background="White">
+                                    <Grid x:Name="GroupPanel" Background="{DynamicResource MaterialDesignPaper}">
                                         <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top">
                                             <ItemsControl ItemsSource="{Binding Path=Bracket.Rounds}" Margin="10">
                                                 <ItemsControl.ItemsPanel>

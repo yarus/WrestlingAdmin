@@ -12,6 +12,7 @@ using MvvmDialogs.FrameworkDialogs.OpenFile;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
+using Wrestling.UI.Material.Theme;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Settings
@@ -52,8 +53,20 @@ namespace Wrestling.UI.Material.Settings
                 _subscribedItem = Item;
             }
 
+            if (ThemeManager == null)
+            {
+                ThemeManager = Resolve<IThemeManager>();
+                OnPropertyChanged(nameof(ThemeManager));
+            }
+
             OnPropertyChanged(nameof(EffectiveBackupFolderHint));
         }
+
+        // Exposed for the «Внешний вид» settings card. The theme manager is
+        // an app-level singleton: setting IsDark / SelectedPrimary on it
+        // immediately swaps the live palette AND persists to
+        // local_ui_settings.json. No save button needed.
+        public IThemeManager ThemeManager { get; private set; }
 
         private void OnItemPropertyChanged(object sender, PropertyChangedEventArgs e)
         {

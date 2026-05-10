@@ -101,7 +101,7 @@
             
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Expander x:Name="GroupControl" Background="LightGray" Margin="0" Padding="0"
+                    <Expander x:Name="GroupControl" Background="{DynamicResource MaterialDesignToolBarBackground}" Margin="0" Padding="0"
                               HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                         <Expander.Header>
                             <Grid Margin="0">
@@ -149,7 +149,7 @@
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
-                            <Grid Background="White" Visibility="{Binding ElementName=GroupControl, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
+                            <Grid Background="{DynamicResource MaterialDesignPaper}" Visibility="{Binding ElementName=GroupControl, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />

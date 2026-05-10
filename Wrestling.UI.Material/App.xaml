@@ -7,6 +7,12 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- BundledTheme is no longer set here. ThemeManager applies
+                     the operator-chosen palette in App.OnStartup before the
+                     MainWindow is shown, using PaletteHelper. The defaults
+                     (Light / DeepPurple / Lime) live in LocalUiSettings ctor
+                     and are applied if no prefs file exists yet — visually
+                     identical to the historical hardcoded BundledTheme. -->
                 <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="DeepPurple" SecondaryColor="Lime" />
 
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />

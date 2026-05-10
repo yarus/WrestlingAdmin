@@ -134,7 +134,9 @@
             </StackPanel>
         </ScrollViewer>
 
-        <Border Grid.Column="1" BorderThickness="1" Background="White" BorderBrush="{DynamicResource MaterialDesignShadowBrush}" MinHeight="256" ClipToBounds="True" Margin="10 5 10 5">
+        <materialDesign:Card Grid.Column="1" MinHeight="256" Margin="10 5 10 5"
+                             UniformCornerRadius="4"
+                             materialDesign:ElevationAssist.Elevation="Dp4">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -194,6 +196,7 @@
                                                     <TextBlock Text="{Binding NameWithoutGender}"
                                                                FontWeight="SemiBold"
                                                                FontSize="13"
+                                                               Foreground="{DynamicResource MaterialDesignBody}"
                                                                VerticalAlignment="Center" />
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
@@ -245,9 +248,27 @@
                                 </ListView.View>
 
                                 <ListView.ItemContainerStyle>
+                                    <!-- No BasedOn: MD3's implicit ListViewItem style uses a
+                                         ContentPresenter template that bypasses GridView column
+                                         rendering (rows would show "Wrestling.Entities.AgeWeightGroup"
+                                         via ToString). The default WPF template handles GridView
+                                         columns correctly but hardcodes a white-ish hover background
+                                         that becomes invisible in dark mode. Triggers below override
+                                         the hover/selection visuals with theme-aware brushes. -->
                                     <Style TargetType="ListViewItem">
                                         <Setter Property="Cursor" Value="Hand" />
                                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource MaterialDesignDivider}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource PrimaryHueLightForegroundBrush}" />
+                                            </Trigger>
+                                        </Style.Triggers>
                                     </Style>
                                 </ListView.ItemContainerStyle>
 
@@ -269,6 +290,6 @@
                         Command="{Binding GenerateGroupsCommand}" />
                             </StackPanel>
             </Grid>
-        </Border>
+        </materialDesign:Card>
     </Grid>
 </UserControl>

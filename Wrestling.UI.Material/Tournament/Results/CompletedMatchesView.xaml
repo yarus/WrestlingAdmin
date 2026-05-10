@@ -82,7 +82,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Expander Background="LightGray" Margin="0" Padding="0" IsExpanded="{Binding IsExpanded}">
+                            <Expander Background="{DynamicResource MaterialDesignToolBarBackground}" Margin="0" Padding="0" IsExpanded="{Binding IsExpanded}">
                                 <Expander.Header>
                                     <Grid Margin="0">
                                         <Grid.ColumnDefinitions>
@@ -117,7 +117,7 @@
                                     </Grid>
                                 </Expander.Header>
                                 <Expander.Content>
-                                    <StackPanel Background="White" Margin="0">
+                                    <StackPanel Background="{DynamicResource MaterialDesignPaper}" Margin="0">
                                         <ListView ItemsSource="{Binding Matches}" Margin="40,0,0,0" x:Name="MatchesSource">
                                             <ListView.View>
                                                 <GridView AllowsColumnReorder="true">

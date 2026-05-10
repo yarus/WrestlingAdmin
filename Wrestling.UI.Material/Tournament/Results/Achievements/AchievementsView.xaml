@@ -33,7 +33,7 @@
 
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Expander Background="LightGray" Margin="0" Padding="0" x:Name="Expander" IsExpanded="False"
+                    <Expander Background="{DynamicResource MaterialDesignToolBarBackground}" Margin="0" Padding="0" x:Name="Expander" IsExpanded="False"
                               HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                         <Expander.Header>
                             <Grid Margin="0">
@@ -71,7 +71,7 @@
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
-                            <StackPanel Background="White" Margin="0"
+                            <StackPanel Background="{DynamicResource MaterialDesignPaper}" Margin="0"
                                         Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <ListView ItemsSource="{Binding Winners}"
                                           Margin="10,10,10,10"

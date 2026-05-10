@@ -76,7 +76,7 @@
 
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Expander Background="LightGray" Margin="0" Padding="0" x:Name="Expander"
+                    <Expander Background="{DynamicResource MaterialDesignToolBarBackground}" Margin="0" Padding="0" x:Name="Expander"
                               HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
                               IsExpanded="{Binding Path=DataContext.ShouldAutoExpand, ElementName=RootControl, Mode=OneWay}">
                         <Expander.Header>
@@ -131,7 +131,7 @@
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
-                            <StackPanel Background="White" Margin="0"
+                            <StackPanel Background="{DynamicResource MaterialDesignPaper}" Margin="0"
                                         Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <ListView ItemsSource="{Binding Wrestlers}"
                                           Margin="10,10,10,10"
@@ -172,9 +172,9 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="ФИО" Width="290"
-                                                            DisplayMemberBinding="{Binding Wrestler.FullName}"
-                                                            utils:GridViewSort.PropertyName="Wrestler.FullName" />
+                                            <GridViewColumn Header="Фамилия Имя" Width="290"
+                                                            DisplayMemberBinding="{Binding Wrestler.LastFirstName}"
+                                                            utils:GridViewSort.PropertyName="Wrestler.LastFirstName" />
 
                                             <GridViewColumn Header="Команда" Width="170"
                                                             DisplayMemberBinding="{Binding Wrestler.TeamName}"
