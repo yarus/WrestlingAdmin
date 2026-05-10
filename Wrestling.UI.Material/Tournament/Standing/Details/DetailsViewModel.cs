@@ -196,7 +196,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
         private void DeleteGroup(AgeWeightGroup group)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить группу?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить группу?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var wr in DataContext.Tournament.Wrestlers)
             {
@@ -305,7 +305,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
             if (Dialog.ShowMessageBox(this,
                     "Параметры группы были изменены, заявки на участие в данной группе будут удалены. Вы уверены?",
-                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK)
+                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
             {
                 eventArgs.Cancel();
             }

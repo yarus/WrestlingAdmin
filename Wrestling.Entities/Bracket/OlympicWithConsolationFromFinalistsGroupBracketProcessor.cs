@@ -21,6 +21,10 @@ namespace Wrestling.Entities.Bracket
         public override void CompleteMatch(WrestlingMatch wrestlingMatch, bool? isRedWon, MatchWinTypeEnum winType)
         {
             base.CompleteMatch(wrestlingMatch, isRedWon, winType);
+            // SF rebuild must run before the final-rebuild check: a freshly
+            // mutual-DSQ'd SF is reset to Pending here, after which the final
+            // is empty (not MutualDisqualify) so the final rebuild is a no-op.
+            TryRebuildSemifinalAfterMutualDsq();
             TryRebuildFinalAfterMutualDsq();
         }
 
@@ -30,10 +34,137 @@ namespace Wrestling.Entities.Bracket
         // promoted bronze winners. On Load we detect that state and fire the
         // rebuild — idempotent (no-op once final.WinType is null again, which
         // happens immediately after the rebuild resets the final).
+        // Same lazy migration applies to a SF saved with WinType=MutualDisqualify.
         public override void Load(Tournament tournament, AgeWeightGroup group)
         {
             base.Load(tournament, group);
+            TryRebuildSemifinalAfterMutualDsq();
             TryRebuildFinalAfterMutualDsq();
+            ResolveSingleWrestlerAdditionalMatches();
+        }
+
+        // Sweep: any consolation/bronze (any Additional round) match left in
+        // Pending state with exactly one wrestler is physically unplayable —
+        // its missing slot was supposed to come from an upstream chain that
+        // collapsed (mutual DSQ propagated through R16/QF, leaving the SF
+        // FreeWin'd and consolation half-filled). Auto-FreeWin the lone
+        // wrestler so the bracket is fully resolved and no «hanging» matches
+        // remain. Same treatment for fully-empty Pending matches (both feeders
+        // dropped out — DSQ on one side, FreeWin-solo on the other): mark
+        // Completed with no winner, no propagation, so IsBracketCompleted can
+        // flip true. Iterates until stable: each FreeWin may surface more
+        // single-wrestler states downstream (consolation chain feeds bronze).
+        private void ResolveSingleWrestlerAdditionalMatches()
+        {
+            if (Group?.Bracket == null) return;
+
+            // Empty-match resolution must wait until ALL main rounds are
+            // completed. Otherwise a bronze match that is still waiting for
+            // its SF loser (other-side SF not played yet) would be flagged
+            // empty and frozen, causing later ProceedToAdditionalBracket to
+            // fill an already-Completed slot. Single-wrestler resolution is
+            // always safe — that match is physically unplayable regardless
+            // of upstream state.
+            var allMainCompleted = Group.Bracket.Rounds
+                .Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+                .SelectMany(r => r.RoundMatches)
+                .All(m => m.Status == MatchStatusEnum.Completed);
+
+            bool changed;
+            int safety = 100;
+            do
+            {
+                changed = false;
+                safety--;
+                var matches = Group.Bracket.Rounds
+                    .Where(r => r.RoundType == GroupRoundTypeEnum.Additional)
+                    .SelectMany(r => r.RoundMatches)
+                    .ToList();
+                foreach (var m in matches)
+                {
+                    if (m.Status != MatchStatusEnum.Pending) continue;
+                    var hasRed = m.WrestlerInRed != null;
+                    var hasBlue = m.WrestlerInBlue != null;
+                    if (hasRed && hasBlue) continue;
+                    if (!hasRed && !hasBlue)
+                    {
+                        if (!allMainCompleted) continue;
+                        m.Status = MatchStatusEnum.Completed;
+                        m.WinType = MatchWinTypeEnum.FreeWin;
+                        m.IsRedWon = null;
+                        Group.Bracket.CompletedMatchesCount = Group.Bracket.Rounds
+                            .SelectMany(r => r.RoundMatches)
+                            .Count(x => x.Status == MatchStatusEnum.Completed);
+                        changed = true;
+                        break;
+                    }
+                    CompleteMatch(m, hasRed, MatchWinTypeEnum.FreeWin);
+                    changed = true;
+                    break;
+                }
+            } while (changed && safety > 0);
+        }
+
+        // UWW: «Если два полуфиналиста будут дисквалифицированы за грубость
+        // или не явились на ковер в одном матче, они выбывают из соревнований,
+        // а проигравшие им в четвертьфиналах спортсмены проведут схватку в
+        // полуфинале, и состав утешительных групп будет изменен в соответствии
+        // с результатом этого полуфинального матча.»
+        //
+        // Implementation mirrors TryRebuildFinalAfterMutualDsq: instead of
+        // adding a new round we reuse the existing SF — replace its wrestlers
+        // with the two QF-source losers and reset to Pending. The original
+        // mutual-DSQ'd SF wrestlers keep IsDisqualified=true (set by base) so
+        // they're excluded from FinalPlace assignment. ProceedToAdditionalBracket
+        // fires when the operator plays the rebuilt SF, populating consolation.
+        //
+        // Idempotent: after rebuild SF.WinType=null, the guard at the top
+        // short-circuits subsequent calls.
+        private void TryRebuildSemifinalAfterMutualDsq()
+        {
+            if (Group?.Bracket == null) return;
+
+            var mainRounds = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            if (mainRounds.Count < 2) return;
+            var sfRound = mainRounds[mainRounds.Count - 2];
+
+            foreach (var sfMatch in sfRound.RoundMatches.ToList())
+            {
+                if (sfMatch.WinType != MatchWinTypeEnum.MutualDisqualify) continue;
+
+                // Find the two source matches that fed this SF (their
+                // NextMatchBracketFullNumber points back at it). Both must be
+                // completed with a clear winner — otherwise we can't determine
+                // which wrestlers were the QF losers.
+                var sources = Group.Bracket.Rounds
+                    .Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+                    .SelectMany(r => r.RoundMatches)
+                    .Where(m => m != sfMatch
+                                && m.NextMatchBracketFullNumber == sfMatch.BracketFullNumber
+                                && m.IsMatchCompleted
+                                && m.IsRedWon.HasValue)
+                    .ToList();
+                if (sources.Count != 2) continue;
+
+                var loser1 = sources[0].IsRedWon.Value ? sources[0].WrestlerInBlue : sources[0].WrestlerInRed;
+                var loser2 = sources[1].IsRedWon.Value ? sources[1].WrestlerInBlue : sources[1].WrestlerInRed;
+                if (loser1 == null || loser2 == null) continue;
+
+                // Reset SF and replace its wrestlers with the QF losers.
+                // Original DSQ'd wrestlers keep IsDisqualified=true.
+                sfMatch.WrestlerInRed = loser1;
+                sfMatch.WrestlerInBlue = loser2;
+                sfMatch.Status = MatchStatusEnum.Pending;
+                sfMatch.WinType = null;
+                sfMatch.IsRedWon = null;
+                sfMatch.PointsRed = 0;
+                sfMatch.PointsBlue = 0;
+                sfMatch.WarningsNumberRed = 0;
+                sfMatch.WarningsNumberBlue = 0;
+                sfMatch.LastSecondInMatch = 0;
+                sfMatch.StartDateTime = null;
+                sfMatch.MatchActions = new List<MatchAction>();
+            }
         }
 
         // Triggers from CompleteMatch on either side of the order:
@@ -113,12 +244,84 @@ namespace Wrestling.Entities.Bracket
             return true;
         }
 
+        // ClearWrestlerDisqualify hook: when a SF was auto-rebuilt after
+        // mutual DSQ, the original SF.WinType is null (rebuild cleared it),
+        // so the base lookup by WinType=MutualDisqualify misses it. Find the
+        // SF in rebuilt-Pending state where this wrestler was a SOURCE
+        // (i.e., they won a feeding QF) — that's the match we need to revert.
+        protected override WrestlingMatch FindIndirectMutualDisqualifyMatch(Wrestler wrestler)
+        {
+            if (Group?.Bracket == null || wrestler == null) return null;
+
+            var mainRounds = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            if (mainRounds.Count < 2) return null;
+            var sfRound = mainRounds[mainRounds.Count - 2];
+
+            foreach (var sf in sfRound.RoundMatches)
+            {
+                if (!IsSemifinalPendingAfterRebuild(sf)) continue;
+
+                var sources = Group.Bracket.Rounds
+                    .Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+                    .SelectMany(r => r.RoundMatches)
+                    .Where(m => m != sf
+                                && m.NextMatchBracketFullNumber == sf.BracketFullNumber
+                                && m.IsMatchCompleted
+                                && m.IsRedWon.HasValue)
+                    .ToList();
+
+                foreach (var src in sources)
+                {
+                    var winner = src.IsRedWon.Value ? src.WrestlerInRed : src.WrestlerInBlue;
+                    if (winner != null && winner.SameAs(wrestler)) return sf;
+                }
+            }
+            return null;
+        }
+
         private bool IsBronzeMatch(WrestlingMatch wrestlingMatch)
         {
             var addRounds = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
             if (addRounds.Count == 0) return false;
             var bronzeRound = addRounds[addRounds.Count - 1];
             return bronzeRound.RoundMatches.Contains(wrestlingMatch);
+        }
+
+        private bool IsSemifinalMatch(WrestlingMatch wrestlingMatch)
+        {
+            var mainRounds = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            if (mainRounds.Count < 2) return false;
+            return mainRounds[mainRounds.Count - 2].RoundMatches.Contains(wrestlingMatch);
+        }
+
+        // True when SF is currently in the «rebuilt after mutual DSQ» state:
+        // Status=Pending AND its current red/blue are the LOSERS (not winners)
+        // of the two source QFs feeding it.
+        private bool IsSemifinalPendingAfterRebuild(WrestlingMatch sf)
+        {
+            if (sf.Status != MatchStatusEnum.Pending) return false;
+            if (sf.WrestlerInRed == null || sf.WrestlerInBlue == null) return false;
+
+            var sources = Group.Bracket.Rounds
+                .Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+                .SelectMany(r => r.RoundMatches)
+                .Where(m => m != sf
+                            && m.NextMatchBracketFullNumber == sf.BracketFullNumber
+                            && m.IsMatchCompleted
+                            && m.IsRedWon.HasValue)
+                .ToList();
+            if (sources.Count != 2) return false;
+
+            foreach (var sfWrestler in new[] { sf.WrestlerInRed, sf.WrestlerInBlue })
+            {
+                bool matchesAnySourceLoser = sources.Any(s =>
+                {
+                    var loser = s.IsRedWon.Value ? s.WrestlerInBlue : s.WrestlerInRed;
+                    return loser != null && loser.SameAs(sfWrestler);
+                });
+                if (!matchesAnySourceLoser) return false;
+            }
+            return true;
         }
 
         protected override void GenerateAdditionalRounds()
@@ -154,6 +357,23 @@ namespace Wrestling.Entities.Bracket
             //Clear last addtional round next wrestlingMatch
             Group.Bracket.Rounds[Group.Bracket.Rounds.Count - 1].RoundMatches[0].NextMatchBracketFullNumber = string.Empty;
             Group.Bracket.Rounds[Group.Bracket.Rounds.Count - 1].RoundMatches[1].NextMatchBracketFullNumber = string.Empty;
+        }
+
+        // SF mutual DSQ in this processor goes through TryRebuildSemifinalAfterMutualDsq:
+        // the SF is reset to Pending with the QF losers and the operator replays it
+        // for a real winner. Base.ProceedToNextMatch's mutual-DSQ-sibling-completed
+        // branch would auto-FreeWin the Final for the OTHER SF's winner before the
+        // rebuild fires — locking the Final before SF2 has a chance to produce its
+        // outcome. Skip that branch on SF mutual DSQ; rebuild + normal SF replay
+        // handles propagation correctly.
+        protected override void ProceedToNextMatch(WrestlingMatch wrestlingMatch)
+        {
+            if (wrestlingMatch?.WinType == MatchWinTypeEnum.MutualDisqualify
+                && IsSemifinalMatch(wrestlingMatch))
+            {
+                return;
+            }
+            base.ProceedToNextMatch(wrestlingMatch);
         }
 
         protected override void ProceedToAdditionalBracket(WrestlingMatch wrestlingMatch)
@@ -239,6 +459,61 @@ namespace Wrestling.Entities.Bracket
             {
                 CompleteMatch(lowerAddMatch, true, MatchWinTypeEnum.FreeWin);
             }
+
+            // Final cleanup: any other Additional-round match left half-filled
+            // (e.g. bronze with one wrestler from a single-source consolation
+            // chain) gets auto-FreeWin'd so no «hanging» pending matches stay.
+            ResolveSingleWrestlerAdditionalMatches();
+        }
+
+        // Revert path for the SF when it's in rebuilt-Pending state. Standard
+        // base.RevertMatch refuses to operate on a Pending match — but this is
+        // the only way to undo the SF mutual-DSQ rebuild. Restore the SF to
+        // the «mutual DSQ Completed» state with the original SF wrestlers
+        // (= QF source winners) and the IsDisqualified flags still set; from
+        // there a second revert click runs the standard mutual-DSQ revert
+        // path which clears the flags and brings SF to clean Pending.
+        public override void RevertMatch(WrestlingMatch wrestlingMatch)
+        {
+            if (IsSemifinalMatch(wrestlingMatch) && IsSemifinalPendingAfterRebuild(wrestlingMatch))
+            {
+                UnRebuildSemifinal(wrestlingMatch);
+                return;
+            }
+
+            base.RevertMatch(wrestlingMatch);
+        }
+
+        private void UnRebuildSemifinal(WrestlingMatch sf)
+        {
+            var sources = Group.Bracket.Rounds
+                .Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+                .SelectMany(r => r.RoundMatches)
+                .Where(m => m != sf
+                            && m.NextMatchBracketFullNumber == sf.BracketFullNumber
+                            && m.IsMatchCompleted
+                            && m.IsRedWon.HasValue)
+                .ToList();
+            if (sources.Count != 2) return;
+
+            var winner1 = sources[0].IsRedWon.Value ? sources[0].WrestlerInRed : sources[0].WrestlerInBlue;
+            var winner2 = sources[1].IsRedWon.Value ? sources[1].WrestlerInRed : sources[1].WrestlerInBlue;
+            if (winner1 == null || winner2 == null) return;
+
+            sf.WrestlerInRed = winner1;
+            sf.WrestlerInBlue = winner2;
+            sf.Status = MatchStatusEnum.Completed;
+            sf.WinType = MatchWinTypeEnum.MutualDisqualify;
+            sf.IsRedWon = null;
+            sf.PointsRed = 0;
+            sf.PointsBlue = 0;
+            sf.WarningsNumberRed = 0;
+            sf.WarningsNumberBlue = 0;
+            sf.LastSecondInMatch = 0;
+            sf.StartDateTime = null;
+            sf.MatchActions = new List<MatchAction>();
+            // IsDisqualified flags on the QF winners stay true — the
+            // subsequent (standard) mutual-DSQ revert clears them.
         }
 
         protected override void RevertAdditionalBracket(WrestlingMatch wrestlingMatch)
@@ -320,6 +595,31 @@ namespace Wrestling.Entities.Bracket
 
         public override bool CanMatchBeReverted(WrestlingMatch wrestlingMatch)
         {
+            // SF rebuilt after mutual DSQ — allow reverting even though Status
+            // is Pending: this is the one revert path that undoes the rebuild
+            // (back to «SF mutual DSQ Completed»; subsequent revert clears
+            // IsDisqualified flags via the standard mutual-DSQ revert path).
+            if (IsSemifinalMatch(wrestlingMatch) && IsSemifinalPendingAfterRebuild(wrestlingMatch))
+            {
+                return true;
+            }
+
+            // Block QF revert while its downstream SF is still in rebuilt-
+            // Pending state. Standard base revert would clear the QF winner
+            // slot from the SF, but the SF holds QF losers — the result would
+            // be a corrupt SF still wrestling-in-place but pointing at a now-
+            // reverted QF. Operator must un-rebuild the SF first.
+            if (wrestlingMatch.Status == MatchStatusEnum.Completed
+                && !string.IsNullOrEmpty(wrestlingMatch.NextMatchBracketFullNumber))
+            {
+                var downstream = Group.Bracket.Rounds.SelectMany(r => r.RoundMatches)
+                    .FirstOrDefault(m => m.BracketFullNumber == wrestlingMatch.NextMatchBracketFullNumber);
+                if (downstream != null && IsSemifinalMatch(downstream) && IsSemifinalPendingAfterRebuild(downstream))
+                {
+                    return false;
+                }
+            }
+
             if (wrestlingMatch.Status == MatchStatusEnum.Pending || !wrestlingMatch.WinType.HasValue || (wrestlingMatch.RoundNumber == 1 && wrestlingMatch.WinType.Value == MatchWinTypeEnum.FreeWin)) return false;
 
             // Bronze revert in the post-mutual-DSQ rebuild: allowed while
@@ -365,8 +665,8 @@ namespace Wrestling.Entities.Bracket
             // Mutual DSQ: neither wrestler gets a rank — IsDisqualified flag drives UI.
             if (!match.IsRedWon.HasValue) return;
 
-            if (match.WrestlerInRed != null && !match.WrestlerInRed.IsDisqualified) match.WrestlerInRed.FinalPlace = match.IsRedWon.Value ? winnerPlance : looserPlace;
-            if (match.WrestlerInBlue != null && !match.WrestlerInBlue.IsDisqualified) match.WrestlerInBlue.FinalPlace = match.IsBlueWon ? winnerPlance : looserPlace;
+            if (match.WrestlerInRed != null && !match.WrestlerInRed.IsPlaceless) match.WrestlerInRed.FinalPlace = match.IsRedWon.Value ? winnerPlance : looserPlace;
+            if (match.WrestlerInBlue != null && !match.WrestlerInBlue.IsPlaceless) match.WrestlerInBlue.FinalPlace = match.IsBlueWon ? winnerPlance : looserPlace;
         }
 
         private void DefineGoldAndSilver(GroupBracket bracket)
@@ -421,8 +721,68 @@ namespace Wrestling.Entities.Bracket
             {
                 if (!bronze.IsMatchCompleted || !bronze.IsRedWon.HasValue) continue;
                 var loser = bronze.IsRedWon.Value ? bronze.WrestlerInBlue : bronze.WrestlerInRed;
-                if (loser != null && !loser.IsDisqualified) loser.FinalPlace = 3;
+                if (loser != null && !loser.IsPlaceless) loser.FinalPlace = 3;
             }
+        }
+
+        // UWW: when a finalist is DSQ'd in the final, places shift on the
+        // DSQ'd side — bronze winner there moves up to silver, bronze loser
+        // moves up to bronze. The other side keeps its 3rd/5th. So:
+        //   1 → final winner
+        //   2 → bronze winner of DSQ side
+        //   3 → bronze winner of other side  +  bronze loser of DSQ side
+        //   5 → bronze loser of other side (single 5th place)
+        // Returns true when this special distribution was applied.
+        private bool TryDefinePlacesForFinalSingleDsq(GroupBracket bracket)
+        {
+            var mainRounds = bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            if (mainRounds.Count < 2) return false;
+            var final = mainRounds[mainRounds.Count - 1].RoundMatches.FirstOrDefault();
+            if (final == null || !final.IsMatchCompleted || !final.IsRedWon.HasValue) return false;
+            // Both single DSQ (foul) and NoShow on the losing finalist trigger
+            // the same UWW promotion rule — bronze winner → silver, bronze
+            // loser → bronze on the affected side.
+            if (final.WinType != MatchWinTypeEnum.DisqualifyWin && final.WinType != MatchWinTypeEnum.NoShow) return false;
+
+            var goldWinner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
+            var dsqFinalist = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
+            if (goldWinner == null || dsqFinalist == null || !dsqFinalist.IsPlaceless) return false;
+
+            var sfRound = mainRounds[mainRounds.Count - 2];
+            var dsqSf = sfRound.RoundMatches.FirstOrDefault(sf =>
+                sf.IsMatchCompleted && sf.IsRedWon.HasValue
+                && (sf.IsRedWon.Value ? sf.WrestlerInRed : sf.WrestlerInBlue).SameAs(dsqFinalist));
+            if (dsqSf == null) return false;
+
+            var dsqSfLoser = dsqSf.IsRedWon.Value ? dsqSf.WrestlerInBlue : dsqSf.WrestlerInRed;
+            if (dsqSfLoser == null) return false;
+
+            var addRounds = bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+            if (addRounds.Count == 0) return false;
+            var bronzeRound = addRounds[addRounds.Count - 1];
+            if (bronzeRound.RoundMatches.Count != 2) return false;
+
+            var dsqBronze = bronzeRound.RoundMatches.FirstOrDefault(b =>
+                (b.WrestlerInRed != null && b.WrestlerInRed.SameAs(dsqSfLoser))
+                || (b.WrestlerInBlue != null && b.WrestlerInBlue.SameAs(dsqSfLoser)));
+            var otherBronze = bronzeRound.RoundMatches.FirstOrDefault(b => b != dsqBronze);
+            if (dsqBronze == null || otherBronze == null) return false;
+            if (!dsqBronze.IsMatchCompleted || !dsqBronze.IsRedWon.HasValue) return false;
+            if (!otherBronze.IsMatchCompleted || !otherBronze.IsRedWon.HasValue) return false;
+
+            if (!goldWinner.IsPlaceless) goldWinner.FinalPlace = 1;
+
+            var dsqBronzeWinner = dsqBronze.IsRedWon.Value ? dsqBronze.WrestlerInRed : dsqBronze.WrestlerInBlue;
+            var dsqBronzeLoser = dsqBronze.IsRedWon.Value ? dsqBronze.WrestlerInBlue : dsqBronze.WrestlerInRed;
+            if (dsqBronzeWinner != null && !dsqBronzeWinner.IsPlaceless) dsqBronzeWinner.FinalPlace = 2;
+            if (dsqBronzeLoser != null && !dsqBronzeLoser.IsPlaceless) dsqBronzeLoser.FinalPlace = 3;
+
+            var otherBronzeWinner = otherBronze.IsRedWon.Value ? otherBronze.WrestlerInRed : otherBronze.WrestlerInBlue;
+            var otherBronzeLoser = otherBronze.IsRedWon.Value ? otherBronze.WrestlerInBlue : otherBronze.WrestlerInRed;
+            if (otherBronzeWinner != null && !otherBronzeWinner.IsPlaceless) otherBronzeWinner.FinalPlace = 3;
+            if (otherBronzeLoser != null && !otherBronzeLoser.IsPlaceless) otherBronzeLoser.FinalPlace = 5;
+
+            return true;
         }
 
         protected override void CalculateResults()
@@ -430,20 +790,24 @@ namespace Wrestling.Entities.Bracket
             if (Group.Bracket == null) return;
 
             var isRebuilt = IsFinalRebuiltAfterMutualDsq(Group.Bracket);
+            var isFinalSingleDsq = !isRebuilt && TryDefinePlacesForFinalSingleDsq(Group.Bracket);
 
-            // Set 1-2 places from final wrestlingMatch (works the same in
-            // both flows — in the rebuild case the final has bronze winners
-            // and a regular winner/loser).
-            DefineGoldAndSilver(Group.Bracket);
+            if (!isFinalSingleDsq)
+            {
+                // Set 1-2 places from final wrestlingMatch (works the same in
+                // both flows — in the rebuild case the final has bronze winners
+                // and a regular winner/loser).
+                DefineGoldAndSilver(Group.Bracket);
 
-            if (isRebuilt)
-            {
-                DefineThirdPlaceFromBronzeLosers(Group.Bracket);
-            }
-            else
-            {
-                // Get Additional bracket finals and define two 3rd places and two 5th places
-                DefineBronzeAndFifth(Group.Bracket);
+                if (isRebuilt)
+                {
+                    DefineThirdPlaceFromBronzeLosers(Group.Bracket);
+                }
+                else
+                {
+                    // Get Additional bracket finals and define two 3rd places and two 5th places
+                    DefineBronzeAndFifth(Group.Bracket);
+                }
             }
 
             if (!Group.IsBracketCompleted) return;
@@ -453,9 +817,10 @@ namespace Wrestling.Entities.Bracket
             // 5th — the «остальные участники поднимутся» rule from UWW. DSQ'd
             // wrestlers (the original finalists in the rebuild case, or any
             // mutual-DSQ casualties from earlier rounds) stay placeless.
-            var startPlace = isRebuilt ? 5 : 7;
+            // Final-single-DSQ case: 5th was filled (only one), so next is 6.
+            var startPlace = isFinalSingleDsq ? 6 : (isRebuilt ? 5 : 7);
 
-            var statistics = GetStats().Where(x => !x.Wrestler.FinalPlace.HasValue && !x.Wrestler.IsDisqualified)
+            var statistics = GetStats().Where(x => !x.Wrestler.FinalPlace.HasValue && !x.Wrestler.IsPlaceless)
                 .OrderByDescending(x => x.OverallTournamentClassificationPoints)
                 .ThenByDescending(x => x.WinsByTushe)
                 .ThenByDescending(x => x.WinsByDomination)

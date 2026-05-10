@@ -30,26 +30,30 @@
             <converters1:BoolInverterConverter />
             <converters1:GroupedBoolToVisConverter />
         </converters1:ValueConverterGroup>
+
+        <converters1:SubtractDoubleConverter x:Key="Subtract" />
+        <converters1:MultiplyDoubleConverter x:Key="Multiply" />
     </UserControl.Resources>
-    
-    <Grid IsEnabled="{Binding IsFormEnabled}" Margin="0,20,0,0">
+
+    <Grid IsEnabled="{Binding IsFormEnabled}" Margin="0,20,0,20">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" />
-            <ColumnDefinition Width="5*" />
-            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" MinWidth="300" MaxWidth="500" />
         </Grid.ColumnDefinitions>
 
-        <Grid.RowDefinitions>
-            <RowDefinition Height="60" />
-            <RowDefinition Height="1*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="1*" />
-        </Grid.RowDefinitions>
+        <Grid x:Name="LeftPanel" Grid.Column="0" Margin="20,0,10,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="60" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" BorderThickness="1,1,1,1" BorderBrush="Black" />
-        <Border Grid.Row="0" Grid.Column="1" BorderThickness="0,0,0,1" BorderBrush="Black" />
+        <Border Grid.Row="0" Grid.RowSpan="2" BorderThickness="1,1,1,1" BorderBrush="Black" />
+        <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="Black" />
 
-        <Grid Grid.Row="0" Grid.Column="1">
+        <Grid Grid.Row="0">
             <Viewbox Stretch="Uniform">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{Binding WrestlingMatch.GroupName, Mode=OneWay, Converter={StaticResource UpperCaseConverter}}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" HorizontalAlignment="Center">
@@ -62,7 +66,9 @@
             </Viewbox>
         </Grid>
 
-        <Grid Grid.Row="1" Grid.Column="1">
+        <Grid Grid.Row="1"
+              Height="{Binding ActualWidth, ElementName=LeftPanel, Converter={StaticResource Multiply}, ConverterParameter=0.4}"
+              MaxHeight="350" MinHeight="220">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*" />
                 <ColumnDefinition Width="3*" />
@@ -90,7 +96,10 @@
 
             <!-- Red Team Name -->
             <Viewbox Grid.Row="0" Grid.Column="0" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInRed.TeamName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInRed.TeamCity, Mode=OneWay}" Style="{StaticResource MaterialDesignBody1TextBlock}" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInRed.TeamName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" HorizontalAlignment="Center" />
+                </StackPanel>
             </Viewbox>
 
             <!-- Red Team Emblem-->
@@ -117,9 +126,9 @@
                 </Viewbox>
 
                 <Viewbox Grid.Row="1" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInRed.FullName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
+                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInRed.LastFirstName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
                 </Viewbox>
-                
+
             </Grid>
 
             <!-- Red Winner -->
@@ -155,9 +164,10 @@
 
                 <!-- Red Points -->
                 <Grid Grid.Column="0" Background="Red">
-                    <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Grid>
-                            <TextBlock Text="{Binding WrestlingMatch.PointsRed}" Foreground="White" />
+                    <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10">
+                        <Grid Width="100" Height="100">
+                            <TextBlock Text="{Binding WrestlingMatch.PointsRed}" Foreground="White"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="80" />
                             <Border BorderBrush="{Binding IsPlayer1WithAdvantage, Converter={StaticResource BoolHighlight}, ConverterParameter=Yellow}" BorderThickness="0,0,0,1" Margin="1" />
                         </Grid>
                     </Viewbox>
@@ -165,9 +175,10 @@
 
                 <!-- Blue Points -->
                 <Grid Grid.Column="1" Background="#005BEC">
-                    <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Grid>
-                            <TextBlock Text="{Binding WrestlingMatch.PointsBlue}" Foreground="White"/>
+                    <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10">
+                        <Grid Width="100" Height="100">
+                            <TextBlock Text="{Binding WrestlingMatch.PointsBlue}" Foreground="White"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="80" />
                             <Border BorderBrush="{Binding IsPlayer2WithAdvantage, Converter={StaticResource BoolHighlight}, ConverterParameter=Yellow}" BorderThickness="0,0,0,1" Margin="1" />
                         </Grid>
                     </Viewbox>
@@ -179,7 +190,7 @@
             <Grid Grid.Row="2" Grid.Column="1">
                 <Viewbox Stretch="Uniform" Visibility="{Binding Path=WrestlingMatch.IsMatchCompleted, Converter={StaticResource InvBoolToVis}}" Margin="8">
                     <Grid>
-                        <Button Style="{StaticResource MaterialDesignRaisedButton}" 
+                        <Button Style="{StaticResource MaterialDesignRaisedButton}"
                                 HorizontalAlignment="Center" Margin="8,0,8,0"
                                 Command="{Binding Path=SetWinTypeCommand}">
                             <TextBlock Text="{Binding WinType, Converter={StaticResource UpperWinType}}"
@@ -201,7 +212,10 @@
             </Grid>
 
             <Viewbox Grid.Row="0" Grid.Column="2" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInBlue.TeamName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInBlue.TeamCity, Mode=OneWay}" Style="{StaticResource MaterialDesignBody1TextBlock}" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInBlue.TeamName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" HorizontalAlignment="Center" />
+                </StackPanel>
             </Viewbox>
 
             <!-- Blue Column -->
@@ -228,7 +242,7 @@
                 </Viewbox>
 
                 <Viewbox Grid.Row="1" Stretch="Uniform" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInBlue.FullName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
+                    <TextBlock Text="{Binding Path=WrestlingMatch.WrestlerInBlue.LastFirstName, Mode=OneWay}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" />
                 </Viewbox>
             </Grid>
 
@@ -245,63 +259,75 @@
             </Grid>
         </Grid>
         
-        <StackPanel Grid.Row="2" Grid.Column="1">
-            <Button Content="ЗАВЕРШИТЬ" Style="{StaticResource MaterialDesignRaisedButton}" TabIndex="1"  
+        <GroupBox Grid.Row="2" Header="Заметки" Padding="5" Margin="0,10,0,0" VerticalAlignment="Top">
+            <TextBox Padding="0"
+                     Height="120"
+                     TextWrapping="Wrap" VerticalAlignment="Stretch"
+                     AcceptsReturn="True"
+                     VerticalScrollBarVisibility="Auto"
+                     SpellCheck.IsEnabled="True"
+                     Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}" />
+        </GroupBox>
+
+        <StackPanel Grid.Row="4">
+            <Button Content="ЗАВЕРШИТЬ" Style="{StaticResource MaterialDesignRaisedButton}" TabIndex="1"
                     FontStretch="Medium" Width="200" Height="60" Margin="10" FontSize="20"
                     Command="{Binding CompleteMatchCommand}" ToolTip="Завершить схватку" />
         </StackPanel>
+        </Grid>
 
-        <ScrollViewer Grid.Row="3" Grid.Column="1" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
-            <StackPanel>
-                <Expander Padding="0" IsExpanded="{Binding IsNoteExpanded}" Background="LightGray">
-                    <Expander.Header>
-                        <Grid>
-                            <Viewbox Stretch="Uniform" Height="30">
-                                <TextBlock Text="ЗАМЕТКИ" />
-                            </Viewbox>
-                        </Grid>
-                    </Expander.Header>
+        <Grid Grid.Column="1" Margin="10,0,20,0">
+            <Border BorderBrush="Black" BorderThickness="1">
+                <ListView x:Name="ProtocolList"
+                          ItemsSource="{Binding WrestlingMatch.MatchActions}"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          BorderThickness="0">
+                    <ListView.View>
+                        <GridView>
+                            <GridView.ColumnHeaderContainerStyle>
+                                <Style TargetType="GridViewColumnHeader">
+                                    <Setter Property="HorizontalContentAlignment" Value="Left" />
+                                    <Setter Property="FontSize" Value="14" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                    <Setter Property="Padding" Value="6,4,6,4" />
+                                </Style>
+                            </GridView.ColumnHeaderContainerStyle>
 
-                    <Expander.Content>
-                        <Grid Background="White">
-                            <GroupBox Header="Заметки" Padding="5" Margin="10">
-                                <TextBox Padding="0"
-                                    MinHeight="40"
-                                    TextWrapping="Wrap" VerticalAlignment="Top"
-                                    AcceptsReturn="True"
-                                    VerticalScrollBarVisibility="Auto"
-                                    SpellCheck.IsEnabled="True"                                    
-                                    Text="{Binding Note, UpdateSourceTrigger=PropertyChanged}" />
-                            </GroupBox>
-                        </Grid>
-                    </Expander.Content>
-                </Expander>
+                            <GridViewColumn Header="Время" Width="80">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DateTime, StringFormat={}{0:HH:mm:ss}}" FontSize="15" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
 
-                <Expander Padding="0" IsExpanded="{Binding IsActionsExpanded}" Margin="0,20,0,0" Background="LightGray">
-                    <Expander.Header>
-                        <Grid>
-                            <Viewbox Stretch="Uniform" Height="30">
-                                <TextBlock Text="ПРОТОКОЛ" />
-                            </Viewbox>
-                        </Grid>
-                    </Expander.Header>
+                            <GridViewColumn Header="Матч" Width="120">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock FontSize="15">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="Раунд {0}: {1:mm\:ss}">
+                                                    <Binding Path="RoundNumber" />
+                                                    <Binding Path="SecondInRound" Converter="{StaticResource SecondsToTimeSpanConverter}" />
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
 
-                    <Expander.Content>
-                        <Grid Background="White">
-                            <ListView ItemsSource="{Binding Path=WrestlingMatch.MatchActions}" Margin="10">
-                                <ListView.View>
-                                    <GridView AllowsColumnReorder="true">
-                                        <GridViewColumn DisplayMemberBinding="{Binding DateTime}" Header="#" Width="Auto"/>
-                                        <GridViewColumn DisplayMemberBinding="{Binding RoundNumber}" Header="Раунд" Width="Auto"/>
-                                        <GridViewColumn DisplayMemberBinding="{Binding SecondInRound, StringFormat={}{0:mm':'ss}, Converter={StaticResource SecondsToTimeSpanConverter}}" Header="Время" Width="Auto"/>
-                                        <GridViewColumn DisplayMemberBinding="{Binding Text}" Header="Детали" Width="Auto"/>
-                                    </GridView>
-                                </ListView.View>
-                            </ListView>
-                        </Grid>
-                    </Expander.Content>
-                </Expander>
-            </StackPanel>
-        </ScrollViewer>
+                            <GridViewColumn Header="Действие"
+                                            Width="{Binding ActualWidth, ElementName=ProtocolList, Converter={StaticResource Subtract}, ConverterParameter=222}">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Text}" FontSize="15" TextWrapping="Wrap" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

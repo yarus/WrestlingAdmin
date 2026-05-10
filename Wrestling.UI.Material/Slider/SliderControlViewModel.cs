@@ -94,7 +94,6 @@ namespace Wrestling.UI.Material.Slider
                 (
                     _quickButtons = new List<CommandButtonItem>
                     {
-                        new CommandButtonItem("Новый канал", PackIconKind.PlaylistPlus, new RelayCommand(param => AddChannel(), param => true)),
                         new CommandButtonItem("Остановить все таймеры", PackIconKind.TimerOff, new RelayCommand(param => StopAllTimers(), param => HasAnyRunningTimer())),
                         new CommandButtonItem("Закрыть все слайдеры", PackIconKind.CloseCircleOutline, new RelayCommand(param => CloseAllSliders(), param => _windowManager?.OpenCount > 0))
                     }
@@ -428,7 +427,7 @@ namespace Wrestling.UI.Material.Slider
         {
             if (channel == null) return;
 
-            if (Dialog.ShowMessageBox(this, $"Удалить канал «{channel.Name}» со всеми слайдами?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, $"Удалить канал «{channel.Name}» со всеми слайдами?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             _windowManager.CloseChannel(channel);
 
@@ -591,7 +590,7 @@ namespace Wrestling.UI.Material.Slider
         {
             if (_selectedChannel == null) return;
 
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить все слайды?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить все слайды?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             // Clear in place — replacing the collection would invalidate cached
             // Slides references held by the preview VM and open window VMs.

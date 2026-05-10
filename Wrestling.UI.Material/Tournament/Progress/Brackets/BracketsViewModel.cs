@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
+using Wrestling.Entities.Bracket;
 using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
@@ -23,6 +25,8 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
 
         private ICommand _openMatchCommand;
         private ICommand _changeCarpetCommand;
+        private ICommand _clearDisqualifyCommand;
+        private List<IGroupBracketProcessor> _processors;
 
         private IList<CommandButtonItem> _quickButtons;
 
@@ -46,6 +50,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             }
 
             _quickButtons = null;
+            _processors = Resolve<List<IGroupBracketProcessor>>();
             Carpets = DataContext.Tournament.Carpets;
 
             if (Carpets.Count > 0 && _selectedCarpet == null || (Carpets.Count > 0 && !Carpets.Contains(SelectedCarpet))) SelectedCarpet = Carpets[0];
@@ -144,6 +149,24 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             }
         }
 
+        // Bound to the orange-X icon overlays in BracketsView. Click → confirm
+        // dialog → resolve the right processor for the wrestler's bracket →
+        // ClearWrestlerDisqualify (finds the originating mutual-DSQ match and
+        // reverts; falls back to clearing the flag if no match exists).
+        public ICommand ClearDisqualifyCommand
+        {
+            get
+            {
+                if (_clearDisqualifyCommand == null)
+                {
+                    _clearDisqualifyCommand = new RelayCommand(
+                        param => ClearDisqualify(param as Wrestler),
+                        param => param is Wrestler w && w.IsDisqualified);
+                }
+                return _clearDisqualifyCommand;
+            }
+        }
+
         #endregion
 
         #region Private Methods
@@ -151,6 +174,42 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
         private void ChangeCarpet(Carpet carpet)
         {
             SelectedCarpet = carpet;
+        }
+
+        private void ClearDisqualify(Wrestler wrestler)
+        {
+            if (wrestler == null || !wrestler.IsDisqualified) return;
+
+            // Find the group whose bracket holds this wrestler so we can pick
+            // the right processor (different bracket types share the
+            // ClearWrestlerDisqualify entry point but their override behavior
+            // differs — ConsolationFinalists handles rebuilt SF specially).
+            var hostGroup = DataContext?.Tournament?.Groups
+                .FirstOrDefault(g => g.Wrestlers.Any(w => w.SameAs(wrestler)));
+            if (hostGroup?.Bracket == null) return;
+
+            var msg = $"Снять дисквалификацию со спортсмена «{wrestler.FullName}»?\n" +
+                      $"Матч с обоюдной дисквалификацией будет освобождён для повторной игры.";
+            if (Dialog.ShowMessageBox(this, msg, "Подтверждение",
+                    MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
+            {
+                return;
+            }
+
+            var processor = _processors?.FirstOrDefault(p => p.Code == hostGroup.Bracket.BracketTypeCode);
+            if (processor is GroupBracketProcessorBase concrete)
+            {
+                concrete.LoadTournamentGroup(DataContext.Tournament, hostGroup);
+                concrete.ClearWrestlerDisqualify(wrestler);
+                ShowSnackMessage("Дисквалификация снята.");
+            }
+            else
+            {
+                // Processor missing or doesn't expose ClearWrestlerDisqualify —
+                // graceful fallback so the operator isn't stuck.
+                wrestler.IsDisqualified = false;
+                ShowSnackMessage("Дисквалификация снята.");
+            }
         }
 
         // Mirrors Schedule's filter behavior: case-insensitive substring match across
@@ -218,6 +277,11 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
         private void OpenMatch(WrestlingMatch match)
         {
             if (match == null) return;
+
+            // Empty consolation slots resolved via auto-FreeWin (no wrestlers,
+            // no winner — see OlympicWithConsolationFromFinalists sweep) have
+            // nothing to display and break MatchResultsViewModel's invariants.
+            if (match.WrestlerInRed == null && match.WrestlerInBlue == null) return;
 
             if (match.Status == MatchStatusEnum.Completed)
             {

@@ -14,12 +14,14 @@ namespace Wrestling.UI.Material.Utils.Converters
         private const string NOSHOW = "Неявка (VFO 5:0)";
         private const string DISQUALIFYWIN = "Дисквалификация (DSQ 5:0)";
         private const string DOMINATIONWIN = "Преимущество (VSU 4:0)";
-        private const string DOMINATIONWIN_WITH_POINTS = "Преимущество (VSU 4:1)";
+        private const string DOMINATIONWIN_WITH_POINTS = "Преимущество (VSU1 4:1)";
         private const string POINTSWIN = "Победа по Баллам (VPO 3:0)";
-        private const string POINTSWIN_WITH_POINTS = "Победа по Баллам (VPO 3:1)";
-        private const string ACTIONWIN = "Последнее Действие (VPO 3:1)";
+        private const string POINTSWIN_WITH_POINTS = "Победа по Баллам (VPO1 3:1)";
+        private const string ACTIONWIN = "Последнее Действие (VPO1 3:1)";
         private const string FREEWIN = "Автопобеда";
-        private const string MUTUAL_DSQ = "Обоюдная дисквалификация (DSQ × DSQ)";
+        private const string MUTUAL_DSQ = "Обоюдная дисквал. (2DSQ 0:0)";
+        private const string MUTUAL_INJURY = "Обоюдная травма (2VIN 0:0)";
+        private const string MUTUAL_NOSHOW = "Обоюдная неявка (2VFO 0:0)";
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
@@ -41,6 +43,8 @@ namespace Wrestling.UI.Material.Utils.Converters
                 case MatchWinTypeEnum.ActionWin: return ACTIONWIN;
                 case MatchWinTypeEnum.FreeWin: return FREEWIN;
                 case MatchWinTypeEnum.MutualDisqualify: return MUTUAL_DSQ;
+                case MatchWinTypeEnum.MutualInjury: return MUTUAL_INJURY;
+                case MatchWinTypeEnum.MutualNoShow: return MUTUAL_NOSHOW;
             }
 
             return string.Empty;
@@ -64,6 +68,8 @@ namespace Wrestling.UI.Material.Utils.Converters
                 case ACTIONWIN: return MatchWinTypeEnum.ActionWin;
                 case FREEWIN: return MatchWinTypeEnum.FreeWin;
                 case MUTUAL_DSQ: return MatchWinTypeEnum.MutualDisqualify;
+                case MUTUAL_INJURY: return MatchWinTypeEnum.MutualInjury;
+                case MUTUAL_NOSHOW: return MatchWinTypeEnum.MutualNoShow;
             }
 
             return null;

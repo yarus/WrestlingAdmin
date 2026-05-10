@@ -186,6 +186,48 @@ public class SubGroupsProcessorTests
         sf.RoundNumber.Should().BeLessThan(f.RoundNumber);
     }
 
+    // UWW: when both finalists are mutually DSQ'd, the bronze match decides
+    // 1-2; everyone else shifts up by 2. (Single-bronze adaptation of the
+    // OlympicConsilationFinalists rule.)
+    [Fact]
+    public void Final_mutual_DSQ_promotes_bronze_winner_to_1st_loser_to_2nd()
+    {
+        var (_, g, proc) = Setup(6);
+
+        foreach (var round in g.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList())
+            foreach (var m in round.RoundMatches.ToList())
+                if (m.Status == MatchStatusEnum.Pending && m.WrestlerInRed != null && m.WrestlerInBlue != null)
+                    proc.CompleteMatch(m, true, MatchWinTypeEnum.PointsWin);
+
+        var addRounds = g.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+        foreach (var sf in addRounds[0].RoundMatches.ToList())
+            proc.CompleteMatch(sf, true, MatchWinTypeEnum.PointsWin);
+
+        var finalMatch = addRounds[1].RoundMatches[0];
+        var origFinalRed = finalMatch.WrestlerInRed;
+        var origFinalBlue = finalMatch.WrestlerInBlue;
+        proc.CompleteMatch(finalMatch, null, MatchWinTypeEnum.MutualDisqualify);
+
+        var thirdMatch = addRounds[2].RoundMatches[0];
+        var bronzeWinner = thirdMatch.WrestlerInRed;
+        var bronzeLoser = thirdMatch.WrestlerInBlue;
+        proc.CompleteMatch(thirdMatch, true, MatchWinTypeEnum.PointsWin);
+
+        proc.GetResults();
+
+        bronzeWinner!.FinalPlace.Should().Be(1, because: "bronze winner promoted by UWW final-DSQ rule");
+        bronzeLoser!.FinalPlace.Should().Be(2, because: "bronze loser promoted to silver");
+        origFinalRed!.IsDisqualified.Should().BeTrue();
+        origFinalBlue!.IsDisqualified.Should().BeTrue();
+        origFinalRed.FinalPlace.Should().BeNull(because: "DSQ'd wrestlers stay placeless");
+        origFinalBlue.FinalPlace.Should().BeNull();
+        // Remaining 2 wrestlers (not finalists, not bronze) take 3-4 by classification.
+        var others = g.Wrestlers.Where(w => w != bronzeWinner && w != bronzeLoser
+                                            && w != origFinalRed && w != origFinalBlue).ToList();
+        others.Should().HaveCount(2);
+        others.Select(w => w.FinalPlace).Should().BeEquivalentTo(new int?[] { 3, 4 });
+    }
+
     [Fact]
     public void Revert_SF_clears_final_and_third_place_slots()
     {

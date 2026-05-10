@@ -184,7 +184,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
         private void RegenerateBrackets()
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите перегенерировать все сетки! Это приведет к потере текущих результатов турнира!", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите перегенерировать все сетки! Это приведет к потере текущих результатов турнира!", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var ageWeightGroup in Groups)
             {
@@ -222,7 +222,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
         private void UnfixAllSeeds()
         {
-            if (Dialog.ShowMessageBox(this, "Снять отметку «Фикс.» у всех участников во всех группах?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, "Снять отметку «Фикс.» у всех участников во всех группах?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var wrestler in DataContext.Tournament.Wrestlers)
             {

@@ -244,56 +244,122 @@ namespace Wrestling.Entities.Bracket
 
             var finalists = new List<Wrestler>();
 
-            // 1-2 place
-            if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue)
-            {
-                var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
-                if (winner != null && !winner.IsDisqualified)
-                {
-                    finalists.Add(winner);
-                    winner.FinalPlace = currentPlace;
-                    currentPlace++;
-                }
-
-                var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
-                if (looser != null && !looser.IsDisqualified)
-                {
-                    finalists.Add(looser);
-                    looser.FinalPlace = currentPlace;
-                    currentPlace++;
-                }
-            }
-            else
-            {
-                // can't calculate yet
-                currentPlace += 2;
-            }
-
-            // 3-4 place
             var thirdPlace = addRounds[addRounds.Count - 1].RoundMatches[0];
 
-            if (thirdPlace.Status == MatchStatusEnum.Completed && thirdPlace.IsRedWon.HasValue)
+            // UWW: mutual DSQ in the final leaves both finalists DSQ'd; the
+            // bronze match then decides 1-2 and everyone else shifts up by 2.
+            // Single DSQ in the final: winner stays gold, bronze winner → 2,
+            // bronze loser → 3, everyone else shifts up by 1.
+            // (Sibling rule of OlympicConsilationFinalists, adapted for the
+            // single-bronze SubGroupsToOlympic format.)
+            var finalMutualDsq = final.Status == MatchStatusEnum.Completed
+                                 && final.WinType == MatchWinTypeEnum.MutualDisqualify;
+            var bronzeHasWinner = thirdPlace.Status == MatchStatusEnum.Completed
+                                  && thirdPlace.IsRedWon.HasValue;
+            Wrestler dsqFinalist = null;
+            if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue
+                && (final.WinType == MatchWinTypeEnum.DisqualifyWin || final.WinType == MatchWinTypeEnum.NoShow))
             {
-                var bronzeWinner = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
-                if (bronzeWinner != null && !bronzeWinner.IsDisqualified)
+                dsqFinalist = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
+                if (dsqFinalist == null || !dsqFinalist.IsPlaceless) dsqFinalist = null;
+            }
+            var finalSingleDsq = dsqFinalist != null;
+
+            if (finalMutualDsq && bronzeHasWinner)
+            {
+                var promoted1st = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
+                if (promoted1st != null && !promoted1st.IsPlaceless)
                 {
-                    finalists.Add(bronzeWinner);
-                    bronzeWinner.FinalPlace = currentPlace;
+                    finalists.Add(promoted1st);
+                    promoted1st.FinalPlace = currentPlace;
                     currentPlace++;
                 }
 
-                var bronzeLooser = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
-                if (bronzeLooser != null && !bronzeLooser.IsDisqualified)
+                var promoted2nd = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
+                if (promoted2nd != null && !promoted2nd.IsPlaceless)
                 {
-                    finalists.Add(bronzeLooser);
-                    bronzeLooser.FinalPlace = currentPlace;
+                    finalists.Add(promoted2nd);
+                    promoted2nd.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
+            }
+            else if (finalSingleDsq && bronzeHasWinner)
+            {
+                var gold = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
+                if (gold != null && !gold.IsPlaceless)
+                {
+                    finalists.Add(gold);
+                    gold.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
+
+                var silver = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
+                if (silver != null && !silver.IsPlaceless)
+                {
+                    finalists.Add(silver);
+                    silver.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
+
+                var bronze = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
+                if (bronze != null && !bronze.IsPlaceless)
+                {
+                    finalists.Add(bronze);
+                    bronze.FinalPlace = currentPlace;
                     currentPlace++;
                 }
             }
             else
             {
-                // can't calculate yet
-                currentPlace += 2;
+                // Standard 1-2 from final
+                if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue)
+                {
+                    var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
+                    if (winner != null && !winner.IsPlaceless)
+                    {
+                        finalists.Add(winner);
+                        winner.FinalPlace = currentPlace;
+                        currentPlace++;
+                    }
+
+                    var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
+                    if (looser != null && !looser.IsPlaceless)
+                    {
+                        finalists.Add(looser);
+                        looser.FinalPlace = currentPlace;
+                        currentPlace++;
+                    }
+                }
+                else
+                {
+                    // can't calculate yet
+                    currentPlace += 2;
+                }
+
+                // Standard 3-4 from bronze
+                if (bronzeHasWinner)
+                {
+                    var bronzeWinner = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
+                    if (bronzeWinner != null && !bronzeWinner.IsPlaceless)
+                    {
+                        finalists.Add(bronzeWinner);
+                        bronzeWinner.FinalPlace = currentPlace;
+                        currentPlace++;
+                    }
+
+                    var bronzeLooser = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
+                    if (bronzeLooser != null && !bronzeLooser.IsPlaceless)
+                    {
+                        finalists.Add(bronzeLooser);
+                        bronzeLooser.FinalPlace = currentPlace;
+                        currentPlace++;
+                    }
+                }
+                else
+                {
+                    // can't calculate yet
+                    currentPlace += 2;
+                }
             }
 
             // Other places should be set based on main round robin results
@@ -309,8 +375,8 @@ namespace Wrestling.Entities.Bracket
             }
 
             var comparedResults = new List<TournamentResult>();
-            comparedResults.AddRange(resultsA.Where(r => !finalists.Contains(r.Wrestler) && !r.Wrestler.IsDisqualified).Distinct());
-            comparedResults.AddRange(resultsB.Where(r => !finalists.Contains(r.Wrestler) && !r.Wrestler.IsDisqualified).Distinct());
+            comparedResults.AddRange(resultsA.Where(r => !finalists.Contains(r.Wrestler) && !r.Wrestler.IsPlaceless).Distinct());
+            comparedResults.AddRange(resultsB.Where(r => !finalists.Contains(r.Wrestler) && !r.Wrestler.IsPlaceless).Distinct());
 
             var finalOrder = comparedResults
                 .OrderByDescending(x => x.Wins)
@@ -386,8 +452,8 @@ namespace Wrestling.Entities.Bracket
             // happened in a subgroup. Mutual DSQ in any subgroup match cascades
             // auto-wins to the third wrestler, who legitimately becomes that
             // subgroup's gold; silver simply doesn't exist.
-            var resultsA = _groupAProcessor.GetResults().Where(r => !r.Wrestler.IsDisqualified).ToList();
-            var resultsB = _groupBProcessor.GetResults().Where(r => !r.Wrestler.IsDisqualified).ToList();
+            var resultsA = _groupAProcessor.GetResults().Where(r => !r.Wrestler.IsPlaceless).ToList();
+            var resultsB = _groupBProcessor.GetResults().Where(r => !r.Wrestler.IsPlaceless).ToList();
 
             var groupAGold = resultsA.Count > 0 ? resultsA[0].Wrestler : null;
             var groupASilver = resultsA.Count > 1 ? resultsA[1].Wrestler : null;

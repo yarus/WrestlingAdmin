@@ -147,13 +147,13 @@ namespace Wrestling.Entities.Bracket
             if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue)
             {
                 var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
-                if (winner != null && !winner.IsDisqualified)
+                if (winner != null && !winner.IsPlaceless)
                 {
                     winner.FinalPlace = 1;
                 }
 
                 var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
-                if (looser != null && !looser.IsDisqualified)
+                if (looser != null && !looser.IsPlaceless)
                 {
                     looser.FinalPlace = 2;
                 }
@@ -167,13 +167,13 @@ namespace Wrestling.Entities.Bracket
                 if (addFinal.Status == MatchStatusEnum.Completed && addFinal.IsRedWon.HasValue)
                 {
                     var addWinner = addFinal.IsRedWon.Value ? addFinal.WrestlerInRed : addFinal.WrestlerInBlue;
-                    if (addWinner != null && !addWinner.IsDisqualified)
+                    if (addWinner != null && !addWinner.IsPlaceless)
                     {
                         addWinner.FinalPlace = 3;
                     }
 
                     var addLooser = addFinal.IsRedWon.Value ? addFinal.WrestlerInBlue : addFinal.WrestlerInRed;
-                    if (addLooser != null && !addLooser.IsDisqualified)
+                    if (addLooser != null && !addLooser.IsPlaceless)
                     {
                         addLooser.FinalPlace = 4;
                     }
@@ -188,14 +188,14 @@ namespace Wrestling.Entities.Bracket
                 if (!match.IsRedWon.HasValue) continue; // mutual DSQ — no rank for either wrestler
 
                 var matchWinner = match.IsRedWon.Value ? match.WrestlerInRed : match.WrestlerInBlue;
-                if (matchWinner != null && !matchWinner.FinalPlace.HasValue && !matchWinner.IsDisqualified)
+                if (matchWinner != null && !matchWinner.FinalPlace.HasValue && !matchWinner.IsPlaceless)
                 {
                     matchWinner.FinalPlace = currentPlace;
                     currentPlace++;
                 }
 
                 var matchLooser = match.IsRedWon.Value ? match.WrestlerInBlue : match.WrestlerInRed;
-                if (matchLooser != null && !matchLooser.FinalPlace.HasValue && !matchLooser.IsDisqualified)
+                if (matchLooser != null && !matchLooser.FinalPlace.HasValue && !matchLooser.IsPlaceless)
                 {
                     matchLooser.FinalPlace = currentPlace;
                     currentPlace++;

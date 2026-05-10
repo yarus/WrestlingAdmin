@@ -156,12 +156,17 @@
                                                         <Grid>
                                                             <TextBlock Text="{Binding Wrestler.FinalPlace}"
                                                                        HorizontalAlignment="Center"
-                                                                       Visibility="{Binding Wrestler.IsDisqualified, Converter={StaticResource InvBoolToVis}}" />
+                                                                       Visibility="{Binding Wrestler.IsPlaceless, Converter={StaticResource InvBoolToVis}}" />
                                                             <TextBlock Text="DSQ"
                                                                        Foreground="Red" FontWeight="Bold"
                                                                        HorizontalAlignment="Center"
                                                                        ToolTip="Дисквалификация"
                                                                        Visibility="{Binding Wrestler.IsDisqualified, Converter={StaticResource BoolToVis}}" />
+                                                            <TextBlock Text="Неявка"
+                                                                       Foreground="DarkOrange" FontWeight="Bold"
+                                                                       HorizontalAlignment="Center"
+                                                                       ToolTip="Неявка"
+                                                                       Visibility="{Binding Wrestler.IsNoShow, Converter={StaticResource BoolToVis}}" />
                                                         </Grid>
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>

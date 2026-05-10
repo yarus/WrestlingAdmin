@@ -23,9 +23,9 @@
 
     <Grid Margin="0" x:Name="RootControl">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*" MinWidth="340" />
+            <ColumnDefinition Width="Auto" MinWidth="240" />
             <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="5*" MinWidth="400" />
+            <ColumnDefinition Width="*" MinWidth="400" />
         </Grid.ColumnDefinitions>
 
         <!-- MASTER: channel list -->
@@ -35,7 +35,9 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Text="Каналы" FontSize="18" FontWeight="SemiBold" Margin="6,8,0,8" />
+            <Button Grid.Row="0" Content="Новый канал"
+                    HorizontalAlignment="Stretch" Margin="6,8,6,8" Padding="8,4"
+                    Command="{Binding AddChannelCommand}" />
 
             <ListBox Grid.Row="1"
                      ItemsSource="{Binding Channels}"

@@ -181,7 +181,7 @@ namespace Wrestling.UI.Material
             // form they didn't mean to commit.
             if (Dialog.ShowMessageBox(this,
                     "Закрыть текущий турнир и вернуться на стартовый экран?",
-                    "Подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                    "Подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
             {
                 return;
             }

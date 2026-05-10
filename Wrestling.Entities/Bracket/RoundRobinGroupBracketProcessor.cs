@@ -74,7 +74,7 @@ namespace Wrestling.Entities.Bracket
             var finalPlace = 1;
             foreach (var stat in orderedStats)
             {
-                if (stat.Wrestler.FinalPlace.HasValue || stat.Wrestler.IsDisqualified)
+                if (stat.Wrestler.FinalPlace.HasValue || stat.Wrestler.IsPlaceless)
                 {
                     // Disqualified wrestlers (mutual DSQ for brutality) keep
                     // FinalPlace=null per UWW «без места».
@@ -84,7 +84,7 @@ namespace Wrestling.Entities.Bracket
                 var fullyTied = orderedStats.Where(x =>
                     x.Wrestler.ID != stat.Wrestler.ID
                     && !x.Wrestler.FinalPlace.HasValue
-                    && !x.Wrestler.IsDisqualified
+                    && !x.Wrestler.IsPlaceless
                     && x.Wins == stat.Wins
                     && x.OverallTournamentClassificationPoints == stat.OverallTournamentClassificationPoints
                     && x.WinsByTushe == stat.WinsByTushe

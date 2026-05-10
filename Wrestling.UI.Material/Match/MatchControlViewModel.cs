@@ -29,7 +29,6 @@ namespace Wrestling.UI.Material.Match
         private DispatcherTimer _timer;
 
         private bool _isRunning;
-        private bool _isSettingsOpen;
 
         private IPanelView _scoreScreenView;
 
@@ -89,11 +88,6 @@ namespace Wrestling.UI.Material.Match
 
                     _quickButtons.Add(new CommandButtonItem("Открыть электронное табло", PackIconKind.Monitor, new RelayCommand(param => ShowScreen(), param => true)));
                     _quickButtons.Add(new CommandButtonItem("Сбросить поединок", PackIconKind.BackupRestore, new RelayCommand(param => Reset(), param => true)));
-
-                    if (DataContext.Tournament == null)
-                    {
-                        _quickButtons.Add(new CommandButtonItem("Настройки поединка", PackIconKind.Settings, new AsyncRelayCommand(async param => await ShowSettingsAsync(), param => true)));
-                    }
                 }
 
                 return _quickButtons;
@@ -118,6 +112,13 @@ namespace Wrestling.UI.Material.Match
             }
 
             SetupTimer();
+
+            // Sync local _startDateTime with the match's persisted value.
+            // The VM is a singleton, so without this the previous match's
+            // start time leaks into a freshly-opened (or reverted) match —
+            // Start() guards on `!_startDateTime.HasValue` and would skip
+            // updating, then CopyDataFromViewToMatch writes the stale value.
+            _startDateTime = DataContext.WrestlingMatch.StartDateTime;
 
             if (DataContext.WrestlingMatch.LastSecondInMatch == 0)
             {
@@ -353,7 +354,7 @@ namespace Wrestling.UI.Material.Match
                 return;
             }
 
-            if (!_isSettingsOpen && (e.Key == Key.Space))
+            if (e.Key == Key.Space)
             {
                 if (IsRunning)
                 {
@@ -368,7 +369,7 @@ namespace Wrestling.UI.Material.Match
                 return;
             }
 
-            if (!_isSettingsOpen && (e.Key == Key.Enter))
+            if (e.Key == Key.Enter)
             {
                 if (IsRunning)
                 {
@@ -381,125 +382,60 @@ namespace Wrestling.UI.Material.Match
                 return;
             }
 
-            if (!_isSettingsOpen && (e.Key == Key.Q))
+            if (e.Key == Key.Q)
             {
                 AdjustPoints("+1,Red");
                 e.Handled = true;
                 return;
             }
 
-            if (!_isSettingsOpen && (e.Key == Key.W))
+            if (e.Key == Key.W)
             {
                 AdjustPoints("+2,Red");
                 e.Handled = true;
                 return;
             }
 
-            if (!_isSettingsOpen && (e.Key == Key.E))
+            if (e.Key == Key.E)
             {
                 AdjustPoints("+4,Red");
                 e.Handled = true;
                 return;
             }
 
-            if (!_isSettingsOpen && (e.Key == Key.R))
+            if (e.Key == Key.R)
             {
                 AdjustPoints("0,Red");
                 e.Handled = true;
                 return;
             }
 
-            if (!_isSettingsOpen && (e.Key == Key.U))
+            if (e.Key == Key.U)
             {
                 AdjustPoints("+1,Blue");
                 e.Handled = true;
                 return;
             }
 
-            if (!_isSettingsOpen && (e.Key == Key.I))
+            if (e.Key == Key.I)
             {
                 AdjustPoints("+2,Blue");
                 e.Handled = true;
                 return;
             }
 
-            if (!_isSettingsOpen && (e.Key == Key.O))
+            if (e.Key == Key.O)
             {
                 AdjustPoints("+4,Blue");
                 e.Handled = true;
                 return;
             }
 
-            if (!_isSettingsOpen && (e.Key == Key.P))
+            if (e.Key == Key.P)
             {
                 AdjustPoints("0,Blue");
                 e.Handled = true;
                 return;
-            }
-        }
-
-        private async Task ShowSettingsAsync()
-        {
-            var tmp = new ScoreScreenViewModel(DiContainer);
-            tmp.InitData();
-
-            tmp.TournamentTitle = ScoreScreenVm.TournamentTitle;
-            tmp.CarpetLabel = ScoreScreenVm.CarpetLabel;
-            tmp.GroupLabel = ScoreScreenVm.GroupLabel;
-            tmp.MatchFullNumber = ScoreScreenVm.MatchFullNumber;
-            tmp.RoundName = ScoreScreenVm.RoundName;
-            tmp.MaxRoundSecond = ScoreScreenVm.MaxRoundSecond;
-            tmp.MaxActionSecond = ScoreScreenVm.MaxActionSecond;
-            tmp.MaxTimeoutSecond = ScoreScreenVm.MaxTimeoutSecond;
-            tmp.Wrestler1 = ScoreScreenVm.Wrestler1;
-            tmp.Wrestler1TeamName = ScoreScreenVm.Wrestler1TeamName;
-            tmp.Wrestler2 = ScoreScreenVm.Wrestler2;
-            tmp.Wrestler2TeamName = ScoreScreenVm.Wrestler2TeamName;
-            tmp.Wrestler1TeamEmblem = ScoreScreenVm.Wrestler1TeamEmblem;
-            tmp.Wrestler2TeamEmblem = ScoreScreenVm.Wrestler2TeamEmblem;
-            tmp.Points1 = ScoreScreenVm.Points1;
-            tmp.Points2 = ScoreScreenVm.Points2;
-            tmp.Wrestler1WarningsNumber = ScoreScreenVm.Wrestler1WarningsNumber;
-            tmp.Wrestler2WarningsNumber = ScoreScreenVm.Wrestler2WarningsNumber;
-
-            var vm = new MatchSettingsViewModel(DiContainer, tmp);
-            vm.InitData();
-
-            var view = new MatchSettingsDialog
-            {
-                DataContext = vm
-            };
-
-            _isSettingsOpen = true;
-
-            var result = await DialogHost.Show(view, "RootDialog");
-            
-            if (result != null)
-            {
-                _isSettingsOpen = false;
-
-                if ((bool) result)
-                {
-                    ScoreScreenVm.TournamentTitle = tmp.TournamentTitle;
-                    ScoreScreenVm.CarpetLabel = tmp.CarpetLabel;
-                    ScoreScreenVm.GroupLabel = tmp.GroupLabel;
-                    ScoreScreenVm.MatchFullNumber = tmp.MatchFullNumber;
-                    ScoreScreenVm.RoundName = tmp.RoundName;
-                    ScoreScreenVm.MaxRoundSecond = tmp.MaxRoundSecond;
-                    ScoreScreenVm.MaxActionSecond = tmp.MaxActionSecond;
-                    ScoreScreenVm.MaxTimeoutSecond = tmp.MaxTimeoutSecond;
-                    ScoreScreenVm.Wrestler1 = tmp.Wrestler1;
-                    ScoreScreenVm.Wrestler1TeamName = tmp.Wrestler1TeamName;
-                    ScoreScreenVm.Wrestler2 = tmp.Wrestler2;
-                    ScoreScreenVm.Wrestler2TeamName = tmp.Wrestler2TeamName;
-                    ScoreScreenVm.Wrestler1TeamEmblem = tmp.Wrestler1TeamEmblem;
-                    ScoreScreenVm.Wrestler2TeamEmblem = tmp.Wrestler2TeamEmblem;
-
-                    if (DataContext.Tournament == null)
-                    {
-                        CopyDataFromViewToMatch();
-                    }
-                }
             }
         }
 
@@ -531,7 +467,17 @@ namespace Wrestling.UI.Material.Match
 
         private void AddPointsAction(bool isRed, int value)
         {
-            AddAction($"Действие борца в {(isRed ? "красном" : "синем")} трико оценено в {value}", value, isRed);
+            AddAction($"{(isRed ? "Красный" : "Синий")} +{value} {PluralizePoints(value)}", value, isRed);
+        }
+
+        private static string PluralizePoints(int value)
+        {
+            int abs = Math.Abs(value) % 100;
+            if (abs >= 11 && abs <= 14) return "баллов";
+            int rem = abs % 10;
+            if (rem == 1) return "балл";
+            if (rem >= 2 && rem <= 4) return "балла";
+            return "баллов";
         }
 
         private void AddWarningAction(bool isRed, int value)
@@ -645,13 +591,23 @@ namespace Wrestling.UI.Material.Match
                 ScoreScreenVm.Wrestler2WarningsNumber += value;
                 AddWarningAction(false, ScoreScreenVm.Wrestler2WarningsNumber);
             }
+
+            // UWW: 3 warnings = automatic disqualification (VCA 5:0). Stop
+            // the timer and jump to results immediately — operator cannot
+            // change the win type, MatchResultsViewModel.SetWinnerAndWinType
+            // forces WinType=WarningsLimit and assigns the opponent as winner.
+            if (ScoreScreenVm.Wrestler1WarningsNumber >= 3 || ScoreScreenVm.Wrestler2WarningsNumber >= 3)
+            {
+                if (IsRunning) Stop();
+                CompleteMatch();
+            }
         }
 
         protected override void OnBackCommand()
         {
             if (Dialog.ShowMessageBox(this,
                     "Матч не звершен! Если вы вернетесь назад, то текущие результаты будут потеряны. Вы уверены, что хотите вернуться?",
-                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             if (!DataContext.WrestlingMatch.IsMatchCompleted)
             {
@@ -986,14 +942,18 @@ namespace Wrestling.UI.Material.Match
                 Action1Image = GetActionPathByEnabled(!ScoreScreenVm.IsAction1TimerEnabled);
                 
                 Action2Visibility = ScoreScreenVm.IsAction1TimerEnabled ? Visibility.Hidden : Visibility.Visible;
-                AddAction($"{(ScoreScreenVm.IsAction1TimerEnabled ? "Запущен" : "Остановлен")} таймер действия для борца в красном трико", 0, null);
+                AddAction(ScoreScreenVm.IsAction1TimerEnabled
+                    ? $"Красный - активность {ScoreScreenVm.MaxActionSecond} сек"
+                    : "Красный - активность остановлена", 0, null);
             }
             else
             {
                 ScoreScreenVm.IsAction2TimerEnabled = !ScoreScreenVm.IsAction2TimerEnabled;
                 Action2Image = GetActionPathByEnabled(!ScoreScreenVm.IsAction2TimerEnabled);
                 Action1Visibility = ScoreScreenVm.IsAction2TimerEnabled ? Visibility.Hidden : Visibility.Visible;
-                AddAction($"{(ScoreScreenVm.IsAction2TimerEnabled ? "Запущен" : "Остановлен")} таймер действия для борца в синем трико", 0, null);
+                AddAction(ScoreScreenVm.IsAction2TimerEnabled
+                    ? $"Синий - активность {ScoreScreenVm.MaxActionSecond} сек"
+                    : "Синий - активность остановлена", 0, null);
             }
 
             ScoreScreenVm.SecondarySeconds = 0;

@@ -227,4 +227,92 @@ public class ConsolationProcessorTests
         places.Count(p => p == 3).Should().Be(2);
         places.Count(p => p == 5).Should().Be(2);
     }
+
+    // UWW: when a finalist is DSQ'd in the final, the DSQ-side bronze winner
+    // is promoted to silver, the DSQ-side bronze loser to bronze. So:
+    //   1 → final winner
+    //   2 → bronze winner of DSQ side
+    //   3 → bronze winner of other side  +  bronze loser of DSQ side
+    //   5 → bronze loser of other side (single 5th)
+    // DSQ'd finalist stays placeless with IsDisqualified=true.
+    [Fact]
+    public void Final_single_DSQ_promotes_DSQ_side_bronze_winner_to_silver_and_bronze_loser_to_third()
+    {
+        var (_, g, proc) = Setup(8);
+
+        // Drive QF → SF → F with red winning each (deterministic).
+        foreach (var qf in g.Bracket.Rounds[0].RoundMatches.ToList())
+            proc.CompleteMatch(qf, true, MatchWinTypeEnum.PointsWin);
+        foreach (var sf in g.Bracket.Rounds[1].RoundMatches.ToList())
+            proc.CompleteMatch(sf, true, MatchWinTypeEnum.PointsWin);
+
+        var finalMatch = g.Bracket.Rounds[2].RoundMatches[0];
+        var goldExpected = finalMatch.WrestlerInRed;
+        var dsqFinalist = finalMatch.WrestlerInBlue;
+
+        // Red wins by DSQ — Blue is now disqualified.
+        proc.CompleteMatch(finalMatch, true, MatchWinTypeEnum.DisqualifyWin);
+
+        dsqFinalist!.IsDisqualified.Should().BeTrue("single DSQ marks the loser disqualified");
+
+        // Find DSQ-side bronze (the bronze that received the DSQ finalist's SF loser).
+        var sfRound = g.Bracket.Rounds[1];
+        var dsqSf = sfRound.RoundMatches.First(sf =>
+            (sf.IsRedWon!.Value ? sf.WrestlerInRed : sf.WrestlerInBlue)!.SameAs(dsqFinalist));
+        var dsqSfLoser = dsqSf.IsRedWon!.Value ? dsqSf.WrestlerInBlue : dsqSf.WrestlerInRed;
+
+        var bronzeRound = g.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        var dsqBronze = bronzeRound.RoundMatches.First(b =>
+            (b.WrestlerInRed != null && b.WrestlerInRed.SameAs(dsqSfLoser))
+            || (b.WrestlerInBlue != null && b.WrestlerInBlue.SameAs(dsqSfLoser)));
+        var otherBronze = bronzeRound.RoundMatches.First(b => b != dsqBronze);
+
+        // Complete bronzes — red wins each.
+        proc.CompleteMatch(dsqBronze, true, MatchWinTypeEnum.PointsWin);
+        proc.CompleteMatch(otherBronze, true, MatchWinTypeEnum.PointsWin);
+
+        var dsqBronzeWinner = dsqBronze.WrestlerInRed;
+        var dsqBronzeLoser = dsqBronze.WrestlerInBlue;
+        var otherBronzeWinner = otherBronze.WrestlerInRed;
+        var otherBronzeLoser = otherBronze.WrestlerInBlue;
+
+        proc.GetResults();
+
+        goldExpected!.FinalPlace.Should().Be(1);
+        dsqFinalist.FinalPlace.Should().BeNull(because: "DSQ'd wrestlers stay placeless");
+        dsqBronzeWinner!.FinalPlace.Should().Be(2, because: "promoted from 3rd via UWW final-DSQ rule");
+        dsqBronzeLoser!.FinalPlace.Should().Be(3, because: "promoted from 5th to vacated 3rd");
+        otherBronzeWinner!.FinalPlace.Should().Be(3);
+        otherBronzeLoser!.FinalPlace.Should().Be(5);
+
+        // Only one 5th place.
+        g.Wrestlers.Count(w => w.FinalPlace == 5).Should().Be(1);
+    }
+
+    [Fact]
+    public void Single_DSQ_in_QF_marks_loser_as_disqualified()
+    {
+        var (_, g, proc) = Setup(8);
+        var qf1 = g.Bracket.Rounds[0].RoundMatches[0];
+        var loser = qf1.WrestlerInBlue;
+
+        proc.CompleteMatch(qf1, true, MatchWinTypeEnum.DisqualifyWin);
+
+        loser!.IsDisqualified.Should().BeTrue();
+        qf1.WrestlerInRed!.IsDisqualified.Should().BeFalse(because: "winner stays clean");
+    }
+
+    [Fact]
+    public void Reverting_single_DSQ_clears_IsDisqualified()
+    {
+        var (_, g, proc) = Setup(8);
+        var qf1 = g.Bracket.Rounds[0].RoundMatches[0];
+        var loser = qf1.WrestlerInBlue;
+
+        proc.CompleteMatch(qf1, true, MatchWinTypeEnum.DisqualifyWin);
+        loser!.IsDisqualified.Should().BeTrue();
+
+        proc.RevertMatch(qf1);
+        loser.IsDisqualified.Should().BeFalse();
+    }
 }

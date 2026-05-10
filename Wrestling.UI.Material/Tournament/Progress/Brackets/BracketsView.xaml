@@ -279,15 +279,20 @@
                                                                                         </materialDesign:PackIcon.Visibility>
                                                                                     </materialDesign:PackIcon>
                                                                                     <!-- DSQ marker: replaces the win-check when the winning
-                                                                                         wrestler was later disqualified (e.g. promoted to a
-                                                                                         final that ended in mutual DSQ). -->
+                                                                                         wrestler was later disqualified. Click → confirm →
+                                                                                         revert the originating mutual-DSQ match. Click is
+                                                                                         attached via InputBindings on the PackIcon itself
+                                                                                         (instead of a Button wrapper) to preserve the exact
+                                                                                         original layout — Button chrome would shift the
+                                                                                         icon out of its 16-px column. -->
                                                                                     <materialDesign:PackIcon
                                                                                     Kind="CloseOctagon"
                                                                                     HorizontalAlignment="Center"
                                                                                     VerticalAlignment="Center"
                                                                                     Margin="0" Padding="0"
                                                                                     Foreground="DarkOrange"
-                                                                                    ToolTip="Спортсмен дисквалифицирован"
+                                                                                    ToolTip="Снять дисквалификацию"
+                                                                                    Cursor="Hand"
                                                                                     Height="20" Width="20">
                                                                                         <materialDesign:PackIcon.Visibility>
                                                                                             <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
@@ -295,6 +300,11 @@
                                                                                                 <Binding Path="WrestlerInRed.IsDisqualified" />
                                                                                             </MultiBinding>
                                                                                         </materialDesign:PackIcon.Visibility>
+                                                                                        <materialDesign:PackIcon.InputBindings>
+                                                                                            <MouseBinding Gesture="LeftClick"
+                                                                                                Command="{Binding ElementName=RootControl, Path=DataContext.ClearDisqualifyCommand}"
+                                                                                                CommandParameter="{Binding WrestlerInRed}" />
+                                                                                        </materialDesign:PackIcon.InputBindings>
                                                                                     </materialDesign:PackIcon>
                                                                                 </Grid>
 
@@ -323,7 +333,8 @@
                                                                                     VerticalAlignment="Center"
                                                                                     Margin="0" Padding="0"
                                                                                     Foreground="DarkOrange"
-                                                                                    ToolTip="Спортсмен дисквалифицирован"
+                                                                                    ToolTip="Снять дисквалификацию"
+                                                                                    Cursor="Hand"
                                                                                     Height="20" Width="20">
                                                                                         <materialDesign:PackIcon.Visibility>
                                                                                             <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
@@ -331,6 +342,11 @@
                                                                                                 <Binding Path="WrestlerInBlue.IsDisqualified" />
                                                                                             </MultiBinding>
                                                                                         </materialDesign:PackIcon.Visibility>
+                                                                                        <materialDesign:PackIcon.InputBindings>
+                                                                                            <MouseBinding Gesture="LeftClick"
+                                                                                                Command="{Binding ElementName=RootControl, Path=DataContext.ClearDisqualifyCommand}"
+                                                                                                CommandParameter="{Binding WrestlerInBlue}" />
+                                                                                        </materialDesign:PackIcon.InputBindings>
                                                                                     </materialDesign:PackIcon>
                                                                                 </Grid>
 
@@ -338,15 +354,23 @@
                                                                                     Visibility="{Binding IsMutualDisqualify, Converter={StaticResource BoolToVis}}"
                                                                                     VerticalAlignment="Center"
                                                                                     HorizontalAlignment="Center"
-                                                                                    ToolTip="Обоюдная дисквалификация"
                                                                                     Margin="0">
+                                                                                    <!-- Match-level mutual DSQ marker — click → revert match. -->
                                                                                     <materialDesign:PackIcon
                                                                                     Kind="CloseOctagon"
                                                                                     HorizontalAlignment="Center"
                                                                                     VerticalAlignment="Center"
                                                                                     Margin="0" Padding="0"
                                                                                     Foreground="DarkOrange"
-                                                                                    Height="20" Width="20" />
+                                                                                    ToolTip="Снять обоюдную дисквалификацию"
+                                                                                    Cursor="Hand"
+                                                                                    Height="20" Width="20">
+                                                                                        <materialDesign:PackIcon.InputBindings>
+                                                                                            <MouseBinding Gesture="LeftClick"
+                                                                                                Command="{Binding ElementName=RootControl, Path=DataContext.ClearDisqualifyCommand}"
+                                                                                                CommandParameter="{Binding WrestlerInRed}" />
+                                                                                        </materialDesign:PackIcon.InputBindings>
+                                                                                    </materialDesign:PackIcon>
                                                                                 </Grid>
 
                                                                                 <StackPanel Grid.Row="0" Grid.Column="5"
@@ -367,7 +391,7 @@
                                                                                     </Button>
 
                                                                                     <Button
-                                                                                    Visibility="{Binding IsMatchCompleted, Converter={StaticResource BoolToVis}}"
+                                                                                    Visibility="{Binding HasViewableResults, Converter={StaticResource BoolToVis}}"
                                                                                     CommandParameter="{Binding }"
                                                                                     Margin="5" Padding="5,0,5,0"
                                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.OpenMatchCommand}"

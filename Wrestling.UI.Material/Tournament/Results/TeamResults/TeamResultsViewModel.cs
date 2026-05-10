@@ -20,7 +20,7 @@ namespace Wrestling.UI.Material.Tournament.Results.TeamResults
         {
             new TeamResultsSystemItem("OlympicOrderer", "Олимпийская"),
             new TeamResultsSystemItem("MedalsOrderer", "По количеству медалей"),
-            new TeamResultsSystemItem("PointsOrderer", "Rosbos")
+            new TeamResultsSystemItem("PointsOrderer", "По квалификационным баллам")
         };
 
         private TeamResultsSystemItem _selectedSystem;

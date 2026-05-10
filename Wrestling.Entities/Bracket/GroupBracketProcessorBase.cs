@@ -111,6 +111,37 @@ namespace Wrestling.Entities.Bracket
                 if (wrestlingMatch.WrestlerInRed != null) wrestlingMatch.WrestlerInRed.IsDisqualified = true;
                 if (wrestlingMatch.WrestlerInBlue != null) wrestlingMatch.WrestlerInBlue.IsDisqualified = true;
             }
+            // Mutual no-show (UWW «обоюдная неявка»): same outcome as mutual
+            // DSQ — both placeless, 0 CP — but UI shows «Неявка» badge.
+            else if (winType == MatchWinTypeEnum.MutualNoShow)
+            {
+                if (wrestlingMatch.WrestlerInRed != null && !wrestlingMatch.WrestlerInRed.IsDisqualified)
+                    wrestlingMatch.WrestlerInRed.IsNoShow = true;
+                if (wrestlingMatch.WrestlerInBlue != null && !wrestlingMatch.WrestlerInBlue.IsDisqualified)
+                    wrestlingMatch.WrestlerInBlue.IsNoShow = true;
+            }
+            // Single DSQ (UWW): the loser is disqualified from the tournament
+            // — FinalPlace stays null, IsDisqualified is set so UI shows the
+            // «DSQ» badge and team scoring contributes 0. Mirrors mutual-DSQ
+            // semantics for the loser side only; the winner advances.
+            // WarningsLimit (3 предупреждения, VCA 5:0) shares the same DSQ
+            // semantics — UWW classifies it as disqualification by warnings.
+            else if ((winType == MatchWinTypeEnum.DisqualifyWin || winType == MatchWinTypeEnum.WarningsLimit)
+                     && isRedWon.HasValue)
+            {
+                var dsqLoser = isRedWon.Value ? wrestlingMatch.WrestlerInBlue : wrestlingMatch.WrestlerInRed;
+                if (dsqLoser != null) dsqLoser.IsDisqualified = true;
+            }
+            // NoShow (UWW): the absent wrestler is placeless with «Неявка»
+            // badge and 0 CP, same outcome as DSQ but a different label.
+            // Suppressed when the loser is already IsDisqualified — cascaded
+            // NoShow matches against a previously-DSQ'd wrestler shouldn't
+            // overwrite the DSQ badge.
+            else if (winType == MatchWinTypeEnum.NoShow && isRedWon.HasValue)
+            {
+                var noShowLoser = isRedWon.Value ? wrestlingMatch.WrestlerInBlue : wrestlingMatch.WrestlerInRed;
+                if (noShowLoser != null && !noShowLoser.IsDisqualified) noShowLoser.IsNoShow = true;
+            }
 
             ProceedToNextMatch(wrestlingMatch);
 
@@ -120,28 +151,37 @@ namespace Wrestling.Entities.Bracket
                 ProceedToAdditionalBracket(wrestlingMatch);
             }
 
-            // If wintype is Disqualification or NoShow we should set results of this wrestler matches automatically
-            if (winType == MatchWinTypeEnum.DisqualifyWin || winType == MatchWinTypeEnum.NoShow)
+            // If wintype is Disqualification, WarningsLimit, or NoShow we
+            // should set results of this wrestler matches automatically
+            if (winType == MatchWinTypeEnum.DisqualifyWin
+                || winType == MatchWinTypeEnum.WarningsLimit
+                || winType == MatchWinTypeEnum.NoShow)
             {
                 var looser = isRedWon.Value ? wrestlingMatch.WrestlerInBlue : wrestlingMatch.WrestlerInRed;
 
-                CompleteFullLooserMatches(looser, winType);
+                // UWW: a DSQ'd wrestler does not contest remaining matches —
+                // they're recorded as NoShow losses. Even when the originating
+                // event was DisqualifyWin, downstream auto-completions are
+                // NoShow (the wrestler simply doesn't appear).
+                CompleteFullLooserMatches(looser, MatchWinTypeEnum.NoShow);
                 CompleteWinnerMatchesIfOtherWrestlersDisqualOrNoShow(isRedWon.Value
                     ? wrestlingMatch.WrestlerInRed
                     : wrestlingMatch.WrestlerInBlue);
             }
-            else if (winType == MatchWinTypeEnum.MutualDisqualify)
+            else if (winType == MatchWinTypeEnum.MutualDisqualify
+                     || winType == MatchWinTypeEnum.MutualNoShow
+                     || winType == MatchWinTypeEnum.MutualInjury)
             {
-                // Round-robin (M4): cascade DisqualifyWin to BOTH wrestlers'
-                // remaining pending matches. Opponents get +5 CP — they did
-                // not contribute to the brutality. In Olympic (M1), the only
+                // Round-robin (M4): cascade NoShow to BOTH wrestlers' remaining
+                // pending matches. Opponents get +5 CP — they did not
+                // contribute to the brutality. In Olympic (M1), the only
                 // pending matches for these two are downstream and unfilled,
                 // so this loop is a no-op there; M1 propagation is handled
                 // by ProceedToNextMatch via the sibling check.
                 if (wrestlingMatch.WrestlerInRed != null)
-                    CompleteFullLooserMatches(wrestlingMatch.WrestlerInRed, MatchWinTypeEnum.DisqualifyWin);
+                    CompleteFullLooserMatches(wrestlingMatch.WrestlerInRed, MatchWinTypeEnum.NoShow);
                 if (wrestlingMatch.WrestlerInBlue != null)
-                    CompleteFullLooserMatches(wrestlingMatch.WrestlerInBlue, MatchWinTypeEnum.DisqualifyWin);
+                    CompleteFullLooserMatches(wrestlingMatch.WrestlerInBlue, MatchWinTypeEnum.NoShow);
             }
 
             SetMatchesCount();
@@ -189,6 +229,69 @@ namespace Wrestling.Entities.Bracket
             }
         }
 
+        // Manual DSQ-clear path used by the bracket UI when an operator clicks
+        // the orange-X icon next to a wrestler. Strategy:
+        //   1. Find the originating mutual-DSQ match (the one whose
+        //      CompleteMatch flipped IsDisqualified=true on this wrestler).
+        //      That's any match in this bracket with WinType=MutualDisqualify
+        //      containing the wrestler.
+        //   2. Found → call RevertMatch on it. Standard mutual-DSQ revert path
+        //      clears IsDisqualified on both wrestlers and frees the match
+        //      cell (Status=Pending, WinType=null).
+        //   3. Not found → bracket may have been regenerated since the DSQ
+        //      was set, or processor-specific state may hide it; ask the
+        //      override and otherwise just clear the flag as a fallback so
+        //      the wrestler can rejoin downstream play.
+        public virtual void ClearWrestlerDisqualify(Wrestler wrestler)
+        {
+            if (wrestler == null || !wrestler.IsDisqualified) return;
+            if (Group?.Bracket == null)
+            {
+                wrestler.IsDisqualified = false;
+                return;
+            }
+
+            var mutualMatch = Group.Bracket.Rounds
+                .SelectMany(r => r.RoundMatches)
+                .FirstOrDefault(m => m.WinType == MatchWinTypeEnum.MutualDisqualify
+                                     && (m.WrestlerInRed.SameAs(wrestler) || m.WrestlerInBlue.SameAs(wrestler)));
+
+            if (mutualMatch != null)
+            {
+                RevertMatch(mutualMatch);
+                return;
+            }
+
+            // Subclass hook for processors with more elaborate state — e.g.
+            // OlympicWithConsolationFromFinalists rebuilds the SF after mutual
+            // DSQ, leaving the original match's WinType cleared. The override
+            // returns the rebuilt match so we can run the two-step revert.
+            var indirect = FindIndirectMutualDisqualifyMatch(wrestler);
+            if (indirect != null)
+            {
+                // Two-step: first revert un-rebuilds (override hook in the
+                // subclass restores the mutual-DSQ Completed state); the
+                // second revert runs the standard mutual-DSQ revert path.
+                RevertMatch(indirect);
+                if (indirect.WinType == MatchWinTypeEnum.MutualDisqualify)
+                {
+                    RevertMatch(indirect);
+                }
+                return;
+            }
+
+            // No match left to revert (e.g. bracket regenerated). Just clear
+            // the flag — graceful degradation for «stuck» DSQ markers.
+            wrestler.IsDisqualified = false;
+        }
+
+        // Override to surface a match that DOES NOT currently have
+        // WinType=MutualDisqualify but was the origin of a wrestler's DSQ
+        // flag (e.g. a SF whose WinType was cleared by an auto-rebuild).
+        // Returning the match enables a two-step revert in
+        // ClearWrestlerDisqualify.
+        protected virtual WrestlingMatch FindIndirectMutualDisqualifyMatch(Wrestler wrestler) => null;
+
         public virtual bool CanMatchBeReverted(WrestlingMatch wrestlingMatch)
         {
             // Match can be reverted if it is not Pending, WinType is set and it is not free win
@@ -218,6 +321,29 @@ namespace Wrestling.Entities.Bracket
             {
                 if (wrestlingMatch.WrestlerInRed != null) wrestlingMatch.WrestlerInRed.IsDisqualified = false;
                 if (wrestlingMatch.WrestlerInBlue != null) wrestlingMatch.WrestlerInBlue.IsDisqualified = false;
+            }
+            // Revert of mutual no-show: clear IsNoShow on both wrestlers.
+            else if (wrestlingMatch.WinType == MatchWinTypeEnum.MutualNoShow)
+            {
+                if (wrestlingMatch.WrestlerInRed != null) wrestlingMatch.WrestlerInRed.IsNoShow = false;
+                if (wrestlingMatch.WrestlerInBlue != null) wrestlingMatch.WrestlerInBlue.IsNoShow = false;
+            }
+            // Revert of single DSQ / WarningsLimit: clear the loser's
+            // IsDisqualified flag. Cascaded matches against the same wrestler
+            // keep their state — operator reverts those individually if needed.
+            else if ((wrestlingMatch.WinType == MatchWinTypeEnum.DisqualifyWin
+                      || wrestlingMatch.WinType == MatchWinTypeEnum.WarningsLimit)
+                     && wrestlingMatch.IsRedWon.HasValue)
+            {
+                var dsqLoser = wrestlingMatch.IsRedWon.Value ? wrestlingMatch.WrestlerInBlue : wrestlingMatch.WrestlerInRed;
+                if (dsqLoser != null) dsqLoser.IsDisqualified = false;
+            }
+            // Revert of NoShow: clear the loser's IsNoShow flag. Same caveat
+            // as DSQ revert — cascaded NoShow matches stay completed.
+            else if (wrestlingMatch.WinType == MatchWinTypeEnum.NoShow && wrestlingMatch.IsRedWon.HasValue)
+            {
+                var noShowLoser = wrestlingMatch.IsRedWon.Value ? wrestlingMatch.WrestlerInBlue : wrestlingMatch.WrestlerInRed;
+                if (noShowLoser != null) noShowLoser.IsNoShow = false;
             }
 
             if (!string.IsNullOrEmpty(wrestlingMatch.NextMatchBracketFullNumber) && wrestlingMatch.IsRedWon.HasValue)
@@ -336,7 +462,9 @@ namespace Wrestling.Entities.Bracket
             // them. Otherwise leave nextMatch pending; the sibling's own
             // ProceedToNextMatch will detect this via the symmetric branch
             // below when it eventually completes.
-            if (wrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify)
+            if (wrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify
+                || wrestlingMatch.WinType == MatchWinTypeEnum.MutualNoShow
+                || wrestlingMatch.WinType == MatchWinTypeEnum.MutualInjury)
             {
                 var sibling = FindSiblingInBracket(wrestlingMatch);
                 if (sibling != null && sibling.Status == MatchStatusEnum.Completed && sibling.IsRedWon.HasValue)
@@ -359,11 +487,14 @@ namespace Wrestling.Entities.Bracket
                 nextMatch.WrestlerInRed = winner;
             }
 
-            // M1 reverse direction: if our sibling source was a mutual DSQ,
-            // the other slot in nextMatch will never be filled — auto-FreeWin
-            // for the wrestler we just placed.
+            // M1 reverse direction: if our sibling source was a mutual
+            // DSQ / NoShow / Injury, the other slot in nextMatch will never
+            // be filled — auto-FreeWin for the wrestler we just placed.
             var sib = FindSiblingInBracket(wrestlingMatch);
-            if (sib != null && sib.Status == MatchStatusEnum.Completed && sib.WinType == MatchWinTypeEnum.MutualDisqualify)
+            if (sib != null && sib.Status == MatchStatusEnum.Completed
+                && (sib.WinType == MatchWinTypeEnum.MutualDisqualify
+                    || sib.WinType == MatchWinTypeEnum.MutualNoShow
+                    || sib.WinType == MatchWinTypeEnum.MutualInjury))
             {
                 var isRedTheWinner = nextMatch.WrestlerInRed != null && nextMatch.WrestlerInRed.SameAs(winner);
                 CompleteMatch(nextMatch, isRedTheWinner, MatchWinTypeEnum.FreeWin);

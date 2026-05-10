@@ -223,6 +223,7 @@ namespace Wrestling.Entities
                 _wrestlerInRed = value;
                 OnPropertyChanged("WrestlerInRed");
                 OnPropertyChanged("IsMatchCanStart");
+                OnPropertyChanged("HasViewableResults");
             }
         }
 
@@ -234,6 +235,7 @@ namespace Wrestling.Entities
                 _wrestlerInBlue = value;
                 OnPropertyChanged("WrestlerInBlue");
                 OnPropertyChanged("IsMatchCanStart");
+                OnPropertyChanged("HasViewableResults");
             }
         }
 
@@ -326,11 +328,20 @@ namespace Wrestling.Entities
                 _status = value;
                 OnPropertyChanged("Status");
                 OnPropertyChanged("IsMatchCanStart");
+                OnPropertyChanged("IsMatchCompleted");
+                OnPropertyChanged("HasViewableResults");
             }
         }
 
         public bool IsMatchCompleted => _status == MatchStatusEnum.Completed;
         public bool IsMutualDisqualify => _winType == MatchWinTypeEnum.MutualDisqualify;
+
+        // Auto-FreeWin'd empty consolation slots (no wrestlers, no winner) are
+        // Completed but have nothing to show — opening them throws because
+        // MatchResultsViewModel requires IsRedWon for non-mutual-DSQ wins. Use
+        // this flag to gate the «open results» button in the bracket UI.
+        public bool HasViewableResults => _status == MatchStatusEnum.Completed
+                                          && (_wrestlerInRed != null || _wrestlerInBlue != null);
 
         // Monotonic per-match counter. Bumped exactly once on every state
         // transition the importer propagates (Pending→Completed by ApproveAsync,

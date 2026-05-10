@@ -7,13 +7,9 @@ using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
-using Wrestling.Providers;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Tournament;
-using Wrestling.UI.Material.Tournament.Progress.Brackets;
-using Wrestling.UI.Material.Tournament.Progress.Schedule;
-using Wrestling.UI.Material.Tournament.Results;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Match
@@ -332,6 +328,17 @@ namespace Wrestling.UI.Material.Match
             {
                 _winType = value;
 
+                // Mutual outcomes have no winner — drop any previously-picked
+                // side so the yellow «ПОБЕДИТЕЛЬ» badge disappears and
+                // ApproveAsync's (!Winner.HasValue && !isMutual) gate sees a
+                // clean state.
+                if ((value == MatchWinTypeEnum.MutualDisqualify
+                     || value == MatchWinTypeEnum.MutualNoShow
+                     || value == MatchWinTypeEnum.MutualInjury) && Winner != null)
+                {
+                    Winner = null;
+                }
+
                 OnPropertyChanged("WinType");
                 OnPropertyChanged("IsWinTypeSet");
             }
@@ -346,30 +353,6 @@ namespace Wrestling.UI.Material.Match
                 _isFormEnabled = value;
 
                 OnPropertyChanged("IsFormEnabled");
-            }
-        }
-
-        private bool _isNoteExpanded;
-        public bool IsNoteExpanded
-        {
-            get { return _isNoteExpanded; }
-            set
-            {
-                _isNoteExpanded = value;
-
-                OnPropertyChanged("IsNoteExpanded");
-            }
-        }
-
-        private bool _isActionsExpanded;
-        public bool IsActionsExpanded
-        {
-            get { return _isActionsExpanded; }
-            set
-            {
-                _isActionsExpanded = value;
-
-                OnPropertyChanged("IsActionsExpanded");
             }
         }
 
@@ -432,12 +415,15 @@ namespace Wrestling.UI.Material.Match
             var availableWinTypes = new List<MatchWinTypeEnum>();
             
             if (IsTusheWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.Tushe);
-            
+
             availableWinTypes.Add(MatchWinTypeEnum.Injury);
-            
-            if (IsWarningsLimitWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.WarningsLimit);
-            
+            availableWinTypes.Add(MatchWinTypeEnum.MutualInjury);
+
+            // WarningsLimit (3 предупреждения) is NOT in the manual list — it
+            // is applied automatically when a wrestler accumulates 3 warnings.
+
             if (IsNoShowWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.NoShow);
+            if (IsNoShowWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.MutualNoShow);
             if (IsDisqualifyWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.DisqualifyWin);
             if (IsDisqualifyWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.MutualDisqualify);
 
@@ -489,6 +475,11 @@ namespace Wrestling.UI.Material.Match
         {
             if (WrestlingMatch.IsMatchCompleted) return;
             if (string.IsNullOrEmpty(winner)) return;
+            // Mutual outcomes: neither side can be marked the winner —
+            // finalize via ApproveAsync only.
+            if (WinType == MatchWinTypeEnum.MutualDisqualify
+                || WinType == MatchWinTypeEnum.MutualNoShow
+                || WinType == MatchWinTypeEnum.MutualInjury) return;
 
             if (winner == "Red")
             {
@@ -525,7 +516,7 @@ namespace Wrestling.UI.Material.Match
         {
             if (Dialog.ShowMessageBox(this,
                     "Результат матча будет анулирован и сетка перестроена! Вы уверены?",
-                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             if (DataContext.Group?.Bracket != null)
             {
@@ -566,7 +557,10 @@ namespace Wrestling.UI.Material.Match
 
         private async Task ApproveAsync()
         {
-            var isMutual = WinType == MatchWinTypeEnum.MutualDisqualify;
+            // No-winner outcomes — finalize without picking a wrestler.
+            var isMutual = WinType == MatchWinTypeEnum.MutualDisqualify
+                           || WinType == MatchWinTypeEnum.MutualNoShow
+                           || WinType == MatchWinTypeEnum.MutualInjury;
             if (WrestlingMatch == null || WrestlingMatch.Status != MatchStatusEnum.Pending || !WinType.HasValue
                 || (!Winner.HasValue && !isMutual))
             {
@@ -578,7 +572,13 @@ namespace Wrestling.UI.Material.Match
 
             if (WrestlingMatch.StartDateTime == null)
             {
-                WrestlingMatch.StartDateTime = Tournament?.StartDate ?? DateTime.Now;
+                // Fallback for matches completed without ever starting the
+                // timer (NoShow, manual completion after revert, auto-VCA
+                // before Start was clicked). Use DateTime.Now so the match
+                // appears at the top of «Последние результаты» — falling back
+                // to Tournament.StartDate would stamp it at the morning of
+                // the competition day and push it past the top-10 cutoff.
+                WrestlingMatch.StartDateTime = DateTime.Now;
             }
 
             WrestlingMatch.IsRedWon = isMutual ? (bool?)null : Winner == WrestlingMatch.WrestlerInRed.ID;
@@ -616,11 +616,14 @@ namespace Wrestling.UI.Material.Match
 
         private void CompleteMatch()
         {
-            // Mutual DSQ: WinType is set, IsRedWon is null — that's the
-            // canonical «no winner» encoding (see GroupBracketProcessorBase).
-            if (!WrestlingMatch.WinType.HasValue) throw new InvalidOperationException("Completed match must have IsRedWon and WinType set (or WinType=MutualDisqualify with IsRedWon=null).");
-            if (!WrestlingMatch.IsRedWon.HasValue && WrestlingMatch.WinType != MatchWinTypeEnum.MutualDisqualify)
-                throw new InvalidOperationException("Completed match must have IsRedWon and WinType set (or WinType=MutualDisqualify with IsRedWon=null).");
+            // Mutual DSQ / NoShow / Injury: WinType is set, IsRedWon is null —
+            // that's the canonical «no winner» encoding (see GroupBracketProcessorBase).
+            if (!WrestlingMatch.WinType.HasValue) throw new InvalidOperationException("Completed match must have WinType set.");
+            var isMutual = WrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify
+                           || WrestlingMatch.WinType == MatchWinTypeEnum.MutualNoShow
+                           || WrestlingMatch.WinType == MatchWinTypeEnum.MutualInjury;
+            if (!WrestlingMatch.IsRedWon.HasValue && !isMutual)
+                throw new InvalidOperationException("Completed match must have IsRedWon set (or be a Mutual* outcome).");
 
             if (DataContext.Tournament != null)
             {
@@ -708,9 +711,12 @@ namespace Wrestling.UI.Material.Match
             if (WrestlingMatch.Status == MatchStatusEnum.Completed)
             {
                 if (!WrestlingMatch.WinType.HasValue) throw new InvalidOperationException("Completed match must have WinType set.");
-                // Mutual DSQ: completed without winner. Other completion types must have IsRedWon.
-                if (!WrestlingMatch.IsRedWon.HasValue && WrestlingMatch.WinType != MatchWinTypeEnum.MutualDisqualify)
-                    throw new InvalidOperationException("Completed match must have IsRedWon and WinType set (or WinType=MutualDisqualify with IsRedWon=null).");
+                // Mutual DSQ / NoShow / Injury: completed without winner. Other completion types must have IsRedWon.
+                var initIsMutual = WrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify
+                                   || WrestlingMatch.WinType == MatchWinTypeEnum.MutualNoShow
+                                   || WrestlingMatch.WinType == MatchWinTypeEnum.MutualInjury;
+                if (!WrestlingMatch.IsRedWon.HasValue && !initIsMutual)
+                    throw new InvalidOperationException("Completed match must have IsRedWon set (or be a Mutual* outcome).");
 
                 WinType = WrestlingMatch.WinType.Value;
 
@@ -731,26 +737,29 @@ namespace Wrestling.UI.Material.Match
                 return;
             }
             
-            // If match not started select Tushe by default
-            if (!IsMatchStarted)
-            {
-                WinType = MatchWinTypeEnum.Tushe;
-                return;
-            }
-            
-            // Check if it is 3 warnings win
-            if (WrestlingMatch.WarningsNumberRed == 3)
+            // 3 warnings (VCA 5:0) takes precedence over the «match not
+            // started → Tushe» default — the auto-trigger from MatchControl
+            // can fire before the timer was ever started, so checking
+            // IsMatchStarted first would mask it. Use >= so an over-count
+            // (e.g. 4) still resolves correctly.
+            if (WrestlingMatch.WarningsNumberRed >= 3 && WrestlingMatch.WrestlerInBlue != null)
             {
                 Winner = WrestlingMatch.WrestlerInBlue.ID;
                 WinType = MatchWinTypeEnum.WarningsLimit;
                 return;
             }
-            
-            // Check if it is 3 warnings win
-            if (WrestlingMatch.WarningsNumberBlue == 3)
+
+            if (WrestlingMatch.WarningsNumberBlue >= 3 && WrestlingMatch.WrestlerInRed != null)
             {
                 Winner = WrestlingMatch.WrestlerInRed.ID;
                 WinType = MatchWinTypeEnum.WarningsLimit;
+                return;
+            }
+
+            // If match not started select Tushe by default
+            if (!IsMatchStarted)
+            {
+                WinType = MatchWinTypeEnum.Tushe;
                 return;
             }
 

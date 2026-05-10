@@ -184,7 +184,7 @@ public class MutualDisqualifyTests
     // ---------- M4: Round-robin ----------
 
     [Fact]
-    public void RoundRobin_MutualDsq_cascades_DisqualifyWin_to_both_wrestlers_other_matches()
+    public void RoundRobin_MutualDsq_cascades_NoShow_to_both_wrestlers_other_matches()
     {
         var group = TestHelpers.MakeGroup(4);
         var t = TestHelpers.MakeTournament(group);
@@ -199,13 +199,14 @@ public class MutualDisqualifyTests
 
         proc.CompleteMatch(mutualMatch, null, MatchWinTypeEnum.MutualDisqualify);
 
-        // All other matches involving A or B should be auto-completed as DisqualifyWin
+        // All other matches involving A or B should be auto-completed as NoShow
+        // — UWW: a DSQ'd wrestler doesn't appear for remaining matches.
         var aOrBMatches = allMatches
             .Where(m => m != mutualMatch && (m.WrestlerInRed!.SameAs(a) || m.WrestlerInBlue!.SameAs(a)
                                             || m.WrestlerInRed.SameAs(b) || m.WrestlerInBlue.SameAs(b)))
             .ToList();
         aOrBMatches.Should().NotBeEmpty();
-        aOrBMatches.Should().OnlyContain(m => m.Status == MatchStatusEnum.Completed && m.WinType == MatchWinTypeEnum.DisqualifyWin);
+        aOrBMatches.Should().OnlyContain(m => m.Status == MatchStatusEnum.Completed && m.WinType == MatchWinTypeEnum.NoShow);
     }
 
     [Fact]
@@ -381,6 +382,507 @@ public class MutualDisqualifyTests
         red!.IsDisqualified.Should().BeTrue();
         blue!.IsDisqualified.Should().BeTrue();
         qf1.IsRedWon.Should().BeNull();
+    }
+
+    // ---------- ConsolationFromFinalists: SF mutual DSQ ----------
+
+    // UWW: when both SF wrestlers are mutually DSQ'd, the QF losers play
+    // a rematch in the same SF slot. The bracket must remain playable.
+    [Fact]
+    public void ConsolationFinalists_MutualDsq_in_SF_rebuilds_SF_with_QF_losers()
+    {
+        var group = TestHelpers.MakeGroup(8);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        // Drive the four QFs with red winning each.
+        var qfs = group.Bracket.Rounds[0].RoundMatches.ToList();
+        foreach (var qf in qfs) proc.CompleteMatch(qf, true, MatchWinTypeEnum.PointsWin);
+
+        var sfRound = group.Bracket.Rounds[1];
+        var sf1 = sfRound.RoundMatches[0];
+        // QF losers feeding sf1 (the wrestlers who lost in QFs whose
+        // NextMatchBracketFullNumber points to sf1).
+        var sf1Sources = qfs.Where(q => q.NextMatchBracketFullNumber == sf1.BracketFullNumber).ToList();
+        var qfLoser1 = sf1Sources[0].IsRedWon!.Value ? sf1Sources[0].WrestlerInBlue : sf1Sources[0].WrestlerInRed;
+        var qfLoser2 = sf1Sources[1].IsRedWon!.Value ? sf1Sources[1].WrestlerInBlue : sf1Sources[1].WrestlerInRed;
+        var origSf1Red = sf1.WrestlerInRed;
+        var origSf1Blue = sf1.WrestlerInBlue;
+
+        // Mutual DSQ in SF1.
+        proc.CompleteMatch(sf1, null, MatchWinTypeEnum.MutualDisqualify);
+
+        // SF1 must now be playable: Status=Pending, WinType cleared, wrestlers
+        // replaced with the two QF losers.
+        sf1.Status.Should().Be(MatchStatusEnum.Pending);
+        sf1.WinType.Should().BeNull();
+        sf1.IsRedWon.Should().BeNull();
+        new[] { sf1.WrestlerInRed, sf1.WrestlerInBlue }
+            .Should().BeEquivalentTo(new[] { qfLoser1, qfLoser2 });
+
+        // Original SF wrestlers keep IsDisqualified=true.
+        origSf1Red!.IsDisqualified.Should().BeTrue();
+        origSf1Blue!.IsDisqualified.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ConsolationFinalists_MutualDsq_in_SF_then_SF_replay_advances_winner_to_final()
+    {
+        var group = TestHelpers.MakeGroup(8);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var qfs = group.Bracket.Rounds[0].RoundMatches.ToList();
+        foreach (var qf in qfs) proc.CompleteMatch(qf, true, MatchWinTypeEnum.PointsWin);
+
+        var sf1 = group.Bracket.Rounds[1].RoundMatches[0];
+        var sf2 = group.Bracket.Rounds[1].RoundMatches[1];
+
+        // Mutual DSQ on SF1 → rebuilt with QF losers. Replay it normally.
+        proc.CompleteMatch(sf1, null, MatchWinTypeEnum.MutualDisqualify);
+        var sf1NewRedWinner = sf1.WrestlerInRed;
+        proc.CompleteMatch(sf1, true, MatchWinTypeEnum.PointsWin);
+
+        // Complete SF2 normally so the bracket reaches the final.
+        proc.CompleteMatch(sf2, true, MatchWinTypeEnum.PointsWin);
+        var sf2Winner = sf2.WrestlerInRed;
+
+        var finalMatch = group.Bracket.Rounds[2].RoundMatches[0];
+        new[] { finalMatch.WrestlerInRed, finalMatch.WrestlerInBlue }
+            .Should().Contain(sf1NewRedWinner)
+            .And.Contain(sf2Winner);
+    }
+
+    [Fact]
+    public void ConsolationFinalists_RebuiltSF_can_be_reverted_back_to_mutualDsq_state()
+    {
+        var group = TestHelpers.MakeGroup(8);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var qfs = group.Bracket.Rounds[0].RoundMatches.ToList();
+        foreach (var qf in qfs) proc.CompleteMatch(qf, true, MatchWinTypeEnum.PointsWin);
+
+        var sf1 = group.Bracket.Rounds[1].RoundMatches[0];
+        var origSf1Red = sf1.WrestlerInRed;
+        var origSf1Blue = sf1.WrestlerInBlue;
+
+        proc.CompleteMatch(sf1, null, MatchWinTypeEnum.MutualDisqualify);
+
+        // Rebuilt SF1 must be revertable in its Pending state.
+        proc.CanMatchBeReverted(sf1).Should().BeTrue();
+        proc.RevertMatch(sf1);
+
+        // After revert, SF1 is back in the original mutual-DSQ Completed state.
+        sf1.Status.Should().Be(MatchStatusEnum.Completed);
+        sf1.WinType.Should().Be(MatchWinTypeEnum.MutualDisqualify);
+        sf1.IsRedWon.Should().BeNull();
+        sf1.WrestlerInRed.Should().Be(origSf1Red);
+        sf1.WrestlerInBlue.Should().Be(origSf1Blue);
+        // IsDisqualified flags persist — second revert clears them via
+        // standard mutual-DSQ revert path.
+        origSf1Red!.IsDisqualified.Should().BeTrue();
+        origSf1Blue!.IsDisqualified.Should().BeTrue();
+
+        // Standard revert from mutual-DSQ Completed clears the DSQ flags.
+        proc.RevertMatch(sf1);
+        origSf1Red.IsDisqualified.Should().BeFalse();
+        origSf1Blue.IsDisqualified.Should().BeFalse();
+        sf1.Status.Should().Be(MatchStatusEnum.Pending);
+        sf1.WinType.Should().BeNull();
+    }
+
+    [Fact]
+    public void ConsolationFinalists_QF_revert_blocked_while_downstream_SF_is_rebuilt()
+    {
+        var group = TestHelpers.MakeGroup(8);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var qfs = group.Bracket.Rounds[0].RoundMatches.ToList();
+        foreach (var qf in qfs) proc.CompleteMatch(qf, true, MatchWinTypeEnum.PointsWin);
+
+        var sf1 = group.Bracket.Rounds[1].RoundMatches[0];
+        proc.CompleteMatch(sf1, null, MatchWinTypeEnum.MutualDisqualify);
+
+        // The QF that fed sf1 must NOT be revertable while sf1 is still in
+        // rebuilt-Pending state — otherwise base revert would corrupt sf1.
+        var qfFeedingSf1 = qfs.First(q => q.NextMatchBracketFullNumber == sf1.BracketFullNumber);
+        proc.CanMatchBeReverted(qfFeedingSf1).Should().BeFalse();
+
+        // QFs feeding the OTHER (untouched) SF stay revertable.
+        var sf2 = group.Bracket.Rounds[1].RoundMatches[1];
+        var qfFeedingSf2 = qfs.First(q => q.NextMatchBracketFullNumber == sf2.BracketFullNumber);
+        proc.CanMatchBeReverted(qfFeedingSf2).Should().BeTrue();
+    }
+
+    // ---------- ClearWrestlerDisqualify: manual DSQ-clear from bracket UI ----------
+
+    [Fact]
+    public void ClearWrestlerDisqualify_with_direct_mutual_DSQ_match_reverts_it()
+    {
+        var group = TestHelpers.MakeGroup(4);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new RoundRobinGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var match = group.Bracket.Rounds[0].RoundMatches[0];
+        var red = match.WrestlerInRed;
+        var blue = match.WrestlerInBlue;
+        proc.CompleteMatch(match, null, MatchWinTypeEnum.MutualDisqualify);
+        red!.IsDisqualified.Should().BeTrue();
+        blue!.IsDisqualified.Should().BeTrue();
+
+        proc.ClearWrestlerDisqualify(red);
+
+        // Match itself reverted, flags cleared on both wrestlers (single revert
+        // of mutual DSQ clears both via base RevertMatch).
+        red.IsDisqualified.Should().BeFalse();
+        blue.IsDisqualified.Should().BeFalse();
+        match.Status.Should().Be(MatchStatusEnum.Pending);
+        match.WinType.Should().BeNull();
+    }
+
+    [Fact]
+    public void ClearWrestlerDisqualify_on_rebuilt_SF_runs_two_step_revert()
+    {
+        var group = TestHelpers.MakeGroup(8);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var qfs = group.Bracket.Rounds[0].RoundMatches.ToList();
+        foreach (var qf in qfs) proc.CompleteMatch(qf, true, MatchWinTypeEnum.PointsWin);
+
+        var sf1 = group.Bracket.Rounds[1].RoundMatches[0];
+        var origRed = sf1.WrestlerInRed;
+        var origBlue = sf1.WrestlerInBlue;
+        proc.CompleteMatch(sf1, null, MatchWinTypeEnum.MutualDisqualify);
+
+        // After auto-rebuild SF1.WinType is null; the wrestler-X overlay on
+        // origRed's QF cell is what the operator clicks. ClearWrestlerDisqualify
+        // must find SF1 via FindIndirectMutualDisqualifyMatch and run the
+        // two-step revert (un-rebuild + standard mutual-DSQ revert).
+        proc.ClearWrestlerDisqualify(origRed);
+
+        origRed!.IsDisqualified.Should().BeFalse();
+        origBlue!.IsDisqualified.Should().BeFalse();
+        sf1.Status.Should().Be(MatchStatusEnum.Pending);
+        sf1.WinType.Should().BeNull();
+        sf1.WrestlerInRed.Should().Be(origRed);
+        sf1.WrestlerInBlue.Should().Be(origBlue);
+    }
+
+    [Fact]
+    public void ClearWrestlerDisqualify_with_no_originating_match_just_clears_flag()
+    {
+        // Simulates the «stuck flag» case: a wrestler ended up with
+        // IsDisqualified=true but no match in the current bracket carries the
+        // mutual-DSQ marker (e.g. bracket regenerated after the DSQ was set).
+        var group = TestHelpers.MakeGroup(4);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new RoundRobinGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var lonelyWrestler = group.Wrestlers.First();
+        lonelyWrestler.IsDisqualified = true;
+
+        proc.ClearWrestlerDisqualify(lonelyWrestler);
+
+        lonelyWrestler.IsDisqualified.Should().BeFalse();
+    }
+
+    // Regression: when one SF was already mutual-DSQ'd (and rebuilt + replayed),
+    // a subsequent mutual DSQ on the OTHER SF used to trigger the base
+    // mutual-DSQ-sibling-completed propagation, auto-FreeWin'ing the Final
+    // for the first SF's winner BEFORE the second SF rebuild could produce
+    // a real result. Final must wait for the rebuilt SF2 outcome.
+    [Fact]
+    public void ConsolationFinalists_Both_SFs_MutualDsq_does_not_auto_complete_Final()
+    {
+        var group = TestHelpers.MakeGroup(8);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var qfs = group.Bracket.Rounds[0].RoundMatches.ToList();
+        foreach (var qf in qfs) proc.CompleteMatch(qf, true, MatchWinTypeEnum.PointsWin);
+
+        var sf1 = group.Bracket.Rounds[1].RoundMatches[0];
+        var sf2 = group.Bracket.Rounds[1].RoundMatches[1];
+
+        // SF1 mutual DSQ → rebuilt with QF losers → operator plays it.
+        proc.CompleteMatch(sf1, null, MatchWinTypeEnum.MutualDisqualify);
+        proc.CompleteMatch(sf1, true, MatchWinTypeEnum.PointsWin);
+
+        // SF2 mutual DSQ → rebuild fires; Final must NOT be auto-completed
+        // for SF1's winner — it has to wait for SF2 rebuild to play out.
+        proc.CompleteMatch(sf2, null, MatchWinTypeEnum.MutualDisqualify);
+
+        var finalMatch = group.Bracket.Rounds[2].RoundMatches[0];
+        finalMatch.Status.Should().Be(MatchStatusEnum.Pending,
+            because: "Final must wait for the rebuilt SF2 to be played");
+
+        // SF2 should be in the rebuilt-Pending state, ready to play.
+        sf2.Status.Should().Be(MatchStatusEnum.Pending);
+        sf2.WinType.Should().BeNull();
+    }
+
+    // When upstream mutual DSQ leaves a consolation/bronze match with a
+    // single wrestler (the other slot can never be filled), that wrestler
+    // should auto-FreeWin — UWW expects no «hanging» pending matches that
+    // are physically impossible to play. Applies to ANY additional round
+    // (Утешение Круг 1, 2, ..., 3-е место).
+    [Fact]
+    public void ConsolationFinalists_LoadResolves_single_wrestler_AdditionalMatches_via_FreeWin()
+    {
+        // Simulate a saved bracket where an additional-round match got stuck
+        // in Pending with only one wrestler (e.g. legacy state from before
+        // the auto-FreeWin sweep was added). Load() must auto-resolve.
+        var group = TestHelpers.MakeGroup(8);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var addRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+        var bronzeRound = addRounds.Last();
+        var stuckBronze = bronzeRound.RoundMatches[0];
+        // Place a wrestler manually into one slot — leave the other empty.
+        stuckBronze.WrestlerInRed = group.Wrestlers.First();
+        stuckBronze.Status = MatchStatusEnum.Pending;
+
+        // A fresh processor instance loading the saved bracket should sweep
+        // and auto-FreeWin the stuck match.
+        var loadedProc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        loadedProc.Load(t, group);
+
+        stuckBronze.Status.Should().Be(MatchStatusEnum.Completed);
+        stuckBronze.WinType.Should().Be(MatchWinTypeEnum.FreeWin);
+        stuckBronze.IsRedWon.Should().BeTrue(because: "lone wrestler is in the red slot");
+    }
+
+    // Both feeder slots empty (every upstream feeder DSQ'd or FreeWin-solo).
+    // Once all main rounds are settled, an empty Additional match can never
+    // be filled — sweep marks it Completed with no winner so IsBracketCompleted
+    // flips true. No propagation: there's nothing to advance.
+    [Fact]
+    public void ConsolationFinalists_LoadResolves_empty_AdditionalMatches_via_NoWinner_FreeWin()
+    {
+        var group = TestHelpers.MakeGroup(8);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        // Force all main matches into Completed — simulates a tournament
+        // where the main bracket fully resolved but Additional slots ended
+        // up empty (DSQ-saturated upstream).
+        foreach (var mainMatch in group.Bracket.Rounds
+                     .Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+                     .SelectMany(r => r.RoundMatches))
+        {
+            mainMatch.Status = MatchStatusEnum.Completed;
+            mainMatch.WinType = MatchWinTypeEnum.PointsWin;
+            mainMatch.IsRedWon = true;
+        }
+
+        var addRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+        var bronzeRound = addRounds.Last();
+        var emptyBronze = bronzeRound.RoundMatches[0];
+        emptyBronze.WrestlerInRed = null;
+        emptyBronze.WrestlerInBlue = null;
+        emptyBronze.Status = MatchStatusEnum.Pending;
+
+        var loadedProc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        loadedProc.Load(t, group);
+
+        emptyBronze.Status.Should().Be(MatchStatusEnum.Completed);
+        emptyBronze.WinType.Should().Be(MatchWinTypeEnum.FreeWin);
+        emptyBronze.IsRedWon.Should().BeNull(because: "no wrestlers, no winner");
+    }
+
+    // Mid-flow guard: an empty Additional match must NOT be flagged Completed
+    // while a main-round match is still Pending. Otherwise the next
+    // ProceedToAdditionalBracket call would try to fill an already-Completed
+    // slot, corrupting the bracket. (Covers the regression introduced when
+    // empty-match resolution first landed without the all-main-completed gate.)
+    [Fact]
+    public void ConsolationFinalists_EmptyAdditional_left_alone_while_main_round_pending()
+    {
+        var group = TestHelpers.MakeGroup(8);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        // Complete all 4 QFs and only the first SF — second SF stays Pending.
+        foreach (var qf in group.Bracket.Rounds[0].RoundMatches.ToList())
+            proc.CompleteMatch(qf, true, MatchWinTypeEnum.PointsWin);
+        var sf1 = group.Bracket.Rounds[1].RoundMatches[0];
+        proc.CompleteMatch(sf1, true, MatchWinTypeEnum.PointsWin);
+
+        // After SF1, lower-bronze (BracketNumber=2) is still empty — SF2 + its
+        // upstream loser will eventually fill it. Sweep must leave it Pending.
+        var addRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+        var lowerBronze = addRounds.Last().RoundMatches[1];
+        lowerBronze.Status.Should().Be(MatchStatusEnum.Pending);
+        lowerBronze.WrestlerInRed.Should().BeNull();
+        lowerBronze.WrestlerInBlue.Should().BeNull();
+    }
+
+    // ---------- ConsolationFromFinalists: mutual DSQ in early rounds ----------
+    //
+    // Base ProceedToNextMatch handles mutual DSQ propagation in Olympic-style
+    // brackets: both DSQ'd, sibling match auto-FreeWin's the next round for
+    // its winner. The ConsolationFromFinalists processor inherits this — these
+    // tests pin down that QF/R16/R32 mutual DSQ does NOT trigger the SF-rebuild
+    // path (that's reserved for SF only) and the bracket stays playable.
+
+    [Fact]
+    public void ConsolationFinalists_MutualDsq_in_QF_marks_both_disqualified()
+    {
+        var group = TestHelpers.MakeGroup(8);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var qf1 = group.Bracket.Rounds[0].RoundMatches[0];
+        var red = qf1.WrestlerInRed;
+        var blue = qf1.WrestlerInBlue;
+
+        proc.CompleteMatch(qf1, null, MatchWinTypeEnum.MutualDisqualify);
+
+        qf1.Status.Should().Be(MatchStatusEnum.Completed);
+        qf1.WinType.Should().Be(MatchWinTypeEnum.MutualDisqualify);
+        red!.IsDisqualified.Should().BeTrue();
+        blue!.IsDisqualified.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ConsolationFinalists_MutualDsq_in_QF_when_sibling_completes_auto_FreeWins_SF()
+    {
+        var group = TestHelpers.MakeGroup(8);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var qf1 = group.Bracket.Rounds[0].RoundMatches[0];
+        var qf2 = group.Bracket.Rounds[0].RoundMatches[1];
+
+        // Mutual DSQ in qf1 first, then complete qf2 normally.
+        proc.CompleteMatch(qf1, null, MatchWinTypeEnum.MutualDisqualify);
+        proc.CompleteMatch(qf2, true, MatchWinTypeEnum.PointsWin);
+        var qf2Winner = qf2.WrestlerInRed;
+
+        // The SF that qf1 + qf2 feed into should be auto-FreeWin'd for qf2's
+        // winner — even though this is the ConsolationFromFinalists processor.
+        var sf = group.Bracket.Rounds[1].RoundMatches[0];
+        sf.Status.Should().Be(MatchStatusEnum.Completed);
+        sf.WinType.Should().Be(MatchWinTypeEnum.FreeWin);
+        var sfWinner = sf.IsRedWon!.Value ? sf.WrestlerInRed : sf.WrestlerInBlue;
+        sfWinner.Should().Be(qf2Winner);
+    }
+
+    [Fact]
+    public void ConsolationFinalists_MutualDsq_in_QF_does_NOT_trigger_SF_rebuild()
+    {
+        // Sanity check: SF rebuild is reserved for mutual DSQ AT THE SF level.
+        // QF mutual DSQ propagates through ProceedToNextMatch, not through
+        // TryRebuildSemifinalAfterMutualDsq.
+        var group = TestHelpers.MakeGroup(8);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var qf1 = group.Bracket.Rounds[0].RoundMatches[0];
+        proc.CompleteMatch(qf1, null, MatchWinTypeEnum.MutualDisqualify);
+
+        var sf = group.Bracket.Rounds[1].RoundMatches[0];
+        // SF has no wrestlers yet (qf2 sibling still pending) — and crucially
+        // it is NOT in the rebuilt-Pending state (no QF losers placed there).
+        sf.WrestlerInRed.Should().BeNull();
+        sf.WrestlerInBlue.Should().BeNull();
+        sf.WinType.Should().BeNull();
+    }
+
+    [Fact]
+    public void ConsolationFinalists_MutualDsq_in_R16_marks_both_disqualified()
+    {
+        // 16-wrestler bracket: Main rounds = R16, QF, SF, Final.
+        var group = TestHelpers.MakeGroup(16);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var mainRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+        mainRounds.Should().HaveCount(4); // R16, QF, SF, Final
+
+        var r16Match = mainRounds[0].RoundMatches[0];
+        var red = r16Match.WrestlerInRed;
+        var blue = r16Match.WrestlerInBlue;
+
+        proc.CompleteMatch(r16Match, null, MatchWinTypeEnum.MutualDisqualify);
+
+        red!.IsDisqualified.Should().BeTrue();
+        blue!.IsDisqualified.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ConsolationFinalists_MutualDsq_in_R16_when_sibling_completes_auto_FreeWins_QF()
+    {
+        var group = TestHelpers.MakeGroup(16);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var mainRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+        var r16_1 = mainRounds[0].RoundMatches[0];
+        var r16_2 = mainRounds[0].RoundMatches[1];
+
+        proc.CompleteMatch(r16_1, null, MatchWinTypeEnum.MutualDisqualify);
+        proc.CompleteMatch(r16_2, true, MatchWinTypeEnum.PointsWin);
+        var r16_2Winner = r16_2.WrestlerInRed;
+
+        // QF that r16_1 + r16_2 feed into auto-FreeWin'd for r16_2's winner.
+        var qf = mainRounds[1].RoundMatches[0];
+        qf.Status.Should().Be(MatchStatusEnum.Completed);
+        qf.WinType.Should().Be(MatchWinTypeEnum.FreeWin);
+        var qfWinner = qf.IsRedWon!.Value ? qf.WrestlerInRed : qf.WrestlerInBlue;
+        qfWinner.Should().Be(r16_2Winner);
+
+        // The SF this QF feeds into should NOT be completed yet (other QF still pending).
+        var sf = mainRounds[2].RoundMatches.First(s => s.BracketFullNumber == qf.NextMatchBracketFullNumber);
+        sf.Status.Should().Be(MatchStatusEnum.Pending);
+    }
+
+    [Fact]
+    public void ConsolationFinalists_MutualDsq_in_R16_FreeWin_QF_winner_propagates_to_SF()
+    {
+        var group = TestHelpers.MakeGroup(16);
+        var t = TestHelpers.MakeTournament(group);
+        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        proc.Generate(t, group);
+
+        var mainRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+        var r16_1 = mainRounds[0].RoundMatches[0];
+        var r16_2 = mainRounds[0].RoundMatches[1];
+
+        // Mutual DSQ on r16_1; sibling r16_2 completes → QF auto-FreeWin'd.
+        proc.CompleteMatch(r16_1, null, MatchWinTypeEnum.MutualDisqualify);
+        proc.CompleteMatch(r16_2, true, MatchWinTypeEnum.PointsWin);
+        var r16_2Winner = r16_2.WrestlerInRed;
+
+        var freeWinQf = mainRounds[1].RoundMatches.First(q => q.WinType == MatchWinTypeEnum.FreeWin);
+        var qfWinner = freeWinQf.IsRedWon!.Value ? freeWinQf.WrestlerInRed : freeWinQf.WrestlerInBlue;
+        qfWinner.Should().Be(r16_2Winner);
+
+        // The QF FreeWin's winner is already propagated to its downstream SF.
+        var sfFedByFreeWinQf = mainRounds[2].RoundMatches
+            .First(sf => sf.BracketFullNumber == freeWinQf.NextMatchBracketFullNumber);
+        new[] { sfFedByFreeWinQf.WrestlerInRed, sfFedByFreeWinQf.WrestlerInBlue }
+            .Should().Contain(qfWinner);
     }
 
     // ---------- SubGroupsToOlympic: smoke ----------

@@ -85,6 +85,15 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             }
         }
 
+        public bool IsTournamentCompleted
+        {
+            get
+            {
+                var t = DataContext?.Tournament;
+                return t != null && t.MatchesCount > 0 && t.PendingMatchesCount == 0;
+            }
+        }
+
         public ICommand OpenScheduleCommand =>
             _openScheduleCommand ?? (_openScheduleCommand = new RelayCommand(
                 _ => NavigateToView<ScheduleViewModel>(),
@@ -236,6 +245,7 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             OnPropertyChanged(nameof(HasRecentResults));
             OnPropertyChanged(nameof(PendingCarpets));
             OnPropertyChanged(nameof(TournamentDurationLabel));
+            OnPropertyChanged(nameof(IsTournamentCompleted));
 
             // Состав info card aggregates — recompute on every refresh tick so
             // late registrations / team edits show up without a manual reload.
@@ -296,17 +306,24 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             var pair = $"{redName} — {blueName}";
 
             string resultLine;
+            var winLabel = ShortWinType(match.WinType);
+            var score = $"(счет {match.PointsRed}:{match.PointsBlue})";
+
             if (match.WrestlerInRed == null || match.WrestlerInBlue == null)
             {
                 // Auto-completed (FreeWin) — only one wrestler is set.
                 var loneWinner = match.WrestlerInRed?.LastFirstNameShort ?? match.WrestlerInBlue?.LastFirstNameShort ?? "—";
-                resultLine = $"Победа: {loneWinner}, {ShortWinType(match.WinType)}";
+                resultLine = $"Победа: {loneWinner}, {winLabel}";
+            }
+            else if (!match.IsRedWon.HasValue)
+            {
+                // Mutual DSQ / NoShow / Injury — no winner.
+                resultLine = $"{winLabel} {score}";
             }
             else
             {
-                var winner = match.IsRedWon == true ? redName : blueName;
-                var score = $"{match.PointsRed}:{match.PointsBlue}";
-                resultLine = $"Победа: {winner}, {ShortWinType(match.WinType)} {score}";
+                var winner = match.IsRedWon.Value ? redName : blueName;
+                resultLine = $"Победа: {winner}, {winLabel} {score}";
             }
 
             return new RecentMatchSummary
@@ -319,25 +336,29 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             };
         }
 
-        // Short wrestling notation codes used by referees worldwide. Mapped from
-        // MatchWinTypeEnum so the "last 3 results" feed reads as a glance-able
-        // single line; the long-form WinTypeToStringConverter is too verbose here.
+        // Short wrestling notation with classification points, used by referees
+        // worldwide. Mapped from MatchWinTypeEnum so the "last results" feed
+        // reads as a glance-able single line; the long-form
+        // WinTypeToStringConverter is too verbose here.
         private static string ShortWinType(MatchWinTypeEnum? winType)
         {
             if (!winType.HasValue) return string.Empty;
             switch (winType.Value)
             {
-                case MatchWinTypeEnum.Tushe: return "VFA";
-                case MatchWinTypeEnum.Injury: return "VIN";
-                case MatchWinTypeEnum.WarningsLimit: return "VCA";
-                case MatchWinTypeEnum.NoShow: return "VFO";
-                case MatchWinTypeEnum.DisqualifyWin: return "DSQ";
-                case MatchWinTypeEnum.DominationWin: return "VSU";
-                case MatchWinTypeEnum.DominationWinWithPoints: return "VSU1";
-                case MatchWinTypeEnum.PointsWin: return "VPO";
-                case MatchWinTypeEnum.PointsWinWithPoints: return "VPO1";
-                case MatchWinTypeEnum.ActionWin: return "VPO1";
+                case MatchWinTypeEnum.Tushe: return "VFA 5:0";
+                case MatchWinTypeEnum.Injury: return "VIN 5:0";
+                case MatchWinTypeEnum.WarningsLimit: return "VCA 5:0";
+                case MatchWinTypeEnum.NoShow: return "VFO 5:0";
+                case MatchWinTypeEnum.DisqualifyWin: return "DSQ 5:0";
+                case MatchWinTypeEnum.DominationWin: return "VSU 4:0";
+                case MatchWinTypeEnum.DominationWinWithPoints: return "VSU1 4:1";
+                case MatchWinTypeEnum.PointsWin: return "VPO 3:0";
+                case MatchWinTypeEnum.PointsWinWithPoints: return "VPO1 3:1";
+                case MatchWinTypeEnum.ActionWin: return "VPO1 3:1";
                 case MatchWinTypeEnum.FreeWin: return "BYE";
+                case MatchWinTypeEnum.MutualDisqualify: return "2DSQ 0:0";
+                case MatchWinTypeEnum.MutualNoShow: return "2VFO 0:0";
+                case MatchWinTypeEnum.MutualInjury: return "2VIN 0:0";
                 default: return string.Empty;
             }
         }

@@ -53,7 +53,7 @@ namespace Wrestling.UI.Material
 
             if (dialogService.ShowMessageBox(DataContext as MainWindowViewModel,
                     "Вы уверены что хотите закрыть приложение? Все несохраненные данные будут утеряны!",
-                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) !=
+                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) !=
                 MessageBoxResult.OK)
             {
                 e.Cancel = true;

@@ -255,7 +255,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
 
         private void DeleteCarpet(Carpet carpet)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить ковер?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить ковер?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             var groups = _groups.Where(g => g.CarpetID.HasValue && g.CarpetID.Value == carpet.ID.Value).ToList();
 
@@ -299,7 +299,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
 
         private void UnbindGroup(AgeWeightGroup group)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что убрать группу с ковра?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, "Вы уверены, что убрать группу с ковра?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             var carpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == group.CarpetID);
             if (carpet != null)

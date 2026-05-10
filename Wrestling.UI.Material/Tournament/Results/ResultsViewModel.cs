@@ -292,12 +292,12 @@ namespace Wrestling.UI.Material.Tournament.Results
 
             var ordered = allResults
                 .OrderBy(x => x.Group.Name)
-                // DSQ'd wrestlers go to the bottom of each weight category —
-                // FinalPlace is null on them (UWW «без места»), so without an
-                // explicit guard they would sort to the top via default null-
-                // first ordering. ThenBy(IsDisqualified) puts false (0)
-                // before true (1) — non-DSQ first, DSQ last.
-                .ThenBy(p => p.Wrestler.IsDisqualified)
+                // DSQ'd / no-show wrestlers go to the bottom of each weight
+                // category — FinalPlace is null on them (UWW «без места»), so
+                // without an explicit guard they would sort to the top via
+                // default null-first ordering. ThenBy(IsPlaceless) puts false
+                // (0) before true (1) — placed wrestlers first, DSQ/NoShow last.
+                .ThenBy(p => p.Wrestler.IsPlaceless)
                 .ThenBy(p => p.Wrestler.FinalPlace ?? int.MaxValue)
                 .ThenBy(p => p.Wrestler.LastName)
                 .ToList();

@@ -305,7 +305,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         private void ApproveAllWrestlers()
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите допустить всех спортсменов?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите допустить всех спортсменов?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var wrestler in Tournament.Wrestlers)
             {
@@ -387,7 +387,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         private void DeleteApplication(TeamApplicationViewModel app)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить заявку?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить заявку?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var wrestler in app.Wrestlers)
             {
@@ -575,7 +575,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         private void DeleteWrestler(Wrestler wrestler)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить спортсмена из заявки?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить спортсмена из заявки?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             RemoveWrestlerFromGroup(wrestler);
 
