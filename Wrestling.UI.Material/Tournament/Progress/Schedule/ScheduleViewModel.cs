@@ -7,6 +7,7 @@ using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
+using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
 using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
@@ -34,6 +35,11 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         private IList<CommandButtonItem> _quickButtons;
 
         private string _filterString;
+
+        private IKeyHandler _keyHandler;
+
+        private IPanelView _scoreScreenView;
+        private ScoreScreenViewModel _scoreScreen;
 
         public string PageName => "Расписание";
         public override string PageTitle => "Расписание схваток по коврам";
@@ -97,6 +103,34 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
                 if (preselect != null) SelectedCarpet = preselect;
                 _preselectedCarpetId = null;
             }
+
+            // Enter hotkey starts the top startable match in the selected
+            // carpet's queue. Singleton VM, so guard with -=/+= to avoid
+            // double subscription on revisits.
+            if (_keyHandler == null) _keyHandler = Resolve<IKeyHandler>();
+            if (_keyHandler != null)
+            {
+                _keyHandler.KeyPressed -= KeyHandler_KeyPressed;
+                _keyHandler.KeyPressed += KeyHandler_KeyPressed;
+            }
+        }
+
+        protected override void OnNavigatingOut()
+        {
+            base.OnNavigatingOut();
+            if (_keyHandler != null)
+            {
+                _keyHandler.KeyPressed -= KeyHandler_KeyPressed;
+            }
+        }
+
+        private void KeyHandler_KeyPressed(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key != System.Windows.Input.Key.Enter) return;
+            var topMatch = SelectedCarpet?.Matches?.FirstOrDefault(m => m != null && m.IsMatchCanStart);
+            if (topMatch == null) return;
+            OpenMatch(topMatch);
+            e.Handled = true;
         }
 
         // Caller sets this immediately before NavigateToView<ScheduleViewModel>().
@@ -172,7 +206,8 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
                        (
                            _quickButtons = new List<CommandButtonItem>
                            {
-                               new CommandButtonItem("Открыть турнирную сетку", PackIconKind.Dns, new RelayCommand(param => OpenBrackets(), param => true))
+                               new CommandButtonItem("Открыть электронное табло", PackIconKind.Monitor, new RelayCommand(param => ShowScoreScreen(), param => true)),
+                               new CommandButtonItem("Открыть турнирную сетку", PackIconKind.Dns, new RelayCommand(param => OpenBrackets(), param => true)),
                            }
                        );
             }
@@ -316,8 +351,34 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
                && source.IndexOf(value, StringComparison.InvariantCultureIgnoreCase) >= 0;
 
         private void OpenBrackets()
-        {            
+        {
             NavigateToView<BracketsViewModel>();
+        }
+
+        // Opens (or re-shows) the projector window. Moved here from
+        // MatchControl so the operator can launch the score display once at
+        // the start of the day from the carpet queue and have it persist
+        // across matches — no need to re-open it every time MatchControl is
+        // entered. Both _scoreScreenView and _scoreScreen are DI singletons,
+        // so the same instances stay alive throughout the session.
+        private async void ShowScoreScreen()
+        {
+            if (_scoreScreenView == null) _scoreScreenView = Resolve<IPanelView>("ScoreScreen");
+            if (_scoreScreen == null) _scoreScreen = Resolve<ScoreScreenViewModel>();
+            if (_scoreScreenView == null || _scoreScreen == null) return;
+
+            if (!_scoreScreenView.WasShown)
+            {
+                var monitor = await MonitorPicker.PickAsync();
+                if (monitor == null) return;
+
+                if (_scoreScreenView is PanelViewBase panel)
+                {
+                    panel.TargetMonitor = monitor;
+                }
+            }
+
+            _scoreScreenView.ShowScreen(_scoreScreen);
         }
 
         private void OpenMatch(WrestlingMatch match)

@@ -27,7 +27,7 @@ namespace Wrestling.UI.Material.Model
             {
                 if (DataContext.Tournament == null)
                 {
-                    return "Вольная борьба - Администратор турниров";
+                    return "РОСБОС © Сетка 2.0";
                 }
 
                 if (string.IsNullOrEmpty(DataContext.Tournament.FileName))

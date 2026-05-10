@@ -408,10 +408,13 @@ namespace Wrestling.Providers
                 {
                     RoundNumber = m.RoundNumber,
                     DateTime = m.DateTime,
-                    Text = m.Text,
                     SecondInRound = m.SecondInRound,
                     IsForRed = m.IsForRed,
-                    Points = m.Points
+                    Points = m.Points,
+                    // Prefer the explicit discriminator. Fall back to the
+                    // legacy text-based inferrer for .wrt files written
+                    // before MatchActionType existed.
+                    Type = ResolveActionType(m),
                 }).ToList(),
                 GroupID = group.ID,
                 BracketNumber = info.BracketNumber,
@@ -656,13 +659,24 @@ namespace Wrestling.Providers
             {
                 RoundNumber = entity.RoundNumber,
                 DateTime = entity.DateTime,
-                Text = entity.Text,
                 SecondInRound = entity.SecondInRound,
                 IsForRed = entity.IsForRed,
-                Points = entity.Points
+                Points = entity.Points,
+                Type = entity.Type.ToString(),
+                // Computed display text — kept in the schema purely so an
+                // older app version reading this .wrt still shows meaningful
+                // protocol entries (it has no awareness of Type).
+                Text = MatchActionDescriber.Describe(entity.Type, entity.IsForRed, entity.Points),
             };
 
             return info;
+        }
+
+        private static MatchActionType ResolveActionType(MatchActionInfo info)
+        {
+            var parsed = ParseEnumOrDefault(info.Type, MatchActionType.Unknown);
+            if (parsed != MatchActionType.Unknown) return parsed;
+            return LegacyMatchActionTypeInferrer.Infer(info.Text, info.Points, info.IsForRed);
         }
     }
 }

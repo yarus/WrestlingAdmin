@@ -128,26 +128,34 @@
                         <ItemsControl ItemsSource="{Binding RecentResults}" Margin="12,4,4,12">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Margin="0,0,0,8" Padding="0,4,0,8"
-                                            BorderThickness="0,0,0,1"
-                                            BorderBrush="{DynamicResource MaterialDesignDivider}">
-                                        <StackPanel Orientation="Vertical">
-                                            <TextBlock FontSize="14" TextTrimming="CharacterEllipsis">
-                                                <Run Text="{Binding Time, Mode=OneWay}" FontWeight="SemiBold" />
-                                                <Run Text=" · " />
-                                                <Run Text="{Binding CarpetName, Mode=OneWay}" />
-                                                <Run Text=" · " />
-                                                <Run Text="{Binding WeightLabel, Mode=OneWay}" />
-                                                <Run Text=" · " />
-                                                <Run Text="{Binding Pair, Mode=OneWay}" />
-                                            </TextBlock>
-                                            <TextBlock Text="{Binding ResultLine, Mode=OneWay}"
-                                                       FontSize="13"
-                                                       Foreground="{DynamicResource MaterialDesignBodyLight}"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       Margin="0,2,0,0" />
-                                        </StackPanel>
-                                    </Border>
+                                    <Button Padding="0" Margin="0,0,0,8" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0"
+                                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                            Style="{x:Null}"
+                                            ToolTip="Открыть итоги поединка"
+                                            Command="{Binding ElementName=RootControl, Path=DataContext.OpenRecentMatchCommand}"
+                                            CommandParameter="{Binding}">
+                                        <Border Padding="0,4,0,8"
+                                                BorderThickness="0,0,0,1"
+                                                BorderBrush="{DynamicResource MaterialDesignDivider}">
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock FontSize="14" TextTrimming="CharacterEllipsis">
+                                                    <Run Text="{Binding Time, Mode=OneWay}" FontWeight="SemiBold" />
+                                                    <Run Text=" · " />
+                                                    <Run Text="{Binding CarpetName, Mode=OneWay}" />
+                                                    <Run Text=" · " />
+                                                    <Run Text="{Binding WeightLabel, Mode=OneWay}" />
+                                                    <Run Text=" · " />
+                                                    <Run Text="{Binding Pair, Mode=OneWay}" />
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding ResultLine, Mode=OneWay}"
+                                                           FontSize="13"
+                                                           Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Margin="0,2,0,0" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

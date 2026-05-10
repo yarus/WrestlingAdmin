@@ -8,6 +8,10 @@ using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Model;
+using Wrestling.UI.Material.Tournament.Conducting;
+using Wrestling.UI.Material.Tournament.Results;
+using Wrestling.UI.Material.Tournament.Standing.Applications;
+using Wrestling.UI.Material.Tournament.Standing.Carpets;
 using Wrestling.UI.Material.Tournament.Standing.Details;
 using Wrestling.UI.Utils;
 
@@ -39,7 +43,7 @@ namespace Wrestling.UI.Material.Home
             _resultsService = Resolve<IResultsService>();
         }
 
-        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20260421";
+        public override string PageTitle => "РОСБОС © Сетка 2.0";
 
         #region Commands
 
@@ -102,12 +106,57 @@ namespace Wrestling.UI.Material.Home
 
                     _resultsService.Recalculate(tournament);
 
-                    // After opening / creating a tournament, land on the first
-            // phase (Положение). The persistent rail then guides the
-            // operator through the tournament lifecycle.
-            NavigateToView<DetailsViewModel>();
+                    // Land the operator on the phase that matches the
+                    // tournament's current state (e.g. carpets configured →
+                    // straight to «Проведение») instead of always sending
+                    // them through «Положение».
+                    NavigateToOpenedTournamentPhase();
                 }
             }
+        }
+
+        // Picks the most relevant phase screen for a freshly-opened tournament.
+        // Order matters — completion wins over carpets, carpets over brackets,
+        // etc. — so we check the most-progressed conditions first.
+        private void NavigateToOpenedTournamentPhase()
+        {
+            var t = DataContext.Tournament;
+            if (t == null)
+            {
+                NavigateToView<DetailsViewModel>();
+                return;
+            }
+
+            // Rule 5: every match in every group is completed → Результаты.
+            if (t.MatchesCount > 0 && t.PendingMatchesCount == 0)
+            {
+                NavigateToView<ResultsViewModel>();
+                return;
+            }
+
+            // Rule 4: at least one carpet configured → Проведение.
+            if (t.CarpetsCount > 0)
+            {
+                NavigateToView<ConductingViewModel>();
+                return;
+            }
+
+            // Rule 3: brackets generated, no carpets yet → Расписание (carpets setup).
+            if (t.MatchesCount > 0)
+            {
+                NavigateToView<CarpetsViewModel>();
+                return;
+            }
+
+            // Rule 2: groups exist but no brackets → Регистрация.
+            if (t.GroupsCount > 0)
+            {
+                NavigateToView<ApplicationsViewModel>();
+                return;
+            }
+
+            // Rule 1: brand-new / empty tournament → Положение.
+            NavigateToView<DetailsViewModel>();
         }
 
         private void UpdateCache()
@@ -235,10 +284,11 @@ namespace Wrestling.UI.Material.Home
                 }
             }
 
-            // After opening / creating a tournament, land on the first
-            // phase (Подготовка). The persistent rail then guides the
-            // operator through the tournament lifecycle.
-            NavigateToView<DetailsViewModel>();
+            // Same routing as the «Open» path. For a brand-new empty
+            // tournament this resolves to «Положение» (rule 1) just like
+            // before; consolidating means future copy-from-template flows
+            // automatically pick the right phase.
+            NavigateToOpenedTournamentPhase();
         }
 
         private GlobalSettings GetSettingsObject()

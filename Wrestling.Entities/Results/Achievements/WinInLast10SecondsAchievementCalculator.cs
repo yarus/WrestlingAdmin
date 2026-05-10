@@ -46,16 +46,19 @@ namespace Wrestling.Entities.Results.Achievements
                             break;
                         }
 
-                        if (action.Points > 0 || action.Points < 0)
+                        // Only real points actions count toward the «before
+                        // last 10 seconds» score. Warnings and reverts must
+                        // not inflate the running totals — they share the
+                        // Points field but have a different Type.
+                        if (action.Type != MatchActionType.SetPoints) continue;
+
+                        if (action.IsForRed.HasValue && action.IsForRed.Value)
                         {
-                            if (action.IsForRed.HasValue && action.IsForRed.Value)
-                            {
-                                redPoints += action.Points;
-                            }
-                            else if (action.IsForRed.HasValue && !action.IsForRed.Value)
-                            {
-                                bluePoints += action.Points;
-                            }
+                            redPoints += action.Points;
+                        }
+                        else if (action.IsForRed.HasValue && !action.IsForRed.Value)
+                        {
+                            bluePoints += action.Points;
                         }
                     }
 

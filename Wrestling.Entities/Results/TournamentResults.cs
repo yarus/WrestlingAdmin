@@ -120,17 +120,20 @@ namespace Wrestling.Entities.Results
             {
                 if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
 
+                // Gate on Type==SetPoints. Without this warnings (which also
+                // carry Points>0 in the legacy schema) inflate the «fastest
+                // action» heuristic.
                 var redActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
                     .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed.SameAs(_wrestler)) && x.LastSecondInMatch > 0)
                     .SelectMany(m => m.MatchActions)
-                    .Where(a => a.Points > 0 && a.IsForRed.HasValue && a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
+                    .Where(a => a.Type == MatchActionType.SetPoints && a.IsForRed.HasValue && a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
                     .OrderBy(a => a.SecondInRound)
                     .ToList();
 
                 var blueActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
                     .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue.SameAs(_wrestler)) && x.LastSecondInMatch > 0)
                     .SelectMany(m => m.MatchActions)
-                    .Where(a => a.Points > 0 && a.IsForRed.HasValue && !a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
+                    .Where(a => a.Type == MatchActionType.SetPoints && a.IsForRed.HasValue && !a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
                     .OrderBy(a => a.SecondInRound)
                     .ToList();
 
@@ -189,12 +192,12 @@ namespace Wrestling.Entities.Results
                 var redActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
                     .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed.SameAs(_wrestler)))
                     .SelectMany(m => m.MatchActions)
-                    .Count(a => a.Points == 4 && a.IsForRed.HasValue && a.IsForRed.Value);
+                    .Count(a => a.Type == MatchActionType.SetPoints && a.Points == 4 && a.IsForRed.HasValue && a.IsForRed.Value);
 
                 var blueActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
                     .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue.SameAs(_wrestler)))
                     .SelectMany(m => m.MatchActions)
-                    .Count(a => a.Points == 4 && a.IsForRed.HasValue && !a.IsForRed.Value);
+                    .Count(a => a.Type == MatchActionType.SetPoints && a.Points == 4 && a.IsForRed.HasValue && !a.IsForRed.Value);
 
                 return redActions + blueActions;
             }

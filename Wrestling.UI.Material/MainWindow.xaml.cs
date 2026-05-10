@@ -30,7 +30,7 @@ namespace Wrestling.UI.Material
             welcome.Tick += (_, _) =>
             {
                 welcome.Stop();
-                MainSnackbar.MessageQueue.Enqueue("Добро пожаловать в Администратор турниров по вольной борьбе!");
+                MainSnackbar.MessageQueue.Enqueue("Добро пожаловать в РОСБОС Сетка 2.0!");
             };
             welcome.Start();
 

@@ -6,6 +6,7 @@ using System.Windows.Input;
 using Wrestling.Entities;
 using Wrestling.Providers;
 using Wrestling.Providers.Network;
+using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
@@ -25,6 +26,7 @@ namespace Wrestling.UI.Material.Tournament.Conducting
         private ICommand _openScheduleCommand;
         private ICommand _openCarpetScheduleCommand;
         private ICommand _openSliderCommand;
+        private ICommand _openRecentMatchCommand;
 
         public ConductingViewModel(IDiContainer container) : base(container)
         {
@@ -124,6 +126,23 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             _openSliderCommand ?? (_openSliderCommand = new RelayCommand(
                 _ => NavigateToView<SliderControlViewModel>(),
                 _ => true));
+
+        // Recent-results panel click — opens the match in MatchResultsViewModel.
+        // Shell captures Conducting as the return target automatically (see
+        // MainWindowViewModel.CurrentViewModel setter), so the back button on
+        // the results screen lands the operator right back here.
+        public ICommand OpenRecentMatchCommand =>
+            _openRecentMatchCommand ?? (_openRecentMatchCommand = new RelayCommand(
+                param => OpenRecentMatch(param as RecentMatchSummary),
+                param => param is RecentMatchSummary s && s.Match != null && s.Group != null));
+
+        private void OpenRecentMatch(RecentMatchSummary summary)
+        {
+            if (summary?.Match == null || summary.Group == null) return;
+            DataContext.WrestlingMatch = summary.Match;
+            DataContext.Group = summary.Group;
+            NavigateToView<MatchResultsViewModel>();
+        }
 
         #region Network card
 
@@ -332,7 +351,9 @@ namespace Wrestling.UI.Material.Tournament.Conducting
                 CarpetName = carpetName,
                 WeightLabel = weightLabel,
                 Pair = pair,
-                ResultLine = resultLine
+                ResultLine = resultLine,
+                Match = match,
+                Group = group
             };
         }
 
@@ -371,5 +392,11 @@ namespace Wrestling.UI.Material.Tournament.Conducting
         public string WeightLabel { get; set; }
         public string Pair { get; set; }
         public string ResultLine { get; set; }
+
+        // Backing references for the click-to-open-match-results action on the
+        // Conducting dashboard. Not bound by the UI directly — read by
+        // ConductingViewModel.OpenRecentMatchCommand.
+        public WrestlingMatch Match { get; set; }
+        public AgeWeightGroup Group { get; set; }
     }
 }
