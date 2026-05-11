@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" 
              md:DialogServiceViews.IsRegistered="True"
              d:DesignHeight="400" d:DesignWidth="1000">
@@ -30,20 +31,19 @@
                             <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="TrophyOutline" Width="160" Height="160" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                             <StackPanel Grid.Row="0" Grid.Column="1">
-                                <TextBlock Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="16 16 16 8">Турниры</TextBlock>
+                                <TextBlock Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="16 16 16 8" Text="{loc:Loc Home_Tournaments}" />
 
-                                <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
-                                    Вы можете начать подготовку к новому турниру или открыть ранее сохраненный файл для продолжения работы.
-                                </TextBlock>
+                                <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top"
+                                           Text="{loc:Loc Home_Description}" />
                             </StackPanel>
                             
                             <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
                                 <DockPanel>
                                     <Button DockPanel.Dock="Left" HorizontalAlignment="Left" Margin="8 4 8 8"
-                                            Command="{Binding Path=OpenTournamentCommand}">ОТКРЫТЬ</Button>
+                                            Command="{Binding Path=OpenTournamentCommand}" Content="{loc:Loc Home_Open}" />
 
                                     <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Margin="8 4 8 8"
-                                            Command="{Binding Path=NewTournamentCommand}">НОВЫЙ</Button>
+                                            Command="{Binding Path=NewTournamentCommand}" Content="{loc:Loc Home_New}" />
                                 </DockPanel>
                             </Border>
                             

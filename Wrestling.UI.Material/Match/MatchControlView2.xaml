@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:converters1="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
@@ -78,7 +79,7 @@
             <Border Grid.Row="0" Grid.Column="1" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
 
             <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="2" Margin="10,0,10,0" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="{Binding ScoreScreenVm.RoundName, Converter={StaticResource UpperCaseConverter}}"/>
+                <TextBlock Text="{loc:LocRound ScoreScreenVm.RoundName, Upper=True}"/>
             </Viewbox>
         </Grid>
 
@@ -214,14 +215,14 @@
                 </Viewbox>
 
                 <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="1" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="ДЕЙСТВИЕ" Foreground="Yellow"/>
+                    <TextBlock Text="{loc:Loc MatchControl_Action}" Foreground="Yellow"/>
                 </Viewbox>
             </Grid>
 
             <Border Grid.Row="0" Grid.Column="2" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
 
             <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Button Content="ИТОГИ" TabIndex="3" FontStretch="Medium" Margin="2"
+                <Button Content="{loc:Loc MatchControl_Results}" TabIndex="3" FontStretch="Medium" Margin="2"
                             Command="{Binding CompleteMatchCommand}" Style="{StaticResource MaterialDesignRaisedButton}" />
             </Viewbox>
 
@@ -243,7 +244,7 @@
                 <Border Grid.Row="0" Grid.Column="1" Background="Yellow" BorderThickness="0,0,1,0"></Border>
 
                 <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0" Margin="10,10,10,10" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="ДЕЙСТВИЕ" Foreground="Yellow"/>
+                    <TextBlock Text="{loc:Loc MatchControl_Action}" Foreground="Yellow"/>
                 </Viewbox>
 
                 <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -370,7 +371,7 @@
             <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
                          Visibility="{Binding ScoreScreenVm.IsTimeout, Converter={StaticResource InvBoolToVis}}">
                 <TextBlock Foreground="White">
-                        <Run Text="РАУНД "/>
+                        <Run Text="{loc:Loc MatchControl_RoundLabel}"/>
                         <Run Text="{Binding ScoreScreenVm.Round}"/>
                 </TextBlock>
             </Viewbox>
@@ -476,12 +477,12 @@
                     </Viewbox>
 
                     <Viewbox Stretch="Uniform" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2" Visibility="{Binding IsStartButtonVisible, Converter={StaticResource BoolToVis}}">
-                        <Button Content="СТАРТ" Background="LightGray" TabIndex="3" Foreground="Black" FontStretch="Medium"
+                        <Button Content="{loc:Loc MatchControl_Start}" Background="LightGray" TabIndex="3" Foreground="Black" FontStretch="Medium"
                             Command="{Binding StartCommand}" />
                     </Viewbox>
 
                     <Viewbox Stretch="Uniform" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2" Visibility="{Binding IsStopButtonVisible, Converter={StaticResource BoolToVis}}">
-                        <Button Content="СТОП" Background="LightGray" TabIndex="3" Foreground="Black" FontStretch="Medium"
+                        <Button Content="{loc:Loc MatchControl_Stop}" Background="LightGray" TabIndex="3" Foreground="Black" FontStretch="Medium"
                             Command="{Binding StopCommand}" />
                     </Viewbox>
 
@@ -500,7 +501,7 @@
 
                 <Viewbox Stretch="Uniform" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center"
                          Visibility="{Binding ScoreScreenVm.IsTimeout, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="ПЕРЕРЫВ" Foreground="Black" />
+                    <TextBlock Text="{loc:Loc MatchControl_Break}" Foreground="Black" />
                 </Viewbox>
 
                 <Border

@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:matConverters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" Foreground="Black" Background="LightGray"
              d:DesignHeight="800" d:DesignWidth="800">
 
@@ -57,7 +58,7 @@
         </Grid>
 
         <TextBlock
-            TextWrapping="NoWrap" Foreground="Black" Text="Итоги Cоревнований"
+            TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc PrintResults_Title}"
             FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,10,10,0" />
 
         <Border BorderBrush="Black" BorderThickness="0,1,0,0" />
@@ -106,14 +107,14 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LastFirstName}" Header="Фамилия Имя" Width="180" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="Команда" Width="100" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamCity}" Header="Регион" Width="115" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.Level}" Header="Разряд" Width="50" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wins}" Header="Побед" Width="45" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Loses}" Header="Пораж." Width="50" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=OverallTournamentClassificationPoints}" Header="Классиф." Width="55" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=TotalPoints}" Header="Команд." Width="50" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LastFirstName}" Header="{loc:Loc Personal_Column_LastFirstName}" Width="180" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="{loc:Loc Draw_Column_Team}" Width="100" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamCity}" Header="{loc:Loc Personal_Column_Region}" Width="115" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.Level}" Header="{loc:Loc Applications_Column_Level}" Width="50" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wins}" Header="{loc:Loc PrintResults_Column_Wins}" Width="45" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Loses}" Header="{loc:Loc PrintResults_Column_Losses}" Width="50" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=OverallTournamentClassificationPoints}" Header="{loc:Loc PrintResults_Column_Classif}" Width="55" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=TotalPoints}" Header="{loc:Loc PrintResults_Column_Team}" Width="50" />
                 </GridView>
 
             </ListView.View>
@@ -133,7 +134,7 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Column="0" Grid.Row="0"
-                           TextWrapping="NoWrap" Foreground="Black" Text="Главный судья"
+                           TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc Details_Judge_Header}"
                            FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
                 <TextBlock Grid.Column="2" Grid.Row="0"
@@ -142,7 +143,7 @@
                            FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0"
-                           TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь"
+                           TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc Details_Secretary_Header}"
                            FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
                 <TextBlock Grid.Row="1" Grid.Column="2"

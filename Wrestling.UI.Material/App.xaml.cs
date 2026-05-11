@@ -1,12 +1,10 @@
 ﻿using MvvmDialogs;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Markup;
 using Wrestling.DataAccess;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
@@ -38,6 +36,8 @@ using Wrestling.UI.Material.Tournament.Standing.Draw;
 using Wrestling.UI.Material.Utils;
 using MaterialDesignThemes.Wpf;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
+using Wrestling.UI.Material.Localization;
 
 namespace Wrestling.UI.Material
 {
@@ -76,21 +76,26 @@ namespace Wrestling.UI.Material
         {
             base.OnStartup(e);
 
-            Thread.CurrentThread.CurrentCulture = new CultureInfo("ru-RU");
-            Thread.CurrentThread.CurrentUICulture = new CultureInfo("ru-RU");
-            FrameworkElement.LanguageProperty.OverrideMetadata(typeof(FrameworkElement), new FrameworkPropertyMetadata(
-                XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)));
-
             var di = GetContainer();
 
-            // Apply the operator-chosen theme before any window is shown so
-            // the first rendered frame already matches the saved preference.
-            // Defaults (Light / DeepPurple / Lime) kick in for first launch
-            // or a missing prefs file — visually identical to the historical
-            // hardcoded BundledTheme.
+            // Apply the operator-chosen theme + language before any window is
+            // shown so the first rendered frame already matches the saved
+            // preference. Defaults (Light / DeepPurple / Lime / "ru") kick in
+            // for first launch or a missing prefs file — visually identical
+            // to the historical hardcoded BundledTheme + ru-RU.
             var themeManager = di.Resolve<Wrestling.UI.Material.Theme.IThemeManager>();
             var uiStorage = di.Resolve<Wrestling.UI.Material.Theme.ILocalUiSettingsStorage>();
-            themeManager?.Apply(uiStorage?.Load() ?? new Wrestling.UI.Material.Theme.LocalUiSettings());
+            var savedUi = uiStorage?.Load() ?? new Wrestling.UI.Material.Theme.LocalUiSettings();
+            themeManager?.Apply(savedUi);
+
+            var localization = di.Resolve<ILocalizationService>();
+            if (localization != null)
+            {
+                if (!localization.SetLanguage(savedUi.LanguageCode) && localization.AvailableLanguages.Count > 0)
+                {
+                    localization.SetLanguage(localization.AvailableLanguages[0].Code);
+                }
+            }
 
             SetupExceptionHandling(di);
 
@@ -151,22 +156,22 @@ namespace Wrestling.UI.Material
         {
             var items = new List<INavigationItem>
             {
-                new NavigationItem("Положение", PackIconKind.FileDocumentOutline,
+                new NavigationItem("Nav_Standing", PackIconKind.FileDocumentOutline,
                     typeof(DetailsViewModel),
                     new RelayCommand(_ => navService.NavigateToView<DetailsViewModel>())),
-                new NavigationItem("Регистрация", PackIconKind.ClipboardList,
+                new NavigationItem("Nav_Registration", PackIconKind.ClipboardList,
                     typeof(ApplicationsViewModel),
                     new RelayCommand(_ => navService.NavigateToView<ApplicationsViewModel>())),
-                new NavigationItem("Жеребьёвка", PackIconKind.Shuffle,
+                new NavigationItem("Nav_Draw", PackIconKind.Shuffle,
                     typeof(DrawViewModel),
                     new RelayCommand(_ => navService.NavigateToView<DrawViewModel>())),
-                new NavigationItem("Расписание", PackIconKind.Calendar,
+                new NavigationItem("Nav_Schedule", PackIconKind.Calendar,
                     typeof(CarpetsViewModel),
                     new RelayCommand(_ => navService.NavigateToView<CarpetsViewModel>())),
-                new NavigationItem("Проведение", PackIconKind.Scoreboard,
+                new NavigationItem("Nav_Conducting", PackIconKind.Scoreboard,
                     typeof(ConductingViewModel),
                     new RelayCommand(_ => navService.NavigateToView<ConductingViewModel>())),
-                new NavigationItem("Результаты", PackIconKind.Trophy,
+                new NavigationItem("Nav_Results", PackIconKind.Trophy,
                     typeof(ResultsViewModel),
                     new RelayCommand(_ => navService.NavigateToView<ResultsViewModel>()))
             };
@@ -183,10 +188,10 @@ namespace Wrestling.UI.Material
             var shellVm = (MainWindowViewModel)shell;
             return new List<INavigationItem>
             {
-                new NavigationItem("Настройки", PackIconKind.Cog,
+                new NavigationItem("Nav_Settings", PackIconKind.Cog,
                     typeof(SettingsViewModel),
                     new RelayCommand(_ => navService.NavigateToView<SettingsViewModel>())),
-                new NavigationItem("Закрыть", PackIconKind.LogoutVariant,
+                new NavigationItem("Nav_Close", PackIconKind.LogoutVariant,
                     null,
                     shellVm.CloseTournamentCommand)
             };
@@ -209,7 +214,7 @@ namespace Wrestling.UI.Material
                 {
                     CreateBackup(di);                    
 
-                    MessageBox.Show($"Ошибка: {exception.Message}", "Критическая ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ShowCriticalError(exception);
                 }
             };
 
@@ -237,7 +242,7 @@ namespace Wrestling.UI.Material
 
                 args.Handled = true;
 
-                MessageBox.Show($"Ошибка: {args.Exception.Message}", "Критическая ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowCriticalError(args.Exception);
             };
 
             TaskScheduler.UnobservedTaskException += (sender, args) =>
@@ -246,6 +251,21 @@ namespace Wrestling.UI.Material
                 args.SetObserved();
                 CreateBackup(di);
             };
+        }
+
+        // Crash-time MessageBox helper. LocalizationService falls back to the
+        // raw key when no language has been set yet, so a startup-time crash
+        // before LoadAll completes still produces a readable (if untranslated)
+        // dialog. Format string is fetched the same way.
+        private static void ShowCriticalError(Exception exception)
+        {
+            var loc = LocalizationService.Instance;
+            var title = loc.T("App_CriticalError_Title");
+            var format = loc.T("App_Error_Format");
+            string body;
+            try { body = string.Format(format, exception?.Message ?? string.Empty); }
+            catch (FormatException) { body = exception?.Message ?? string.Empty; }
+            MessageBox.Show(body, title, MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private void CreateBackup(IDiContainer di)
@@ -485,13 +505,30 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
 
             di.Add<IKeyHandler>(new KeyHandler());
 
-            // Per-machine UI prefs (theme) — stored in
+            // Per-machine UI prefs (theme + language) — stored in
             // %LocalAppData%/WrestlingAdmin/local_ui_settings.json, separate
             // from .wrt so the operator's chosen theme does not change when
             // opening a tournament authored on another machine.
             var localUiStorage = new Wrestling.UI.Material.Theme.LocalUiSettingsStorage(di.Resolve<IStorageDataAccess>());
             di.Add<Wrestling.UI.Material.Theme.ILocalUiSettingsStorage>(localUiStorage);
             di.Add<Wrestling.UI.Material.Theme.IThemeManager>(new Wrestling.UI.Material.Theme.ThemeManager(localUiStorage));
+
+            // Localization — singleton (LocalizationService.Instance) so the
+            // {loc:Loc Key=...} markup extension can find it from XAML, also
+            // registered into DI so view-model code can resolve it the usual
+            // way. JSON files live next to the exe under i18n/.
+            var i18nFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "i18n");
+            JsonLocalizationLoader.LoadAll(LocalizationService.Instance, i18nFolder);
+            di.Add<ILocalizationService>(LocalizationService.Instance);
+
+            // Bridge for non-UI code (Wrestling.Providers can't take a WPF
+            // dependency). GroupGenerator and friends call ProviderLocalization.T
+            // which routes through this delegate to the real service.
+            Wrestling.Providers.Localization.ProviderLocalization.Translate = (key, fallback) =>
+            {
+                var value = LocalizationService.Instance.T(key);
+                return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+            };
 
             return di;
         }

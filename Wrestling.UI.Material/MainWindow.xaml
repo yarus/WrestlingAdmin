@@ -24,6 +24,7 @@
         xmlns:conducting="clr-namespace:Wrestling.UI.Material.Tournament.Conducting"
         xmlns:resultsRoot="clr-namespace:Wrestling.UI.Material.Tournament.Results"
         xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+        xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
         TextElement.FontSize="13"
@@ -307,7 +308,7 @@
                                 Foreground="White"
                                 Command="{Binding SaveCommand}"
                                 Visibility="{Binding IsSaveCommandVisible, Converter={StaticResource BoolToVis}}"
-                                ToolTip="Сохранить турнир"
+                                ToolTip="{loc:Loc MainWindow_SaveTooltip}"
                                 Style="{StaticResource MaterialDesignToolButton}">
                             <materialDesign:PackIcon Kind="ContentSave" Width="28" Height="28" />
                         </Button>

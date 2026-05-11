@@ -11,6 +11,7 @@
              xmlns:imageSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.ImageSlide"
              xmlns:videoSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.VideoSlide"
              xmlns:upcomingMatchesSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" MinWidth="460" MaxWidth="680"
              d:DesignHeight="200" d:DesignWidth="300">
 
@@ -47,7 +48,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ComboBox Grid.Row="0" Grid.Column="0" materialDesign:HintAssist.Hint="Тип слайда" Style="{DynamicResource MaterialDesignFloatingHintComboBox}" IsEditable="False" Margin="10 5 10 5" FontSize="18"
+        <ComboBox Grid.Row="0" Grid.Column="0" materialDesign:HintAssist.Hint="{loc:Loc AddSlide_Type}" Style="{DynamicResource MaterialDesignFloatingHintComboBox}" IsEditable="False" Margin="10 5 10 5" FontSize="18"
                   ItemsSource="{Binding SlideTypes}" SelectedItem="{Binding SelectedSlideType}">
             <ComboBox.ItemTemplate>
                 <DataTemplate>
@@ -60,7 +61,7 @@
                 Grid.Column="0"
                 Margin="10 5 10 5" Padding="0" Content="{Binding SelectedSlideType.SettingsControl}" x:Name="ContentControl" />
 
-        <TextBox Grid.Row="2" Grid.Column="0" materialDesign:HintAssist.Hint="Длительность" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
+        <TextBox Grid.Row="2" Grid.Column="0" materialDesign:HintAssist.Hint="{loc:Loc AddSlide_Duration}" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
             <TextBox.Text>
                 <Binding Path="Item.Duration" UpdateSourceTrigger="PropertyChanged">
                     <Binding.ValidationRules>
@@ -70,7 +71,7 @@
             </TextBox.Text>
         </TextBox>
 
-        <TextBox Grid.Row="3" Grid.Column="0" materialDesign:HintAssist.Hint="Название слайда" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
+        <TextBox Grid.Row="3" Grid.Column="0" materialDesign:HintAssist.Hint="{loc:Loc AddSlide_Name}" Style="{DynamicResource MaterialDesignFloatingHintTextBox}" Margin="10 5 10 5" FontSize="18">
             <TextBox.Text>
                 <Binding Path="Item.Title" UpdateSourceTrigger="PropertyChanged">
                     <Binding.ValidationRules>
@@ -82,18 +83,18 @@
 
         <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0 10 0 0">
             <Button IsDefault="True"
-                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    Content="{loc:Loc Dialog_Save}">
                 <Button.CommandParameter>
                     <system:Boolean>True</system:Boolean>
                 </Button.CommandParameter>
-                СОХРАНИТЬ
             </Button>
             <Button IsCancel="True" Margin="8 0 0 0"
-                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    Content="{loc:Loc Dialog_Cancel}">
                 <Button.CommandParameter>
                     <system:Boolean>False</system:Boolean>
                 </Button.CommandParameter>
-                ОТМЕНИТЬ
             </Button>
         </StackPanel>
     </Grid>

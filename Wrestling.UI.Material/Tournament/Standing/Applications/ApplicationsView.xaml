@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:converters1="clr-namespace:Wrestling.UI.Material.Utils.Converters"
@@ -41,13 +42,13 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
-                <Button Content="Новая заявка"
-                        ToolTip="Добавить заявку на участие"
+                <Button Content="{loc:Loc Applications_NewApp}"
+                        ToolTip="{loc:Loc Applications_NewApp_Tooltip}"
                         Width="160"
                         HorizontalAlignment="Left" Margin="20,10,0,10"
                         Command="{Binding AddAppCommand}" />
-                <Button Content="Автодопуск"
-                        ToolTip="Допустить всех участников"
+                <Button Content="{loc:Loc Applications_AutoApprove}"
+                        ToolTip="{loc:Loc Applications_AutoApprove_Tooltip}"
                         Width="120"
                         HorizontalAlignment="Left" Margin="10,10,0,10"
                         Command="{Binding ApproveAllCommand}" />
@@ -68,7 +69,7 @@
                         <materialDesign:PackIcon Kind="Magnify" Opacity=".56" />
                     </Button>
 
-                    <TextBox Grid.Column="1" Margin="8 0 0 0" materialDesign:HintAssist.Hint="Поиск по ФИО, команде или городу"
+                    <TextBox Grid.Column="1" Margin="8 0 0 0" materialDesign:HintAssist.Hint="{loc:Loc Applications_SearchHint}"
                              materialDesign:TextFieldAssist.DecorationVisibility="Hidden" BorderThickness="0"
                              MinWidth="260" VerticalAlignment="Center"
                              Text="{Binding FilterString, UpdateSourceTrigger=PropertyChanged, Delay=1000}" />
@@ -79,13 +80,12 @@
                       VerticalAlignment="Center"
                       MinWidth="110"
                       Margin="8,0,0,0"
-                      IsChecked="{Binding IsOnlyUnapprovedVisible}">
-                Недопуск
-            </CheckBox>
+                      IsChecked="{Binding IsOnlyUnapprovedVisible}"
+                      Content="{loc:Loc Applications_OnlyUnapproved}" />
 
             <StackPanel Grid.Row="0" Grid.Column="4" Orientation="Horizontal"
                         Margin="20,0,8,0" VerticalAlignment="Center"
-                        ToolTip="Количество зарегистрированных команд">
+                        ToolTip="{loc:Loc Applications_TeamsCount_Tooltip}">
                 <materialDesign:PackIcon Kind="AccountGroup" Width="20" Height="20"
                                          VerticalAlignment="Center"
                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -96,7 +96,7 @@
 
             <StackPanel Grid.Row="0" Grid.Column="5" Orientation="Horizontal"
                         Margin="8,0,20,0" VerticalAlignment="Center"
-                        ToolTip="Количество зарегистрированных участников">
+                        ToolTip="{loc:Loc Applications_WrestlersCount_Tooltip}">
                 <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
                                          VerticalAlignment="Center"
                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -172,24 +172,24 @@
 
                                     <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="32"
                                                              Height="32" Margin="0" Padding="0"
-                                                             ToolTip="Заявка заполнена правильно."
+                                                             ToolTip="{loc:Loc Applications_AppValid_Tooltip}"
                                                              Kind="CheckboxMarkedOutline"
                                                              Visibility="{Binding IsApplicationValid, Converter={StaticResource BoolToVis}}" />
                                     <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="32"
                                                              Height="32" Margin="0" Padding="0"
-                                                             ToolTip="Заявка не корректно заполнена. В заявке должен быть указан хотя бы один спортсмен с корректно заполненными данными."
+                                                             ToolTip="{loc:Loc Applications_AppInvalid_Tooltip}"
                                                              Kind="CloseBoxOutline"
                                                              Visibility="{Binding IsApplicationValid, Converter={StaticResource InvBoolToVis}}" />
                                 </Grid>
 
-                                <Button Grid.Column="4" ToolTip="Редактировать заявку" VerticalAlignment="Center"
+                                <Button Grid.Column="4" ToolTip="{loc:Loc Applications_EditApp_Tooltip}" VerticalAlignment="Center"
                                         HorizontalAlignment="Center"
                                         Command="{Binding Path=DataContext.EditAppCommand, ElementName=RootControl}"
                                         CommandParameter="{Binding }">
                                     <materialDesign:PackIcon Kind="BorderColor" Width="22" Height="22" Padding="0" />
                                 </Button>
                                 
-                                <Button Grid.Column="5" ToolTip="Удалить заявку" VerticalAlignment="Center"
+                                <Button Grid.Column="5" ToolTip="{loc:Loc Applications_DeleteApp_Tooltip}" VerticalAlignment="Center"
                                         HorizontalAlignment="Center"
                                         Command="{Binding Path=DataContext.DeleteAppCommand, ElementName=RootControl}"
                                         CommandParameter="{Binding }" Margin="20,0,0,0">
@@ -200,9 +200,9 @@
                         </Expander.Header>
                         <Expander.Content>
                             <StackPanel Background="{DynamicResource MaterialDesignPaper}" Margin="0" Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
-                                <Button Content="Новый спортсмен" Width="160" HorizontalAlignment="Left"
+                                <Button Content="{loc:Loc Applications_NewWrestler}" Width="160" HorizontalAlignment="Left"
                                         Margin="20,10,0,10"
-                                        ToolTip="Добавить спортсмена в заявку"
+                                        ToolTip="{loc:Loc Applications_NewWrestler_Tooltip}"
                                         Command="{Binding Path=DataContext.AddWrestlerCommand, ElementName=RootControl}"
                                         CommandParameter="{Binding }" />
                                 <ListView ItemsSource="{Binding Wrestlers}" x:Name="WrestlersSource"
@@ -232,7 +232,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="ФИО" Width="240"
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_FullName}" Width="240"
                                                             utils:GridViewSort.PropertyName="FullName">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -245,7 +245,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Г.р." Width="90" utils:GridViewSort.PropertyName="BirthDate">
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_BirthYear}" Width="90" utils:GridViewSort.PropertyName="BirthDate">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding BirthDate, StringFormat={}{0:d}}"
@@ -256,7 +256,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Вес" Width="60"
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_Weight}" Width="60"
                                                             utils:GridViewSort.PropertyName="Weight">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -268,7 +268,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Разряд" Width="70"
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_Level}" Width="70"
                                                             utils:GridViewSort.PropertyName="Level">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -280,7 +280,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Группа" Width="180"
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_Group}" Width="180"
                                                             utils:GridViewSort.PropertyName="GroupName">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -293,7 +293,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Допуск" Width="110"
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_Approval}" Width="110"
                                                             utils:GridViewSort.PropertyName="IsApplicationValid">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -310,30 +310,30 @@
                                                                                      Foreground="Green" Width="20"
                                                                                      Height="20" Margin="0"
                                                                                      Padding="0"
-                                                                                     ToolTip="Данные о спортсмене заполнены верно."
+                                                                                     ToolTip="{loc:Loc Applications_WrestlerValid_Tooltip}"
                                                                                      Kind="AccountCheck"
                                                                                      Visibility="{Binding IsApplicationValid, Converter={StaticResource BoolToVis}}" />
                                                             <materialDesign:PackIcon Grid.Column="0"
                                                                                      Foreground="DarkRed"
                                                                                      Width="20" Height="20"
                                                                                      Margin="0" Padding="0"
-                                                                                     ToolTip="Данные о спортсмене заполнены не верно. Необходимо заполнить все обязательные поля."
+                                                                                     ToolTip="{loc:Loc Applications_WrestlerInvalid_Tooltip}"
                                                                                      Kind="AccountAlert"
                                                                                      Visibility="{Binding IsApplicationValid, Converter={StaticResource InvBoolToVis}}" />
 
-                                                            <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="20" Height="20" Margin="0" Padding="0" ToolTip="Спортсмен успешно прошел взвешивание." 
+                                                            <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="20" Height="20" Margin="0" Padding="0" ToolTip="{loc:Loc Applications_WeightApproved_Tooltip}"
                                                                                  Kind="WeightKilogram" Visibility="{Binding IsWeightApproved, Converter={StaticResource BoolToVis}}" />
-                                                            <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="20" Height="20" Margin="0" Padding="0" ToolTip="Спортсмену необходимо пройти взвешивание." 
+                                                            <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="20" Height="20" Margin="0" Padding="0" ToolTip="{loc:Loc Applications_WeightPending_Tooltip}"
                                                                                  Kind="WeightKilogram" Visibility="{Binding IsWeightApproved, Converter={StaticResource InvBoolToVis}}" />
 
-                                                            <materialDesign:PackIcon Grid.Column="2" Foreground="Green" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="Оплата вступительного взноса подтверждена." 
+                                                            <materialDesign:PackIcon Grid.Column="2" Foreground="Green" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="{loc:Loc Applications_FeePaid_Tooltip}"
                                                                                  Kind="Cash100" Visibility="{Binding IsEntryFeePaid, Converter={StaticResource BoolToVis}}" />
-                                                            <materialDesign:PackIcon Grid.Column="2" Foreground="DarkRed" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="Необходимо подтвердить оплату." 
+                                                            <materialDesign:PackIcon Grid.Column="2" Foreground="DarkRed" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="{loc:Loc Applications_FeePending_Tooltip}"
                                                                                  Kind="Cash100" Visibility="{Binding IsEntryFeePaid, Converter={StaticResource InvBoolToVis}}" />
 
-                                                            <materialDesign:PackIcon Grid.Column="3" Foreground="Green" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="Спортсмен допущен до соревнований." 
+                                                            <materialDesign:PackIcon Grid.Column="3" Foreground="Green" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="{loc:Loc Applications_RegApproved_Tooltip}"
                                                                                  Kind="CheckboxMarkedOutline" Visibility="{Binding IsRegistrationApproved, Converter={StaticResource BoolToVis}}" />
-                                                            <materialDesign:PackIcon Grid.Column="4" Foreground="DarkRed" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="Спортсмен не допущен до соревнований. Необходимо подтвердить вес, оплату и весовую категорию." 
+                                                            <materialDesign:PackIcon Grid.Column="4" Foreground="DarkRed" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="{loc:Loc Applications_RegPending_Tooltip}"
                                                                                  Kind="CloseBoxOutline" Visibility="{Binding IsRegistrationApproved, Converter={StaticResource InvBoolToVis}}" />
 
                                                         </Grid>
@@ -347,7 +347,7 @@
                                                         <StackPanel VerticalAlignment="Center"
                                                                     HorizontalAlignment="Right" Margin="0,0,8,0"
                                                                     Orientation="Horizontal">
-                                                            <Button ToolTip="Редактировать данные спортсмена"
+                                                            <Button ToolTip="{loc:Loc Applications_EditWrestler_Tooltip}"
                                                                     Margin="0" Padding="0" Width="28" Height="28"
                                                                     Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.EditWrestlerCommand}"
@@ -358,7 +358,7 @@
                                                                                          Margin="0" Padding="0" />
                                                             </Button>
 
-                                                            <Button ToolTip="Удалить спортсмена из заявки"
+                                                            <Button ToolTip="{loc:Loc Applications_DeleteWrestler_Tooltip}"
                                                                     Margin="8,0,0,0" Padding="0" Width="28" Height="28"
                                                                     Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.DeleteWrestlerCommand}"

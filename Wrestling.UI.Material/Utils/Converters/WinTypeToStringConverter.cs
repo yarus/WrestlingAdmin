@@ -1,77 +1,62 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Windows.Data;
 using Wrestling.Entities;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Utils.Converters
 {
     [ValueConversion(typeof(MatchWinTypeEnum), typeof(string))]
     public class WinTypeToStringConverter : IValueConverter
     {
-        private const string TUSHEWIN = "Туше (VFA 5:0)";
-        private const string INJURYWIN = "Травма (VIN 5:0)";
-        private const string WARNINGSLIMIT = "3 предупреждения (VCA 5:0)";
-        private const string NOSHOW = "Неявка (VFO 5:0)";
-        private const string DISQUALIFYWIN = "Дисквалификация (DSQ 5:0)";
-        private const string DOMINATIONWIN = "Преимущество (VSU 4:0)";
-        private const string DOMINATIONWIN_WITH_POINTS = "Преимущество (VSU1 4:1)";
-        private const string POINTSWIN = "Победа по Баллам (VPO 3:0)";
-        private const string POINTSWIN_WITH_POINTS = "Победа по Баллам (VPO1 3:1)";
-        private const string ACTIONWIN = "Последнее Действие (VPO1 3:1)";
-        private const string FREEWIN = "Автопобеда";
-        private const string MUTUAL_DSQ = "Обоюдная дисквал. (2DSQ 0:0)";
-        private const string MUTUAL_INJURY = "Обоюдная травма (2VIN 0:0)";
-        private const string MUTUAL_NOSHOW = "Обоюдная неявка (2VFO 0:0)";
+        // Stable mapping enum→localization key. The displayed string comes
+        // from LocalizationService at Convert time, so a language switch flips
+        // every "win type" label without any per-binding plumbing.
+        private static readonly Dictionary<MatchWinTypeEnum, string> KeyByEnum = new Dictionary<MatchWinTypeEnum, string>
+        {
+            { MatchWinTypeEnum.Tushe,                    "WinType_Tushe" },
+            { MatchWinTypeEnum.Injury,                   "WinType_Injury" },
+            { MatchWinTypeEnum.WarningsLimit,            "WinType_WarningsLimit" },
+            { MatchWinTypeEnum.NoShow,                   "WinType_NoShow" },
+            { MatchWinTypeEnum.DisqualifyWin,            "WinType_DisqualifyWin" },
+            { MatchWinTypeEnum.DominationWin,            "WinType_DominationWin" },
+            { MatchWinTypeEnum.DominationWinWithPoints,  "WinType_DominationWinWithPoints" },
+            { MatchWinTypeEnum.PointsWin,                "WinType_PointsWin" },
+            { MatchWinTypeEnum.PointsWinWithPoints,      "WinType_PointsWinWithPoints" },
+            { MatchWinTypeEnum.ActionWin,                "WinType_ActionWin" },
+            { MatchWinTypeEnum.FreeWin,                  "WinType_FreeWin" },
+            { MatchWinTypeEnum.MutualDisqualify,         "WinType_MutualDisqualify" },
+            { MatchWinTypeEnum.MutualInjury,             "WinType_MutualInjury" },
+            { MatchWinTypeEnum.MutualNoShow,             "WinType_MutualNoShow" },
+        };
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value == null) return string.Empty;
 
             var valueEnum = (MatchWinTypeEnum)Enum.Parse(typeof(MatchWinTypeEnum), value.ToString());
-
-            switch (valueEnum)
-            {
-                case MatchWinTypeEnum.Tushe: return TUSHEWIN;
-                case MatchWinTypeEnum.Injury: return INJURYWIN;
-                case MatchWinTypeEnum.WarningsLimit: return WARNINGSLIMIT;
-                case MatchWinTypeEnum.NoShow: return NOSHOW;
-                case MatchWinTypeEnum.DisqualifyWin: return DISQUALIFYWIN;
-                case MatchWinTypeEnum.DominationWin: return DOMINATIONWIN;
-                case MatchWinTypeEnum.DominationWinWithPoints: return DOMINATIONWIN_WITH_POINTS;
-                case MatchWinTypeEnum.PointsWin: return POINTSWIN;
-                case MatchWinTypeEnum.PointsWinWithPoints: return POINTSWIN_WITH_POINTS;
-                case MatchWinTypeEnum.ActionWin: return ACTIONWIN;
-                case MatchWinTypeEnum.FreeWin: return FREEWIN;
-                case MatchWinTypeEnum.MutualDisqualify: return MUTUAL_DSQ;
-                case MatchWinTypeEnum.MutualInjury: return MUTUAL_INJURY;
-                case MatchWinTypeEnum.MutualNoShow: return MUTUAL_NOSHOW;
-            }
-
-            return string.Empty;
+            return KeyByEnum.TryGetValue(valueEnum, out var key)
+                ? LocalizationService.Instance.T(key)
+                : string.Empty;
         }
 
+        // Round-trip: map the displayed string back through the current
+        // language's lookup table. If two enums ever produced the same
+        // localized text the first match wins — the canonical strings here
+        // are unique by design (each carries its UWW code in parentheses).
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value == null) return null;
 
-            switch (value.ToString())
+            var text = value.ToString();
+            foreach (var pair in KeyByEnum)
             {
-                case TUSHEWIN: return MatchWinTypeEnum.Tushe;
-                case INJURYWIN: return MatchWinTypeEnum.Injury;
-                case WARNINGSLIMIT: return MatchWinTypeEnum.WarningsLimit;
-                case NOSHOW: return MatchWinTypeEnum.NoShow;
-                case DISQUALIFYWIN: return MatchWinTypeEnum.DisqualifyWin;
-                case DOMINATIONWIN: return MatchWinTypeEnum.DominationWin;
-                case DOMINATIONWIN_WITH_POINTS: return MatchWinTypeEnum.DominationWinWithPoints;
-                case POINTSWIN: return MatchWinTypeEnum.PointsWin;
-                case POINTSWIN_WITH_POINTS: return MatchWinTypeEnum.PointsWinWithPoints;
-                case ACTIONWIN: return MatchWinTypeEnum.ActionWin;
-                case FREEWIN: return MatchWinTypeEnum.FreeWin;
-                case MUTUAL_DSQ: return MatchWinTypeEnum.MutualDisqualify;
-                case MUTUAL_INJURY: return MatchWinTypeEnum.MutualInjury;
-                case MUTUAL_NOSHOW: return MatchWinTypeEnum.MutualNoShow;
+                if (string.Equals(LocalizationService.Instance.T(pair.Value), text, StringComparison.Ordinal))
+                {
+                    return pair.Key;
+                }
             }
-
             return null;
         }
     }

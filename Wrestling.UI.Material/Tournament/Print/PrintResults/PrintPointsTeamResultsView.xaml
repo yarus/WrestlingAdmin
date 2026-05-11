@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" Foreground="Black" Background="LightGray"
              d:DesignHeight="800" d:DesignWidth="800">
 
@@ -33,11 +34,11 @@
         </Grid>
 
         <TextBlock
-            TextWrapping="NoWrap" Foreground="Black" Text="Командные результаты соревнований"
+            TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc PrintTeam_Title}"
             FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,10,10,0" />
 
         <TextBlock
-            TextWrapping="NoWrap" Foreground="Black" Text="По рейтингу Российского Борцовского Союза (РОСБОС)"
+            TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc PrintTeam_Points_Subtitle}"
             FontSize="20" TextAlignment="Center" FontWeight="Normal" Margin="10,10,10,0" />
 
         <Border BorderBrush="Black" BorderThickness="0,1,0,0" />
@@ -46,14 +47,14 @@
             <ListView.View>
                 <GridView AllowsColumnReorder="true">
                     <GridViewColumn Header="#" DisplayMemberBinding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
-                    <GridViewColumn DisplayMemberBinding="{Binding TeamName}" Header="Команда" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding TeamCity}" Header="Город" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding TotalPoints}" Header="Очки" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding GoldMedals}" Header="1-е место" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding SilverMedals}" Header="2-е место" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding BronzeMedals}" Header="3-е место" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Wrestlers.Count}" Header="Борцов" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding GroupCount}" Header="Групп" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding TeamName}" Header="{loc:Loc Draw_Column_Team}" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding TeamCity}" Header="{loc:Loc Draw_Column_City}" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding TotalPoints}" Header="{loc:Loc TeamResults_Points}" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding GoldMedals}" Header="{loc:Loc PrintTeam_FirstPlace}" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding SilverMedals}" Header="{loc:Loc PrintTeam_SecondPlace}" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding BronzeMedals}" Header="{loc:Loc PrintTeam_ThirdPlace}" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Wrestlers.Count}" Header="{loc:Loc TeamResults_Wrestlers}" Width="Auto" />
+                    <GridViewColumn DisplayMemberBinding="{Binding GroupCount}" Header="{loc:Loc PrintTeam_Groups}" Width="Auto" />
                 </GridView>
             </ListView.View>
         </ListView>
@@ -71,7 +72,7 @@
             </Grid.RowDefinitions>
 
             <TextBlock Grid.Column="0" Grid.Row="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="Главный судья соревнований"
+                       TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc PrintTeam_ChiefJudge}"
                        FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,10,10,0" />
 
             <TextBlock Grid.Column="2" Grid.Row="0"
@@ -81,7 +82,7 @@
             <Border Grid.Row="0" Grid.Column="1" BorderThickness="0,0,0,1" BorderBrush="Black" />
 
             <TextBlock Grid.Row="1" Grid.Column="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь соревнований"
+                       TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc PrintTeam_ChiefSecretary}"
                        FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,40,10,0" />
 
             <TextBlock Grid.Row="1" Grid.Column="2"

@@ -1,4 +1,5 @@
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
 {
@@ -12,7 +13,14 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
             SettingsControl = di.Resolve<GroupBracketSlideSettingsViewModel>();
         }
 
-        public string SlideType => "Сетка группы";
+        public string SlideType
+        {
+            get
+            {
+                var v = LocalizationService.Instance?.T("SlideType_GroupBracket");
+                return string.IsNullOrEmpty(v) || v == "SlideType_GroupBracket" ? "Сетка группы" : v;
+            }
+        }
         public ISliderSettingsControl SettingsControl { get; }
 
         public ISliderViewControl CreateViewControl() => new GroupBracketViewModel(_di);

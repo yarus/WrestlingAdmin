@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:utils="clr-namespace:Wrestling.UI.Utils;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="900">
@@ -65,7 +66,7 @@
                                            Text="{Binding Definition, Mode=OneWay}" />
 
                                 <TextBlock Grid.Column="3" Margin="20,0,20,0" FontSize="14" VerticalAlignment="Center">
-                                    <Run Text="Лауреатов:" />
+                                    <Run Text="{loc:Loc Achievements_NomineesLabel}" />
                                     <Run Text="{Binding WinnersCount, Mode=OneWay}" />
                                 </TextBlock>
                             </Grid>
@@ -84,19 +85,19 @@
                                             <GridViewColumn Header="#" Width="48"
                                                             DisplayMemberBinding="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
 
-                                            <GridViewColumn Header="ФИО" Width="240"
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_FullName}" Width="240"
                                                             DisplayMemberBinding="{Binding Wrestler.FullName}"
                                                             utils:GridViewSort.PropertyName="Wrestler.FullName" />
 
-                                            <GridViewColumn Header="Команда" Width="200"
+                                            <GridViewColumn Header="{loc:Loc Draw_Column_Team}" Width="200"
                                                             DisplayMemberBinding="{Binding Wrestler.TeamName}"
                                                             utils:GridViewSort.PropertyName="Wrestler.TeamName" />
 
-                                            <GridViewColumn Header="Категория" Width="180"
+                                            <GridViewColumn Header="{loc:Loc Results_Column_Category}" Width="180"
                                                             DisplayMemberBinding="{Binding Wrestler.GroupName}"
                                                             utils:GridViewSort.PropertyName="Wrestler.GroupName" />
 
-                                            <GridViewColumn Header="Достижение" Width="160"
+                                            <GridViewColumn Header="{loc:Loc Achievements_Column_Achievement}" Width="160"
                                                             DisplayMemberBinding="{Binding AchievementValue}" />
                                         </GridView>
                                     </ListView.View>

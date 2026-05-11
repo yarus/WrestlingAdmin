@@ -6,6 +6,7 @@
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:converters2="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              md:DialogServiceViews.IsRegistered="True"
@@ -34,6 +35,7 @@
         <converters1:SubtractDoubleConverter x:Key="Subtract" />
         <converters1:MultiplyDoubleConverter x:Key="Multiply" />
         <converters2:MatchActionDescriptionConverter x:Key="MatchActionDescriber" />
+        <loc:LocFormatConverter x:Key="LocFormat" />
     </UserControl.Resources>
 
     <Grid IsEnabled="{Binding IsFormEnabled}" Margin="0,20,0,20">
@@ -139,7 +141,7 @@
                     <StackPanel Orientation="Horizontal" Margin="8">
                         <Grid Background="Yellow">
                             <Border BorderBrush="Black" BorderThickness="1">
-                                <TextBlock Text="ПОБЕДИТЕЛЬ" Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="10,4,10,4" />
+                                <TextBlock Text="{loc:Loc Match_WinnerBadge}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="10,4,10,4" />
                             </Border>                            
                         </Grid>
                     </StackPanel>
@@ -148,14 +150,14 @@
 
             <!-- Stage -->
             <Viewbox Grid.Row="0" Grid.Column="1" Stretch="Uniform" Margin="10,6,10,2" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="{Binding WrestlingMatch.RoundName, Mode=OneWay, Converter={StaticResource UpperCaseConverter}}"
+                <TextBlock Text="{loc:LocRound WrestlingMatch.RoundName, Upper=True}"
                            Style="{StaticResource MaterialDesignHeadline5TextBlock}" HorizontalAlignment="Center" />
             </Viewbox>
 
             <!-- Match Number -->
             <Viewbox Grid.Row="1" Grid.Column="1" Stretch="Uniform" Margin="10,2,10,6" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Style="{StaticResource MaterialDesignHeadline5TextBlock}" HorizontalAlignment="Center">
-                        <Run Text="СХВАТКА"></Run>
+                        <Run Text="{loc:Loc Match_MatchLabel}"></Run>
                         <Run Text="#"></Run>
                         <Run Text="{Binding Path=WrestlingMatch.MatchNumber}"></Run>
                 </TextBlock>
@@ -268,7 +270,7 @@
                     <StackPanel Orientation="Horizontal" Margin="8">
                         <Grid Background="Yellow">
                             <Border BorderBrush="Black" BorderThickness="1">
-                                <TextBlock Text="ПОБЕДИТЕЛЬ" Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="10,4,10,4" />
+                                <TextBlock Text="{loc:Loc Match_WinnerBadge}" Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="10,4,10,4" />
                             </Border>                            
                         </Grid>
                     </StackPanel>
@@ -277,12 +279,12 @@
         </Grid>
         
         <TextBlock Grid.Row="2"
-                   Text="Не выбран победитель схватки"
+                   Text="{loc:Loc Match_NoWinnerWarning}"
                    Foreground="Red" FontWeight="SemiBold" FontSize="14"
                    HorizontalAlignment="Center" Margin="0,8,0,0"
                    Visibility="{Binding IsWinnerNotSelected, Converter={StaticResource BoolToVis}}" />
 
-        <GroupBox Grid.Row="3" Header="Заметки" Padding="5" Margin="0,10,0,0" VerticalAlignment="Top">
+        <GroupBox Grid.Row="3" Header="{loc:Loc Match_NotesHeader}" Padding="5" Margin="0,10,0,0" VerticalAlignment="Top">
             <TextBox Padding="0"
                      Height="120"
                      TextWrapping="Wrap" VerticalAlignment="Stretch"
@@ -293,9 +295,9 @@
         </GroupBox>
 
         <StackPanel Grid.Row="5">
-            <Button Content="ЗАВЕРШИТЬ" Style="{StaticResource MaterialDesignRaisedButton}" TabIndex="1"
+            <Button Content="{loc:Loc Match_Complete}" Style="{StaticResource MaterialDesignRaisedButton}" TabIndex="1"
                     FontStretch="Medium" Width="200" Height="60" Margin="10" FontSize="20"
-                    Command="{Binding CompleteMatchCommand}" ToolTip="Завершить схватку" />
+                    Command="{Binding CompleteMatchCommand}" ToolTip="{loc:Loc Match_Complete_Tooltip}" />
         </StackPanel>
         </Grid>
 
@@ -316,7 +318,7 @@
                                 </Style>
                             </GridView.ColumnHeaderContainerStyle>
 
-                            <GridViewColumn Header="Время" Width="80">
+                            <GridViewColumn Header="{loc:Loc Match_Protocol_Time}" Width="80">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding DateTime, StringFormat={}{0:HH:mm:ss}}" FontSize="15" />
@@ -324,12 +326,13 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <GridViewColumn Header="Матч" Width="120">
+                            <GridViewColumn Header="{loc:Loc Match_Protocol_Match}" Width="120">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock FontSize="15">
                                             <TextBlock.Text>
-                                                <MultiBinding StringFormat="Раунд {0}: {1:mm\:ss}">
+                                                <MultiBinding Converter="{StaticResource LocFormat}">
+                                                    <Binding Path="[Match_Protocol_RoundFormat]" Source="{x:Static loc:LocalizationService.Instance}" />
                                                     <Binding Path="RoundNumber" />
                                                     <Binding Path="SecondInRound" Converter="{StaticResource SecondsToTimeSpanConverter}" />
                                                 </MultiBinding>
@@ -339,7 +342,7 @@
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
 
-                            <GridViewColumn Header="Действие"
+                            <GridViewColumn Header="{loc:Loc Match_Protocol_Action}"
                                             Width="{Binding ActualWidth, ElementName=ProtocolList, Converter={StaticResource Subtract}, ConverterParameter=222}">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>

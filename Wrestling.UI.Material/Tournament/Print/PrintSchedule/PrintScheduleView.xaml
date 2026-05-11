@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" Foreground="Black" Background="LightGray"
              d:DesignHeight="600" d:DesignWidth="1000">
 
@@ -34,7 +35,7 @@
         </Grid>
 
         <TextBlock
-            TextWrapping="NoWrap" Foreground="Black" Text="Протокол хода поединков"
+            TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc PrintSchedule_Title}"
             FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,5,10,0" />
 
         <Border BorderBrush="Black" BorderThickness="0,1,0,0" />
@@ -50,11 +51,11 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0" Text="#" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
-            <TextBlock Grid.Column="1" Text="Группа/Стадия" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
-            <TextBlock Grid.Column="2" Text="Спортсмены" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
-            <TextBlock Grid.Column="3" Text="Команды" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
-            <TextBlock Grid.Column="4" Text="Баллы" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" Width="300" />
-            <TextBlock Grid.Column="5" Text="Итоги" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" TextWrapping="NoWrap" />
+            <TextBlock Grid.Column="1" Text="{loc:Loc Completed_Column_GroupStage}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
+            <TextBlock Grid.Column="2" Text="{loc:Loc Completed_Column_Wrestlers}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
+            <TextBlock Grid.Column="3" Text="{loc:Loc Completed_Column_Teams}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
+            <TextBlock Grid.Column="4" Text="{loc:Loc PrintSchedule_Column_Points}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" Width="300" />
+            <TextBlock Grid.Column="5" Text="{loc:Loc PrintSchedule_Column_Result}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" TextWrapping="NoWrap" />
         </Grid>
 
         <Border BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0,2,0,0" />
@@ -79,7 +80,7 @@
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="{Binding GroupName}" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
-                            <TextBlock Text="{Binding RoundName}" Margin="0,4,0,0" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
+                            <TextBlock Text="{loc:LocRound RoundName}" Margin="0,4,0,0" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
                         </StackPanel>
 
                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
@@ -147,7 +148,7 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Column="0" Grid.Row="0"
-                           TextWrapping="NoWrap" Foreground="Black" Text="Главный судья"
+                           TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc Details_Judge_Header}"
                            FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,10,10,0" />
 
                 <TextBlock Grid.Column="2" Grid.Row="0"
@@ -156,7 +157,7 @@
                            FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,10,10,0" MinWidth="100" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0"
-                           TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь"
+                           TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc Details_Secretary_Header}"
                            FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
                 <TextBlock Grid.Row="1" Grid.Column="2"

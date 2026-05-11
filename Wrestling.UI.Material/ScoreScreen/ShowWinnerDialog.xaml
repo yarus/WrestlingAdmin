@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              md:DialogServiceViews.IsRegistered="True" MinWidth="800" MinHeight="600"
              mc:Ignorable="d" d:DesignHeight="400" d:DesignWidth="600">
 
@@ -17,7 +18,7 @@
         </Grid.RowDefinitions>
 
         <Viewbox Grid.Row="0" Stretch="Uniform">
-            <TextBlock>ПОБЕДИТЕЛЬ!</TextBlock>
+            <TextBlock Text="{loc:Loc ScoreScreen_Winner}" />
         </Viewbox>
 
         <Border Grid.Row="0" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1" Margin="10,0,10,0"></Border>

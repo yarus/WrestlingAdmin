@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters" Foreground="White">
+             xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils" Foreground="White">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -36,7 +37,7 @@
         <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" Margin="10,0,10,0"
                  VerticalAlignment="Center">
             <TextBlock>
-                <Run Text="Ближайшие схватки -" />
+                <Run Text="{loc:Loc Slide_UpcomingMatches_Header}" />
                 <Run Text="{Binding CarpetName, Mode=OneWay}" />
             </TextBlock>
         </Viewbox>
@@ -90,13 +91,13 @@
                                            TextAlignment="Center" TextWrapping="Wrap" />
 
                                 <TextBlock Grid.Row="1" Grid.Column="1"
-                                           Text="{Binding Path=RoundName, Converter={StaticResource converter}}" Foreground="White"
+                                           Text="{loc:LocRound RoundName, Upper=True}" Foreground="White"
                                            VerticalAlignment="Center" HorizontalAlignment="Center"
                                            TextAlignment="Center" TextWrapping="Wrap" />
 
                                 <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,5,0">
                                     <materialDesign:PackIcon Foreground="Red" Margin="0" Padding="0"
-                                                             ToolTip="Спортсмен в красном трико" Kind="CheckboxBlank" />
+                                                             ToolTip="{loc:Loc Match_RedWrestler_Tooltip}" Kind="CheckboxBlank" />
                                     <TextBlock Text="{Binding Path=WrestlerInRed.LastFirstNameShort, Converter={StaticResource converter}}" Foreground="White"
                                                TextWrapping="Wrap" HorizontalAlignment="Left" TextAlignment="Left" />
                                 </StackPanel>
@@ -104,7 +105,7 @@
                                 <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal"
                                             HorizontalAlignment="Left">
                                     <materialDesign:PackIcon Foreground="#005BEC" Margin="0" Padding="0"
-                                                             ToolTip="Спортсмен в синем трико." Kind="CheckboxBlank" />
+                                                             ToolTip="{loc:Loc Match_BlueWrestler_Tooltip}" Kind="CheckboxBlank" />
                                     <TextBlock Text="{Binding Path=WrestlerInBlue.LastFirstNameShort, Converter={StaticResource converter}}" Foreground="White"
                                                TextWrapping="Wrap" TextAlignment="Left" HorizontalAlignment="Left" />
                                 </StackPanel>

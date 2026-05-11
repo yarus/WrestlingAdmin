@@ -6,6 +6,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
              xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              mc:Ignorable="d"
@@ -36,15 +37,15 @@
                                 </Style>
                             </StackPanel.Resources>
 
-                            <TextBlock Style="{DynamicResource MaterialDesignHeadline5TextBlock}">Соревнования</TextBlock>
+                            <TextBlock Style="{DynamicResource MaterialDesignHeadline5TextBlock}" Text="{loc:Loc Details_Tournament_Header}" />
 
                             <TextBox Text="{Binding Tournament.HashTag, UpdateSourceTrigger=PropertyChanged}"
-                                     materialDesign:HintAssist.Hint="Хэш Тэг"
+                                     materialDesign:HintAssist.Hint="{loc:Loc Details_Tournament_HashTag}"
                                      TextWrapping="NoWrap" />
 
                             <TextBox Text="{Binding Tournament.Name, UpdateSourceTrigger=PropertyChanged}"
                                      TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
-                                     materialDesign:HintAssist.Hint="Название" MaxHeight="80" />
+                                     materialDesign:HintAssist.Hint="{loc:Loc Details_Tournament_Name}" MaxHeight="80" />
 
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -53,13 +54,13 @@
                                 </Grid.ColumnDefinitions>
 
                                 <DatePicker SelectedDate="{Binding Path=Tournament.StartDate, UpdateSourceTrigger=PropertyChanged}"
-                                            materialDesign:HintAssist.Hint="Дата проведения"
+                                            materialDesign:HintAssist.Hint="{loc:Loc Details_Tournament_StartDate}"
                                             Style="{DynamicResource MaterialDesignFloatingHintDatePicker}"
                                             HorizontalAlignment="Left" FontSize="18" MinWidth="160" Margin="0,14,0,0" />
 
                                 <TextBox Grid.Column="1"
                                          Text="{Binding Tournament.EntryFee, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="Вступительный взнос" Margin="10,14,0,0"
+                                         materialDesign:HintAssist.Hint="{loc:Loc Details_Tournament_EntryFee}" Margin="10,14,0,0"
                                          TextWrapping="NoWrap" />
                             </Grid>
 
@@ -71,18 +72,18 @@
 
                                 <TextBox Grid.Column="0"
                                          Text="{Binding Tournament.Country, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="Страна" Margin="0,14,10,0"
+                                         materialDesign:HintAssist.Hint="{loc:Loc Details_Tournament_Country}" Margin="0,14,10,0"
                                          TextWrapping="NoWrap" />
 
                                 <TextBox Grid.Column="1"
                                          Text="{Binding Tournament.City, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="Город" Margin="10,14,0,0"
+                                         materialDesign:HintAssist.Hint="{loc:Loc Details_Tournament_City}" Margin="10,14,0,0"
                                          TextWrapping="NoWrap" />
                             </Grid>
 
                             <TextBox Text="{Binding Tournament.Address, UpdateSourceTrigger=PropertyChanged}"
                                      TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
-                                     materialDesign:HintAssist.Hint="Адрес" MaxHeight="80" />
+                                     materialDesign:HintAssist.Hint="{loc:Loc Details_Tournament_Address}" MaxHeight="80" />
                         </StackPanel>
 
                         <Grid Margin="10">
@@ -98,34 +99,34 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                <TextBlock Style="{DynamicResource MaterialDesignHeadline5TextBlock}">Главный судья</TextBlock>
+                                <TextBlock Style="{DynamicResource MaterialDesignHeadline5TextBlock}" Text="{loc:Loc Details_Judge_Header}" />
 
                                 <TextBox Text="{Binding Tournament.MainJudge, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="ФИО"
+                                         materialDesign:HintAssist.Hint="{loc:Loc Details_FullName}"
                                          TextWrapping="NoWrap" />
 
                                 <TextBox Text="{Binding Tournament.MainJudgeEmail, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="Email"
+                                         materialDesign:HintAssist.Hint="{loc:Loc Details_Email}"
                                          TextWrapping="NoWrap" />
 
                                 <TextBox Text="{Binding Tournament.MainJudgePhone, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="Телефон"
+                                         materialDesign:HintAssist.Hint="{loc:Loc Details_Phone}"
                                          TextWrapping="NoWrap" />
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                                <TextBlock Style="{DynamicResource MaterialDesignHeadline5TextBlock}">Главный секретарь</TextBlock>
+                                <TextBlock Style="{DynamicResource MaterialDesignHeadline5TextBlock}" Text="{loc:Loc Details_Secretary_Header}" />
 
                                 <TextBox Text="{Binding Tournament.MainSecretary, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="ФИО"
+                                         materialDesign:HintAssist.Hint="{loc:Loc Details_FullName}"
                                          TextWrapping="NoWrap" />
 
                                 <TextBox Text="{Binding Tournament.MainSecretaryEmail, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="Email"
+                                         materialDesign:HintAssist.Hint="{loc:Loc Details_Email}"
                                          TextWrapping="NoWrap" />
 
                                 <TextBox Text="{Binding Tournament.MainSecretaryPhone, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="Телефон"
+                                         materialDesign:HintAssist.Hint="{loc:Loc Details_Phone}"
                                          TextWrapping="NoWrap" />
                             </StackPanel>
                         </Grid>
@@ -151,7 +152,7 @@
                                         <ColumnDefinition />
                                     </Grid.ColumnDefinitions>
 
-                                    <TextBlock Margin="16">Весовые категории</TextBlock>
+                                    <TextBlock Margin="16" Text="{loc:Loc Details_Groups_Header}" />
                                     <TextBlock Grid.Column="1" Text="{Binding Path=Groups.Count, Mode=OneWay}" Margin="16" />
 
                                 </Grid>
@@ -190,7 +191,7 @@
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
 
-                                        <GridViewColumn Header="Группа" Width="130">
+                                        <GridViewColumn Header="{loc:Loc Details_Groups_Column_Name}" Width="130">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding NameWithoutGender}"
@@ -202,7 +203,7 @@
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
 
-                                        <GridViewColumn Header="Время" Width="44">
+                                        <GridViewColumn Header="{loc:Loc Details_Groups_Column_Time}" Width="44">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding MaxRoundSecond, StringFormat='{}{0}s'}"
@@ -214,7 +215,7 @@
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
 
-                                        <GridViewColumn Header="Пол"
+                                        <GridViewColumn Header="{loc:Loc Details_Groups_Column_Gender}"
                                                         Width="{Binding ElementName=RootControl, Path=DataContext.GenderColumnWidth, Mode=OneWay}">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
@@ -230,7 +231,7 @@
                                         <GridViewColumn Width="28">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <Button ToolTip="Удалить группу"
+                                                    <Button ToolTip="{loc:Loc Details_Groups_Delete_Tooltip}"
                                                             Width="22" Height="22"
                                                             Padding="0"
                                                             HorizontalAlignment="Left"
@@ -282,10 +283,10 @@
                             </ListView>
 
                             <StackPanel Grid.Row="2" Grid.Column="0">
-                                <Button Content="Сгенерировать"
-                        ToolTip="Сгенерировать список групп"
+                                <Button Content="{loc:Loc Details_Groups_Generate}"
+                        ToolTip="{loc:Loc Details_Groups_Generate_Tooltip}"
                         Width="140"
-                        HorizontalAlignment="Center" 
+                        HorizontalAlignment="Center"
                         Margin="0,20,0,10"
                         Command="{Binding GenerateGroupsCommand}" />
                             </StackPanel>

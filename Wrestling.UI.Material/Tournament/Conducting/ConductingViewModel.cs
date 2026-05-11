@@ -11,6 +11,7 @@ using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Tournament.Conducting
 {
@@ -33,7 +34,8 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             RecentResults = new ObservableCollection<RecentMatchSummary>();
         }
 
-        public override string PageTitle => "Проведение";
+        // T inherited from TournamentViewModelBase.
+        public override string PageTitle => T("Conducting_PageTitle", "Проведение");
 
         public override bool IsBackButtonAvailable => false;
 
@@ -79,11 +81,13 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             {
                 var seconds = DataContext?.Tournament?.ExpectedDurationInSeconds ?? 0;
                 var ts = TimeSpan.FromSeconds(seconds);
+                var hoursLabel = T("Time_HoursShort", "ч");
+                var minutesLabel = T("Time_MinutesShort", "мин");
                 if ((int)ts.TotalHours >= 1)
                 {
-                    return $"{(int)ts.TotalHours}ч {ts.Minutes:D2}мин";
+                    return $"{(int)ts.TotalHours}{hoursLabel} {ts.Minutes:D2}{minutesLabel}";
                 }
-                return $"{ts.Minutes}мин";
+                return $"{ts.Minutes}{minutesLabel}";
             }
         }
 
@@ -326,13 +330,15 @@ namespace Wrestling.UI.Material.Tournament.Conducting
 
             string resultLine;
             var winLabel = ShortWinType(match.WinType);
-            var score = $"(счет {match.PointsRed}:{match.PointsBlue})";
+            var scoreLabel = T("Conducting_RecentScore", "счет");
+            var score = $"({scoreLabel} {match.PointsRed}:{match.PointsBlue})";
+            var winPrefix = T("Conducting_RecentWin", "Победа");
 
             if (match.WrestlerInRed == null || match.WrestlerInBlue == null)
             {
                 // Auto-completed (FreeWin) — only one wrestler is set.
                 var loneWinner = match.WrestlerInRed?.LastFirstNameShort ?? match.WrestlerInBlue?.LastFirstNameShort ?? "—";
-                resultLine = $"Победа: {loneWinner}, {winLabel}";
+                resultLine = $"{winPrefix}: {loneWinner}, {winLabel}";
             }
             else if (!match.IsRedWon.HasValue)
             {
@@ -342,7 +348,7 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             else
             {
                 var winner = match.IsRedWon.Value ? redName : blueName;
-                resultLine = $"Победа: {winner}, {winLabel} {score}";
+                resultLine = $"{winPrefix}: {winner}, {winLabel} {score}";
             }
 
             return new RecentMatchSummary

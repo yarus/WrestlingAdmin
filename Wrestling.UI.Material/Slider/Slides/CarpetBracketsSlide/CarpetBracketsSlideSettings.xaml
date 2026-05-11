@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" d:DesignHeight="120" d:DesignWidth="300">
 
     <Grid>
@@ -13,7 +14,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ComboBox Grid.Row="0" Grid.Column="0" materialDesign:HintAssist.Hint="Ковер"
+        <ComboBox Grid.Row="0" Grid.Column="0" materialDesign:HintAssist.Hint="{loc:Loc Slide_Carpet}"
                   Style="{DynamicResource MaterialDesignFloatingHintComboBox}"
                   IsEditable="False" Margin="0 0 0 5" FontSize="18"
                   ItemsSource="{Binding Carpets}" SelectedItem="{Binding SelectedCarpet}">
@@ -27,15 +28,14 @@
         <TextBlock Grid.Row="1" Margin="4 6 4 6" FontSize="13"
                    Foreground="{DynamicResource MaterialDesignBodyLight}"
                    TextWrapping="Wrap">
-            <Run Text="Будет добавлено слайдов:" />
+            <Run Text="{loc:Loc Slide_CarpetBrackets_PlannedLabel}" />
             <Run Text="{Binding PlannedSlidesCount, Mode=OneWay}" />
         </TextBlock>
 
         <TextBlock Grid.Row="2" Margin="4 0 4 4" FontSize="11"
                    Foreground="{DynamicResource MaterialDesignBodyLight}"
-                   TextWrapping="Wrap">
-            Для каждой группы выбранного ковра создаётся отдельный слайд «Сетка группы». Группы, которые уже есть в канале, пропускаются.
-        </TextBlock>
+                   TextWrapping="Wrap"
+                   Text="{loc:Loc Slide_CarpetBrackets_HelpText}" />
 
     </Grid>
 </UserControl>

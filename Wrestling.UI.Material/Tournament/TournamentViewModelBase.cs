@@ -6,11 +6,21 @@ using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Tournament
 {
     public abstract class TournamentViewModelBase : ViewModelBase
     {
+        // Shared lazy-resolve helper for the few snack/dialog strings produced
+        // by the autosave path. Static so derived VMs can call without
+        // per-instance state.
+        protected static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+        }
+
         private ITournamentsManager _tournService;
         private IResultsService _resultsService;
         private ISliderWindowManager _sliderWindowManager;
@@ -61,13 +71,13 @@ namespace Wrestling.UI.Material.Tournament
             if (!string.IsNullOrEmpty(DataContext.Tournament.FileName))
             {
                 var result = await TournamentManager.SaveToFileAsync(DataContext.Tournament, DataContext.Tournament.FileName);
-                ShowSnackMessage(result ? "Турнир сохранен!" : "При сохранении произошла ошибка!");
+                ShowSnackMessage(result ? T("Snack_TournamentSaved", "Турнир сохранен!") : T("Snack_SaveError", "При сохранении произошла ошибка!"));
             }
             else
             {
                 var settings = new SaveFileDialogSettings
                 {
-                    Title = "Сохранить турнир",
+                    Title = T("Home_SaveDialog_Title", "Сохранить турнир"),
                     CheckFileExists = false,
                     OverwritePrompt = true,
                     InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -78,7 +88,7 @@ namespace Wrestling.UI.Material.Tournament
                 if (success == true)
                 {
                     var result = await TournamentManager.SaveToFileAsync(DataContext.Tournament, settings.FileName);
-                    ShowSnackMessage(result ? "Турнир сохранен!" : "При сохранении произошла ошибка!");
+                    ShowSnackMessage(result ? T("Snack_TournamentSaved", "Турнир сохранен!") : T("Snack_SaveError", "При сохранении произошла ошибка!"));
                 }
             }
         }

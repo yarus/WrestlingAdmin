@@ -9,11 +9,12 @@
              xmlns:imageSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.ImageSlide"
              xmlns:videoSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.VideoSlide"
              xmlns:upcomingMatchesSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              md:DialogServiceViews.IsRegistered="True"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              Icon="../Resources/scoreboard.ico"
              Background="Transparent"
-             Title="Электронное табло" Height="600" Width="800" Foreground="White" WindowStartupLocation="Manual"
+             Title="{loc:Loc ScoreScreen_Title}" Height="600" Width="800" Foreground="White" WindowStartupLocation="Manual"
              d:DesignHeight="400" d:DesignWidth="800">
 
     <model:PanelViewBase.Resources>

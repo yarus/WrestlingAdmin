@@ -9,6 +9,7 @@ using MvvmDialogs.FrameworkDialogs.OpenFile;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Tournament.Standing.Applications
 {
@@ -114,13 +115,19 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
         }
 
+        private static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+        }
+
         private void SetEmblem()
         {
             var settings = new OpenFileDialogSettings
             {
-                Title = "Открыть файл с изображением",
+                Title = T("OpenImage_DialogTitle", "Открыть файл с изображением"),
                 InitialDirectory = string.IsNullOrEmpty(Item.EmblemPath) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : Item.EmblemPath,
-                Filter = "Изображение (*.png)|*.png|Изображение (*.jpeg)|*.jpeg|Изображение (*.bmp)|*.bmp|Изображение (*.gif)|*.gif"
+                Filter = T("AddApp_EmblemFilter", "Изображение (*.png)|*.png|Изображение (*.jpeg)|*.jpeg|Изображение (*.bmp)|*.bmp|Изображение (*.gif)|*.gif")
             };
 
             bool? success = Dialog.ShowOpenFileDialog(this, settings);

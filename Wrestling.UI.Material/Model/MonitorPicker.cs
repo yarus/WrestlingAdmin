@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Model
 {
@@ -30,10 +31,14 @@ namespace Wrestling.UI.Material.Model
             {
                 var s = screens[i];
                 var bounds = s.Bounds;
-                var label = $"Монитор {i + 1} — {bounds.Width}×{bounds.Height}";
+                var monitorFmt = LocalizationService.Instance?.T("Monitor_LabelFormat");
+                if (string.IsNullOrEmpty(monitorFmt) || monitorFmt == "Monitor_LabelFormat") monitorFmt = "Монитор {0} — {1}×{2}";
+                var label = string.Format(monitorFmt, i + 1, bounds.Width, bounds.Height);
                 if (Equals(primary, s))
                 {
-                    label += " (основной)";
+                    var primaryLbl = LocalizationService.Instance?.T("Monitor_PrimarySuffix");
+                    if (string.IsNullOrEmpty(primaryLbl) || primaryLbl == "Monitor_PrimarySuffix") primaryLbl = " (основной)";
+                    label += primaryLbl;
                 }
 
                 _monitors.Add(new MonitorOption

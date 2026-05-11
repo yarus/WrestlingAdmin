@@ -7,6 +7,7 @@
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:matConverters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d"
              md:DialogServiceViews.IsRegistered="True"
              d:DesignHeight="1180" d:DesignWidth="960">
@@ -19,6 +20,7 @@
             <converters:GroupedBoolToVisConverter />
         </converters:ValueConverterGroup>
         <matConverters:OptionalImagePathConverter x:Key="OptionalImage" />
+        <loc:LocFormatConverter x:Key="LocFormat" />
     </UserControl.Resources>
 
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -38,10 +40,9 @@
                     <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="PaletteOutline" Width="80" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                     <StackPanel Grid.Row="0" Grid.Column="1">
-                        <TextBlock Margin="16 16 16 8">Внешний вид</TextBlock>
-                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
-                            Цветовая тема приложения. Настройка хранится локально на этом компьютере и не сохраняется в файле турнира.
-                        </TextBlock>
+                        <TextBlock Margin="16 16 16 8" Text="{loc:Loc Settings_Appearance_Header}" />
+                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top"
+                                   Text="{loc:Loc Settings_Appearance_Description}" />
                     </StackPanel>
 
                     <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="12,8,12,12">
@@ -54,13 +55,13 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <materialDesign:PackIcon Grid.Column="0" Kind="WeatherNight" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                                <TextBlock Grid.Column="1" Margin="10 0 0 0" VerticalAlignment="Center" Text="Тёмная тема" />
+                                <TextBlock Grid.Column="1" Margin="10 0 0 0" VerticalAlignment="Center" Text="{loc:Loc Settings_Appearance_DarkTheme}" />
                                 <ToggleButton Grid.Column="2" VerticalAlignment="Center"
                                               IsChecked="{Binding ThemeManager.IsDark, UpdateSourceTrigger=PropertyChanged}"
                                               Style="{StaticResource MaterialDesignSwitchToggleButton}" />
                             </Grid>
 
-                            <TextBlock Margin="0 4 0 4" Text="Основной цвет" Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                            <TextBlock Margin="0 4 0 4" Text="{loc:Loc Settings_Appearance_PrimaryColor}" Foreground="{DynamicResource MaterialDesignBodyLight}" />
 
                             <ListBox ItemsSource="{Binding ThemeManager.AvailablePrimaryColors}"
                                      SelectedItem="{Binding ThemeManager.SelectedPrimary, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -106,9 +107,44 @@
 
                             <TextBlock Margin="4 8 4 0"
                                        FontSize="11"
-                                       Foreground="{DynamicResource MaterialDesignBodyLight}"
-                                       Text="{Binding ThemeManager.SelectedPrimary.DisplayName, StringFormat='Выбран: {0}'}" />
+                                       Foreground="{DynamicResource MaterialDesignBodyLight}">
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource LocFormat}">
+                                        <Binding Path="[Settings_Appearance_SelectedFormat]" Source="{x:Static loc:LocalizationService.Instance}" />
+                                        <Binding Path="ThemeManager.SelectedPrimary.DisplayName" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
                         </StackPanel>
+                    </Border>
+                </Grid>
+            </materialDesign:Card>
+
+
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
+                <Grid VerticalAlignment="Stretch">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="Translate" Width="80" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                    <StackPanel Grid.Row="0" Grid.Column="1">
+                        <TextBlock Margin="16 16 16 8" Text="{loc:Loc Settings_Language_Header}" />
+                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top"
+                                   Text="{loc:Loc Settings_Language_Description}" />
+                    </StackPanel>
+
+                    <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="12,12,12,12">
+                        <ComboBox ItemsSource="{Binding AvailableLanguages}"
+                                  SelectedItem="{Binding SelectedLanguage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  DisplayMemberPath="DisplayName"
+                                  HorizontalAlignment="Stretch" />
                     </Border>
                 </Grid>
             </materialDesign:Card>
@@ -128,11 +164,9 @@
                     <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="Settings" Width="80" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                     <StackPanel Grid.Row="0" Grid.Column="1">
-                        <TextBlock Margin="16 16 16 8">Настройки</TextBlock>
-
-                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
-                                Вы можете задать настройки, влияющие на работу приложения в целом.
-                        </TextBlock>
+                        <TextBlock Margin="16 16 16 8" Text="{loc:Loc Settings_General_Header}" />
+                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top"
+                                   Text="{loc:Loc Settings_General_Description}" />
                     </StackPanel>
 
                     <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8,0,8,8">
@@ -151,34 +185,30 @@
                             </Grid.ColumnDefinitions>
 
                             <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding Path=Item.IsTimerBackward, UpdateSourceTrigger=PropertyChanged}"></CheckBox>
-                            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center">Обратный таймер</TextBlock>
-                            <TextBlock Grid.Row="0" Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
-                                    Обратный отсчет времени в поединке.
-                            </TextBlock>
+                            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Text="{loc:Loc Settings_General_BackwardTimer}" />
+                            <TextBlock Grid.Row="0" Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center"
+                                       Text="{loc:Loc Settings_General_BackwardTimer_Description}" />
 
                             <materialDesign:PackIcon Grid.Row="1" Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
                             <TextBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center"
                                          Text="{Binding Path=Item.MaxRoundSecond, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="секунд" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
-                                    Продолжительность раунда.
-                            </TextBlock>
+                                         materialDesign:HintAssist.Hint="{loc:Loc Settings_General_SecondsHint}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center"
+                                       Text="{loc:Loc Settings_General_RoundDuration_Description}" />
 
                             <materialDesign:PackIcon Grid.Row="2" Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
                             <TextBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center"
                                          Text="{Binding Path=Item.MaxTimeoutSecond, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="секунд" />
-                            <TextBlock Grid.Row="2" Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
-                                    Продолжительность перерыва.
-                            </TextBlock>
+                                         materialDesign:HintAssist.Hint="{loc:Loc Settings_General_SecondsHint}" />
+                            <TextBlock Grid.Row="2" Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center"
+                                       Text="{loc:Loc Settings_General_TimeoutDuration_Description}" />
 
                             <materialDesign:PackIcon Grid.Row="3" Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
                             <TextBox Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"
                                          Text="{Binding Path=Item.MaxActionSecond, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="секунд" />
-                            <TextBlock Grid.Row="3" Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
-                                    Время на выполнение действия.
-                            </TextBlock>
+                                         materialDesign:HintAssist.Hint="{loc:Loc Settings_General_SecondsHint}" />
+                            <TextBlock Grid.Row="3" Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center"
+                                       Text="{loc:Loc Settings_General_ActionDuration_Description}" />
 
                         </Grid>
 
@@ -201,11 +231,9 @@
                     <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="ImageMultiple" Width="80" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                     <StackPanel Grid.Row="0" Grid.Column="1">
-                        <TextBlock Margin="16 16 16 8">Слайдер</TextBlock>
-
-                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
-                                Вы можете настроить фоновое изображение экрана слайдера, прозрачность фона изображения, а так же время переключения слайдов.
-                        </TextBlock>
+                        <TextBlock Margin="16 16 16 8" Text="{loc:Loc Settings_Slider_Header}" />
+                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top"
+                                   Text="{loc:Loc Settings_Slider_Description}" />
                     </StackPanel>
 
                     <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
@@ -224,11 +252,10 @@
                                 </Grid.ColumnDefinitions>
 
                                 <materialDesign:PackIcon Grid.Column="0" Kind="Timer" Width="20" Height="20" VerticalAlignment="Center" />
-                                <TextBox Grid.Column="1" VerticalAlignment="Center" x:Name="SliderTimer" materialDesign:HintAssist.Hint="секунд" Margin="10,5,10,5"
+                                <TextBox Grid.Column="1" VerticalAlignment="Center" x:Name="SliderTimer" materialDesign:HintAssist.Hint="{loc:Loc Settings_General_SecondsHint}" Margin="10,5,10,5"
                                              Text="{Binding Path=Item.SliderMaxSecond, UpdateSourceTrigger=PropertyChanged}"/>
-                                <TextBlock Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
-                                        Таймер переключения слайдов.
-                                </TextBlock>
+                                <TextBlock Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center"
+                                           Text="{loc:Loc Settings_Slider_Timer_Description}" />
                             </Grid>
 
                             <Grid Row="1">
@@ -240,11 +267,11 @@
 
                                 <materialDesign:PackIcon Grid.Column="0" Kind="Image" Width="20" Height="20" VerticalAlignment="Center"/>
 
-                                <TextBox Grid.Column="1" VerticalAlignment="Center" materialDesign:HintAssist.Hint="Фоновое изображение слайдера" Margin="10,5,10,5"
+                                <TextBox Grid.Column="1" VerticalAlignment="Center" materialDesign:HintAssist.Hint="{loc:Loc Settings_Slider_BackgroundHint}" Margin="10,5,10,5"
                                              Text="{Binding Path=Item.SliderBackgroundImagePath, UpdateSourceTrigger=PropertyChanged}"/>
 
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,20,0">
-                                    <Button ToolTip="Указать путь к файлу" Margin="0" Padding="0" Width="22" Height="22"
+                                    <Button ToolTip="{loc:Loc Settings_Sound_PickFileTooltip}" Margin="0" Padding="0" Width="22" Height="22"
                                                 Command="{Binding SetSliderBackgroundCommand}"
                                                 CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="DotsHorizontal" Width="22" Height="22" Margin="0" Padding="0" />
@@ -264,10 +291,9 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" TextWrapping="NoWrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" 
-                                               VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        Прозрачность фонового изображения.
-                                </TextBlock>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" TextWrapping="NoWrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               VerticalAlignment="Center" HorizontalAlignment="Center"
+                                               Text="{loc:Loc Settings_Slider_OpacityLabel}" />
 
                                 <StackPanel Grid.Row="1" Grid.Column="0">
                                     <Slider Margin="0,10,0,10" Height="120" Value="{Binding Path=Item.SliderOpacityValue}" TickFrequency="5" Orientation="Vertical"
@@ -299,11 +325,9 @@
                     <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="MusicCircle" Width="80" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                     <StackPanel Grid.Row="0" Grid.Column="1">
-                        <TextBlock Margin="16 16 16 8">Звук</TextBlock>
-
-                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
-                                При подключенном звуковом устройстве, программа может воспроизводить заданные звуки при начале и завершении раунда схватки.
-                        </TextBlock>
+                        <TextBlock Margin="16 16 16 8" Text="{loc:Loc Settings_Sound_Header}" />
+                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top"
+                                   Text="{loc:Loc Settings_Sound_Description}" />
                     </StackPanel>
 
                     <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
@@ -315,12 +339,10 @@
                             </Grid.RowDefinitions>
 
                             <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
-                                <ToggleButton VerticalAlignment="Center" ToolTip="Вкл/выкл звуки"
+                                <ToggleButton VerticalAlignment="Center" ToolTip="{loc:Loc Settings_Sound_ToggleTooltip}"
                                                   IsChecked="{Binding Path=Item.IsSoundEnabled, UpdateSourceTrigger=PropertyChanged}"/>
-                                <TextBlock TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
-                                        Проигрывать звук при старте и завершении раунда.
-                                </TextBlock>
-
+                                <TextBlock TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center"
+                                           Text="{loc:Loc Settings_Sound_ToggleDescription}" />
                             </StackPanel>
 
                             <Grid Row="1" Grid.Column="0">
@@ -333,11 +355,11 @@
 
                                 <materialDesign:PackIcon Grid.Column="0" Kind="MusicBoxOutline" Width="20" Height="20" VerticalAlignment="Center" />
 
-                                <TextBox Grid.Column="1" VerticalAlignment="Center" materialDesign:HintAssist.Hint="Звук начала раунда" Margin="10,5,10,5"
+                                <TextBox Grid.Column="1" VerticalAlignment="Center" materialDesign:HintAssist.Hint="{loc:Loc Settings_Sound_StartGongHint}" Margin="10,5,10,5"
                                              Text="{Binding Path=Item.StartGongSoundPath, UpdateSourceTrigger=PropertyChanged}"/>
 
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,20,0">
-                                    <Button ToolTip="Указать путь к файлу" Margin="0" Padding="0" Width="22" Height="22"
+                                    <Button ToolTip="{loc:Loc Settings_Sound_PickFileTooltip}" Margin="0" Padding="0" Width="22" Height="22"
                                                 Command="{Binding SetStartGongCommand}"
                                                 VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="DotsHorizontal" Width="22" Height="22" Margin="0" Padding="0" />
@@ -345,8 +367,8 @@
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,20,0">
-                                    <Button ToolTip="Проиграть звук" Margin="0" Padding="0" Width="22" Height="22"
-                                                Command="{Binding PlayStartGongCommand}" 
+                                    <Button ToolTip="{loc:Loc Settings_Sound_PlaySoundTooltip}" Margin="0" Padding="0" Width="22" Height="22"
+                                                Command="{Binding PlayStartGongCommand}"
                                                 VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="PlayCircle" Width="22" Height="22" Margin="0" Padding="0" />
                                     </Button>
@@ -364,11 +386,11 @@
 
                                 <materialDesign:PackIcon Grid.Column="0" Kind="MusicBoxOutline" Width="20" Height="20" VerticalAlignment="Center" />
 
-                                <TextBox Grid.Column="1" VerticalAlignment="Center" materialDesign:HintAssist.Hint="Звук конца раунда" Margin="10,5,10,5"
+                                <TextBox Grid.Column="1" VerticalAlignment="Center" materialDesign:HintAssist.Hint="{loc:Loc Settings_Sound_EndGongHint}" Margin="10,5,10,5"
                                              Text="{Binding Path=Item.EndGongSoundPath, UpdateSourceTrigger=PropertyChanged}"/>
 
                                 <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,20,0">
-                                    <Button ToolTip="Указать путь к файлу" Margin="0" Padding="0" Width="22" Height="22"
+                                    <Button ToolTip="{loc:Loc Settings_Sound_PickFileTooltip}" Margin="0" Padding="0" Width="22" Height="22"
                                                 Command="{Binding SetEndGongCommand}"
                                                 VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="DotsHorizontal" Width="22" Height="22" Margin="0" Padding="0" />
@@ -376,8 +398,8 @@
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,20,0">
-                                    <Button ToolTip="Проиграть звук" Margin="0" Padding="0" Width="22" Height="22"
-                                                Command="{Binding PlayEndGongCommand}" 
+                                    <Button ToolTip="{loc:Loc Settings_Sound_PlaySoundTooltip}" Margin="0" Padding="0" Width="22" Height="22"
+                                                Command="{Binding PlayEndGongCommand}"
                                                 VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="PlayCircle" Width="22" Height="22" Margin="0" Padding="0" />
                                     </Button>
@@ -404,11 +426,9 @@
                     <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="DatabaseArrowDown" Width="80" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                     <StackPanel Grid.Row="0" Grid.Column="1">
-                        <TextBlock Margin="16 16 16 8">Резервные копии</TextBlock>
-
-                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
-                                Перед каждым сохранением создаётся резервная копия предыдущей версии файла турнира. Хранится не более указанного количества копий.
-                        </TextBlock>
+                        <TextBlock Margin="16 16 16 8" Text="{loc:Loc Settings_Backup_Header}" />
+                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top"
+                                   Text="{loc:Loc Settings_Backup_Description}" />
                     </StackPanel>
 
                     <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
@@ -421,11 +441,10 @@
                             </Grid.RowDefinitions>
 
                             <StackPanel Grid.Row="0" Orientation="Horizontal">
-                                <ToggleButton VerticalAlignment="Center" ToolTip="Вкл/выкл резервные копии"
+                                <ToggleButton VerticalAlignment="Center" ToolTip="{loc:Loc Settings_Backup_ToggleTooltip}"
                                               IsChecked="{Binding Path=Item.IsBackupEnabled, UpdateSourceTrigger=PropertyChanged}" x:Name="BackupEnabledCb" />
-                                <TextBlock TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
-                                        Вкл/Выкл. резервное копирование
-                                </TextBlock>
+                                <TextBlock TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center"
+                                           Text="{loc:Loc Settings_Backup_ToggleDescription}" />
                             </StackPanel>
 
                             <Grid Grid.Row="1" Margin="0 4 0 4">
@@ -440,11 +459,10 @@
                                 <TextBox Grid.Column="1" VerticalAlignment="Center" Margin="10,5,0,5"
                                          IsEnabled="{Binding Path=IsChecked, ElementName=BackupEnabledCb}"
                                          Text="{Binding Path=Item.MaxBackupCount, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="шт." />
+                                         materialDesign:HintAssist.Hint="{loc:Loc Settings_Backup_MaxCountHint}" />
 
-                                <TextBlock Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center">
-                                        Максимум резервных копий.
-                                </TextBlock>
+                                <TextBlock Grid.Column="2" TextWrapping="Wrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Center"
+                                           Text="{loc:Loc Settings_Backup_MaxCountDescription}" />
                             </Grid>
 
                             <Grid Grid.Row="2" Margin="0 4 0 4">
@@ -459,18 +477,24 @@
                                 <TextBox Grid.Column="1" VerticalAlignment="Center" Margin="10,5,0,5"
                                          IsEnabled="{Binding Path=IsChecked, ElementName=BackupEnabledCb}"
                                          Text="{Binding Path=Item.BackupFolderPath, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="Путь (пусто = по умолчанию)" />
+                                         materialDesign:HintAssist.Hint="{loc:Loc Settings_Backup_FolderHint}" />
 
                                 <Button Grid.Column="2" VerticalAlignment="Center" Margin="8 5 8 5"
                                         Style="{StaticResource MaterialDesignOutlinedButton}"
                                         IsEnabled="{Binding Path=IsChecked, ElementName=BackupEnabledCb}"
                                         Command="{Binding BrowseBackupFolderCommand}"
-                                        Content="Обзор..." />
+                                        Content="{loc:Loc Settings_Backup_BrowseButton}" />
                             </Grid>
 
                             <TextBlock Grid.Row="3" Margin="30 0 8 4" TextWrapping="Wrap"
-                                       FontSize="11" Foreground="{DynamicResource MaterialDesignBodyLight}"
-                                       Text="{Binding EffectiveBackupFolderHint, StringFormat='Используется: {0}'}" />
+                                       FontSize="11" Foreground="{DynamicResource MaterialDesignBodyLight}">
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource LocFormat}">
+                                        <Binding Path="[Settings_Backup_EffectiveFormat]" Source="{x:Static loc:LocalizationService.Instance}" />
+                                        <Binding Path="EffectiveBackupFolderHint" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
                         </Grid>
                     </Border>
                 </Grid>
@@ -490,11 +514,9 @@
                     <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="DrawPen" Width="80" Height="80" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
                     <StackPanel Grid.Row="0" Grid.Column="1">
-                        <TextBlock Margin="16 16 16 8">Печать и подписи в протоколах</TextBlock>
-
-                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top">
-                                Если изображение задано, оно автоматически накладывается поверх линий подписи во всех генерируемых протоколах. Изображение должно содержать только печать и подписи — лейблы и ФИО уже рисуются протоколом.
-                        </TextBlock>
+                        <TextBlock Margin="16 16 16 8" Text="{loc:Loc Settings_Signature_Header}" />
+                        <TextBlock TextWrapping="Wrap" Margin="16 0 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" VerticalAlignment="Top"
+                                   Text="{loc:Loc Settings_Signature_Description}" />
                     </StackPanel>
 
                     <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0" BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="8">
@@ -517,17 +539,17 @@
                                 <TextBox Grid.Column="1" VerticalAlignment="Center" Margin="10,5,0,5"
                                          IsReadOnly="True"
                                          Text="{Binding Path=Item.SignatureFooterImagePath, Mode=OneWay}"
-                                         materialDesign:HintAssist.Hint="Путь к изображению (пусто = без печати)" />
+                                         materialDesign:HintAssist.Hint="{loc:Loc Settings_Signature_PathHint}" />
 
                                 <Button Grid.Column="2" VerticalAlignment="Center" Margin="8 5 4 5"
                                         Style="{StaticResource MaterialDesignOutlinedButton}"
                                         Command="{Binding BrowseSignatureFooterImageCommand}"
-                                        Content="Обзор..." />
+                                        Content="{loc:Loc Settings_Signature_BrowseButton}" />
 
                                 <Button Grid.Column="3" VerticalAlignment="Center" Margin="0 5 8 5"
                                         Style="{StaticResource MaterialDesignOutlinedButton}"
                                         Command="{Binding RemoveSignatureFooterImageCommand}"
-                                        Content="Очистить" />
+                                        Content="{loc:Loc Settings_Signature_ClearButton}" />
                             </Grid>
 
                             <Border Grid.Row="1" Margin="0 8 0 0" BorderThickness="1" BorderBrush="{DynamicResource MaterialDesignDivider}" Background="White">

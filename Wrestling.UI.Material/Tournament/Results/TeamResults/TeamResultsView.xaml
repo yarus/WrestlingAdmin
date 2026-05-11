@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:utils="clr-namespace:Wrestling.UI.Utils;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d"
              d:DesignHeight="500" d:DesignWidth="900">
@@ -29,7 +30,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Button ToolTip="Выбрать систему расчёта"
+                        <Button ToolTip="{loc:Loc TeamResults_SelectSystem_Tooltip}"
                                 Content="{Binding Name}"
                                 MinWidth="180"
                                 Margin="0,0,20,0"
@@ -69,7 +70,7 @@
                         </Style>
                     </GridView.ColumnHeaderContainerStyle>
 
-                    <GridViewColumn Header="Место" Width="70">
+                    <GridViewColumn Header="{loc:Loc Personal_Column_Place}" Width="70">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock HorizontalAlignment="Center"
@@ -78,18 +79,18 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
-                    <GridViewColumn Header="Команда" Width="Auto"
+                    <GridViewColumn Header="{loc:Loc Draw_Column_Team}" Width="Auto"
                                     DisplayMemberBinding="{Binding TeamName}"
                                     utils:GridViewSort.PropertyName="TeamName" />
 
-                    <GridViewColumn Header="Город" Width="Auto"
+                    <GridViewColumn Header="{loc:Loc Draw_Column_City}" Width="Auto"
                                     DisplayMemberBinding="{Binding TeamCity}"
                                     utils:GridViewSort.PropertyName="TeamCity" />
 
                     <GridViewColumn Width="60" utils:GridViewSort.PropertyName="GoldMedals">
                         <GridViewColumn.Header>
                             <materialDesign:PackIcon Kind="Medal" Width="22" Height="22"
-                                                     Foreground="#FFB300" ToolTip="Золото" />
+                                                     Foreground="#FFB300" ToolTip="{loc:Loc TeamResults_Gold}" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -101,7 +102,7 @@
                     <GridViewColumn Width="60" utils:GridViewSort.PropertyName="SilverMedals">
                         <GridViewColumn.Header>
                             <materialDesign:PackIcon Kind="Medal" Width="22" Height="22"
-                                                     Foreground="#9E9E9E" ToolTip="Серебро" />
+                                                     Foreground="#9E9E9E" ToolTip="{loc:Loc TeamResults_Silver}" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -113,7 +114,7 @@
                     <GridViewColumn Width="60" utils:GridViewSort.PropertyName="BronzeMedals">
                         <GridViewColumn.Header>
                             <materialDesign:PackIcon Kind="Medal" Width="22" Height="22"
-                                                     Foreground="#8D6E63" ToolTip="Бронза" />
+                                                     Foreground="#8D6E63" ToolTip="{loc:Loc TeamResults_Bronze}" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -125,7 +126,7 @@
                     <GridViewColumn Width="60" utils:GridViewSort.PropertyName="TotalMedals">
                         <GridViewColumn.Header>
                             <materialDesign:PackIcon Kind="MedalOutline" Width="22" Height="22"
-                                                     ToolTip="Всего медалей" />
+                                                     ToolTip="{loc:Loc TeamResults_TotalMedals}" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -137,7 +138,7 @@
                     <GridViewColumn Width="60" utils:GridViewSort.PropertyName="TotalPoints">
                         <GridViewColumn.Header>
                             <materialDesign:PackIcon Kind="Star" Width="22" Height="22"
-                                                     ToolTip="Очки" />
+                                                     ToolTip="{loc:Loc TeamResults_Points}" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -149,7 +150,7 @@
                     <GridViewColumn Width="60" utils:GridViewSort.PropertyName="GroupCount">
                         <GridViewColumn.Header>
                             <materialDesign:PackIcon Kind="FormatListBulleted" Width="22" Height="22"
-                                                     ToolTip="Категорий" />
+                                                     ToolTip="{loc:Loc TeamResults_Categories}" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -161,7 +162,7 @@
                     <GridViewColumn Width="60">
                         <GridViewColumn.Header>
                             <materialDesign:PackIcon Kind="AccountMultiple" Width="22" Height="22"
-                                                     ToolTip="Борцов" />
+                                                     ToolTip="{loc:Loc TeamResults_Wrestlers}" />
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

@@ -11,12 +11,14 @@ using Wrestling.UI.Material.Tournament.Progress.Brackets;
 using Wrestling.UI.Material.Tournament.Results.PersonalResults;
 using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Tournament.Results
 {
     public class CompletedMatchesViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
-        public string PageName => "Журнал матчей";
+        // T inherited from TournamentViewModelBase.
+        public string PageName => T("Completed_PageName", "Журнал матчей");
 
 
         private ICommand _openMatchCommand;
@@ -28,7 +30,7 @@ namespace Wrestling.UI.Material.Tournament.Results
         
         private string _filterString;
         
-        public override string PageTitle => "Завершенные поединки";
+        public override string PageTitle => T("Completed_PageTitle", "Завершенные поединки");
 
         public int CarpetsCount => DataContext.Tournament.Carpets.Count;
         public int MatchesCount => DataContext.Tournament.Groups.Sum(g => g.Bracket?.MatchesCount ?? 0);

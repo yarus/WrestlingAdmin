@@ -11,6 +11,7 @@ using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Tournament;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Match
 {
@@ -24,6 +25,7 @@ namespace Wrestling.UI.Material.Match
         private IGroupBracketProcessor _processor;
         private ICommand _completeMatch;
         private IKeyHandler _keyHandler;
+        private ILocalizationService _localization;
 
         #endregion
 
@@ -32,7 +34,8 @@ namespace Wrestling.UI.Material.Match
             _drawTypes = Resolve<List<IGroupBracketProcessor>>();
         }
 
-        public override string PageTitle => "Результаты поединка";
+        // T inherited from TournamentViewModelBase.
+        public override string PageTitle => T("MatchResults_PageTitle", "Результаты поединка");
 
         public override IList<CommandButtonItem> QuickButtons
         {
@@ -44,7 +47,7 @@ namespace Wrestling.UI.Material.Match
 
                     if (WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Completed && CanRejectResult)
                     {
-                        _quickButtons.Add(new CommandButtonItem("Анулировать", PackIconKind.BlockHelper,
+                        _quickButtons.Add(new CommandButtonItem(T("MatchResults_Cancel", "Анулировать"), PackIconKind.BlockHelper,
                             new AsyncRelayCommand(async param => await RejectAsync(),
                                 param => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Completed &&
                                          CanRejectResult)));
@@ -77,6 +80,7 @@ namespace Wrestling.UI.Material.Match
             base.InitData();
 
             _scoreScreenVm = Resolve<ScoreScreenViewModel>();
+            if (_localization == null) _localization = Resolve<ILocalizationService>();
 
             if (WrestlingMatch == null) throw new InvalidOperationException("Match is not set on the data context — navigation reached MatchResultsView without a current match.");
 
@@ -629,8 +633,8 @@ namespace Wrestling.UI.Material.Match
         private async Task RejectAsync()
         {
             if (Dialog.ShowMessageBox(this,
-                    "Результат матча будет анулирован и сетка перестроена! Вы уверены?",
-                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+                    T("MatchResults_RevertConfirm_Body", "Результат матча будет анулирован и сетка перестроена! Вы уверены?"),
+                    T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             if (DataContext.Group?.Bracket != null)
             {
@@ -679,8 +683,8 @@ namespace Wrestling.UI.Material.Match
                 || (!Winner.HasValue && !isMutual))
             {
                 Dialog.ShowMessageBox(this,
-                        "Ошибка завершения мачта! Возможно матч уже завершен.",
-                        "Ошибка", MessageBoxButton.OK, MessageBoxImage.Information);
+                        T("MatchResults_CompleteError_Body", "Ошибка завершения мачта! Возможно матч уже завершен."),
+                        T("MatchResults_ErrorTitle", "Ошибка"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -784,12 +788,15 @@ namespace Wrestling.UI.Material.Match
                 // the rebuild resets it.
                 if (match.Status == MatchStatusEnum.Pending)
                 {
-                    return "Обоюдная DSQ в финале: в финал переведены победители схваток за 3-е место. Финал сыгран заново.";
+                    return T("MatchResults_MutualDsq_FinalRebuilt",
+                        "Обоюдная DSQ в финале: в финал переведены победители схваток за 3-е место. Финал сыгран заново.");
                 }
-                return "Обоюдная DSQ в финале: после завершения схваток за 3-е место их победители будут переведены в финал.";
+                return T("MatchResults_MutualDsq_FinalPending",
+                    "Обоюдная DSQ в финале: после завершения схваток за 3-е место их победители будут переведены в финал.");
             }
 
-            return "Обоюдная DSQ в полуфинале/финале — требуется ручная перестройка сетки (правила УВВ).";
+            return T("MatchResults_MutualDsq_ManualRebuild",
+                "Обоюдная DSQ в полуфинале/финале — требуется ручная перестройка сетки (правила УВВ).");
         }
 
         private void NavigateToMatches()
@@ -931,14 +938,14 @@ namespace Wrestling.UI.Material.Match
                         IsPlayer1WithAdvantage = WrestlingMatch.BestActionRed > WrestlingMatch.BestActionBlue;
                         IsPlayer2WithAdvantage = WrestlingMatch.BestActionRed < WrestlingMatch.BestActionBlue;
                         Winner = WrestlingMatch.BestActionRed > WrestlingMatch.BestActionBlue ? WrestlingMatch.WrestlerInRed.ID : WrestlingMatch.WrestlerInBlue.ID;
-                        Note = "Победа присуждена по качеству результативного действия.";
+                        Note = T("MatchResults_AutoNote_ActionQuality", "Победа присуждена по качеству результативного действия.");
                     }
                     else
                     {
                         IsPlayer1WithAdvantage = WrestlingMatch.IsLastActionRed;
                         IsPlayer2WithAdvantage = !WrestlingMatch.IsLastActionRed;
                         Winner = WrestlingMatch.IsLastActionRed ? WrestlingMatch.WrestlerInRed.ID : WrestlingMatch.WrestlerInBlue.ID;
-                        Note = "При равном счете и равном качестве результативных действий победа присуждена по последнему действию.";
+                        Note = T("MatchResults_AutoNote_LastAction", "При равном счете и равном качестве результативных действий победа присуждена по последнему действию.");
                     }
 
                     WinType = MatchWinTypeEnum.ActionWin;

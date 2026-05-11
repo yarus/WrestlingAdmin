@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:utils="clr-namespace:Wrestling.UI.Utils;assembly=Wrestling.UI.Utils"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
@@ -89,7 +90,7 @@
                             <DataTemplate>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="{Binding GroupName}" TextWrapping="NoWrap" HorizontalAlignment="Left" />
-                                    <TextBlock Text="{Binding RoundName}" Margin="0,4,0,0" TextWrapping="NoWrap"
+                                    <TextBlock Text="{loc:LocRound RoundName}" Margin="0,4,0,0" TextWrapping="NoWrap"
                                                Foreground="{DynamicResource MaterialDesignBodyLight}" HorizontalAlignment="Left" />
                                 </StackPanel>
                             </DataTemplate>

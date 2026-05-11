@@ -6,12 +6,14 @@ using Wrestling.Entities.Results;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
 {
     public class PersonalResultsViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
-        public string PageName => "Личные";
+        // T inherited from TournamentViewModelBase.
+        public string PageName => T("Personal_PageName", "Личные");
 
 
         private IResultsService _resultsService;
@@ -27,7 +29,7 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
 
         public override bool IsBackButtonAvailable => true;
 
-        public override string PageTitle => "Личные итоги";
+        public override string PageTitle => T("Personal_PageTitle", "Личные итоги");
 
         public IList<WeightCategoryResultsViewModel> Items
         {

@@ -5,6 +5,7 @@ using MvvmDialogs.FrameworkDialogs.OpenFile;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 using System.Linq;
 
 namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
@@ -82,7 +83,12 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
         }
 
         private static string BuildAutoTitle(string carpetName)
-            => string.IsNullOrEmpty(carpetName) ? null : $"Ближайшие Поединки - {carpetName}";
+        {
+            if (string.IsNullOrEmpty(carpetName)) return null;
+            var format = LocalizationService.Instance?.T("SlideAutoTitle_Upcoming");
+            if (string.IsNullOrEmpty(format) || format == "SlideAutoTitle_Upcoming") format = "Ближайшие Поединки - {0}";
+            return string.Format(format, carpetName);
+        }
 
         private void UpdateAutoTitle(string newAutoTitle)
         {
@@ -221,13 +227,19 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             }
         }
 
+        private static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+        }
+
         private void SetSliderBackground()
         {
             var settings = new OpenFileDialogSettings
             {
-                Title = "Открыть файл с изображением",
+                Title = T("OpenImage_DialogTitle", "Открыть файл с изображением"),
                 InitialDirectory = string.IsNullOrEmpty(SliderBackgroundImagePath) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : SliderBackgroundImagePath,
-                Filter = "Изображения (*.jpg)|*.jpg|All Files (*.*)|*.*"
+                Filter = T("ImageFilter", "Изображения (*.jpg)|*.jpg|All Files (*.*)|*.*")
             };
 
             bool? success = Dialog.ShowOpenFileDialog(this, settings);

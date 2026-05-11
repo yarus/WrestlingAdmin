@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              md:DialogServiceViews.IsRegistered="True"
              mc:Ignorable="d" d:DesignHeight="200" d:DesignWidth="300">
 
@@ -20,11 +21,11 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <TextBox Grid.Column="0" VerticalAlignment="Center" materialDesign:HintAssist.Hint="Видео на слайде" FontSize="18"
+            <TextBox Grid.Column="0" VerticalAlignment="Center" materialDesign:HintAssist.Hint="{loc:Loc Slide_Video_Path}" FontSize="18"
                      Text="{Binding Path=VideoPath, UpdateSourceTrigger=PropertyChanged}" MaxWidth="400" Style="{DynamicResource MaterialDesignFloatingHintTextBox}"/>
 
             <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10,0,0,0">
-                <Button ToolTip="Указать путь к файлу" Margin="0" Padding="0" Width="22" Height="22"
+                <Button ToolTip="{loc:Loc Settings_Sound_PickFileTooltip}" Margin="0" Padding="0" Width="22" Height="22"
                         Command="{Binding SetVideoPathCommand}"
                         CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <materialDesign:PackIcon Kind="DotsHorizontal" Width="22" Height="22" Margin="0" Padding="0" />

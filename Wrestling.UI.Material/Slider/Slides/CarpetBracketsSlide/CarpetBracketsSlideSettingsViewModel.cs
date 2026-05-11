@@ -4,11 +4,22 @@ using System.Linq;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide
 {
     public class CarpetBracketsSlideSettingsViewModel : ViewModelBase, ISliderSettingsControl
     {
+        // Auto-title format. Set at write-time so a language switch after the
+        // user saves the slide does not retroactively rewrite their title.
+        private static string AutoTitleFor(Carpet carpet)
+        {
+            if (carpet == null) return null;
+            var format = LocalizationService.Instance?.T("SlideAutoTitle_CarpetBrackets");
+            if (string.IsNullOrEmpty(format) || format == "SlideAutoTitle_CarpetBrackets") format = "Сетки: {0}";
+            return string.Format(format, carpet.Name);
+        }
+
         private ObservableCollection<Carpet> _carpets;
         private Carpet _selectedCarpet;
         private ScreenSlide _item;
@@ -52,7 +63,7 @@ namespace Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide
 
                 if (!_isInitializing)
                 {
-                    UpdateAutoTitle(_selectedCarpet != null ? "Сетки: " + _selectedCarpet.Name : null);
+                    UpdateAutoTitle(AutoTitleFor(_selectedCarpet));
                 }
 
                 OnPropertyChanged("SelectedCarpet");
@@ -93,7 +104,7 @@ namespace Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide
             }
             finally
             {
-                _lastAutoTitle = _selectedCarpet != null ? "Сетки: " + _selectedCarpet.Name : null;
+                _lastAutoTitle = AutoTitleFor(_selectedCarpet);
                 _isInitializing = false;
             }
         }

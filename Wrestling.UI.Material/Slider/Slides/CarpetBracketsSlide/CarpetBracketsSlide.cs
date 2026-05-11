@@ -10,6 +10,9 @@ namespace Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide
     // step was skipped — fail loudly rather than show an empty slide.
     public class CarpetBracketsSlide : ISlideType
     {
+        // Stable identity sentinel for the macro-detection logic in
+        // SliderControlViewModel.AddSlide. Must NOT be localized — code compares
+        // SlideType against this const to decide whether to expand the macro.
         public const string TypeName = "Сетки ковра";
 
         public CarpetBracketsSlide(IDiContainer di)
@@ -17,6 +20,12 @@ namespace Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide
             SettingsControl = di.Resolve<CarpetBracketsSlideSettingsViewModel>();
         }
 
+        // Returning TypeName as-is keeps SliderControlViewModel.AddSlide's
+        // identity comparison (vm.Item.SlideType == CarpetBracketsSlide.TypeName)
+        // working regardless of UI language. The label that shows in the
+        // type-picker stays Russian — switching it would require routing the
+        // macro detection through a reference check first. Accepted as a small
+        // localization gap on the one macro-type entry.
         public string SlideType => TypeName;
         public ISliderSettingsControl SettingsControl { get; }
 

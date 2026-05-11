@@ -22,6 +22,7 @@ using Wrestling.UI.Material.Tournament.Results.PersonalResults;
 using Wrestling.UI.Material.Tournament.Results.TeamResults;
 using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Tournament.Results
 {
@@ -44,7 +45,8 @@ namespace Wrestling.UI.Material.Tournament.Results
 
         public override bool IsBackButtonAvailable => false;
 
-        public override string PageTitle => CurrentPage?.PageTitle ?? "Результаты";
+        // T inherited from TournamentViewModelBase.
+        public override string PageTitle => CurrentPage?.PageTitle ?? T("Results_PageTitle", "Результаты");
 
         public override IList<CommandButtonItem> QuickButtons
         {
@@ -62,7 +64,7 @@ namespace Wrestling.UI.Material.Tournament.Results
                         },
                         canExecute: _ => true);
                     exportBtn = new CommandButtonItem(
-                        "Скачать сетки и итоги PDF",
+                        T("Results_ExportPdf", "Скачать сетки и итоги PDF"),
                         PackIconKind.PrinterOutline,
                         exportCmd);
 
@@ -76,7 +78,7 @@ namespace Wrestling.UI.Material.Tournament.Results
                         },
                         canExecute: _ => true);
                     resultsCsvBtn = new CommandButtonItem(
-                        "Экспорт результатов в CSV",
+                        T("Results_ExportCsv", "Экспорт результатов в CSV"),
                         PackIconKind.DatabaseExport,
                         resultsCsvCmd);
 
@@ -157,8 +159,8 @@ namespace Wrestling.UI.Material.Tournament.Results
             if (groupsWithBrackets.Count == 0)
             {
                 Dialog.ShowMessageBox(this,
-                    "Нет групп со сгенерированными сетками. Сначала проведите жеребьёвку.",
-                    "Экспорт пакета протоколов", MessageBoxButton.OK, MessageBoxImage.Information);
+                    T("Export_NoBrackets_Body", "Нет групп со сгенерированными сетками. Сначала проведите жеребьёвку."),
+                    T("Export_DialogTitle", "Экспорт пакета протоколов"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -166,7 +168,7 @@ namespace Wrestling.UI.Material.Tournament.Results
 
             var settings = new FolderBrowserDialogSettings
             {
-                Description = "Выберите папку для сохранения пакета протоколов",
+                Description = T("Export_FolderPicker_Title", "Выберите папку для сохранения пакета протоколов"),
                 ShowNewFolderButton = true,
                 SelectedPath = defaultPath
             };
@@ -176,28 +178,28 @@ namespace Wrestling.UI.Material.Tournament.Results
             try
             {
                 var jobs = BuildExportJobs(tournament, groupsWithBrackets);
-                ShowSnackMessage($"Идет создание пакета протоколов: {jobs.Count} файлов...");
+                ShowSnackMessage(string.Format(T("Export_Snack_Building", "Идет создание пакета протоколов: {0} файлов..."), jobs.Count));
 
                 var exporter = new BulkBracketPdfExporter();
                 var result = await exporter.ExportAsync(jobs, settings.SelectedPath);
 
-                var msg = $"Готово. Сохранено PDF: {result.Succeeded}";
-                if (result.Skipped > 0) msg += $", пропущено: {result.Skipped}";
-                if (result.Failures.Count > 0) msg += $", ошибок: {result.Failures.Count}";
+                var msg = string.Format(T("Export_Snack_Done", "Готово. Сохранено PDF: {0}"), result.Succeeded);
+                if (result.Skipped > 0) msg += string.Format(T("Export_Snack_Skipped", ", пропущено: {0}"), result.Skipped);
+                if (result.Failures.Count > 0) msg += string.Format(T("Export_Snack_Failed", ", ошибок: {0}"), result.Failures.Count);
                 ShowSnackMessage(msg);
 
                 if (result.Failures.Count > 0)
                 {
                     Dialog.ShowMessageBox(this,
-                        "Не удалось сохранить часть протоколов:\n\n" + string.Join("\n", result.Failures),
-                        "Экспорт пакета протоколов", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        T("Export_PartialFailure", "Не удалось сохранить часть протоколов:") + "\n\n" + string.Join("\n", result.Failures),
+                        T("Export_DialogTitle", "Экспорт пакета протоколов"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
             {
                 Dialog.ShowMessageBox(this,
-                    "Ошибка экспорта: " + ex.Message,
-                    "Экспорт пакета протоколов", MessageBoxButton.OK, MessageBoxImage.Error);
+                    T("Export_ErrorPrefix", "Ошибка экспорта: ") + ex.Message,
+                    T("Export_DialogTitle", "Экспорт пакета протоколов"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -229,7 +231,7 @@ namespace Wrestling.UI.Material.Tournament.Results
             {
                 jobs.Add(new BulkPdfExportJob
                 {
-                    FileName = "_Командный зачет (олимпийский).pdf",
+                    FileName = T("Export_FileName_TeamResults", "_Командный зачет (олимпийский).pdf"),
                     Landscape = false,
                     ViewFactory = () =>
                     {
@@ -244,7 +246,7 @@ namespace Wrestling.UI.Material.Tournament.Results
             {
                 jobs.Add(new BulkPdfExportJob
                 {
-                    FileName = "_Личные результаты.pdf",
+                    FileName = T("Export_FileName_PersonalResults", "_Личные результаты.pdf"),
                     Landscape = false,
                     ViewFactory = () =>
                     {
@@ -281,7 +283,7 @@ namespace Wrestling.UI.Material.Tournament.Results
             var tournament = DataContext.Tournament;
             if (tournament == null)
             {
-                ShowSnackMessage("Турнир не открыт.");
+                ShowSnackMessage(T("Snack_TournamentNotOpen", "Турнир не открыт."));
                 return;
             }
 
@@ -289,13 +291,13 @@ namespace Wrestling.UI.Material.Tournament.Results
             var results = resultsService?.AllResults;
             if (results == null || results.Count == 0)
             {
-                ShowSnackMessage("Нет данных для экспорта.");
+                ShowSnackMessage(T("Snack_NoExportData", "Нет данных для экспорта."));
                 return;
             }
 
             var settings = new SaveFileDialogSettings
             {
-                Title = "Экспортировать результаты в файл",
+                Title = T("Export_Csv_DialogTitle", "Экспортировать результаты в файл"),
                 CheckFileExists = false,
                 OverwritePrompt = true,
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -339,11 +341,11 @@ namespace Wrestling.UI.Material.Tournament.Results
                     csv.WriteRecords(exportData);
                 }
 
-                ShowSnackMessage("Результаты турнира экспортированы!");
+                ShowSnackMessage(T("Snack_ResultsExported", "Результаты турнира экспортированы!"));
             }
             catch (Exception ex)
             {
-                ShowSnackMessage($"Произошла ошибка экспорта: {ex.Message}");
+                ShowSnackMessage(string.Format(T("Snack_ExportError", "Произошла ошибка экспорта: {0}"), ex.Message));
             }
         }
 

@@ -6,6 +6,7 @@
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:converters2="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              md:DialogServiceViews.IsRegistered="True"
              mc:Ignorable="d"
@@ -143,7 +144,7 @@
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
                                                         <StackPanel Margin="0">
-                                                            <TextBlock x:Name="RoundLabel" Text="{Binding RoundName}"
+                                                            <TextBlock x:Name="RoundLabel" Text="{loc:LocRound RoundName}"
                                                                     HorizontalAlignment="Center"
                                                                     VerticalAlignment="Center">
                                                                 <TextBlock.Margin>

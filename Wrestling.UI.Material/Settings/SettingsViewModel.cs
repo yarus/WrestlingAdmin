@@ -14,6 +14,7 @@ using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Theme;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Settings
 {
@@ -30,6 +31,8 @@ namespace Wrestling.UI.Material.Settings
 
         private string _validation;
         private GlobalSettings _subscribedItem;
+        private ILocalizationService _localization;
+        private ILocalUiSettingsStorage _localUiStorage;
 
         public SettingsViewModel(IDiContainer container) : base(container)
         {
@@ -59,7 +62,50 @@ namespace Wrestling.UI.Material.Settings
                 OnPropertyChanged(nameof(ThemeManager));
             }
 
+            if (_localization == null)
+            {
+                _localization = Resolve<ILocalizationService>();
+                _localUiStorage = Resolve<ILocalUiSettingsStorage>();
+                OnPropertyChanged(nameof(AvailableLanguages));
+                OnPropertyChanged(nameof(SelectedLanguage));
+            }
+
             OnPropertyChanged(nameof(EffectiveBackupFolderHint));
+        }
+
+        public IReadOnlyList<LanguageDescriptor> AvailableLanguages =>
+            _localization?.AvailableLanguages ?? new List<LanguageDescriptor>();
+
+        // Two-way bound to the ComboBox. Setter applies the language live and
+        // persists the choice into local_ui_settings.json so the next launch
+        // starts in the picked language.
+        public LanguageDescriptor SelectedLanguage
+        {
+            get
+            {
+                if (_localization == null) return null;
+                var current = _localization.CurrentLanguage;
+                foreach (var lang in _localization.AvailableLanguages)
+                {
+                    if (string.Equals(lang.Code, current, StringComparison.OrdinalIgnoreCase)) return lang;
+                }
+                return null;
+            }
+            set
+            {
+                if (value == null || _localization == null) return;
+                if (string.Equals(value.Code, _localization.CurrentLanguage, StringComparison.OrdinalIgnoreCase)) return;
+
+                if (_localization.SetLanguage(value.Code) && _localUiStorage != null)
+                {
+                    var snapshot = _localUiStorage.Load();
+                    snapshot.LanguageCode = value.Code;
+                    _localUiStorage.Save(snapshot);
+                }
+
+                OnPropertyChanged(nameof(SelectedLanguage));
+                OnPropertyChanged(nameof(PageTitle));
+            }
         }
 
         // Exposed for the «Внешний вид» settings card. The theme manager is
@@ -97,7 +143,9 @@ namespace Wrestling.UI.Material.Settings
             }
         }
 
-        public override string PageTitle => DataContext.Tournament == null ? "Общие Настройки" : "Настройки Турнира";
+        public override string PageTitle => _localization == null
+            ? (DataContext.Tournament == null ? "Общие Настройки" : "Настройки Турнира")
+            : _localization.T(DataContext.Tournament == null ? "Settings_Page_Title_General" : "Settings_Page_Title_Tournament");
 
         public override bool IsBackButtonAvailable => true;
 
@@ -258,13 +306,19 @@ namespace Wrestling.UI.Material.Settings
             }
         }
 
+        private static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+        }
+
         private void SetSliderBackground()
         {
             var settings = new OpenFileDialogSettings
             {
-                Title = "Открыть файл с изображением",
+                Title = T("OpenImage_DialogTitle", "Открыть файл с изображением"),
                 InitialDirectory = string.IsNullOrEmpty(Item.SliderBackgroundImagePath) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : Item.SliderBackgroundImagePath,
-                Filter = "Изображения (*.jpg)|*.jpg|All Files (*.*)|*.*"
+                Filter = T("ImageFilter", "Изображения (*.jpg)|*.jpg|All Files (*.*)|*.*")
             };
 
             bool? success = Dialog.ShowOpenFileDialog(this, settings);
@@ -296,9 +350,9 @@ namespace Wrestling.UI.Material.Settings
         {
             var settings = new OpenFileDialogSettings
             {
-                Title = "Открыть wav файл",
+                Title = T("OpenWav_DialogTitle", "Открыть wav файл"),
                 InitialDirectory = string.IsNullOrEmpty(Item.StartGongSoundPath) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : Item.StartGongSoundPath,
-                Filter = "Звуковой файл (*.wav)|*.wav"
+                Filter = T("WavFilter", "Звуковой файл (*.wav)|*.wav")
             };
 
             bool? success = Dialog.ShowOpenFileDialog(this, settings);
@@ -312,9 +366,9 @@ namespace Wrestling.UI.Material.Settings
         {
             var settings = new OpenFileDialogSettings
             {
-                Title = "Открыть wav файл",
+                Title = T("OpenWav_DialogTitle", "Открыть wav файл"),
                 InitialDirectory = string.IsNullOrEmpty(Item.EndGongSoundPath) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : Item.EndGongSoundPath,
-                Filter = "Звуковой файл (*.wav)|*.wav"
+                Filter = T("WavFilter", "Звуковой файл (*.wav)|*.wav")
             };
 
             bool? success = Dialog.ShowOpenFileDialog(this, settings);
@@ -343,7 +397,7 @@ namespace Wrestling.UI.Material.Settings
         {
             var settings = new FolderBrowserDialogSettings
             {
-                Description = "Выберите папку для резервных копий",
+                Description = T("Backup_FolderPicker_Title", "Выберите папку для резервных копий"),
                 ShowNewFolderButton = true,
                 SelectedPath = string.IsNullOrWhiteSpace(Item.BackupFolderPath)
                     ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
@@ -394,9 +448,9 @@ namespace Wrestling.UI.Material.Settings
         {
             var settings = new OpenFileDialogSettings
             {
-                Title = "Выберите изображение печати и подписей",
+                Title = T("Signature_PickerTitle", "Выберите изображение печати и подписей"),
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                Filter = "Изображения (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|Все файлы (*.*)|*.*"
+                Filter = T("Signature_PickerFilter", "Изображения (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|Все файлы (*.*)|*.*")
             };
 
             bool? success = Dialog.ShowOpenFileDialog(this, settings);
@@ -425,7 +479,7 @@ namespace Wrestling.UI.Material.Settings
             }
             catch (Exception ex)
             {
-                ShowSnackMessage($"Не удалось сохранить изображение: {ex.Message}");
+                ShowSnackMessage(string.Format(T("Snack_SaveImageError", "Не удалось сохранить изображение: {0}"), ex.Message));
                 Item.SignatureFooterImagePath = previousPath;
             }
         }

@@ -14,6 +14,7 @@ using Wrestling.UI.Material.Tournament.Standing.Applications;
 using Wrestling.UI.Material.Tournament.Standing.Carpets;
 using Wrestling.UI.Material.Tournament.Standing.Details;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Home
 {
@@ -43,7 +44,16 @@ namespace Wrestling.UI.Material.Home
             _resultsService = Resolve<IResultsService>();
         }
 
+        // App brand line — intentionally not localized (proper-noun "РОСБОС"
+        // is a brand identifier). If marketing ever wants per-locale variants
+        // promote this to T("Home_PageTitle", ...) with a fallback.
         public override string PageTitle => "РОСБОС © Сетка 2.0";
+
+        private static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+        }
 
         #region Commands
 
@@ -85,7 +95,7 @@ namespace Wrestling.UI.Material.Home
         {
             var settings = new OpenFileDialogSettings
             {
-                Title = "Открыть турнир",
+                Title = T("Home_OpenDialog_Title", "Открыть турнир"),
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                 Filter = "Wrestling Tournament (*.wrt)|*.wrt|All Files (*.*)|*.*"
             };
@@ -253,7 +263,7 @@ namespace Wrestling.UI.Material.Home
             DataContext.Tournament = new Entities.Tournament(GetSettingsObject())
             {
                 ID = Guid.NewGuid(),
-                Name = "Новый турнир",
+                Name = T("Home_NewTournamentName", "Новый турнир"),
                 Status = TournamentStatus.Pending,
                 StartDate = DateTime.Now.AddDays(1)
             };
@@ -265,7 +275,7 @@ namespace Wrestling.UI.Material.Home
             // The dashboard re-prompts if the operator dismissed this dialog.
             var settings = new SaveFileDialogSettings
             {
-                Title = "Сохранить турнир",
+                Title = T("Home_SaveDialog_Title", "Сохранить турнир"),
                 CheckFileExists = false,
                 OverwritePrompt = true,
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -276,7 +286,9 @@ namespace Wrestling.UI.Material.Home
             if (success == true)
             {
                 var result = _tournManager.SaveToFile(DataContext.Tournament, settings.FileName);
-                ShowSnackMessage(result ? "Турнир сохранен!" : "При сохранении произошла ошибка!");
+                ShowSnackMessage(result
+                    ? T("Snack_TournamentSaved", "Турнир сохранен!")
+                    : T("Snack_SaveError", "При сохранении произошла ошибка!"));
 
                 if (!result)
                 {

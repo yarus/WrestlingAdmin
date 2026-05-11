@@ -16,10 +16,16 @@ namespace Wrestling.UI.Material.Theme
             BaseTheme = "Light";
             PrimaryColor = "DeepPurple";
             SecondaryColor = "Lime";
+            LanguageCode = "ru";
         }
 
         public string BaseTheme { get; set; }
         public string PrimaryColor { get; set; }
         public string SecondaryColor { get; set; }
+
+        // ISO 639-1 language code (e.g. "ru", "en"). Resolved at startup
+        // against LocalizationService.AvailableLanguages — unknown values
+        // fall back to the first registered language.
+        public string LanguageCode { get; set; }
     }
 }

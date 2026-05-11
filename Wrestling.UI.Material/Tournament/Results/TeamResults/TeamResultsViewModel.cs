@@ -5,22 +5,28 @@ using Wrestling.Entities.Results;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Tournament.Results.TeamResults
 {
     public class TeamResultsViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
-        public string PageName => "Командные";
+        // T inherited from TournamentViewModelBase.
+        public string PageName => T("Team_PageName", "Командные");
 
 
         private IResultsService _resultsService;
         private bool _resultsSubscribed;
 
+        // System Name strings are user-facing labels — the buttons render via
+        // {Binding Name}. Kept as plain literals at construction; if the user
+        // wants live language switching the easiest move is to look up via
+        // T() inside the TeamResultsSystemItem.Name getter.
         private readonly IList<TeamResultsSystemItem> _systems = new List<TeamResultsSystemItem>
         {
-            new TeamResultsSystemItem("OlympicOrderer", "Олимпийская"),
-            new TeamResultsSystemItem("MedalsOrderer", "По количеству медалей"),
-            new TeamResultsSystemItem("PointsOrderer", "По квалификационным баллам")
+            new TeamResultsSystemItem("OlympicOrderer", T("TeamSystem_Olympic", "Олимпийская")),
+            new TeamResultsSystemItem("MedalsOrderer", T("TeamSystem_Medals", "По количеству медалей")),
+            new TeamResultsSystemItem("PointsOrderer", T("TeamSystem_Points", "По квалификационным баллам"))
         };
 
         private TeamResultsSystemItem _selectedSystem;
@@ -34,7 +40,7 @@ namespace Wrestling.UI.Material.Tournament.Results.TeamResults
 
         public override bool IsBackButtonAvailable => true;
 
-        public override string PageTitle => "Командные итоги";
+        public override string PageTitle => T("Team_PageTitle", "Командные итоги");
 
         public IList<TeamResultsSystemItem> Systems => _systems;
 

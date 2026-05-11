@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" Foreground="Black" Background="LightGray"
              d:DesignHeight="600" d:DesignWidth="1000">
 
@@ -44,7 +45,7 @@
         </Grid>
 
         <TextBlock
-            TextWrapping="NoWrap" Foreground="Black" Text="Протокол Взвешивания"
+            TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc PrintApplications_Title}"
             FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,10,10,0" />
 
         <TextBlock
@@ -69,7 +70,7 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Фамилия Имя" Width="200">
+                        <GridViewColumn Header="{loc:Loc Personal_Column_LastFirstName}" Width="200">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding AthleteName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
@@ -77,7 +78,7 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Г.р." Width="50">
+                        <GridViewColumn Header="{loc:Loc Applications_Column_BirthYear}" Width="50">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding BirthYear}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
@@ -85,7 +86,7 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Команда" Width="130">
+                        <GridViewColumn Header="{loc:Loc Draw_Column_Team}" Width="130">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding TeamName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
@@ -93,7 +94,7 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Город" Width="150">
+                        <GridViewColumn Header="{loc:Loc Draw_Column_City}" Width="150">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding TeamCity}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
@@ -101,7 +102,7 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Разряд" Width="60">
+                        <GridViewColumn Header="{loc:Loc Applications_Column_Level}" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Level}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
@@ -109,7 +110,7 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Вес" Width="50">
+                        <GridViewColumn Header="{loc:Loc Applications_Column_Weight}" Width="50">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Weight}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
@@ -141,7 +142,7 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Column="0" Grid.Row="0"
-                           TextWrapping="NoWrap" Foreground="Black" Text="Главный судья"
+                           TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc Details_Judge_Header}"
                            FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,10,10,0" />
 
                 <TextBlock Grid.Column="2" Grid.Row="0"
@@ -150,7 +151,7 @@
                            FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,10,10,0" MinWidth="100" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0"
-                           TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь"
+                           TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc Details_Secretary_Header}"
                            FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
                 <TextBlock Grid.Row="1" Grid.Column="2"

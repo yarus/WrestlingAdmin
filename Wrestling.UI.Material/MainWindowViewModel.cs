@@ -11,6 +11,7 @@ using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Material.Tournament;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material
 {
@@ -27,6 +28,14 @@ namespace Wrestling.UI.Material
         private bool _isDrawerOpen;
         private ICommand _saveCommand;
         private ICommand _closeTournamentCommand;
+
+        // Same lazy-resolve pattern as the per-phase VMs — singleton lifetime,
+        // can be queried before InitData if the rail/snackbar accesses fire early.
+        private static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+        }
 
         // Maps overlay/print VMs to the rail item that should appear "active"
         // while they are on screen. Populated externally via SetOverlayParent
@@ -180,8 +189,8 @@ namespace Wrestling.UI.Material
             // still happens first, but the operator may have a half-edited
             // form they didn't mean to commit.
             if (Dialog.ShowMessageBox(this,
-                    "Закрыть текущий турнир и вернуться на стартовый экран?",
-                    "Подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
+                    T("CloseTournament_Body", "Закрыть текущий турнир и вернуться на стартовый экран?"),
+                    T("CloseTournament_Title", "Подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
             {
                 return;
             }
@@ -195,7 +204,7 @@ namespace Wrestling.UI.Material
                     if (manager != null)
                     {
                         var ok = await manager.SaveToFileAsync(tournament, tournament.FileName);
-                        if (!ok) ShowSnackMessage("При сохранении произошла ошибка!");
+                        if (!ok) ShowSnackMessage(T("Snack_SaveError", "При сохранении произошла ошибка!"));
                     }
                 }
             }

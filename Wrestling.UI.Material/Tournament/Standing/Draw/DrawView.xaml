@@ -6,6 +6,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
              xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              mc:Ignorable="d"
              md:DialogServiceViews.IsRegistered="True"
@@ -40,19 +41,19 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Row="0" Grid.Column="0" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Button Content="Пересоздать Все Сетки"
+                <Button Content="{loc:Loc Draw_RegenerateAll}"
                         HorizontalAlignment="Left" Margin="5,0,5,0"
                         Command="{Binding Path=DataContext.RegenerateAllBrackets, ElementName=RootControl}"
                         CommandParameter="{Binding }" />
-                <Button Content="Снять фиксированный посев"
+                <Button Content="{loc:Loc Draw_UnfixAllSeeds}"
                         HorizontalAlignment="Left" Margin="5,0,5,0"
-                        ToolTip="Сбросить IsSeedFixed у всех участников во всех группах"
+                        ToolTip="{loc:Loc Draw_UnfixAllSeeds_Tooltip}"
                         Command="{Binding Path=DataContext.UnfixAllSeedsCommand, ElementName=RootControl}" />
             </TextBlock>
             
             <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal"
                         Margin="12,0,12,0" VerticalAlignment="Center"
-                        ToolTip="Количество весовых категорий">
+                        ToolTip="{loc:Loc Draw_GroupsCount_Tooltip}">
                 <materialDesign:PackIcon Kind="FormatListBulleted" Width="20" Height="20"
                                          VerticalAlignment="Center"
                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -63,7 +64,7 @@
 
             <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal"
                         Margin="12,0,12,0" VerticalAlignment="Center"
-                        ToolTip="Количество допущенных участников">
+                        ToolTip="{loc:Loc Draw_WrestlersCount_Tooltip}">
                 <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
                                          VerticalAlignment="Center"
                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -74,7 +75,7 @@
 
             <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal"
                         Margin="12,0,20,0" VerticalAlignment="Center"
-                        ToolTip="Количество схваток">
+                        ToolTip="{loc:Loc Draw_MatchesCount_Tooltip}">
                 <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
                                          VerticalAlignment="Center"
                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -127,7 +128,7 @@
                                 <TextBlock Grid.Column="2" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Center" Margin="20,0,0,0" Text="{Binding Path=Bracket.BracketTypeLabel}" />
 
                                 <StackPanel Grid.Row="0" Grid.Column="3">
-                                    <Button Content="Создать сетку"
+                                    <Button Content="{loc:Loc Draw_GenerateBracket}"
                                             HorizontalAlignment="Right" Margin="5,0,5,0"
                                             Command="{Binding Path=DataContext.GenerateBracketCommand, ElementName=RootControl}"
                                             CommandParameter="{Binding }" />
@@ -140,11 +141,11 @@
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
 
-                                    <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="32" Height="32" Margin="0" Padding="0" 
-                                                             ToolTip="Жеребьевка проведена успешно." Kind="CheckboxMarkedOutline" 
+                                    <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="32" Height="32" Margin="0" Padding="0"
+                                                             ToolTip="{loc:Loc Draw_BracketGenerated_Tooltip}" Kind="CheckboxMarkedOutline"
                                                              Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}" />
                                     <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="32" Height="32" Margin="0" Padding="0"
-                                                             ToolTip="Жеребьевка не проведена." Kind="CloseBoxOutline" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource InvBoolToVis}}" />
+                                                             ToolTip="{loc:Loc Draw_BracketMissing_Tooltip}" Kind="CloseBoxOutline" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource InvBoolToVis}}" />
                                 </Grid>
                             </Grid>
                         </Expander.Header>
@@ -159,7 +160,7 @@
 
                                 <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}" />
 
-                                <TextBlock Grid.Row="0" TextWrapping="NoWrap" Text="Посев"
+                                <TextBlock Grid.Row="0" TextWrapping="NoWrap" Text="{loc:Loc Draw_Seeding}"
                                            FontSize="16" TextAlignment="Center" FontWeight="SemiBold" Margin="10,8,10,8" />
 
                                 <ListView Grid.Row="1" ItemsSource="{Binding Path=Wrestlers}"
@@ -177,7 +178,7 @@
                                                 </Style>
                                             </GridView.ColumnHeaderContainerStyle>
 
-                                            <GridViewColumn Width="50" Header="Фикс.">
+                                            <GridViewColumn Width="50" Header="{loc:Loc Draw_Column_Fixed}">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <CheckBox IsChecked="{Binding IsSeedFixed}" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -185,7 +186,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Width="60" Header="Посев">
+                                            <GridViewColumn Width="60" Header="{loc:Loc Draw_Column_Seed}">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBox Text="{Binding SeedNumber}" MinWidth="36" TextWrapping="NoWrap" FontSize="15"
@@ -195,7 +196,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="ФИО" Width="220">
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_FullName}" Width="220">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding FullNameShort}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
@@ -204,7 +205,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Команда" Width="160">
+                                            <GridViewColumn Header="{loc:Loc Draw_Column_Team}" Width="160">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding TeamName}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
@@ -213,7 +214,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Город" Width="200">
+                                            <GridViewColumn Header="{loc:Loc Draw_Column_City}" Width="200">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding TeamCity}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
@@ -222,7 +223,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Разряд" Width="80">
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_Level}" Width="80">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding Level}" TextWrapping="NoWrap" FontSize="15"
@@ -231,7 +232,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Г.р." Width="90">
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_BirthYear}" Width="90">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding BirthDate, StringFormat={}{0:d}}" TextWrapping="NoWrap"
@@ -245,7 +246,7 @@
                                     </ListView.View>
                                 </ListView>
 
-                                <TextBlock Grid.Row="2" TextWrapping="NoWrap" Text="Результаты Жеребьевки"
+                                <TextBlock Grid.Row="2" TextWrapping="NoWrap" Text="{loc:Loc Draw_Results}"
                                            FontSize="16" TextAlignment="Center" FontWeight="SemiBold" Margin="10,12,10,8"
                                            Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}" />
 
@@ -262,7 +263,7 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <StackPanel Margin="0">
-                                                    <TextBlock x:Name="RoundLabel" Text="{Binding RoundName}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock x:Name="RoundLabel" Text="{loc:LocRound RoundName}" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                         <TextBlock.Margin>
                                                             <MultiBinding Converter="{StaticResource BracketColTopMargin}">
                                                                 <Binding Path="." />

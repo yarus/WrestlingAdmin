@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:system="clr-namespace:System;assembly=mscorlib"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" MinWidth="360" MaxWidth="480"
              d:DesignHeight="180" d:DesignWidth="360">
 
@@ -16,34 +17,34 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Канал слайдов" FontSize="20" Margin="0,0,0,12" />
+        <TextBlock Grid.Row="0" Text="{loc:Loc Channel_Title}" FontSize="20" Margin="0,0,0,12" />
 
         <TextBox Grid.Row="1"
-                 materialDesign:HintAssist.Hint="Название канала"
+                 materialDesign:HintAssist.Hint="{loc:Loc Channel_Name}"
                  Style="{DynamicResource MaterialDesignFloatingHintTextBox}"
                  Margin="0,5,0,5" FontSize="16"
                  Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
 
         <TextBox Grid.Row="2"
-                 materialDesign:HintAssist.Hint="Длительность слайда по умолчанию (с)"
+                 materialDesign:HintAssist.Hint="{loc:Loc Channel_DefaultDurationSec}"
                  Style="{DynamicResource MaterialDesignFloatingHintTextBox}"
                  Margin="0,5,0,5" FontSize="16"
                  Text="{Binding SliderMaxSecond, UpdateSourceTrigger=PropertyChanged}" />
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
             <Button IsDefault="True"
-                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    Content="{loc:Loc Dialog_Save}">
                 <Button.CommandParameter>
                     <system:Boolean>True</system:Boolean>
                 </Button.CommandParameter>
-                СОХРАНИТЬ
             </Button>
             <Button IsCancel="True" Margin="8,0,0,0"
-                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    Content="{loc:Loc Dialog_Cancel}">
                 <Button.CommandParameter>
                     <system:Boolean>False</system:Boolean>
                 </Button.CommandParameter>
-                ОТМЕНИТЬ
             </Button>
         </StackPanel>
     </Grid>

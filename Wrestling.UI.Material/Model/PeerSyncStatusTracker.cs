@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Threading;
 using Wrestling.Providers.Network;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Model
 {
@@ -164,7 +165,15 @@ namespace Wrestling.UI.Material.Model
             private set { _statusGlyph = value; Raise(); }
         }
 
-        private string _statusText = "ожидание";
+        // Initialized to the Russian fallback; recomputed by RecomputeStatus
+        // on the next tick so a language switch reaches the UI within seconds.
+        private string _statusText = T("PeerSync_Waiting", "ожидание");
+
+        private static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+        }
         public string StatusText
         {
             get => _statusText;
@@ -182,7 +191,7 @@ namespace Wrestling.UI.Material.Model
 
         public void UpdateLive(string nodeName, string stateHash, DateTime lastSeenUtc)
         {
-            NodeName = string.IsNullOrWhiteSpace(nodeName) ? "(без имени)" : nodeName;
+            NodeName = string.IsNullOrWhiteSpace(nodeName) ? T("PeerSync_NoName", "(без имени)") : nodeName;
             StateHash = stateHash ?? string.Empty;
             LastSeenUtc = lastSeenUtc;
             IsLive = true;
@@ -198,24 +207,24 @@ namespace Wrestling.UI.Material.Model
             if (!IsLive)
             {
                 StatusGlyph = "⚠";
-                StatusText = "не в сети";
+                StatusText = T("PeerSync_Offline", "не в сети");
                 return;
             }
             if (string.IsNullOrEmpty(StateHash))
             {
                 StatusGlyph = "⏳";
-                StatusText = "состояние неизвестно";
+                StatusText = T("PeerSync_Unknown", "состояние неизвестно");
                 return;
             }
             if (StateHash == localHash)
             {
                 StatusGlyph = "✅";
-                StatusText = "синхронизирован";
+                StatusText = T("PeerSync_InSync", "синхронизирован");
             }
             else
             {
                 StatusGlyph = "⏳";
-                StatusText = "догоняет";
+                StatusText = T("PeerSync_CatchingUp", "догоняет");
             }
         }
 

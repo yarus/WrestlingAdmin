@@ -15,6 +15,7 @@ using Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide;
 using Wrestling.UI.Material.Slider.Slides.GroupBracketSlide;
 using Wrestling.UI.Material.Tournament;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Slider
 {
@@ -50,7 +51,8 @@ namespace Wrestling.UI.Material.Slider
         {
         }
 
-        public override string PageTitle => "Управление слайдером";
+        // T inherited from TournamentViewModelBase.
+        public override string PageTitle => T("Slider_PageTitle", "Управление слайдером");
 
         public override void InitData()
         {
@@ -95,8 +97,8 @@ namespace Wrestling.UI.Material.Slider
                 (
                     _quickButtons = new List<CommandButtonItem>
                     {
-                        new CommandButtonItem("Остановить все таймеры", PackIconKind.TimerOff, new RelayCommand(param => StopAllTimers(), param => HasAnyRunningTimer())),
-                        new CommandButtonItem("Закрыть все слайдеры", PackIconKind.CloseCircleOutline, new RelayCommand(param => CloseAllSliders(), param => _windowManager?.OpenCount > 0))
+                        new CommandButtonItem(T("Slider_StopAllTimers", "Остановить все таймеры"), PackIconKind.TimerOff, new RelayCommand(param => StopAllTimers(), param => HasAnyRunningTimer())),
+                        new CommandButtonItem(T("Slider_CloseAll", "Закрыть все слайдеры"), PackIconKind.CloseCircleOutline, new RelayCommand(param => CloseAllSliders(), param => _windowManager?.OpenCount > 0))
                     }
                 );
             }
@@ -428,7 +430,7 @@ namespace Wrestling.UI.Material.Slider
         {
             if (channel == null) return;
 
-            if (Dialog.ShowMessageBox(this, $"Удалить канал «{channel.Name}» со всеми слайдами?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, string.Format(T("Slider_DeleteChannel_Body", "Удалить канал «{0}» со всеми слайдами?"), channel.Name), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             _windowManager.CloseChannel(channel);
 
@@ -591,7 +593,7 @@ namespace Wrestling.UI.Material.Slider
         {
             if (_selectedChannel == null) return;
 
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить все слайды?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Slider_DeleteAll_Body", "Вы уверены, что хотите удалить все слайды?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             // Clear in place — replacing the collection would invalidate cached
             // Slides references held by the preview VM and open window VMs.
@@ -611,7 +613,7 @@ namespace Wrestling.UI.Material.Slider
             string candidate;
             do
             {
-                candidate = $"Канал {i}";
+                candidate = string.Format(T("Slider_ChannelNameFormat", "Канал {0}"), i);
                 i++;
             } while (Channels.Any(c => c.Name == candidate));
             return candidate;
@@ -622,7 +624,7 @@ namespace Wrestling.UI.Material.Slider
             var groupBracketSlide = new GroupBracketSlide(DiContainer);
             var channel = new SlideChannel
             {
-                Name = "Основной",
+                Name = T("Slider_DefaultChannelName", "Основной"),
                 SliderMaxSecond = DataContext.Tournament.Settings.SliderMaxSecond
             };
 

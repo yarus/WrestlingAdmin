@@ -4,6 +4,7 @@ using MvvmDialogs.FrameworkDialogs.OpenFile;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Slider.Slides.VideoSlide
 {
@@ -62,11 +63,17 @@ namespace Wrestling.UI.Material.Slider.Slides.VideoSlide
             }
         }
 
+        private static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+        }
+
         private void SetVideoPath()
         {
             var settings = new OpenFileDialogSettings
             {
-                Title = "Открыть видео файл",
+                Title = T("OpenVideo_DialogTitle", "Открыть видео файл"),
                 InitialDirectory = string.IsNullOrEmpty(VideoPath) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : VideoPath,
                 Filter = "Video (*.avi,*.mp4)|*.avi;*.mp4|All Files (*.*)|*.*"
             };

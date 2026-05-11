@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:utils="clr-namespace:Wrestling.UI.Utils;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="900">
@@ -43,7 +44,7 @@
                     </Button>
 
                     <TextBox Grid.Column="1" Margin="8 0 0 0"
-                             materialDesign:HintAssist.Hint="Поиск по фамилии"
+                             materialDesign:HintAssist.Hint="{loc:Loc Completed_SearchHint}"
                              materialDesign:TextFieldAssist.DecorationVisibility="Hidden" BorderThickness="0"
                              MinWidth="240" VerticalAlignment="Center"
                              Text="{Binding FilterString, UpdateSourceTrigger=PropertyChanged, Delay=400}" />
@@ -51,9 +52,8 @@
             </StackPanel>
 
             <CheckBox Grid.Column="2" Margin="20,10,20,10" VerticalAlignment="Center"
-                      IsChecked="{Binding IsOnlyMedalsVisible}">
-                Только призёры
-            </CheckBox>
+                      IsChecked="{Binding IsOnlyMedalsVisible}"
+                      Content="{loc:Loc Personal_OnlyMedals}" />
         </Grid>
 
         <Border Grid.Row="0" BorderThickness="0,0,0,1"
@@ -109,7 +109,7 @@
 
                                 <StackPanel Grid.Column="3" Orientation="Horizontal"
                                             Margin="12,0,12,0" VerticalAlignment="Center"
-                                            ToolTip="Количество участников">
+                                            ToolTip="{loc:Loc Personal_WrestlersCount_Tooltip}">
                                     <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
                                                              VerticalAlignment="Center"
                                                              Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -120,7 +120,7 @@
 
                                 <StackPanel Grid.Column="4" Orientation="Horizontal"
                                             Margin="12,0,12,0" VerticalAlignment="Center"
-                                            ToolTip="Количество призёров">
+                                            ToolTip="{loc:Loc Personal_MedalsCount_Tooltip}">
                                     <materialDesign:PackIcon Kind="Medal" Width="20" Height="20"
                                                              VerticalAlignment="Center"
                                                              Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -149,7 +149,7 @@
                                                 </Style>
                                             </GridView.ColumnHeaderContainerStyle>
 
-                                            <GridViewColumn Header="Место" Width="80"
+                                            <GridViewColumn Header="{loc:Loc Personal_Column_Place}" Width="80"
                                                             utils:GridViewSort.PropertyName="Wrestler.FinalPlace">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -160,31 +160,31 @@
                                                             <TextBlock Text="DSQ"
                                                                        Foreground="Red" FontWeight="Bold"
                                                                        HorizontalAlignment="Center"
-                                                                       ToolTip="Дисквалификация"
+                                                                       ToolTip="{loc:Loc Personal_Dsq_Tooltip}"
                                                                        Visibility="{Binding Wrestler.IsDisqualified, Converter={StaticResource BoolToVis}}" />
-                                                            <TextBlock Text="Неявка"
+                                                            <TextBlock Text="{loc:Loc Personal_NoShow}"
                                                                        Foreground="DarkOrange" FontWeight="Bold"
                                                                        HorizontalAlignment="Center"
-                                                                       ToolTip="Неявка"
+                                                                       ToolTip="{loc:Loc Personal_NoShow}"
                                                                        Visibility="{Binding Wrestler.IsNoShow, Converter={StaticResource BoolToVis}}" />
                                                         </Grid>
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Фамилия Имя" Width="290"
+                                            <GridViewColumn Header="{loc:Loc Personal_Column_LastFirstName}" Width="290"
                                                             DisplayMemberBinding="{Binding Wrestler.LastFirstName}"
                                                             utils:GridViewSort.PropertyName="Wrestler.LastFirstName" />
 
-                                            <GridViewColumn Header="Команда" Width="170"
+                                            <GridViewColumn Header="{loc:Loc Draw_Column_Team}" Width="170"
                                                             DisplayMemberBinding="{Binding Wrestler.TeamName}"
                                                             utils:GridViewSort.PropertyName="Wrestler.TeamName" />
 
-                                            <GridViewColumn Header="Регион" Width="190"
+                                            <GridViewColumn Header="{loc:Loc Personal_Column_Region}" Width="190"
                                                             DisplayMemberBinding="{Binding Wrestler.TeamCity}"
                                                             utils:GridViewSort.PropertyName="Wrestler.TeamCity" />
 
-                                            <GridViewColumn Header="Разряд" Width="100"
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_Level}" Width="100"
                                                             utils:GridViewSort.PropertyName="Wrestler.Level">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -194,7 +194,7 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Квал. балл" Width="120"
+                                            <GridViewColumn Header="{loc:Loc Personal_Column_QualPoints}" Width="120"
                                                             utils:GridViewSort.PropertyName="TotalPoints">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>

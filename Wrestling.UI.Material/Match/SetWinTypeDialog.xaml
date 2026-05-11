@@ -7,7 +7,8 @@
              xmlns:system="clr-namespace:System;assembly=mscorlib"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:converters2="clr-namespace:Wrestling.UI.Material.Utils.Converters"
-             xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils" 
+             xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              md:DialogServiceViews.IsRegistered="True"
              mc:Ignorable="d" Width="560"
@@ -47,11 +48,11 @@
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0 16 0 0">
             <Button IsCancel="True" Margin="8 0 0 0" TabIndex="14"
-                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    Content="{loc:Loc Dialog_Cancel}">
                 <Button.CommandParameter>
                     <system:Boolean>False</system:Boolean>
                 </Button.CommandParameter>
-                ОТМЕНИТЬ
             </Button>
         </StackPanel>
     </Grid>

@@ -8,6 +8,7 @@ using Wrestling.Entities;
 using Wrestling.UI.Material.Slider.Slides;
 using Wrestling.UI.Material.Tournament;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Slider
 {
@@ -123,7 +124,8 @@ namespace Wrestling.UI.Material.Slider
                     return CurrentSlide.Title;
                 }
 
-                return "Турнир";
+                var v = LocalizationService.Instance?.T("Slide_DefaultTitle");
+                return string.IsNullOrEmpty(v) || v == "Slide_DefaultTitle" ? "Турнир" : v;
             }
         }
 

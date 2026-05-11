@@ -4,12 +4,14 @@ using Wrestling.Entities;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Tournament.Results.Achievements
 {
     public class AchievementsViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
-        public string PageName => "Достижения";
+        // T inherited from TournamentViewModelBase.
+        public string PageName => T("Achievements_PageName", "Достижения");
 
 
         private IResultsService _resultsService;
@@ -23,7 +25,7 @@ namespace Wrestling.UI.Material.Tournament.Results.Achievements
 
         public override bool IsBackButtonAvailable => true;
 
-        public override string PageTitle => "Достижения спортсменов";
+        public override string PageTitle => T("Achievements_PageTitle", "Достижения спортсменов");
 
         public IList<AchievementCategoryViewModel> Items
         {

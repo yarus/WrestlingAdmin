@@ -16,6 +16,7 @@ using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Tournament.Progress.Brackets;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Match
 {
@@ -71,7 +72,17 @@ namespace Wrestling.UI.Material.Match
         public bool IsStartButtonVisible => IsMatchNotCompleted && !IsRunning;
         public bool IsStopButtonVisible => IsMatchNotCompleted && IsRunning;
 
-        public override string PageTitle => "Управление Электронным Табло";
+        public override string PageTitle => T("MatchControl_PageTitle", "Управление Электронным Табло");
+
+        // Lazy-resolve via singleton; PageTitle can be queried before InitData
+        // runs (e.g. when the shell builds nav metadata). Fallback is the raw
+        // Russian literal so missing keys still render readably.
+        private static string T(string key, string fallback)
+        {
+            var loc = LocalizationService.Instance;
+            var value = loc?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+        }
 
         // No QuickButtons on this screen — the «Сбросить поединок» action is
         // implicit: leaving an unfinished match via the back button resets
@@ -105,7 +116,7 @@ namespace Wrestling.UI.Material.Match
 
             if (DataContext.WrestlingMatch == null)
             {
-                ShowSnackMessage("Матч не инициализирован!");
+                ShowSnackMessage(T("MatchControl_NotInitialized", "Матч не инициализирован!"));
                 OnBackCommand();
                 return;
             }
@@ -559,8 +570,8 @@ namespace Wrestling.UI.Material.Match
         protected override void OnBackCommand()
         {
             if (Dialog.ShowMessageBox(this,
-                    "Матч не звершен! Если вы вернетесь назад, то текущие результаты будут потеряны. Вы уверены, что хотите вернуться?",
-                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+                    T("MatchControl_BackConfirm_Body", "Матч не звершен! Если вы вернетесь назад, то текущие результаты будут потеряны. Вы уверены, что хотите вернуться?"),
+                    T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             if (!DataContext.WrestlingMatch.IsMatchCompleted)
             {

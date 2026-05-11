@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:utils="clr-namespace:Wrestling.UI.Utils;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
@@ -19,6 +20,7 @@
             <converters:BoolInverterConverter />
             <converters:GroupedBoolToVisConverter />
         </converters:ValueConverterGroup>
+        <loc:LocFormatConverter x:Key="LocFormat" />
     </UserControl.Resources>
 
     <Grid Margin="0" x:Name="RootControl">
@@ -35,7 +37,7 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Button Grid.Row="0" Content="Новый канал"
+            <Button Grid.Row="0" Content="{loc:Loc Slider_NewChannel}"
                     HorizontalAlignment="Stretch" Margin="6,8,6,8" Padding="8,4"
                     Command="{Binding AddChannelCommand}" />
 
@@ -56,7 +58,7 @@
                                 <StackPanel Grid.Column="0" Orientation="Vertical">
                                     <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" />
                                     <TextBlock FontSize="12" Opacity="0.7">
-                                        <Run Text="Слайдов:" />
+                                        <Run Text="{loc:Loc Slider_SlidesLabel}" />
                                         <Run Text="{Binding Path=Slides.Count, Mode=OneWay}" />
                                     </TextBlock>
                                 </StackPanel>
@@ -68,8 +70,8 @@
                                             CommandParameter="{Binding}">
                                         <Button.ToolTip>
                                             <TextBlock>
-                                                <TextBlock Text="Закрыть окно канала" Visibility="{Binding IsOpen, Converter={StaticResource BoolToVis}}" />
-                                                <TextBlock Text="Открыть на мониторе" Visibility="{Binding IsOpen, Converter={StaticResource InvBoolToVis}}" />
+                                                <TextBlock Text="{loc:Loc Slider_CloseChannel_Tooltip}" Visibility="{Binding IsOpen, Converter={StaticResource BoolToVis}}" />
+                                                <TextBlock Text="{loc:Loc Slider_OpenOnMonitor_Tooltip}" Visibility="{Binding IsOpen, Converter={StaticResource InvBoolToVis}}" />
                                             </TextBlock>
                                         </Button.ToolTip>
                                         <Grid>
@@ -77,13 +79,13 @@
                                             <materialDesign:PackIcon Kind="MonitorOff" Width="16" Height="16" Visibility="{Binding IsOpen, Converter={StaticResource BoolToVis}}" />
                                         </Grid>
                                     </Button>
-                                    <Button ToolTip="Переименовать" Margin="2,0,0,0" Padding="0" Width="28" Height="28"
+                                    <Button ToolTip="{loc:Loc Slider_Rename_Tooltip}" Margin="2,0,0,0" Padding="0" Width="28" Height="28"
                                             Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                             Command="{Binding ElementName=RootControl, Path=DataContext.RenameChannelCommand}"
                                             CommandParameter="{Binding}">
                                         <materialDesign:PackIcon Kind="Pencil" Width="16" Height="16" />
                                     </Button>
-                                    <Button ToolTip="Удалить канал" Margin="2,0,0,0" Padding="0" Width="28" Height="28"
+                                    <Button ToolTip="{loc:Loc Slider_DeleteChannel_Tooltip}" Margin="2,0,0,0" Padding="0" Width="28" Height="28"
                                             Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                             Command="{Binding ElementName=RootControl, Path=DataContext.DeleteChannelCommand}"
                                             CommandParameter="{Binding}">
@@ -117,26 +119,33 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <Button Content="Новый слайд"
-                            ToolTip="Добавить новый слайд"
+                    <Button Content="{loc:Loc Slider_NewSlide}"
+                            ToolTip="{loc:Loc Slider_NewSlide_Tooltip}"
                             Width="160"
                             HorizontalAlignment="Left" Margin="10,10,0,10"
                             Command="{Binding AddSlideCommand}" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1">
-                    <Button Content="Удалить Все"
-                            ToolTip="Удалить все слайды"
+                    <Button Content="{loc:Loc Slider_DeleteAll}"
+                            ToolTip="{loc:Loc Slider_DeleteAll_Tooltip}"
                             Width="160"
                             HorizontalAlignment="Left" Margin="10,10,0,10"
                             Command="{Binding DeleteAllSlidesCommand}" />
                 </StackPanel>
 
-                <TextBlock Grid.Column="2" Margin="20,0,30,0" FontSize="16" VerticalAlignment="Center" Text="{Binding SelectedChannel.Name, StringFormat={}Канал: {0}}" />
+                <TextBlock Grid.Column="2" Margin="20,0,30,0" FontSize="16" VerticalAlignment="Center">
+                    <TextBlock.Text>
+                        <MultiBinding Converter="{StaticResource LocFormat}">
+                            <Binding Path="[Slider_ChannelFormat]" Source="{x:Static loc:LocalizationService.Instance}" />
+                            <Binding Path="SelectedChannel.Name" />
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
 
                 <StackPanel Grid.Column="3" Orientation="Horizontal"
                             Margin="10,0,20,0" VerticalAlignment="Center"
-                            ToolTip="Количество слайдов в канале">
+                            ToolTip="{loc:Loc Slider_SlideCount_Tooltip}">
                     <materialDesign:PackIcon Kind="ViewCarousel" Width="20" Height="20"
                                              VerticalAlignment="Center"
                                              Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -146,9 +155,9 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="10,0,20,0">
-                    <ToggleButton Style="{DynamicResource MaterialDesignSwitchToggleButton}" VerticalAlignment="Center" ToolTip="Вкл/выкл переключение слайдов в превью" IsChecked="{Binding Path=Host.IsTimerEnabled}" IsEnabled="{Binding CanToggleTimer}" />
+                    <ToggleButton Style="{DynamicResource MaterialDesignSwitchToggleButton}" VerticalAlignment="Center" ToolTip="{loc:Loc Slider_AutoToggle_Tooltip}" IsChecked="{Binding Path=Host.IsTimerEnabled}" IsEnabled="{Binding CanToggleTimer}" />
                     <StackPanel Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center"
-                                ToolTip="Секунд до показа следующего слайда в превью">
+                                ToolTip="{loc:Loc Slider_NextSec_Tooltip}">
                         <materialDesign:PackIcon Kind="TimerOutline" Width="20" Height="20"
                                                  VerticalAlignment="Center"
                                                  Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -187,15 +196,15 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Header="Название" Width="Auto"
+                        <GridViewColumn Header="{loc:Loc Slider_Column_Name}" Width="Auto"
                                         DisplayMemberBinding="{Binding Title}"
                                         utils:GridViewSort.PropertyName="Title" />
 
-                        <GridViewColumn Header="Тип" Width="Auto"
+                        <GridViewColumn Header="{loc:Loc Slider_Column_Type}" Width="Auto"
                                         DisplayMemberBinding="{Binding SlideType}"
                                         utils:GridViewSort.PropertyName="SlideType" />
 
-                        <GridViewColumn Header="Длительность (с)" Width="Auto">
+                        <GridViewColumn Header="{loc:Loc Slider_Column_DurationSec}" Width="Auto">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Duration}" TextWrapping="NoWrap"
@@ -208,7 +217,7 @@
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0" Orientation="Horizontal">
-                                        <Button ToolTip="Переместить слайд выше по списку"
+                                        <Button ToolTip="{loc:Loc Slider_MoveUp_Tooltip}"
                                                 Margin="0" Padding="0" Width="22" Height="22"
                                                 Background="Transparent" BorderThickness="0"
                                                 Style="{DynamicResource MaterialDesignToolButton}"
@@ -217,7 +226,7 @@
                                             <materialDesign:PackIcon Kind="ArrowUp" Width="18" Height="18" Margin="0" Padding="0" />
                                         </Button>
 
-                                        <Button ToolTip="Переместить слайд ниже по списку"
+                                        <Button ToolTip="{loc:Loc Slider_MoveDown_Tooltip}"
                                                 Margin="6,0,0,0" Padding="0" Width="22" Height="22"
                                                 Background="Transparent" BorderThickness="0"
                                                 Style="{DynamicResource MaterialDesignToolButton}"
@@ -226,7 +235,7 @@
                                             <materialDesign:PackIcon Kind="ArrowDown" Width="18" Height="18" Margin="0" Padding="0" />
                                         </Button>
 
-                                        <Button ToolTip="Редактировать слайд"
+                                        <Button ToolTip="{loc:Loc Slider_EditSlide_Tooltip}"
                                                 Margin="6,0,0,0" Padding="0" Width="22" Height="22"
                                                 Background="Transparent" BorderThickness="0"
                                                 Style="{DynamicResource MaterialDesignToolButton}"
@@ -235,7 +244,7 @@
                                             <materialDesign:PackIcon Kind="BorderColor" Width="18" Height="18" Margin="0" Padding="0" />
                                         </Button>
 
-                                        <Button ToolTip="Удалить слайд"
+                                        <Button ToolTip="{loc:Loc Slider_DeleteSlide_Tooltip}"
                                                 Margin="6,0,0,0" Padding="0" Width="22" Height="22"
                                                 Background="Transparent" BorderThickness="0"
                                                 Style="{DynamicResource MaterialDesignToolButton}"

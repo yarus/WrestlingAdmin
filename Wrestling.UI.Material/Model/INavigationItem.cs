@@ -1,7 +1,9 @@
 using System;
+using System.ComponentModel;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Model
 {
@@ -22,17 +24,23 @@ namespace Wrestling.UI.Material.Model
     public sealed class NavigationItem : ObservableObject, INavigationItem
     {
         private bool _isActive;
+        private readonly string _labelKey;
 
+        // labelKey is a localization key looked up via LocalizationService.
+        // The item subscribes to language-change events so the rail updates
+        // live. Items live for the whole app session — no unsubscribe path.
         public NavigationItem(
-            string label,
+            string labelKey,
             PackIconKind icon,
             Type targetViewModel,
             ICommand activateCommand)
         {
-            Label = label;
+            _labelKey = labelKey;
             Icon = icon;
             TargetViewModel = targetViewModel;
             ActivateCommand = activateCommand;
+
+            LocalizationService.Instance.PropertyChanged += OnLocalizationChanged;
         }
 
         public static NavigationItem Separator() => new NavigationItem();
@@ -40,10 +48,13 @@ namespace Wrestling.UI.Material.Model
         private NavigationItem()
         {
             IsSeparator = true;
-            Label = string.Empty;
+            _labelKey = string.Empty;
         }
 
-        public string Label { get; }
+        public string Label => string.IsNullOrEmpty(_labelKey)
+            ? string.Empty
+            : LocalizationService.Instance.T(_labelKey);
+
         public PackIconKind Icon { get; }
         public bool IsSeparator { get; }
         public Type TargetViewModel { get; }
@@ -57,6 +68,17 @@ namespace Wrestling.UI.Material.Model
                 if (_isActive == value) return;
                 _isActive = value;
                 OnPropertyChanged(nameof(IsActive));
+            }
+        }
+
+        private void OnLocalizationChanged(object sender, PropertyChangedEventArgs e)
+        {
+            // "Item[]" is what LocalizationService raises on a language switch
+            // to invalidate every indexer binding. Match that and also the
+            // CurrentLanguage notification, so we refresh on either signal.
+            if (e.PropertyName == "Item[]" || e.PropertyName == nameof(LocalizationService.CurrentLanguage))
+            {
+                OnPropertyChanged(nameof(Label));
             }
         }
     }
