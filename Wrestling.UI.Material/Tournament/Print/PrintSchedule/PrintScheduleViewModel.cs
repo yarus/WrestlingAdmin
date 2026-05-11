@@ -16,8 +16,8 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
         private CarpetStats _stat;
         private List<AgeWeightGroup> _groups;
 
-        public string PageName => "Расписание";
-        public override string PageTitle => "Расписание схваток по коврам";
+        public string PageName => T("Nav_Schedule", "Расписание");
+        public override string PageTitle => T("PrintSchedule_PageTitle", "Расписание схваток по коврам");
         
         public PrintScheduleViewModel(IDiContainer container, Carpet carpet) : base(container)
         {

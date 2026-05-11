@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
+using Wrestling.Providers.Localization;
 
 namespace Wrestling.Providers.Network
 {
@@ -87,7 +88,7 @@ namespace Wrestling.Providers.Network
                 }
                 catch (Exception ex)
                 {
-                    DiagnosticMessage?.Invoke(this, "Не удалось открыть UDP порт " + port + ": " + ex.Message);
+                    DiagnosticMessage?.Invoke(this, string.Format(ProviderLocalization.T("Network_UdpPortOpenFailed", "Не удалось открыть UDP порт {0}: {1}"), port, ex.Message));
                     try { _listener?.Close(); } catch { }
                     _listener = null;
                     return;
@@ -148,7 +149,7 @@ namespace Wrestling.Providers.Network
                 }
                 catch (Exception ex)
                 {
-                    DiagnosticMessage?.Invoke(this, "Ошибка приёма UDP: " + ex.Message);
+                    DiagnosticMessage?.Invoke(this, ProviderLocalization.T("Network_UdpReceiveError", "Ошибка приёма UDP: ") + ex.Message);
                     continue;
                 }
 
@@ -175,7 +176,7 @@ namespace Wrestling.Providers.Network
             try { bytes = ad.ToBytes(); }
             catch (Exception ex)
             {
-                DiagnosticMessage?.Invoke(this, "Ошибка сериализации анонса: " + ex.Message);
+                DiagnosticMessage?.Invoke(this, ProviderLocalization.T("Network_AnnounceSerializeError", "Ошибка сериализации анонса: ") + ex.Message);
                 return;
             }
 

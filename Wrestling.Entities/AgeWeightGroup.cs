@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities
 {
@@ -223,18 +224,21 @@ namespace Wrestling.Entities
         {
             get
             {
-                string result;
+                var yearSingle = EntityLocalization.T("Group_YearSuffix", "г.");
+                var yearRange = EntityLocalization.T("Group_YearRangeSuffix", "гг.");
+                var weight = EntityLocalization.T("Group_WeightSuffix", "кг.");
 
+                string result;
                 if (BirthYearMax == BirthYearMin)
                 {
-                    result = BirthYearMax + " г. ";
+                    result = BirthYearMax + " " + yearSingle + " ";
                 }
                 else
                 {
-                    result = $"{BirthYearMin}-{BirthYearMax} гг. ";
+                    result = string.Format("{0}-{1} {2} ", BirthYearMin, BirthYearMax, yearRange);
                 }
 
-                result += WeightMax + " кг. " + IsFemaleLabel + ".";
+                result += WeightMax + " " + weight + " " + IsFemaleLabel + ".";
 
                 return result;
             }
@@ -246,15 +250,21 @@ namespace Wrestling.Entities
         {
             get
             {
+                var yearSingle = EntityLocalization.T("Group_YearSuffix", "г.");
+                var yearRange = EntityLocalization.T("Group_YearRangeSuffix", "гг.");
+                var weight = EntityLocalization.T("Group_WeightSuffix", "кг.");
+
                 if (BirthYearMax == BirthYearMin)
                 {
-                    return BirthYearMax + " г. " + WeightMax + " кг.";
+                    return BirthYearMax + " " + yearSingle + " " + WeightMax + " " + weight;
                 }
-                return $"{BirthYearMin}-{BirthYearMax} гг. {WeightMax} кг.";
+                return string.Format("{0}-{1} {2} {3} {4}", BirthYearMin, BirthYearMax, yearRange, WeightMax, weight);
             }
         }
 
-        public string IsFemaleLabel => IsFemale ? "Ж" : "М";
+        public string IsFemaleLabel => IsFemale
+            ? EntityLocalization.T("Gender_FemaleShort", "Ж")
+            : EntityLocalization.T("Gender_MaleShort", "М");
 
         #endregion
         

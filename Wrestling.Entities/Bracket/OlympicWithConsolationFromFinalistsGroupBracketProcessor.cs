@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities.Bracket
 {
     public class OlympicWithConsolationFromFinalistsGroupBracketProcessor : OlympicGroupBracketProcessor
     {
-        public override string Title => "Олимпийская с утешением от финалистов";
+        public override string Title => EntityLocalization.T("BracketType_OlympicConsolation", "Олимпийская с утешением от финалистов");
         public override string Code => BracketTypeEnum.OlympicConsilationFinalists.ToString();
 
         // Per UWW: when both finalists are mutually DSQ'd, the two bronze

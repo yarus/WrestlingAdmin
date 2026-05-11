@@ -37,7 +37,7 @@
 
             <ComboBox Grid.Column="0" Width="220"
                       Style="{DynamicResource MaterialDesignFloatingHintComboBox}"
-                      materialDesign:HintAssist.Hint="Ковер"
+                      materialDesign:HintAssist.Hint="{loc:Loc Slide_Carpet}"
                       ItemsSource="{Binding Carpets}"
                       SelectedItem="{Binding SelectedCarpet}"
                       DisplayMemberPath="Name"
@@ -49,14 +49,14 @@
 
             <TextBox Grid.Column="2"
                      Style="{DynamicResource MaterialDesignFloatingHintTextBox}"
-                     materialDesign:HintAssist.Hint="Поиск (ФИО, команда, город)"
+                     materialDesign:HintAssist.Hint="{loc:Loc Search_NameTeamCity_Hint}"
                      MinWidth="200" MaxWidth="320" HorizontalAlignment="Left"
                      VerticalAlignment="Bottom"
                      Text="{Binding FilterString, UpdateSourceTrigger=PropertyChanged, Delay=1000}" />
 
             <StackPanel Grid.Column="3" Orientation="Horizontal"
                         Margin="20,0,0,0" VerticalAlignment="Bottom"
-                        ToolTip="Осталось схваток на ковре">
+                        ToolTip="{loc:Loc Brackets_RemainingOnCarpet_Tooltip}">
                 <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
                                          VerticalAlignment="Center"
                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -110,7 +110,7 @@
                                                     Orientation="Horizontal">
                                             <StackPanel Orientation="Horizontal"
                                                         Margin="12,0,12,0" VerticalAlignment="Center"
-                                                        ToolTip="Количество участников в группе">
+                                                        ToolTip="{loc:Loc Brackets_GroupParticipants_Tooltip}">
                                                 <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
                                                                          VerticalAlignment="Center"
                                                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -121,7 +121,7 @@
 
                                             <StackPanel Orientation="Horizontal"
                                                         Margin="12,0,12,0" VerticalAlignment="Center"
-                                                        ToolTip="Количество поединков в группе">
+                                                        ToolTip="{loc:Loc Brackets_GroupMatches_Tooltip}">
                                                 <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
                                                                          VerticalAlignment="Center"
                                                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -292,7 +292,7 @@
                                                                                     VerticalAlignment="Center"
                                                                                     Margin="0" Padding="0"
                                                                                     Foreground="DarkOrange"
-                                                                                    ToolTip="Снять дисквалификацию"
+                                                                                    ToolTip="{loc:Loc Brackets_RemoveDsq_Tooltip}"
                                                                                     Cursor="Hand"
                                                                                     Height="20" Width="20">
                                                                                         <materialDesign:PackIcon.Visibility>
@@ -334,7 +334,7 @@
                                                                                     VerticalAlignment="Center"
                                                                                     Margin="0" Padding="0"
                                                                                     Foreground="DarkOrange"
-                                                                                    ToolTip="Снять дисквалификацию"
+                                                                                    ToolTip="{loc:Loc Brackets_RemoveDsq_Tooltip}"
                                                                                     Cursor="Hand"
                                                                                     Height="20" Width="20">
                                                                                         <materialDesign:PackIcon.Visibility>
@@ -363,7 +363,7 @@
                                                                                     VerticalAlignment="Center"
                                                                                     Margin="0" Padding="0"
                                                                                     Foreground="DarkOrange"
-                                                                                    ToolTip="Снять обоюдную дисквалификацию"
+                                                                                    ToolTip="{loc:Loc Brackets_RemoveMutualDsq_Tooltip}"
                                                                                     Cursor="Hand"
                                                                                     Height="20" Width="20">
                                                                                         <materialDesign:PackIcon.InputBindings>
@@ -384,7 +384,7 @@
                                                                                     CommandParameter="{Binding }"
                                                                                     Margin="5" Padding="5,0,5,0"
                                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.OpenMatchCommand}"
-                                                                                    ToolTip="Загрузить поединок">
+                                                                                    ToolTip="{loc:Loc Brackets_LoadMatch_Tooltip}">
                                                                                         <materialDesign:PackIcon
                                                                                         Kind="Play"
                                                                                         Width="22"
@@ -396,7 +396,7 @@
                                                                                     CommandParameter="{Binding }"
                                                                                     Margin="5" Padding="5,0,5,0"
                                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.OpenMatchCommand}"
-                                                                                    ToolTip="Открыть результаты поединка"
+                                                                                    ToolTip="{loc:Loc Completed_OpenMatch_Tooltip}"
                                                                                     Background="DarkGray"
                                                                                     BorderBrush="DarkGray">
                                                                                         <materialDesign:PackIcon

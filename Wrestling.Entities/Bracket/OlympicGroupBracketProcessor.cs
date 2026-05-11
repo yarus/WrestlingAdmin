@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Linq;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities.Bracket
 {
     public class OlympicGroupBracketProcessor : GroupBracketProcessorBase
     {
-        public override string Title => "Олимпийская с матчем за 3-е место";
+        public override string Title => EntityLocalization.T("BracketType_OlympicWithBronze", "Олимпийская с матчем за 3-е место");
         public override string Code => BracketTypeEnum.Olympic.ToString();
         public override int? AthletesMinCount => 4;
         public override int? AthletesMaxCount => 64;

@@ -12,7 +12,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintResults
 
         private List<TournamentResult> _results;
 
-        public override string PageTitle => "Печать Протокола";
+        public override string PageTitle => T("Print_PageTitle", "Печать Протокола");
 
         public List<TournamentResult> Results
         {

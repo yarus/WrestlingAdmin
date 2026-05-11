@@ -184,7 +184,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
         private void RegenerateBrackets()
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите перегенерировать все сетки! Это приведет к потере текущих результатов турнира!", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Draw_RegenerateAll_Body", "Вы уверены, что хотите перегенерировать все сетки! Это приведет к потере текущих результатов турнира!"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var ageWeightGroup in Groups)
             {
@@ -222,7 +222,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
         private void UnfixAllSeeds()
         {
-            if (Dialog.ShowMessageBox(this, "Снять отметку «Фикс.» у всех участников во всех группах?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Draw_UnfixAll_Body", "Снять отметку «Фикс.» у всех участников во всех группах?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var wrestler in DataContext.Tournament.Wrestlers)
             {
@@ -319,8 +319,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             if (groupsWithBrackets.Count == 0)
             {
                 Dialog.ShowMessageBox(this,
-                    "Нет групп со сгенерированными сетками. Сначала проведите жеребьёвку.",
-                    "Экспорт протоколов жеребьёвки", MessageBoxButton.OK, MessageBoxImage.Information);
+                    T("Export_NoBrackets_Body", "Нет групп со сгенерированными сетками. Сначала проведите жеребьёвку."),
+                    T("DrawExport_DialogTitle", "Экспорт протоколов жеребьёвки"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -333,7 +333,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
             var settings = new FolderBrowserDialogSettings
             {
-                Description = "Выберите папку для сохранения протоколов жеребьёвки",
+                Description = T("DrawExport_FolderPicker_Title", "Выберите папку для сохранения протоколов жеребьёвки"),
                 ShowNewFolderButton = true,
                 SelectedPath = defaultPath
             };
@@ -349,7 +349,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                     var mainRounds = capturedGroup.Bracket.Rounds.Count(r => r.RoundType == GroupRoundTypeEnum.Main);
                     jobs.Add(new BulkPdfExportJob
                     {
-                        FileName = "Жеребьевка_" + BulkBracketPdfExporter.MakeSafeFileName(capturedGroup.Name) + ".pdf",
+                        FileName = T("DrawExport_FilePrefix", "Жеребьевка_") + BulkBracketPdfExporter.MakeSafeFileName(capturedGroup.Name) + ".pdf",
                         Landscape = mainRounds >= 5,
                         ViewFactory = () =>
                         {
@@ -361,28 +361,28 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                     });
                 }
 
-                ShowSnackMessage($"Идет создание протоколов жеребьёвки: {jobs.Count} файлов...");
+                ShowSnackMessage(string.Format(T("DrawExport_Snack_Building", "Идет создание протоколов жеребьёвки: {0} файлов..."), jobs.Count));
 
                 var exporter = new BulkBracketPdfExporter();
                 var result = await exporter.ExportAsync(jobs, settings.SelectedPath);
 
-                var msg = $"Готово. Сохранено PDF: {result.Succeeded}";
-                if (result.Skipped > 0) msg += $", пропущено: {result.Skipped}";
-                if (result.Failures.Count > 0) msg += $", ошибок: {result.Failures.Count}";
+                var msg = string.Format(T("Export_Snack_Done", "Готово. Сохранено PDF: {0}"), result.Succeeded);
+                if (result.Skipped > 0) msg += string.Format(T("Export_Snack_Skipped", ", пропущено: {0}"), result.Skipped);
+                if (result.Failures.Count > 0) msg += string.Format(T("Export_Snack_Failed", ", ошибок: {0}"), result.Failures.Count);
                 ShowSnackMessage(msg);
 
                 if (result.Failures.Count > 0)
                 {
                     Dialog.ShowMessageBox(this,
-                        "Не удалось сохранить часть протоколов:\n\n" + string.Join("\n", result.Failures),
-                        "Экспорт протоколов жеребьёвки", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        T("Export_PartialFailure", "Не удалось сохранить часть протоколов:") + "\n\n" + string.Join("\n", result.Failures),
+                        T("DrawExport_DialogTitle", "Экспорт протоколов жеребьёвки"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
             {
                 Dialog.ShowMessageBox(this,
-                    "Ошибка экспорта: " + ex.Message,
-                    "Экспорт протоколов жеребьёвки", MessageBoxButton.OK, MessageBoxImage.Error);
+                    T("Export_ErrorPrefix", "Ошибка экспорта: ") + ex.Message,
+                    T("DrawExport_DialogTitle", "Экспорт протоколов жеребьёвки"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

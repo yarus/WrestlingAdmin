@@ -1,13 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities.Results.Achievements
 {
     public class FastestWinAchievementCalculator : IAchievementCalculator
     {
-        public string AchievementTitle => "Молния";
+        public string AchievementTitle => EntityLocalization.T("Achievement_FastestWin_Title", "Молния");
         public string AchievementType => "FastestWin";
-        public string AchievementDefinition => "Борец, выигравший схватку быстрее всех";
+        public string AchievementDefinition => EntityLocalization.T("Achievement_FastestWin_Definition", "Борец, выигравший схватку быстрее всех");
 
         public List<WrestlerAchievement> CalculateAchievement(Tournament tournament, List<TournamentResult> results)
         {
@@ -34,7 +35,7 @@ namespace Wrestling.Entities.Results.Achievements
                     Title = AchievementTitle,
                     Wrestler = item.Wrestler,
                     AchievementType = AchievementType,
-                    AchievementValue = $"{item.FastestWinSecond} (сек.)",
+                    AchievementValue = string.Format(EntityLocalization.T("Achievement_Value_Seconds", "{0} (сек.)"), item.FastestWinSecond),
                     AchievementDefinition = AchievementDefinition
                 });
             }

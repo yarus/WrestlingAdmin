@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using MvvmDialogs;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material
 {
@@ -30,7 +31,7 @@ namespace Wrestling.UI.Material
             welcome.Tick += (_, _) =>
             {
                 welcome.Stop();
-                MainSnackbar.MessageQueue.Enqueue("Добро пожаловать в РОСБОС Сетка 2.0!");
+                MainSnackbar.MessageQueue.Enqueue(T("MainWindow_Welcome", "Добро пожаловать в РОСБОС Сетка 2.0!"));
             };
             welcome.Start();
 
@@ -52,8 +53,8 @@ namespace Wrestling.UI.Material
             var dialogService = _di.Resolve<IDialogService>();
 
             if (dialogService.ShowMessageBox(DataContext as MainWindowViewModel,
-                    "Вы уверены что хотите закрыть приложение? Все несохраненные данные будут утеряны!",
-                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) !=
+                    T("MainWindow_ExitConfirm_Body", "Вы уверены что хотите закрыть приложение? Все несохраненные данные будут утеряны!"),
+                    T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) !=
                 MessageBoxResult.OK)
             {
                 e.Cancel = true;
@@ -66,6 +67,12 @@ namespace Wrestling.UI.Material
 
             var handler = _di.Resolve<IKeyHandler>();
             handler?.RiseKeyDown(e);
+        }
+
+        private static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
         }
     }
 }

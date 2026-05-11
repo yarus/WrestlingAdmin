@@ -18,10 +18,11 @@ namespace Wrestling.UI.Material.Tournament.Print
             var dlg = new PrintDialog();
             if ((bool)dlg.ShowDialog())
             {
-                // documentName intentionally kept as a literal Russian "Печать"
-                // — Microsoft Print to PDF (and some other drivers) corrupt
-                // cyrillic in this field. See docs/PrintingNotes.md.
-                if (!VisualPrinter.PrintAcrossPages(dlg, PrintControl, "Печать"))
+                // documentName intentionally kept as a locale-neutral Latin
+                // literal — Microsoft Print to PDF (and some other drivers)
+                // corrupt cyrillic in this field, producing mojibake in PDF
+                // viewer title bars. See docs/PrintingNotes.md.
+                if (!VisualPrinter.PrintAcrossPages(dlg, PrintControl, "Print"))
                 {
                     var msg = LocalizationService.Instance?.T("Print_Error");
                     if (string.IsNullOrEmpty(msg) || msg == "Print_Error") msg = "Ошибка печати. Попробуйте еще раз.";

@@ -12,6 +12,17 @@ namespace Wrestling.Providers
     // ones (e.g. "Отмена предупреждения..." before any plain "...предупреждение").
     // Returns Unknown when no rule matches; loader keeps the action with that
     // type and the original Text untouched (display still works).
+    //
+    // ════════════════════════════════════════════════════════════════════════
+    //  DO NOT TRANSLATE the Russian substrings/regexes below.
+    // ════════════════════════════════════════════════════════════════════════
+    //  Every match here runs against persisted .wrt data that was written by
+    //  older Russian-only versions of this app. Translating these strings —
+    //  even via the localization service — breaks classification of every
+    //  pre-typing action in every legacy save file, silently turning known
+    //  types into Unknown. New action types are stamped via the typed
+    //  MatchActionType enum at write-time and never reach this inferrer, so
+    //  this class is locked to the historical Russian wire format forever.
     public static class LegacyMatchActionTypeInferrer
     {
         private static readonly Regex ShowActionTimerPattern =

@@ -1,13 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities.Results.Achievements
 {
     public class MostPointsCountAchievementCalculator : IAchievementCalculator
     {
-        public string AchievementTitle => "Машина Борьбы";
+        public string AchievementTitle => EntityLocalization.T("Achievement_MostPoints_Title", "Машина Борьбы");
         public string AchievementType => "MostPointsCount";
-        public string AchievementDefinition => "Борец, набравший больше всех баллов за турнир";
+        public string AchievementDefinition => EntityLocalization.T("Achievement_MostPoints_Definition", "Борец, набравший больше всех баллов за турнир");
 
         public List<WrestlerAchievement> CalculateAchievement(Tournament tournament, List<TournamentResult> results)
         {

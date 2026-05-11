@@ -521,14 +521,16 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             JsonLocalizationLoader.LoadAll(LocalizationService.Instance, i18nFolder);
             di.Add<ILocalizationService>(LocalizationService.Instance);
 
-            // Bridge for non-UI code (Wrestling.Providers can't take a WPF
-            // dependency). GroupGenerator and friends call ProviderLocalization.T
-            // which routes through this delegate to the real service.
-            Wrestling.Providers.Localization.ProviderLocalization.Translate = (key, fallback) =>
+            // Bridges for non-UI code (Wrestling.Providers and Wrestling.Entities
+            // can't take a WPF dependency). They each expose a static Translate
+            // delegate that the UI layer wires here at startup.
+            Func<string, string, string> bridge = (key, fallback) =>
             {
                 var value = LocalizationService.Instance.T(key);
                 return string.IsNullOrEmpty(value) || value == key ? fallback : value;
             };
+            Wrestling.Providers.Localization.ProviderLocalization.Translate = bridge;
+            Wrestling.Entities.Localization.EntityLocalization.Translate = bridge;
 
             return di;
         }

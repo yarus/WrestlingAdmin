@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities
 {
@@ -32,7 +33,9 @@ namespace Wrestling.Entities
         public bool IsApplicationValid => !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(FirstName) && BirthDate.HasValue && GroupID.HasValue;
         public bool IsRegistrationApproved => IsApplicationValid && Weight.HasValue && IsEntryFeePaid && IsWeightApproved;
 
-        public string IsFemaleLabel => IsFemale ? "Ж" : "М";
+        public string IsFemaleLabel => IsFemale
+            ? EntityLocalization.T("Gender_FemaleShort", "Ж")
+            : EntityLocalization.T("Gender_MaleShort", "М");
 
         public Guid ID
         {

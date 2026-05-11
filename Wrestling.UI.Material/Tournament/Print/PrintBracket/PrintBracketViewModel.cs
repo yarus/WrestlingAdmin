@@ -12,14 +12,16 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintBracket
         private List<GroupRound> _groupAddRounds;
         private List<PrintWrestlerApplicationViewModel> _groupWrestlers = new List<PrintWrestlerApplicationViewModel>();
 
-        public override string PageTitle => "Печать Протокола";
+        public override string PageTitle => T("Print_PageTitle", "Печать Протокола");
 
         // True when this bracket is being rendered as a draw protocol —
         // changes the heading to «Протокол Жеребьевки» and swaps the wrestler
         // table so Жребий replaces Место as the leading column.
         public bool IsDrawProtocol { get; set; }
 
-        public string ProtocolTitle => IsDrawProtocol ? "Протокол Жеребьевки" : "Протокол";
+        public string ProtocolTitle => IsDrawProtocol
+            ? T("Print_DrawProtocol", "Протокол Жеребьевки")
+            : T("Print_Protocol", "Протокол");
 
         public PrintBracketViewModel(IDiContainer container) : base(container)
         {

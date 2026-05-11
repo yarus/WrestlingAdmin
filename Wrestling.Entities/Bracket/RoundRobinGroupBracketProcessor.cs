@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities.Bracket
 {
     public class RoundRobinGroupBracketProcessor : GroupBracketProcessorBase
     {
         private static string FakeRound = "Bye";
-        public override string Title => "Круговая";
+        public override string Title => EntityLocalization.T("BracketType_RoundRobin", "Круговая");
         public override string Code => BracketTypeEnum.RoundRobin.ToString();
         public override int? AthletesMaxCount => 5;
         protected override void GenerateMainRounds()

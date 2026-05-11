@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Wrestling.Entities.Localization;
 using Wrestling.Entities.Results;
 
 namespace Wrestling.Entities.Bracket
@@ -16,7 +17,7 @@ namespace Wrestling.Entities.Bracket
         private AgeWeightGroup _fakeGroupA;
         private AgeWeightGroup _fakeGroupB;
 
-        public override string Title => "2 подгруппы в Олимпийскую с 3м местом";
+        public override string Title => EntityLocalization.T("BracketType_SubGroupsToOlympic", "2 подгруппы в Олимпийскую с 3м местом");
         public override string Code => BracketTypeEnum.SubGroupsIntoOlympic.ToString();
 
         private void InitInternalProcessors()
@@ -183,7 +184,11 @@ namespace Wrestling.Entities.Bracket
         {
             var thirdPlace = new GroupRound
             {
-                RoundName = "3 место",
+                // Hyphenated spelling matches OlympicGroupBracketProcessor —
+                // single source of truth for the "3rd place" round label so
+                // RoundNameLocalizationConverter only has one exact-match key
+                // to resolve (Round_ThirdPlace).
+                RoundName = "3-е место",
                 RoundNumber = Group.Bracket.Rounds.Count + 1,
                 RoundType = GroupRoundTypeEnum.Additional,
                 RoundMatches = new List<WrestlingMatch>()

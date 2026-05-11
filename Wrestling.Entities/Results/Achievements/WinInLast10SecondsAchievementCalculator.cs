@@ -1,13 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities.Results.Achievements
 {
     public class WinInLast10SecondsAchievementCalculator : IAchievementCalculator
     {
-        public string AchievementTitle => "Никогда не сдаваться";
+        public string AchievementTitle => EntityLocalization.T("Achievement_NeverGiveUp_Title", "Никогда не сдаваться");
         public string AchievementType => "NeverGiveUp";
-        public string AchievementDefinition => "Борец, набравший победные баллы за последние 10 секунд схватки";
+        public string AchievementDefinition => EntityLocalization.T("Achievement_NeverGiveUp_Definition", "Борец, набравший победные баллы за последние 10 секунд схватки");
 
         public List<WrestlerAchievement> CalculateAchievement(Tournament tournament, List<TournamentResult> results)
         {
@@ -70,7 +71,7 @@ namespace Wrestling.Entities.Results.Achievements
                             Title = AchievementTitle,
                             Wrestler = result.Wrestler,
                             AchievementType = AchievementType,
-                            AchievementValue = "Схватка #" + match.MatchNumber,
+                            AchievementValue = string.Format(EntityLocalization.T("Achievement_Value_MatchNumber", "Схватка #{0}"), match.MatchNumber),
                             AchievementDefinition = AchievementDefinition
                         });
                     }

@@ -1,4 +1,5 @@
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
 {
@@ -12,7 +13,14 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             SettingsControl = di.Resolve<UpcomingMatchesSlideSettingsViewModel>();
         }
 
-        public string SlideType => "Ближайшие Поединки";
+        public string SlideType
+        {
+            get
+            {
+                var v = LocalizationService.Instance?.T("SlideType_Upcoming");
+                return string.IsNullOrEmpty(v) || v == "SlideType_Upcoming" ? "Ближайшие Поединки" : v;
+            }
+        }
         public ISliderSettingsControl SettingsControl { get; }
 
         public ISliderViewControl CreateViewControl() => new UpcomingMatchesViewModel(_di);

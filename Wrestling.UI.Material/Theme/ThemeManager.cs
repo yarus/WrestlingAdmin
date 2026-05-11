@@ -7,6 +7,7 @@ using System.Windows.Media;
 using MaterialDesignColors;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Theme
 {
@@ -167,29 +168,35 @@ namespace Wrestling.UI.Material.Theme
             // and pure black collapses container/surface variants into a
             // single indistinguishable shade. Grey900 preserves the tonal
             // headroom while reading as black to the eye.
-            var picks = new (string Id, string Label, Color? ExplicitColor)[]
+            // Labels are resolved through LocalizationService at swatch-
+            // construction time. Settings rebuilds this list when the user
+            // changes the language (or any palette knob), so the displayed
+            // tooltip is always current.
+            var picks = new (string Id, string Key, string Fallback, Color? ExplicitColor)[]
             {
-                ("DeepPurple", "Тёмно-фиолетовый", null),
-                ("Purple",     "Фиолетовый",       null),
-                ("Indigo",     "Индиго",           null),
-                ("Blue",       "Синий",            null),
-                ("Teal",       "Бирюзовый",        null),
-                ("Green",      "Зелёный",          null),
-                ("Amber",      "Янтарный",         null),
-                ("Orange",     "Оранжевый",        null),
-                ("DeepOrange", "Тёмно-оранжевый",  null),
-                ("Red",        "Красный",          null),
-                ("Pink",       "Розовый",          null),
-                ("BlueGrey",   "Серо-синий",       null),
-                ("Grey",       "Серый",            Color.FromRgb(0x75, 0x75, 0x75)),
-                ("Black",      "Чёрный",           Color.FromRgb(0x21, 0x21, 0x21))
+                ("DeepPurple", "Color_DeepPurple", "Тёмно-фиолетовый", null),
+                ("Purple",     "Color_Purple",     "Фиолетовый",       null),
+                ("Indigo",     "Color_Indigo",     "Индиго",           null),
+                ("Blue",       "Color_Blue",       "Синий",            null),
+                ("Teal",       "Color_Teal",       "Бирюзовый",        null),
+                ("Green",      "Color_Green",      "Зелёный",          null),
+                ("Amber",      "Color_Amber",      "Янтарный",         null),
+                ("Orange",     "Color_Orange",     "Оранжевый",        null),
+                ("DeepOrange", "Color_DeepOrange", "Тёмно-оранжевый",  null),
+                ("Red",        "Color_Red",        "Красный",          null),
+                ("Pink",       "Color_Pink",       "Розовый",          null),
+                ("BlueGrey",   "Color_BlueGrey",   "Серо-синий",       null),
+                ("Grey",       "Color_Grey",       "Серый",            Color.FromRgb(0x75, 0x75, 0x75)),
+                ("Black",      "Color_Black",      "Чёрный",           Color.FromRgb(0x21, 0x21, 0x21))
             };
 
             var result = new List<NamedSwatch>(picks.Length);
-            foreach (var (id, label, explicitColor) in picks)
+            foreach (var (id, key, fallback, explicitColor) in picks)
             {
                 var color = explicitColor ?? LookupSwatchColor(id);
                 if (!color.HasValue) continue;
+                var label = LocalizationService.Instance?.T(key);
+                if (string.IsNullOrEmpty(label) || label == key) label = fallback;
                 result.Add(new NamedSwatch(id, label, color.Value));
             }
             return new ReadOnlyCollection<NamedSwatch>(result);

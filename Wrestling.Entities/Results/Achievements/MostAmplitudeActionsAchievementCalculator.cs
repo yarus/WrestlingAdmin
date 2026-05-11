@@ -1,13 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities.Results.Achievements
 {
     public class MostAmplitudeActionsAchievementCalculator : IAchievementCalculator
     {
-        public string AchievementTitle => "Космодром";
+        public string AchievementTitle => EntityLocalization.T("Achievement_MostAmplitude_Title", "Космодром");
         public string AchievementType => "MostAmplitudeActions";
-        public string AchievementDefinition => "Борец, выполнивший больше всех 4-бальных бросков за турнир";
+        public string AchievementDefinition => EntityLocalization.T("Achievement_MostAmplitude_Definition", "Борец, выполнивший больше всех 4-бальных бросков за турнир");
 
         public List<WrestlerAchievement> CalculateAchievement(Tournament tournament, List<TournamentResult> results)
         {

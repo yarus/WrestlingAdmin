@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using Wrestling.Providers.Localization;
 
 namespace Wrestling.Providers.Network
 {
@@ -52,7 +53,7 @@ namespace Wrestling.Providers.Network
             }
             catch (Exception ex)
             {
-                DiagnosticMessage?.Invoke(this, "Не удалось открыть HTTP порт " + port + ": " + ex.Message);
+                DiagnosticMessage?.Invoke(this, string.Format(ProviderLocalization.T("Network_HttpPortOpenFailed", "Не удалось открыть HTTP порт {0}: {1}"), port, ex.Message));
                 return;
             }
 
@@ -196,7 +197,7 @@ namespace Wrestling.Providers.Network
                     }
                     catch (Exception ex)
                     {
-                        DiagnosticMessage?.Invoke(this, "Ошибка чтения .wrt для раздачи: " + ex.Message);
+                        DiagnosticMessage?.Invoke(this, ProviderLocalization.T("Network_WrtReadError", "Ошибка чтения .wrt для раздачи: ") + ex.Message);
                         WriteStatus(stream, 500, "Internal Server Error");
                         return;
                     }

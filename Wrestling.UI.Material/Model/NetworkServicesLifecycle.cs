@@ -5,6 +5,7 @@ using System.Threading;
 using System.Windows.Threading;
 using Wrestling.Entities;
 using Wrestling.Providers.Network;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Model
 {
@@ -155,8 +156,11 @@ namespace Wrestling.UI.Material.Model
         {
             if (_discovery.SnapshotPeers().Count == 0)
             {
-                DiagnosticMessage?.Invoke(this,
-                    "Сеть не видит соседей — проверьте, что на первом запуске разрешили приложение в фаерволе Windows.");
+                var v = LocalizationService.Instance?.T("Network_FirewallHint");
+                var msg = string.IsNullOrEmpty(v) || v == "Network_FirewallHint"
+                    ? "Сеть не видит соседей — проверьте, что на первом запуске разрешили приложение в фаерволе Windows."
+                    : v;
+                DiagnosticMessage?.Invoke(this, msg);
             }
         }
 

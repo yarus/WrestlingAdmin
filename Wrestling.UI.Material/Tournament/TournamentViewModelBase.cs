@@ -107,7 +107,7 @@ namespace Wrestling.UI.Material.Tournament
             if (string.IsNullOrEmpty(DataContext.Tournament.FileName)) return;
 
             var result = await TournamentManager.SaveToFileAsync(DataContext.Tournament, DataContext.Tournament.FileName);
-            ShowSnackMessage(result ? "Турнир сохранен!" : "При сохранении произошла ошибка!");
+            ShowSnackMessage(result ? T("Snack_TournamentSaved", "Турнир сохранен!") : T("Snack_SaveError", "При сохранении произошла ошибка!"));
         }
     }
 }
