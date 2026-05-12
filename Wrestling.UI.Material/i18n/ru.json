@@ -307,6 +307,7 @@
   "Export_PartialFailure": "Не удалось сохранить часть протоколов:",
   "Export_ErrorPrefix": "Ошибка экспорта: ",
   "Export_FileName_TeamResults": "_Командный зачет (олимпийский).pdf",
+  "Export_FileName_TeamResultsPoints": "_Командный зачет (квалификационные баллы).pdf",
   "Export_FileName_PersonalResults": "_Личные результаты.pdf",
   "Export_Csv_DialogTitle": "Экспортировать результаты в файл",
   "Snack_TournamentNotOpen": "Турнир не открыт.",

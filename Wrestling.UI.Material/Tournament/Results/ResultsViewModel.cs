@@ -224,8 +224,12 @@ namespace Wrestling.UI.Material.Tournament.Results
             // cache is current whenever the user can click Export.
             var resultsService = Resolve<IResultsService>();
             var olympicOrderer = Resolve<ITeamResultsOrderer>("OlympicOrderer");
+            var pointsOrderer = Resolve<ITeamResultsOrderer>("PointsOrderer");
             var personalResults = resultsService.AllResults.ToList();
             var olympicTeamResults = resultsService.GetOrderedTeamResults(olympicOrderer).ToList();
+            var pointsTeamResults = pointsOrderer == null
+                ? new List<TournamentTeamResult>()
+                : resultsService.GetOrderedTeamResults(pointsOrderer).ToList();
 
             if (olympicTeamResults != null && olympicTeamResults.Count > 0)
             {
@@ -238,6 +242,21 @@ namespace Wrestling.UI.Material.Tournament.Results
                         var vm = new PrintOlympicTeamResultsViewModel(DiContainer) { TeamResults = olympicTeamResults };
                         vm.InitData();
                         return new PrintOlympicTeamResultsView { DataContext = vm };
+                    }
+                });
+            }
+
+            if (pointsTeamResults != null && pointsTeamResults.Count > 0)
+            {
+                jobs.Add(new BulkPdfExportJob
+                {
+                    FileName = T("Export_FileName_TeamResultsPoints", "_Командный зачет (квалификационные баллы).pdf"),
+                    Landscape = false,
+                    ViewFactory = () =>
+                    {
+                        var vm = new PrintPointsTeamResultsViewModel(DiContainer) { TeamResults = pointsTeamResults };
+                        vm.InitData();
+                        return new PrintPointsTeamResultsView { DataContext = vm };
                     }
                 });
             }

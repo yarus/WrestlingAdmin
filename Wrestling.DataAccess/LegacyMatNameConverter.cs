@@ -13,8 +13,9 @@ namespace Wrestling.DataAccess
     public class LegacyMatNameConverter : JsonConverter
     {
         // Inner serializer has no converters: prevents recursion when we re-bind
-        // the migrated JObject back into a strongly-typed instance.
-        private static readonly JsonSerializer _inner = new JsonSerializer();
+        // the migrated JObject back into a strongly-typed instance. Uses the
+        // same hardened settings as the storage layer (TypeNameHandling.None).
+        private static readonly JsonSerializer _inner = JsonStorageDataAccess.CreateSerializer();
 
         public override bool CanConvert(Type objectType)
         {

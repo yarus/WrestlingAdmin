@@ -16,16 +16,40 @@ namespace Wrestling.DataAccess
         // "CarpetID", "CarpetLabel") in old .wrt files. See LegacyMatNameConverter.
         private static readonly LegacyMatNameConverter _legacyMatConverter = new LegacyMatNameConverter();
 
-        private static JsonSerializer CreateLoadSerializer()
+        // Orphan tmp files (atomic-write residue from a prior crash) older than
+        // this are reaped on the next load. A normal save completes in well
+        // under a second, so 5 min is comfortably past any legitimate
+        // in-progress write while still keeping disk clutter bounded.
+        private static readonly TimeSpan OrphanTempFileMinAge = TimeSpan.FromMinutes(5);
+
+        // Pinned hardening for every serializer instance the storage layer
+        // creates. TypeNameHandling.None blocks $type polymorphic gadgets in
+        // untrusted .wrt files (we never write $type — all our DTOs are flat),
+        // so loading a malicious file cannot trigger a deserialization gadget.
+        // Kept centralized so we never accidentally instantiate a bare
+        // JsonSerializer somewhere with default settings.
+        internal static JsonSerializer CreateSerializer(JsonConverter extraConverter = null)
         {
-            var s = new JsonSerializer();
-            s.Converters.Add(_legacyMatConverter);
+            var s = new JsonSerializer
+            {
+                TypeNameHandling = TypeNameHandling.None,
+            };
+            if (extraConverter != null)
+            {
+                s.Converters.Add(extraConverter);
+            }
             return s;
         }
 
+        private static JsonSerializer CreateLoadSerializer() => CreateSerializer(_legacyMatConverter);
+
         private static JsonSerializerSettings CreateLoadSettings()
         {
-            return new JsonSerializerSettings { Converters = { _legacyMatConverter } };
+            return new JsonSerializerSettings
+            {
+                TypeNameHandling = TypeNameHandling.None,
+                Converters = { _legacyMatConverter },
+            };
         }
 
 
@@ -66,7 +90,7 @@ namespace Wrestling.DataAccess
                 {
                     using (var writer = new StreamWriter(stream, new UTF8Encoding(false), 4096, leaveOpen: true))
                     {
-                        var serializer = JsonSerializer.CreateDefault();
+                        var serializer = CreateSerializer();
                         serializer.Serialize(writer, item);
                         await writer.FlushAsync().ConfigureAwait(false);
                     }
@@ -103,7 +127,7 @@ namespace Wrestling.DataAccess
             using (var writeFileStream = new StreamWriter(tmpPath, append: false, new UTF8Encoding(false)))
             {
                 var jsonWriter = new JsonTextWriter(writeFileStream);
-                var ser = new JsonSerializer();
+                var ser = CreateSerializer();
                 ser.Serialize(jsonWriter, item);
                 jsonWriter.Flush();
             }
@@ -145,6 +169,49 @@ namespace Wrestling.DataAccess
             try { if (File.Exists(path)) File.Delete(path); } catch { /* best effort cleanup */ }
         }
 
+        // Sweep stale atomic-write residue (*.tmp.<guid>) from the directory
+        // hosting the file being loaded. A normal save flushes-then-swaps in
+        // sub-second time, so anything older than OrphanTempFileMinAge is from
+        // a prior crash (process killed mid-save, power loss, OOM). Best-effort
+        // — any directory enumeration / deletion failure is swallowed so a
+        // permission glitch on cleanup never blocks the actual load.
+        private static void TryCleanOrphanTempFiles(string referencePath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(referencePath)) return;
+
+                var dir = Path.GetDirectoryName(referencePath);
+                if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return;
+
+                // Skip network paths — sweeping a peer's share would delete
+                // tmp files mid-write on another machine.
+                if (IsNetworkPath(referencePath)) return;
+
+                var cutoff = DateTime.UtcNow - OrphanTempFileMinAge;
+                foreach (var tmp in Directory.EnumerateFiles(dir, "*.tmp.*"))
+                {
+                    try
+                    {
+                        var info = new FileInfo(tmp);
+                        if (info.LastWriteTimeUtc <= cutoff)
+                        {
+                            info.Delete();
+                        }
+                    }
+                    catch (Exception perFileEx) when (IsExpectedLoadException(perFileEx) || perFileEx is IOException)
+                    {
+                        // One stuck file shouldn't stop the rest of the sweep.
+                        FileLogger.Log("JsonStorageDataAccess.TryCleanOrphanTempFiles [Delete]", tmp, perFileEx);
+                    }
+                }
+            }
+            catch (Exception ex) when (IsExpectedLoadException(ex) || ex is IOException)
+            {
+                FileLogger.Log("JsonStorageDataAccess.TryCleanOrphanTempFiles", referencePath, ex);
+            }
+        }
+
         public T ReadFromFile<T>(string path)
         {
             // Load paths must never crash the app — import polls network/UNC paths
@@ -158,6 +225,8 @@ namespace Wrestling.DataAccess
             {
                 return default(T);
             }
+
+            TryCleanOrphanTempFiles(path);
 
             int maxRetries = IsNetworkPath(path) ? 3 : 1;
             const int initialDelayMs = 200;
@@ -205,6 +274,8 @@ namespace Wrestling.DataAccess
             {
                 return default(T);
             }
+
+            TryCleanOrphanTempFiles(path);
 
             int maxRetries = IsNetworkPath(path) ? 5 : 3;
             const int initialDelayMs = 200;

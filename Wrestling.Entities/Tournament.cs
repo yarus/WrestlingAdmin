@@ -55,39 +55,32 @@ namespace Wrestling.Entities
         public int ApplicationsCount => TeamApplications.Count;
         public int ProgressPercent => MatchesCount == 0 ? 0 : CompletedMatchesCount * 100 / MatchesCount;
 
-        public int ExpectedDurationInSeconds { 
+        // Tournament-wide ETA: the largest per-mat pending workload, sized
+        // by theoretical per-match time (round × 2 + timeout). Conservative
+        // upper bound that assumes mats run in parallel — the slowest mat
+        // bounds the whole tournament. Operators read this as «when the
+        // last running mat will finish».
+        public int ExpectedDurationInSeconds
+        {
             get
             {
-                if (PendingMatchesCount == 0)
-                {
-                    return 0;
-                }
+                if (PendingMatchesCount == 0) return 0;
 
                 int maxDurationInSeconds = 0;
-
                 foreach (var mat in _mats)
                 {
-                    var matMaxDurationInSeconds = 0;
-                    var groupsWithBrackets = mat.Groups.Where(g => g.IsBracketGenerated).ToList();
-
-                    foreach (var group in groupsWithBrackets)
+                    var matDurationInSeconds = 0;
+                    foreach (var group in mat.Groups)
                     {
-                        var roundLength = group.MaxRoundSecond;
-                        var timeoutLength = group.MaxTimeoutSecond;
-
-                        var uncompleted = group.Bracket.MatchesCount - group.Bracket.CompletedMatchesCount;
-
-                        var groupDuration = uncompleted * (roundLength * 2 + timeoutLength);
-
-                        matMaxDurationInSeconds += groupDuration;
+                        if (group?.Bracket == null) continue;
+                        matDurationInSeconds += group.PendingMatchesCount
+                            * (group.MaxRoundSecond * 2 + group.MaxTimeoutSecond);
                     }
-
-                    if (matMaxDurationInSeconds > maxDurationInSeconds)
+                    if (matDurationInSeconds > maxDurationInSeconds)
                     {
-                        maxDurationInSeconds = matMaxDurationInSeconds;
+                        maxDurationInSeconds = matDurationInSeconds;
                     }
                 }
-
                 return maxDurationInSeconds;
             }
         }

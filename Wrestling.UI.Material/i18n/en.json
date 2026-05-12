@@ -307,6 +307,7 @@
   "Export_PartialFailure": "Some protocols could not be saved:",
   "Export_ErrorPrefix": "Export error: ",
   "Export_FileName_TeamResults": "_Team standings (olympic).pdf",
+  "Export_FileName_TeamResultsPoints": "_Team standings (classification points).pdf",
   "Export_FileName_PersonalResults": "_Personal results.pdf",
   "Export_Csv_DialogTitle": "Export results to file",
   "Snack_TournamentNotOpen": "Tournament not open.",

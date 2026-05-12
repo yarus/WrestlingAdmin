@@ -219,4 +219,66 @@ public sealed class JsonStorageDataAccessTests : IDisposable
         json.Should().Contain("\"Mats\"").And.Contain("\"MatID\"").And.Contain("\"MatLabel\"");
         json.Should().NotContain("\"Carpets\"").And.NotContain("\"CarpetID\"").And.NotContain("\"CarpetLabel\"");
     }
+
+    // Hardening: TypeNameHandling.None blocks $type-based polymorphic
+    // deserialization gadgets. A .wrt forged with a $type pointing to e.g.
+    // ObjectDataProvider must NOT instantiate that type — instead the parser
+    // either drops the property or returns null on a property type mismatch.
+    [Fact]
+    public void ReadFromFile_ignores_dollar_type_polymorphism_marker()
+    {
+        var path = Path_("typename.json");
+        File.WriteAllText(path, @"{
+  ""$type"": ""System.Windows.Data.ObjectDataProvider, PresentationFramework"",
+  ""Name"": ""benign""
+}");
+
+        Payload result = null;
+        Action act = () => result = _storage.ReadFromFile<Payload>(path);
+
+        act.Should().NotThrow("malformed $type must not blow up the load");
+        // Either Payload deserialized with Name (if Newtonsoft skipped $type)
+        // or null was returned — both are safe outcomes. The unsafe outcome
+        // (instantiating ObjectDataProvider via $type) is the one we forbid.
+        if (result != null)
+        {
+            result.Name.Should().Be("benign");
+        }
+    }
+
+    // Orphan-tmp cleanup (#5): stale *.tmp.<guid> residue from a previous
+    // crashed save is reaped when the load reads any file from the same dir.
+    [Fact]
+    public void ReadFromFile_reaps_stale_orphan_tmp_files_in_same_directory()
+    {
+        var realPath = Path_("real.json");
+        _storage.SaveToFile(new Payload { Name = "ok" }, realPath).Should().BeTrue();
+
+        var staleOrphan = Path_("real.json.tmp.deadbeef000111222333444555666777");
+        File.WriteAllText(staleOrphan, "{}");
+        File.SetLastWriteTimeUtc(staleOrphan, DateTime.UtcNow.AddHours(-1));
+
+        _storage.ReadFromFile<Payload>(realPath).Should().NotBeNull();
+
+        File.Exists(staleOrphan).Should().BeFalse(
+            "an hour-old *.tmp.* sibling is residue from a crashed atomic write");
+    }
+
+    // Don't reap *.tmp.* siblings that are still fresh — they might belong
+    // to a peer mat's in-flight write (or to ours, in a parallel save).
+    [Fact]
+    public void ReadFromFile_keeps_fresh_tmp_files_intact()
+    {
+        var realPath = Path_("real-fresh.json");
+        _storage.SaveToFile(new Payload { Name = "ok" }, realPath).Should().BeTrue();
+
+        var freshTmp = Path_("real-fresh.json.tmp.aaaabbbbccccdddd1111222233334444");
+        File.WriteAllText(freshTmp, "{}");
+        // mtime defaults to "now" — within the 5-min protection window
+
+        _storage.ReadFromFile<Payload>(realPath).Should().NotBeNull();
+
+        File.Exists(freshTmp).Should().BeTrue(
+            "fresh tmp residue must not be deleted — a peer/parallel save may still be flushing it");
+    }
 }
