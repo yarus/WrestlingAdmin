@@ -51,7 +51,7 @@
             <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,1,0" BorderBrush="White"></Border>
 
             <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="1" Margin="10,0,10,0" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="{Binding ScoreScreenVm.CarpetLabel, Converter={StaticResource UpperCaseConverter}}"/>
+                <TextBlock Text="{Binding ScoreScreenVm.MatLabel, Converter={StaticResource UpperCaseConverter}}"/>
             </Viewbox>
         </Grid>
 

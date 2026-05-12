@@ -85,7 +85,7 @@ public class AdapterEdgeCasesTests
                     TeamID = missingTeamId
                 }
             },
-            Carpets = new List<CarpetInfo>(),
+            Mats = new List<MatInfo>(),
             Slides = new List<ScreenSlideInfo>()
         };
 

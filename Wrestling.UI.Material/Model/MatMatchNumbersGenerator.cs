@@ -6,18 +6,18 @@ using Wrestling.Entities.Bracket;
 
 namespace Wrestling.UI.Material.Model
 {
-    // The Idea of this carpet generator is to have match numbers started from #1 for each Carpet.
-    // So match numbers won't be unique during thru tournament but they will be unique for the Carpet.
+    // The Idea of this mat generator is to have match numbers started from #1 for each Mat.
+    // So match numbers won't be unique during thru tournament but they will be unique for the Mat.
     // This allows to easily predict match schedule for participants.
-    public class CarpetMatchNumbersGenerator : IMatchNumbersGenerator
+    public class MatMatchNumbersGenerator : IMatchNumbersGenerator
     {
         public void Generate(Entities.Tournament tournament, List<IGroupBracketProcessor> processors)
         {
-            foreach (var carpet in tournament.Carpets)
+            foreach (var mat in tournament.Mats)
             {
                 int currentMatchNumber = 1;
 
-                var groups = carpet.Groups.Where(g => g.Bracket != null).ToList();
+                var groups = mat.Groups.Where(g => g.Bracket != null).ToList();
                 if (groups.Count == 0) continue;
 
                 // Reset every match number first so stale values from previous runs cannot leak through
@@ -30,7 +30,7 @@ namespace Wrestling.UI.Material.Model
 
                 // Each WrestlingMatch instance can only be numbered once per Generate pass — protects against
                 // shared references between rounds (e.g., a match accidentally referenced from both semi-final
-                // and final rounds), which would otherwise yield two carpet matches sharing a MatchNumber.
+                // and final rounds), which would otherwise yield two mat matches sharing a MatchNumber.
                 var assigned = new HashSet<WrestlingMatch>();
 
                 BindMainBracketQualification(groups, processors, ref currentMatchNumber, assigned);

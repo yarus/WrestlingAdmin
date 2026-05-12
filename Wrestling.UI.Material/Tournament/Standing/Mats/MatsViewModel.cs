@@ -15,18 +15,18 @@ using Wrestling.UI.Material.Tournament.Print;
 using Wrestling.UI.Material.Tournament.Print.PrintSchedule;
 using Wrestling.UI.Utils;
 
-namespace Wrestling.UI.Material.Tournament.Standing.Carpets
+namespace Wrestling.UI.Material.Tournament.Standing.Mats
 {
-    public class CarpetsViewModel : TournamentViewModelBase, IStandingPageViewModel
+    public class MatsViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
         private IMatchNumbersGenerator _matchNumbersGenerator;
 
         private ObservableCollection<AgeWeightGroup> _groups;
-        private ObservableCollection<Carpet> _items;
+        private ObservableCollection<Mat> _items;
 
-        private ICommand _addCarpetCommand;
-        private ICommand _deleteCarpetCommand;
-        private ICommand _editCarpetCommand;
+        private ICommand _addMatCommand;
+        private ICommand _deleteMatCommand;
+        private ICommand _editMatCommand;
         private ICommand _bindGroupCommand;
         private ICommand _unbindGroupCommand;
         private ICommand _upGroupCommand;
@@ -35,10 +35,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
         private IList<CommandButtonItem> _quickButtons;
 
         public string PageName => T("Nav_Schedule", "Расписание");
-        public override string PageTitle => T("Carpets_PageTitle", "Очередность схваток по коврам и группам");
+        public override string PageTitle => T("Mats_PageTitle", "Очередность схваток по коврам и группам");
         public int UnbindedGroups => _groups != null && _items != null ? _groups.Count - _items.SelectMany(c => c.Groups).Count() : 0;
 
-        public CarpetsViewModel(IDiContainer container) : base(container)
+        public MatsViewModel(IDiContainer container) : base(container)
         {
 
         }
@@ -59,7 +59,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
                         },
                         canExecute: _ => true);
                     printBtn = new CommandButtonItem(
-                        T("Carpets_ExportSchedules_Tooltip", "Скачать расписания ковров PDF"),
+                        T("Mats_ExportSchedules_Tooltip", "Скачать расписания ковров PDF"),
                         PackIconKind.PrinterOutline,
                         printCmd);
 
@@ -76,20 +76,20 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             _quickButtons = null;
             _matchNumbersGenerator = Resolve<IMatchNumbersGenerator>();
 
-            Items = DataContext.Tournament.Carpets;
+            Items = DataContext.Tournament.Mats;
 
             _groups = DataContext.Tournament.Groups;
 
-            VerifyCarpets();
+            VerifyMats();
         }
 
-        private void VerifyCarpets()
+        private void VerifyMats()
         {
-            var invalidCarpetGroups = _groups.Where(g => g.CarpetID.HasValue && Items.FirstOrDefault(c => c.ID == g.CarpetID.Value) == null).ToList();
-            foreach (var invalidGroup in invalidCarpetGroups)
+            var invalidMatGroups = _groups.Where(g => g.MatID.HasValue && Items.FirstOrDefault(c => c.ID == g.MatID.Value) == null).ToList();
+            foreach (var invalidGroup in invalidMatGroups)
             {
-                invalidGroup.CarpetID = null;
-                invalidGroup.CarpetLabel = string.Empty;
+                invalidGroup.MatID = null;
+                invalidGroup.MatLabel = string.Empty;
             }
         }
 
@@ -117,39 +117,39 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             }
         }
 
-        public ICommand AddCarpetCommand
+        public ICommand AddMatCommand
         {
             get
             {
-                if (_addCarpetCommand == null)
+                if (_addMatCommand == null)
                 {
-                    _addCarpetCommand = new AsyncRelayCommand(param => AddCarpetAsync(), param => true);
+                    _addMatCommand = new AsyncRelayCommand(param => AddMatAsync(), param => true);
                 }
-                return _addCarpetCommand;
+                return _addMatCommand;
             }
         }
 
-        public ICommand EditCarpetCommand
+        public ICommand EditMatCommand
         {
             get
             {
-                if (_editCarpetCommand == null)
+                if (_editMatCommand == null)
                 {
-                    _editCarpetCommand = new AsyncRelayCommand(param => EditCarpetAsync(param as Carpet), param => param != null);
+                    _editMatCommand = new AsyncRelayCommand(param => EditMatAsync(param as Mat), param => param != null);
                 }
-                return _editCarpetCommand;
+                return _editMatCommand;
             }
         }
 
-        public ICommand DeleteCarpetCommand
+        public ICommand DeleteMatCommand
         {
             get
             {
-                if (_deleteCarpetCommand == null)
+                if (_deleteMatCommand == null)
                 {
-                    _deleteCarpetCommand = new RelayCommand(param => DeleteCarpet(param as Carpet), param => param != null);
+                    _deleteMatCommand = new RelayCommand(param => DeleteMat(param as Mat), param => param != null);
                 }
-                return _deleteCarpetCommand;
+                return _deleteMatCommand;
             }
         }
 
@@ -159,7 +159,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             {
                 if (_bindGroupCommand == null)
                 {
-                    _bindGroupCommand = new AsyncRelayCommand(param => BindGroupAsync(param as Carpet), param => param != null);
+                    _bindGroupCommand = new AsyncRelayCommand(param => BindGroupAsync(param as Mat), param => param != null);
                 }
                 return _bindGroupCommand;
             }
@@ -177,7 +177,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             }
         }
 
-        public ObservableCollection<Carpet> Items
+        public ObservableCollection<Mat> Items
         {
             get { return _items; }
             set
@@ -190,86 +190,86 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
 
         private void UpGroup(AgeWeightGroup group)
         {
-            var carpet = Items.FirstOrDefault(c => c.ID == group.CarpetID);
-            if (carpet != null)
+            var mat = Items.FirstOrDefault(c => c.ID == group.MatID);
+            if (mat != null)
             {
-                var i = carpet.Groups.IndexOf(group);
+                var i = mat.Groups.IndexOf(group);
                 var j = i - 1;
                 if (j >= 0)
                 {
-                    carpet.Groups.Swap(i, j);
+                    mat.Groups.Swap(i, j);
                 }
             }
         }
 
         private void DownGroup(AgeWeightGroup group)
         {
-            var carpet = Items.FirstOrDefault(c => c.ID == group.CarpetID);
-            if (carpet != null)
+            var mat = Items.FirstOrDefault(c => c.ID == group.MatID);
+            if (mat != null)
             {
-                var i = carpet.Groups.IndexOf(group);
+                var i = mat.Groups.IndexOf(group);
                 var j = i + 1;
-                if (j < carpet.Groups.Count)
+                if (j < mat.Groups.Count)
                 {
-                    carpet.Groups.Swap(i, j);
+                    mat.Groups.Swap(i, j);
                 }
             }
         }
 
-        private async Task AddCarpetAsync()
+        private async Task AddMatAsync()
         {
-            var tmpCarpet = new Carpet
+            var tmpMat = new Mat
             {
                 ID = Guid.NewGuid()
             };
 
-            var view = new CarpetDialog
+            var view = new MatDialog
             {
-                DataContext = tmpCarpet
+                DataContext = tmpMat
             };
 
             var result = await DialogHost.Show(view, "RootDialog");
 
             if (result != null && (bool) result)
             {
-                Items.Add(tmpCarpet);                
+                Items.Add(tmpMat);                
             }
         }
 
-        private async Task EditCarpetAsync(Carpet carpet)
+        private async Task EditMatAsync(Mat mat)
         {
-            var tmpCarpet = carpet.Clone() as Carpet;
+            var tmpMat = mat.Clone() as Mat;
 
-            var view = new CarpetDialog
+            var view = new MatDialog
             {
-                DataContext = tmpCarpet
+                DataContext = tmpMat
             };
 
             var result = await DialogHost.Show(view, "RootDialog");
 
             if (result != null && (bool)result)
             {
-                carpet.Sync(tmpCarpet);
+                mat.Sync(tmpMat);
             }
         }
 
-        private void DeleteCarpet(Carpet carpet)
+        private void DeleteMat(Mat mat)
         {
-            if (Dialog.ShowMessageBox(this, T("Carpets_Delete_Body", "Вы уверены, что хотите удалить ковер?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Mats_Delete_Body", "Вы уверены, что хотите удалить ковер?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
-            var groups = _groups.Where(g => g.CarpetID.HasValue && g.CarpetID.Value == carpet.ID.Value).ToList();
+            var groups = _groups.Where(g => g.MatID.HasValue && g.MatID.Value == mat.ID.Value).ToList();
 
             foreach (var group in groups)
             {
-                group.CarpetID = null;
-                group.CarpetLabel = string.Empty;
+                group.MatID = null;
+                group.MatLabel = string.Empty;
                 group.FieldsVersion++;
             }
 
-            Items.Remove(carpet);
+            Items.Remove(mat);
         }
 
-        private async Task BindGroupAsync(Carpet carpet)
+        private async Task BindGroupAsync(Mat mat)
         {
             var vm = new BindGroupViewModel(DiContainer);
             vm.InitData();
@@ -285,11 +285,11 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             {
                 if (vm.SelectedGroup != null)
                 {
-                    vm.SelectedGroup.CarpetLabel = carpet.Name;
-                    vm.SelectedGroup.CarpetID = carpet.ID;
+                    vm.SelectedGroup.MatLabel = mat.Name;
+                    vm.SelectedGroup.MatID = mat.ID;
                     vm.SelectedGroup.FieldsVersion++;
-                    carpet.Groups.Add(vm.SelectedGroup);
-                    carpet.RefreshStats();
+                    mat.Groups.Add(vm.SelectedGroup);
+                    mat.RefreshStats();
                     OnPropertyChanged("UnbindedGroups");
 
                     GenerateMatchNumbers();
@@ -299,16 +299,16 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
 
         private void UnbindGroup(AgeWeightGroup group)
         {
-            if (Dialog.ShowMessageBox(this, T("Carpets_UnbindGroup_Body", "Вы уверены, что убрать группу с ковра?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Mats_UnbindGroup_Body", "Вы уверены, что убрать группу с ковра?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
-            var carpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == group.CarpetID);
-            if (carpet != null)
+            var mat = DataContext.Tournament.Mats.FirstOrDefault(c => c.ID == group.MatID);
+            if (mat != null)
             {
-                carpet.Groups.Remove(group);
-                group.CarpetID = null;
-                group.CarpetLabel = string.Empty;
+                mat.Groups.Remove(group);
+                group.MatID = null;
+                group.MatLabel = string.Empty;
                 group.FieldsVersion++;
-                Items = new ObservableCollection<Carpet>(DataContext.Tournament.Carpets);
+                Items = new ObservableCollection<Mat>(DataContext.Tournament.Mats);
 
                 GenerateMatchNumbers();
             }
@@ -322,28 +322,28 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
         private async Task ExportSchedulesAsync()
         {
             var tournament = DataContext.Tournament;
-            var carpets = tournament?.Carpets;
-            if (carpets == null || carpets.Count == 0)
+            var mats = tournament?.Mats;
+            if (mats == null || mats.Count == 0)
             {
                 Dialog.ShowMessageBox(this,
-                    T("CarpetsExport_NoCarpets", "Нет ковров для печати расписания."),
-                    T("CarpetsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Information);
+                    T("MatsExport_NoMats", "Нет ковров для печати расписания."),
+                    T("MatsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            var carpetsWithPending = carpets
+            var matsWithPending = mats
                 .Where(c => tournament.Groups
-                    .Where(g => g.Bracket != null && g.CarpetID == c.ID)
+                    .Where(g => g.Bracket != null && g.MatID == c.ID)
                     .SelectMany(g => g.Bracket.Rounds)
                     .SelectMany(r => r.RoundMatches)
                     .Any(rm => !rm.IsMatchCompleted))
                 .ToList();
 
-            if (carpetsWithPending.Count == 0)
+            if (matsWithPending.Count == 0)
             {
                 Dialog.ShowMessageBox(this,
-                    T("CarpetsExport_NoPending", "На коврах нет непройденных схваток."),
-                    T("CarpetsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Information);
+                    T("MatsExport_NoPending", "На коврах нет непройденных схваток."),
+                    T("MatsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -356,7 +356,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
 
             var settings = new FolderBrowserDialogSettings
             {
-                Description = T("CarpetsExport_FolderPicker_Title", "Выберите папку для сохранения расписаний ковров"),
+                Description = T("MatsExport_FolderPicker_Title", "Выберите папку для сохранения расписаний ковров"),
                 ShowNewFolderButton = true,
                 SelectedPath = defaultPath
             };
@@ -366,23 +366,23 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             try
             {
                 var jobs = new List<BulkPdfExportJob>();
-                foreach (var carpet in carpetsWithPending)
+                foreach (var mat in matsWithPending)
                 {
-                    var capturedCarpet = carpet;
+                    var capturedMat = mat;
                     jobs.Add(new BulkPdfExportJob
                     {
-                        FileName = T("CarpetsExport_FilePrefix", "Расписание_") + BulkBracketPdfExporter.MakeSafeFileName(capturedCarpet.Name) + ".pdf",
+                        FileName = T("MatsExport_FilePrefix", "Расписание_") + BulkBracketPdfExporter.MakeSafeFileName(capturedMat.Name) + ".pdf",
                         Landscape = false,
                         ViewFactory = () =>
                         {
-                            var vm = new PrintScheduleViewModel(DiContainer, capturedCarpet);
+                            var vm = new PrintScheduleViewModel(DiContainer, capturedMat);
                             vm.InitData();
                             return new PrintScheduleView { DataContext = vm };
                         }
                     });
                 }
 
-                ShowSnackMessage(string.Format(T("CarpetsExport_Snack_Building", "Идет создание расписаний ковров: {0} файлов..."), jobs.Count));
+                ShowSnackMessage(string.Format(T("MatsExport_Snack_Building", "Идет создание расписаний ковров: {0} файлов..."), jobs.Count));
 
                 var exporter = new BulkBracketPdfExporter();
                 var result = await exporter.ExportAsync(jobs, settings.SelectedPath);
@@ -396,14 +396,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
                 {
                     Dialog.ShowMessageBox(this,
                         T("Export_PartialFailure", "Не удалось сохранить часть протоколов:") + "\n\n" + string.Join("\n", result.Failures),
-                        T("CarpetsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                        T("MatsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
             {
                 Dialog.ShowMessageBox(this,
                     T("Export_ErrorPrefix", "Ошибка экспорта: ") + ex.Message,
-                    T("CarpetsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Error);
+                    T("MatsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

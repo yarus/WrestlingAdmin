@@ -12,10 +12,10 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
 {
     public class GroupBracketSlideSettingsViewModel : ViewModelBase, ISliderSettingsControl
     {
-        private ObservableCollection<Carpet> _carpets;
+        private ObservableCollection<Mat> _mats;
         private ObservableCollection<AgeWeightGroup> _groups;
         private AgeWeightGroup _selectedGroup;
-        private Carpet _selectedCarpet;
+        private Mat _selectedMat;
         private ScreenSlide _item;
 
         private int _sliderOpacityValue;
@@ -40,7 +40,7 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
         {
             base.InitData();
 
-            Carpets = DataContext.Tournament.Carpets;
+            Mats = DataContext.Tournament.Mats;
 
             Groups = DataContext.Tournament.Groups;
         }
@@ -118,35 +118,35 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
             }
         }
 
-        public Carpet SelectedCarpet
+        public Mat SelectedMat
         {
-            get { return _selectedCarpet; }
+            get { return _selectedMat; }
             set
             {
-                _selectedCarpet = value;
+                _selectedMat = value;
 
-                _item.SetNamedValue("CarpetID", _selectedCarpet?.ID);
+                _item.SetNamedValue("MatID", _selectedMat?.ID);
 
-                if (_selectedCarpet == null)
+                if (_selectedMat == null)
                 {
                     Groups = DataContext.Tournament.Groups;
                 }
                 else
                 {
-                    Groups = _selectedCarpet.Groups;
+                    Groups = _selectedMat.Groups;
                 }
 
-                OnPropertyChanged("SelectedCarpet");
+                OnPropertyChanged("SelectedMat");
             }
         }
 
-        public ObservableCollection<Carpet> Carpets
+        public ObservableCollection<Mat> Mats
         {
-            get { return _carpets; }
+            get { return _mats; }
             set
             {
-                _carpets = value;
-                OnPropertyChanged("Carpets");
+                _mats = value;
+                OnPropertyChanged("Mats");
             }
         }
 
@@ -185,15 +185,15 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
 
             if (slide == null) return;
 
-            var carpetID = _item.GetNamedValue("CarpetID");
-            if (carpetID != null)
+            var matID = _item.GetNamedValue("MatID");
+            if (matID != null)
             {
-                var carpetGuid = new Guid(carpetID.ToString());
-                SelectedCarpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == carpetGuid);
+                var matGuid = new Guid(matID.ToString());
+                SelectedMat = DataContext.Tournament.Mats.FirstOrDefault(c => c.ID == matGuid);
             }
             else
             {
-                SelectedCarpet = null;
+                SelectedMat = null;
             }
 
             var groupID = _item.GetNamedValue("GroupID");
@@ -201,9 +201,9 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
             {
                 var groupGuid = new Guid(groupID.ToString());
 
-                if (SelectedCarpet != null)
+                if (SelectedMat != null)
                 {
-                    SelectedGroup = SelectedCarpet.Groups.FirstOrDefault(g => g.ID == groupGuid);
+                    SelectedGroup = SelectedMat.Groups.FirstOrDefault(g => g.ID == groupGuid);
                 }
                 else
                 {

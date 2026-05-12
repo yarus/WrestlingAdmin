@@ -17,21 +17,21 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 {
     public class ScheduleViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
-        private ObservableCollection<Carpet> _carpets;
-        private ObservableCollection<CarpetStats> _filteredStats;
-        private CarpetStats _selectedCarpet;
-        // Optional single-carpet view: null = show all carpets (default,
-        // matches the legacy "carpet schedule" page); set to a carpet ID
+        private ObservableCollection<Mat> _mats;
+        private ObservableCollection<MatStats> _filteredStats;
+        private MatStats _selectedMat;
+        // Optional single-mat view: null = show all mats (default,
+        // matches the legacy "mat schedule" page); set to a mat ID
         // by Phase 5 → Ковер wrapper so the operator only sees their own
-        // carpet's queue. GenerateStats() uses it to scope iteration.
-        private Guid? _carpetIdFilter;
-        // One-shot preselection — set by callers (e.g. Conducting carpet
+        // mat's queue. GenerateStats() uses it to scope iteration.
+        private Guid? _matIdFilter;
+        // One-shot preselection — set by callers (e.g. Conducting mat
         // cards) before navigation; consumed in InitData and immediately
         // cleared so it doesn't leak into later visits.
-        private Guid? _preselectedCarpetId;
+        private Guid? _preselectedMatId;
 
         private ICommand _openMatchCommand;
-        private ICommand _changeCarpetCommand;
+        private ICommand _changeMatCommand;
 
         private IList<CommandButtonItem> _quickButtons;
 
@@ -45,7 +45,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         public string PageName => T("Nav_Schedule", "Расписание");
         public override string PageTitle => T("Schedule_PageTitle", "Расписание схваток по коврам");
 
-        public int CarpetsCount => DataContext.Tournament.Carpets.Count;
+        public int MatsCount => DataContext.Tournament.Mats.Count;
         public int MatchesCount => DataContext.Tournament.Groups.Sum(g => g.Bracket?.MatchesCount ?? 0);
         public int CompletedMatchesCount => DataContext.Tournament.Groups.Sum(g => g.Bracket?.CompletedMatchesCount ?? 0);
         public int LeftMatchesCount => MatchesCount - CompletedMatchesCount;
@@ -63,50 +63,50 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             base.InitData();
 
             _quickButtons = null;
-            _carpets = DataContext.Tournament.Carpets;
+            _mats = DataContext.Tournament.Mats;
 
-            if (_carpets.Count == 0 || (Stats != null && _carpets.Count != Stats.Count))
+            if (_mats.Count == 0 || (Stats != null && _mats.Count != Stats.Count))
             {
                 Stats = null;
             }
 
-            var expandedCarpets = _filteredStats?.Where(x => x.IsExpanded).ToList();
+            var expandedMats = _filteredStats?.Where(x => x.IsExpanded).ToList();
 
             _filteredStats = GenerateStats();
 
-            if (expandedCarpets?.Count > 0)
+            if (expandedMats?.Count > 0)
             {
-                foreach (var item in expandedCarpets)
+                foreach (var item in expandedMats)
                 {
-                    var newCarpetData = _filteredStats.First(x => x.CarpetID == item.CarpetID);
-                    newCarpetData.IsExpanded = item.IsExpanded;
+                    var newMatData = _filteredStats.First(x => x.MatID == item.MatID);
+                    newMatData.IsExpanded = item.IsExpanded;
                 }
             }
 
             Filter(FilterString);
 
-            if (SelectedCarpet == null && _filteredStats?.Count > 0)
+            if (SelectedMat == null && _filteredStats?.Count > 0)
             {
-                SelectedCarpet = _filteredStats[0];
+                SelectedMat = _filteredStats[0];
             }
             else if (_filteredStats?.Count > 0)
             {
-                var newCarpet = _filteredStats.First(x => x.CarpetID == SelectedCarpet.CarpetID);
-                SelectedCarpet = newCarpet;
+                var newMat = _filteredStats.First(x => x.MatID == SelectedMat.MatID);
+                SelectedMat = newMat;
             }
 
-            // One-shot preselection wins over the previously-selected carpet —
+            // One-shot preselection wins over the previously-selected mat —
             // a Conducting card click should always land the operator on the
-            // requested carpet's queue.
-            if (_preselectedCarpetId.HasValue && _filteredStats?.Count > 0)
+            // requested mat's queue.
+            if (_preselectedMatId.HasValue && _filteredStats?.Count > 0)
             {
-                var preselect = _filteredStats.FirstOrDefault(x => x.CarpetID == _preselectedCarpetId.Value);
-                if (preselect != null) SelectedCarpet = preselect;
-                _preselectedCarpetId = null;
+                var preselect = _filteredStats.FirstOrDefault(x => x.MatID == _preselectedMatId.Value);
+                if (preselect != null) SelectedMat = preselect;
+                _preselectedMatId = null;
             }
 
             // Enter hotkey starts the top startable match in the selected
-            // carpet's queue. Singleton VM, so guard with -=/+= to avoid
+            // mat's queue. Singleton VM, so guard with -=/+= to avoid
             // double subscription on revisits.
             if (_keyHandler == null) _keyHandler = Resolve<IKeyHandler>();
             if (_keyHandler != null)
@@ -128,7 +128,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         private void KeyHandler_KeyPressed(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key != System.Windows.Input.Key.Enter) return;
-            var topMatch = SelectedCarpet?.Matches?.FirstOrDefault(m => m != null && m.IsMatchCanStart);
+            var topMatch = SelectedMat?.Matches?.FirstOrDefault(m => m != null && m.IsMatchCanStart);
             if (topMatch == null) return;
             OpenMatch(topMatch);
             e.Handled = true;
@@ -136,28 +136,28 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
         // Caller sets this immediately before NavigateToView<ScheduleViewModel>().
         // The next InitData consumes and clears it.
-        public Guid? PreselectedCarpetId
+        public Guid? PreselectedMatId
         {
-            get => _preselectedCarpetId;
-            set => _preselectedCarpetId = value;
+            get => _preselectedMatId;
+            set => _preselectedMatId = value;
         }
 
         // Set by Phase 5 → Ковер wrapper before navigation. Switching
-        // it forces a stats rebuild so the user sees only their carpet's
-        // queue. Null re-broadens to "all carpets".
-        public Guid? CarpetIdFilter
+        // it forces a stats rebuild so the user sees only their mat's
+        // queue. Null re-broadens to "all mats".
+        public Guid? MatIdFilter
         {
-            get => _carpetIdFilter;
+            get => _matIdFilter;
             set
             {
-                if (_carpetIdFilter == value) return;
-                _carpetIdFilter = value;
-                OnPropertyChanged(nameof(CarpetIdFilter));
+                if (_matIdFilter == value) return;
+                _matIdFilter = value;
+                OnPropertyChanged(nameof(MatIdFilter));
 
                 // Drop the cached Stats so the next Filter() call regenerates
                 // through GenerateStats() with the new filter applied. If we
                 // were never InitData'd yet, the next InitData call covers it.
-                if (_carpets != null)
+                if (_mats != null)
                 {
                     Stats = null;
                     Filter(FilterString);
@@ -165,14 +165,14 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             }
         }
 
-        public CarpetStats SelectedCarpet
+        public MatStats SelectedMat
         {
-            get { return _selectedCarpet; }
+            get { return _selectedMat; }
             set
             {
-                _selectedCarpet = value;
+                _selectedMat = value;
 
-                OnPropertyChanged("SelectedCarpet");
+                OnPropertyChanged("SelectedMat");
             }
         }
 
@@ -188,7 +188,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             }
         }
         
-        public ObservableCollection<CarpetStats> Stats
+        public ObservableCollection<MatStats> Stats
         {
             get { return _filteredStats; }
             set
@@ -216,15 +216,15 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
         #region Commands
 
-        public ICommand ChangeCarpetCommand
+        public ICommand ChangeMatCommand
         {
             get
             {
-                if (_changeCarpetCommand == null)
+                if (_changeMatCommand == null)
                 {
-                    _changeCarpetCommand = new RelayCommand(param => ChangeCarpet(param as CarpetStats), param => param != null);
+                    _changeMatCommand = new RelayCommand(param => ChangeMat(param as MatStats), param => param != null);
                 }
-                return _changeCarpetCommand;
+                return _changeMatCommand;
             }
         }
 
@@ -251,25 +251,25 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             NavigateToView<Conducting.ConductingViewModel>();
         }
 
-        private void ChangeCarpet(CarpetStats carpet)
+        private void ChangeMat(MatStats mat)
         {
-            SelectedCarpet = carpet;
+            SelectedMat = mat;
         }
 
         private void Filter(string filter)
         {
             if (Stats == null || Stats.Count == 0)
             {
-                var expandedCarpets = _filteredStats?.Where(x => x.IsExpanded).ToList();
+                var expandedMats = _filteredStats?.Where(x => x.IsExpanded).ToList();
 
                 _filteredStats = GenerateStats();
 
-                if (expandedCarpets != null && expandedCarpets.Count > 0)
+                if (expandedMats != null && expandedMats.Count > 0)
                 {
-                    foreach (var item in expandedCarpets)
+                    foreach (var item in expandedMats)
                     {
-                        var newCarpetData = _filteredStats.FirstOrDefault(x => x.CarpetID == item.CarpetID);
-                        if (newCarpetData != null) newCarpetData.IsExpanded = item.IsExpanded;
+                        var newMatData = _filteredStats.FirstOrDefault(x => x.MatID == item.MatID);
+                        if (newMatData != null) newMatData.IsExpanded = item.IsExpanded;
                     }
                 }
 
@@ -281,25 +281,25 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             }
         }
 
-        private ObservableCollection<CarpetStats> GenerateStats()
+        private ObservableCollection<MatStats> GenerateStats()
         {
-            var result = new ObservableCollection<CarpetStats>();
+            var result = new ObservableCollection<MatStats>();
 
-            var source = _carpetIdFilter.HasValue
-                ? _carpets.Where(c => c.ID == _carpetIdFilter.Value)
-                : (IEnumerable<Carpet>)_carpets;
+            var source = _matIdFilter.HasValue
+                ? _mats.Where(c => c.ID == _matIdFilter.Value)
+                : (IEnumerable<Mat>)_mats;
 
-            foreach (var carpet in source)
+            foreach (var mat in source)
             {
-                var matches = new ObservableCollection<WrestlingMatch>(carpet.Groups.Where(g => g.Bracket != null)
+                var matches = new ObservableCollection<WrestlingMatch>(mat.Groups.Where(g => g.Bracket != null)
                     .SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches).OrderBy(m => m.MatchNumber));
 
-                var stat = new CarpetStats
+                var stat = new MatStats
                 {
-                    CarpetID = carpet.ID.Value,
-                    CarpetLabel = carpet.Name,
-                    WrestlersCount = carpet.WrestlersCount,
-                    GroupsCount = carpet.Groups.Count,
+                    MatID = mat.ID.Value,
+                    MatLabel = mat.Name,
+                    WrestlersCount = mat.WrestlersCount,
+                    GroupsCount = mat.Groups.Count,
                     Matches = matches
                 };
 
@@ -321,11 +321,11 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
             foreach (var stat in Stats)
             {
-                var carpet = _carpets.FirstOrDefault(c => c.ID == stat.CarpetID);
+                var mat = _mats.FirstOrDefault(c => c.ID == stat.MatID);
 
-                if (carpet == null) continue;
+                if (mat == null) continue;
 
-                stat.Matches = new ObservableCollection<WrestlingMatch>(carpet.Groups.Where(x => x.Bracket != null).SelectMany(g => g.Bracket.Rounds)
+                stat.Matches = new ObservableCollection<WrestlingMatch>(mat.Groups.Where(x => x.Bracket != null).SelectMany(g => g.Bracket.Rounds)
                     .SelectMany(r => r.RoundMatches)
                     .Where(m => !hasTextFilter || MatchPassesFilter(m, filter))
                     .OrderBy(m => m.MatchNumber));
@@ -358,7 +358,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
         // Opens (or re-shows) the projector window. Moved here from
         // MatchControl so the operator can launch the score display once at
-        // the start of the day from the carpet queue and have it persist
+        // the start of the day from the mat queue and have it persist
         // across matches — no need to re-open it every time MatchControl is
         // entered. Both _scoreScreenView and _scoreScreen are DI singletons,
         // so the same instances stay alive throughout the session.

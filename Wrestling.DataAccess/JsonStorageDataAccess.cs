@@ -12,6 +12,23 @@ namespace Wrestling.DataAccess
 {
     public class JsonStorageDataAccess : IStorageDataAccess
     {
+        // Single shared converter handles legacy mat-name keys ("Carpets",
+        // "CarpetID", "CarpetLabel") in old .wrt files. See LegacyMatNameConverter.
+        private static readonly LegacyMatNameConverter _legacyMatConverter = new LegacyMatNameConverter();
+
+        private static JsonSerializer CreateLoadSerializer()
+        {
+            var s = new JsonSerializer();
+            s.Converters.Add(_legacyMatConverter);
+            return s;
+        }
+
+        private static JsonSerializerSettings CreateLoadSettings()
+        {
+            return new JsonSerializerSettings { Converters = { _legacyMatConverter } };
+        }
+
+
         public void ProcessDirectory<T>(string targetDirectory, ref List<T> list, string mask)
         {
             // Process the list of files found in the directory. 
@@ -40,7 +57,7 @@ namespace Wrestling.DataAccess
         {
             // Atomic write: serialize to a sibling tmp file, then swap into place.
             // Keeps the prior-good .wrt intact if serialization or I/O throws
-            // mid-stream, which matters for tournaments synced across carpets.
+            // mid-stream, which matters for tournaments synced across mats.
             var tmpPath = GetTempSiblingPath(fileName);
 
             try
@@ -152,7 +169,7 @@ namespace Wrestling.DataAccess
                     using (var reader = new StreamReader(path))
                     {
                         var jsonReader = new JsonTextReader(reader);
-                        var ser = new JsonSerializer();
+                        var ser = CreateLoadSerializer();
                         return ser.Deserialize<T>(jsonReader);
                     }
                 }
@@ -214,7 +231,7 @@ namespace Wrestling.DataAccess
                         // and after the read completes.
                         string jsonContent = await reader.ReadToEndAsync().ConfigureAwait(false);
                         cancellationToken.ThrowIfCancellationRequested();
-                        return JsonConvert.DeserializeObject<T>(jsonContent);
+                        return JsonConvert.DeserializeObject<T>(jsonContent, CreateLoadSettings());
                     }
                 }
                 catch (Exception ex) when (IsRetryableException(ex))
@@ -242,7 +259,7 @@ namespace Wrestling.DataAccess
         private static bool IsRetryableException(Exception ex)
         {
             // Transient I/O that is worth retrying with a short backoff. JsonException
-            // is included because a peer carpet mid-write can leave the file briefly
+            // is included because a peer mat mid-write can leave the file briefly
             // unparseable before File.Replace completes.
             return ex is IOException
                    || ex is UnauthorizedAccessException

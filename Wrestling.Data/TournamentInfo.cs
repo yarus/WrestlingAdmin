@@ -32,7 +32,7 @@ namespace Wrestling.Data
         [DataMember]
         public IEnumerable<WrestlerInfo> Wrestlers { get; set; }
         [DataMember]
-        public IEnumerable<CarpetInfo> Carpets { get; set; }
+        public IEnumerable<MatInfo> Mats { get; set; }
         [DataMember]
         public IEnumerable<SlideChannelInfo> SlideChannels { get; set; }
         // Legacy flat-slide list kept on the DTO for backward-compat load only.

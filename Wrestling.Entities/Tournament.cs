@@ -32,14 +32,14 @@ namespace Wrestling.Entities
 
         private ObservableCollection<Wrestler> _wrestlers;
 
-        private ObservableCollection<Carpet> _carpets;
+        private ObservableCollection<Mat> _mats;
 
         public Tournament(GlobalSettings settings)
         {
             _groups = new ObservableCollection<AgeWeightGroup>();
             _applications = new ObservableCollection<TeamApplication>();
             _wrestlers = new ObservableCollection<Wrestler>();
-            _carpets = new ObservableCollection<Carpet>();
+            _mats = new ObservableCollection<Mat>();
             _slideChannels = new ObservableCollection<SlideChannel>();
 
             Settings = settings ?? new GlobalSettings();
@@ -48,7 +48,7 @@ namespace Wrestling.Entities
         public int AppliedWrestlersCount => Wrestlers.Count;
         public int ApprovedWrestlersCount => Groups.Sum(g => g.WrestlersApprovedCount);
         public int GroupsCount => Groups.Count;
-        public int CarpetsCount => Carpets.Count;
+        public int MatsCount => Mats.Count;
         public int MatchesCount => Groups.Where(g => g.Bracket != null).Sum(g => g.Bracket.MatchesCount);
         public int CompletedMatchesCount => Groups.Where(g => g.Bracket != null).Sum(g => g.Bracket.CompletedMatchesCount);
         public int PendingMatchesCount => MatchesCount - CompletedMatchesCount;
@@ -65,10 +65,10 @@ namespace Wrestling.Entities
 
                 int maxDurationInSeconds = 0;
 
-                foreach (var carpet in _carpets)
+                foreach (var mat in _mats)
                 {
-                    var carpetMaxDurationInSeconds = 0;
-                    var groupsWithBrackets = carpet.Groups.Where(g => g.IsBracketGenerated).ToList();
+                    var matMaxDurationInSeconds = 0;
+                    var groupsWithBrackets = mat.Groups.Where(g => g.IsBracketGenerated).ToList();
 
                     foreach (var group in groupsWithBrackets)
                     {
@@ -79,12 +79,12 @@ namespace Wrestling.Entities
 
                         var groupDuration = uncompleted * (roundLength * 2 + timeoutLength);
 
-                        carpetMaxDurationInSeconds += groupDuration;
+                        matMaxDurationInSeconds += groupDuration;
                     }
 
-                    if (carpetMaxDurationInSeconds > maxDurationInSeconds)
+                    if (matMaxDurationInSeconds > maxDurationInSeconds)
                     {
-                        maxDurationInSeconds = carpetMaxDurationInSeconds;
+                        maxDurationInSeconds = matMaxDurationInSeconds;
                     }
                 }
 
@@ -289,12 +289,12 @@ namespace Wrestling.Entities
             }
         }
 
-        public ObservableCollection<Carpet> Carpets
+        public ObservableCollection<Mat> Mats
         {
-            get { return _carpets; }
+            get { return _mats; }
             set
             {
-                _carpets = value;
+                _mats = value;
                 OnPropertyChanged();
             }
         }

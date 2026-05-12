@@ -14,17 +14,17 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
     {
         private ScreenSlide _item;
 
-        private ObservableCollection<Carpet> _carpets;
+        private ObservableCollection<Mat> _mats;
         private ObservableCollection<AgeWeightGroup> _groups;
         private int _sliderOpacityValue;
         private int _showMatchesCount;
         private string _sliderBackgroundImagePath;
-        private Carpet _selectedCarpet;
+        private Mat _selectedMat;
 
         private ICommand _setSliderBackgroundCommand;
 
         // Auto-title state — see GroupBracketSlideSettingsViewModel for the full
-        // rationale. Title auto-fills from the slide type + carpet name when
+        // rationale. Title auto-fills from the slide type + mat name when
         // the user hasn't typed a custom title.
         private bool _isInitializing;
         private string _lastAutoTitle;
@@ -37,7 +37,7 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
         {
             base.InitData();
 
-            Carpets = DataContext.Tournament.Carpets;
+            Mats = DataContext.Tournament.Mats;
         }
 
         public ICommand SetSliderBackgroundCommand
@@ -55,39 +55,39 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             }
         }
 
-        public Carpet SelectedCarpet
+        public Mat SelectedMat
         {
-            get { return _selectedCarpet; }
+            get { return _selectedMat; }
             set
             {
-                _selectedCarpet = value;
+                _selectedMat = value;
 
-                _item.SetNamedValue("CarpetID", _selectedCarpet?.ID);
+                _item.SetNamedValue("MatID", _selectedMat?.ID);
 
-                if (_selectedCarpet == null)
+                if (_selectedMat == null)
                 {
                     Groups = DataContext.Tournament.Groups;
                 }
                 else
                 {
-                    Groups = _selectedCarpet.Groups;
+                    Groups = _selectedMat.Groups;
                 }
 
                 if (!_isInitializing)
                 {
-                    UpdateAutoTitle(BuildAutoTitle(_selectedCarpet?.Name));
+                    UpdateAutoTitle(BuildAutoTitle(_selectedMat?.Name));
                 }
 
-                OnPropertyChanged("SelectedCarpet");
+                OnPropertyChanged("SelectedMat");
             }
         }
 
-        private static string BuildAutoTitle(string carpetName)
+        private static string BuildAutoTitle(string matName)
         {
-            if (string.IsNullOrEmpty(carpetName)) return null;
+            if (string.IsNullOrEmpty(matName)) return null;
             var format = LocalizationService.Instance?.T("SlideAutoTitle_Upcoming");
             if (string.IsNullOrEmpty(format) || format == "SlideAutoTitle_Upcoming") format = "Ближайшие Поединки - {0}";
-            return string.Format(format, carpetName);
+            return string.Format(format, matName);
         }
 
         private void UpdateAutoTitle(string newAutoTitle)
@@ -111,13 +111,13 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             }
         }
 
-        public ObservableCollection<Carpet> Carpets
+        public ObservableCollection<Mat> Mats
         {
-            get { return _carpets; }
+            get { return _mats; }
             set
             {
-                _carpets = value;
-                OnPropertyChanged("Carpets");
+                _mats = value;
+                OnPropertyChanged("Mats");
             }
         }
 
@@ -170,7 +170,7 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             }
             finally
             {
-                _lastAutoTitle = BuildAutoTitle(_selectedCarpet?.Name);
+                _lastAutoTitle = BuildAutoTitle(_selectedMat?.Name);
                 _isInitializing = false;
             }
         }
@@ -183,22 +183,22 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
 
             if (slide == null) return;
 
-            var carpetID = _item.GetNamedValue("CarpetID");
-            if (carpetID != null)
+            var matID = _item.GetNamedValue("MatID");
+            if (matID != null)
             {
-                var carpetGuid = new Guid(carpetID.ToString());
-                SelectedCarpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == carpetGuid);
+                var matGuid = new Guid(matID.ToString());
+                SelectedMat = DataContext.Tournament.Mats.FirstOrDefault(c => c.ID == matGuid);
             }
             else
             {
-                SelectedCarpet = null;
+                SelectedMat = null;
             }
 
             var showMatchesCount = _item.GetNamedValue("ShowMatchesCount");
             if (showMatchesCount != null)
             {
 
-                var carpetGuid = new Guid(carpetID.ToString());
+                var matGuid = new Guid(matID.ToString());
                 ShowMatchesCount = Convert.ToInt32(showMatchesCount);
             }
             else

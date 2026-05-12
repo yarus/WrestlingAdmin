@@ -12,7 +12,7 @@ namespace Wrestling.UI.Material.ScoreScreen
     public class ScoreScreenViewModel : ViewModelBase
     {
         private string _tournamentTitle;
-        private string _carpetLabel;
+        private string _matLabel;
         private string _roundName;
         private string _groupLabel;
         private string _wrestler1;
@@ -147,7 +147,7 @@ namespace Wrestling.UI.Material.ScoreScreen
             Points1 = DataContext.WrestlingMatch.PointsRed;
             Points2 = DataContext.WrestlingMatch.PointsBlue;
 
-            CarpetLabel = DataContext.Group != null ? DataContext.Group.CarpetLabel : string.Empty;
+            MatLabel = DataContext.Group != null ? DataContext.Group.MatLabel : string.Empty;
             IsSoundEnabled = GlobalSettings.IsSoundEnabled;
             IsTimerBackward = GlobalSettings.IsTimerBackward;
 
@@ -465,13 +465,13 @@ namespace Wrestling.UI.Material.ScoreScreen
             }
         }
 
-        public string CarpetLabel
+        public string MatLabel
         {
-            get { return _carpetLabel; }
+            get { return _matLabel; }
             set
             {
-                _carpetLabel = value;
-                OnPropertyChanged("CarpetLabel");
+                _matLabel = value;
+                OnPropertyChanged("MatLabel");
             }
         }
 

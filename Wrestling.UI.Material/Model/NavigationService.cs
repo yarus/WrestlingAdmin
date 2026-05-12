@@ -12,7 +12,7 @@ using Wrestling.UI.Material.Tournament.Results.Achievements;
 using Wrestling.UI.Material.Tournament.Results.PersonalResults;
 using Wrestling.UI.Material.Tournament.Results.TeamResults;
 using Wrestling.UI.Material.Tournament.Standing.Applications;
-using Wrestling.UI.Material.Tournament.Standing.Carpets;
+using Wrestling.UI.Material.Tournament.Standing.Mats;
 using Wrestling.UI.Material.Tournament.Standing.Details;
 using Wrestling.UI.Material.Tournament.Standing.Draw;
 using Wrestling.UI.Utils;
@@ -41,7 +41,7 @@ namespace Wrestling.UI.Material.Model
                 new DetailsViewModel(_container),
                 new ApplicationsViewModel(_container),
                 new DrawViewModel(_container),
-                new CarpetsViewModel(_container),
+                new MatsViewModel(_container),
                 // Conducting navigates to these as full-screen overlays.
                 new BracketsViewModel(_container),
                 new ScheduleViewModel(_container),

@@ -18,8 +18,8 @@ namespace Wrestling.Entities
         private int _maxRoundSecond;
         private int _maxTimeoutSecond;
         private int _maxActionSecond;
-        private string _carpetLabel;
-        private Guid? _carpetId;
+        private string _matLabel;
+        private Guid? _matId;
         private GroupBracket _bracket;
         private List<Wrestler> _wrestlers;
         private bool _isExpanded;
@@ -53,13 +53,13 @@ namespace Wrestling.Entities
             }
         }
 
-        public Guid? CarpetID
+        public Guid? MatID
         {
-            get { return _carpetId; }
+            get { return _matId; }
             set
             {
-                _carpetId = value;
-                OnPropertyChanged("CarpetID");
+                _matId = value;
+                OnPropertyChanged("MatID");
             }
         }
 
@@ -120,13 +120,13 @@ namespace Wrestling.Entities
             }
         }
 
-        public string CarpetLabel
+        public string MatLabel
         {
-            get { return _carpetLabel; }
+            get { return _matLabel; }
             set
             {
-                _carpetLabel = value;
-                OnPropertyChanged("CarpetLabel");
+                _matLabel = value;
+                OnPropertyChanged("MatLabel");
             }
         }
 
@@ -171,7 +171,7 @@ namespace Wrestling.Entities
             }
         }
 
-        // Bumped by high-level group field edits (timing, CarpetID, name/age/
+        // Bumped by high-level group field edits (timing, MatID, name/age/
         // weight ranges) — anything that does NOT change bracket shape. Apply
         // copies the new field values onto the local group and cascades the
         // new timing into local pending matches without touching the bracket.
@@ -188,7 +188,7 @@ namespace Wrestling.Entities
         // Bumped only by IGroupBracketProcessor.Generate() — i.e. the bracket
         // was rebuilt from scratch. Apply replaces the bracket and Wrestlers
         // list wholesale, then re-applies any locally-newer match completions
-        // so other carpets do not lose their work.
+        // so other mats do not lose their work.
         public int BracketVersion
         {
             get { return _bracketVersion; }
@@ -280,7 +280,7 @@ namespace Wrestling.Entities
             if (item == null) return;
             ID = item.ID;
             Bracket = item.Bracket;
-            CarpetLabel = item.CarpetLabel;
+            MatLabel = item.MatLabel;
             MaxActionSecond = item.MaxActionSecond;
             MaxRoundSecond = item.MaxRoundSecond;
             MaxTimeoutSecond = item.MaxTimeoutSecond;

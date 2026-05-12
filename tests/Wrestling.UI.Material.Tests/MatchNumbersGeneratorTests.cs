@@ -20,7 +20,7 @@ public class MatchNumbersGeneratorTests
         new SubGroupsToOlympicBracketProcessor()
     };
 
-    private static (WTournament, AgeWeightGroup, Carpet) BuildOneGroup(int wrestlers)
+    private static (WTournament, AgeWeightGroup, Mat) BuildOneGroup(int wrestlers)
     {
         var group = new AgeWeightGroup
         {
@@ -39,19 +39,19 @@ public class MatchNumbersGeneratorTests
         }).ToList();
         group.Wrestlers = ws;
 
-        var carpet = new Carpet { ID = Guid.NewGuid(), Name = "Carpet A" };
-        carpet.Groups.Add(group);
+        var mat = new Mat { ID = Guid.NewGuid(), Name = "Mat A" };
+        mat.Groups.Add(group);
 
         var t = new WTournament(new GlobalSettings()) { ID = Guid.NewGuid(), Name = "T" };
         t.Groups.Add(group);
         foreach (var w in ws) t.Wrestlers.Add(w);
-        t.Carpets.Add(carpet);
+        t.Mats.Add(mat);
 
         var proc = new OlympicGroupBracketProcessor();
         proc.Generate(t, group);
         group.Bracket.BracketTypeCode = BracketTypeEnum.Olympic.ToString();
 
-        return (t, group, carpet);
+        return (t, group, mat);
     }
 
     [Fact]
@@ -83,9 +83,9 @@ public class MatchNumbersGeneratorTests
     }
 
     [Fact]
-    public void CarpetMatchNumbers_restarts_from_1_for_each_carpet()
+    public void MatMatchNumbers_restarts_from_1_for_each_mat()
     {
-        // Two identical groups, each on its own carpet
+        // Two identical groups, each on its own mat
         var (t1, g1, _) = BuildOneGroup(4);
 
         var group2 = new AgeWeightGroup
@@ -103,21 +103,21 @@ public class MatchNumbersGeneratorTests
         }).ToList();
         group2.Wrestlers = ws2;
 
-        var carpet2 = new Carpet { ID = Guid.NewGuid(), Name = "Carpet B" };
-        carpet2.Groups.Add(group2);
+        var mat2 = new Mat { ID = Guid.NewGuid(), Name = "Mat B" };
+        mat2.Groups.Add(group2);
         t1.Groups.Add(group2);
         foreach (var w in ws2) t1.Wrestlers.Add(w);
-        t1.Carpets.Add(carpet2);
+        t1.Mats.Add(mat2);
 
         new OlympicGroupBracketProcessor().Generate(t1, group2);
         group2.Bracket.BracketTypeCode = BracketTypeEnum.Olympic.ToString();
 
-        new CarpetMatchNumbersGenerator().Generate(t1, BuiltInProcessors());
+        new MatMatchNumbersGenerator().Generate(t1, BuiltInProcessors());
 
         var g1Matches = g1.Bracket.Rounds.SelectMany(r => r.RoundMatches).Select(m => m.MatchNumber).ToList();
         var g2Matches = group2.Bracket.Rounds.SelectMany(r => r.RoundMatches).Select(m => m.MatchNumber).ToList();
 
-        g1Matches.Should().Contain(1, "carpet A numbering starts at 1");
-        g2Matches.Should().Contain(1, "carpet B numbering also starts at 1 (per carpet)");
+        g1Matches.Should().Contain(1, "mat A numbering starts at 1");
+        g2Matches.Should().Contain(1, "mat B numbering also starts at 1 (per mat)");
     }
 }

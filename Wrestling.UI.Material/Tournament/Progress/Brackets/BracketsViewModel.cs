@@ -18,13 +18,13 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
     {
         #region Fields
 
-        private Carpet _selectedCarpet;
-        private ObservableCollection<Carpet> _carpets;
+        private Mat _selectedMat;
+        private ObservableCollection<Mat> _mats;
         private ObservableCollection<AgeWeightGroup> _filteredGroups;
         private string _filterString;
 
         private ICommand _openMatchCommand;
-        private ICommand _changeCarpetCommand;
+        private ICommand _changeMatCommand;
         private ICommand _clearDisqualifyCommand;
         private List<IGroupBracketProcessor> _processors;
 
@@ -51,9 +51,9 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
 
             _quickButtons = null;
             _processors = Resolve<List<IGroupBracketProcessor>>();
-            Carpets = DataContext.Tournament.Carpets;
+            Mats = DataContext.Tournament.Mats;
 
-            if (Carpets.Count > 0 && _selectedCarpet == null || (Carpets.Count > 0 && !Carpets.Contains(SelectedCarpet))) SelectedCarpet = Carpets[0];
+            if (Mats.Count > 0 && _selectedMat == null || (Mats.Count > 0 && !Mats.Contains(SelectedMat))) SelectedMat = Mats[0];
 
             RefreshFilteredGroups();
         }
@@ -74,25 +74,25 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
 
         #region Binding Properties
         
-        public ObservableCollection<Carpet> Carpets
+        public ObservableCollection<Mat> Mats
         {
-            get { return _carpets; }
+            get { return _mats; }
             set
             {
-                _carpets = value;
+                _mats = value;
 
-                OnPropertyChanged("Carpets");
+                OnPropertyChanged("Mats");
             }
         }
 
-        public Carpet SelectedCarpet
+        public Mat SelectedMat
         {
-            get { return _selectedCarpet; }
+            get { return _selectedMat; }
             set
             {
-                _selectedCarpet = value;
+                _selectedMat = value;
 
-                OnPropertyChanged("SelectedCarpet");
+                OnPropertyChanged("SelectedMat");
                 RefreshFilteredGroups();
             }
         }
@@ -137,15 +137,15 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             }
         }
 
-        public ICommand ChangeCarpetCommand
+        public ICommand ChangeMatCommand
         {
             get
             {
-                if (_changeCarpetCommand == null)
+                if (_changeMatCommand == null)
                 {
-                    _changeCarpetCommand = new RelayCommand(param => ChangeCarpet(param as Carpet), param => param != null);
+                    _changeMatCommand = new RelayCommand(param => ChangeMat(param as Mat), param => param != null);
                 }
-                return _changeCarpetCommand;
+                return _changeMatCommand;
             }
         }
 
@@ -171,9 +171,9 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
 
         #region Private Methods
 
-        private void ChangeCarpet(Carpet carpet)
+        private void ChangeMat(Mat mat)
         {
-            SelectedCarpet = carpet;
+            SelectedMat = mat;
         }
 
         private void ClearDisqualify(Wrestler wrestler)
@@ -217,7 +217,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
         // auto-expands those groups so the operator sees the result immediately.
         private void RefreshFilteredGroups()
         {
-            if (_selectedCarpet == null)
+            if (_selectedMat == null)
             {
                 FilteredGroups = new ObservableCollection<AgeWeightGroup>();
                 return;
@@ -227,11 +227,11 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
 
             if (!hasTextFilter)
             {
-                FilteredGroups = new ObservableCollection<AgeWeightGroup>(_selectedCarpet.Groups);
+                FilteredGroups = new ObservableCollection<AgeWeightGroup>(_selectedMat.Groups);
                 return;
             }
 
-            var matched = _selectedCarpet.Groups
+            var matched = _selectedMat.Groups
                 .Where(g => g.Bracket != null && BracketHasMatchPassingFilter(g.Bracket, _filterString))
                 .ToList();
 

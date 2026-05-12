@@ -65,7 +65,7 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=SelectedGroup.CarpetLabel}"
+                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=SelectedGroup.MatLabel}"
                        FontSize="16" TextAlignment="Left" FontWeight="Normal" />
 
             <TextBlock Grid.Row="0" Grid.Column="1"

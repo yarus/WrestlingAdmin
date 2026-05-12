@@ -18,7 +18,7 @@
         xmlns:details="clr-namespace:Wrestling.UI.Material.Tournament.Standing.Details"
         xmlns:applications="clr-namespace:Wrestling.UI.Material.Tournament.Standing.Applications"
         xmlns:draw1="clr-namespace:Wrestling.UI.Material.Tournament.Standing.Draw"
-        xmlns:carpets1="clr-namespace:Wrestling.UI.Material.Tournament.Standing.Carpets"
+        xmlns:mats1="clr-namespace:Wrestling.UI.Material.Tournament.Standing.Mats"
         xmlns:printBracket="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintBracket"
         xmlns:slider="clr-namespace:Wrestling.UI.Material.Slider"
         xmlns:conducting="clr-namespace:Wrestling.UI.Material.Tournament.Conducting"
@@ -85,8 +85,8 @@
             <DataTemplate DataType="{x:Type draw1:DrawViewModel}">
                 <draw1:DrawView />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type carpets1:CarpetsViewModel}">
-                <carpets1:CarpetsView />
+            <DataTemplate DataType="{x:Type mats1:MatsViewModel}">
+                <mats1:MatsView />
             </DataTemplate>
             <DataTemplate DataType="{x:Type results:CompletedMatchesViewModel}">
                 <results:CompletedMatchesView />

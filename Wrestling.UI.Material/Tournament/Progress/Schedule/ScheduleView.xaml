@@ -33,10 +33,10 @@
 
             <ComboBox Grid.Column="0" Width="220"
                       Style="{DynamicResource MaterialDesignFloatingHintComboBox}"
-                      materialDesign:HintAssist.Hint="{loc:Loc Slide_Carpet}"
+                      materialDesign:HintAssist.Hint="{loc:Loc Slide_Mat}"
                       ItemsSource="{Binding Stats}"
-                      SelectedItem="{Binding SelectedCarpet}"
-                      DisplayMemberPath="CarpetLabel"
+                      SelectedItem="{Binding SelectedMat}"
+                      DisplayMemberPath="MatLabel"
                       VerticalAlignment="Bottom" />
 
             <materialDesign:PackIcon Grid.Column="1" Kind="Magnify" Opacity=".56"
@@ -52,11 +52,11 @@
 
             <StackPanel Grid.Column="3" Orientation="Horizontal"
                         Margin="20,0,0,0" VerticalAlignment="Bottom"
-                        ToolTip="{loc:Loc Brackets_RemainingOnCarpet_Tooltip}">
+                        ToolTip="{loc:Loc Brackets_RemainingOnMat_Tooltip}">
                 <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
                                          VerticalAlignment="Center"
                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                <TextBlock Text="{Binding SelectedCarpet.MatchesLeft, Mode=OneWay}"
+                <TextBlock Text="{Binding SelectedMat.MatchesLeft, Mode=OneWay}"
                            FontSize="16" VerticalAlignment="Center"
                            Margin="6,0,0,0" />
             </StackPanel>
@@ -65,7 +65,7 @@
         <materialDesign:Card Grid.Row="1" Margin="20,0,20,0"
                              UniformCornerRadius="4"
                              materialDesign:ElevationAssist.Elevation="Dp4">
-        <ListView ItemsSource="{Binding SelectedCarpet.MatchesReady}" x:Name="MatchesSource"
+        <ListView ItemsSource="{Binding SelectedMat.MatchesReady}" x:Name="MatchesSource"
                   utils:GridViewSort.AutoSort="True"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                   HorizontalContentAlignment="Stretch"

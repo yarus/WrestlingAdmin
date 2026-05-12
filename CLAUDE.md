@@ -8,7 +8,7 @@ Operational issues raised after real tournaments are tracked in **`docs/TodoList
 
 ## What this is
 
-WPF desktop application for administrating and running freestyle wrestling tournaments: team/wrestler registration, automatic bracket generation, match control with live scoring and timers, multi-carpet (mat) scheduling, result calculation, broadcast/projection slides, and printed reports. UI is **Russian-only** (hardcoded `ru-RU` culture, no resource files) — keep new strings in Russian unless the user asks to introduce localization.
+WPF desktop application for administrating and running freestyle wrestling tournaments: team/wrestler registration, automatic bracket generation, match control with live scoring and timers, multi-mat scheduling, result calculation, broadcast/projection slides, and printed reports. UI is **Russian-only** (hardcoded `ru-RU` culture, no resource files) — keep new strings in Russian unless the user asks to introduce localization.
 
 ## Build and run
 
@@ -141,9 +141,9 @@ The empty-FileName guard matters: this hook fires from background sync ticks and
 - Team ranking: `ITeamResultsCalculator` with orderers `OlympicTeamResultsOrderer`, `MedalsTeamResultsOrderer`, `PointsTeamResultsOrderer` (different scoring systems per tournament format).
 - Special awards: `IAchievementCalculator` — `FastestWinAchievementCalculator`, `MostAmplitudeActionsAchievementCalculator`, etc. All registered in `App.xaml.cs`. Add new calculators by registering them in the same list.
 
-### Multi-carpet synchronization
+### Multi-mat synchronization
 
-Each carpet (mat) PC keeps its own local copy of the tournament `.wrt`. Results move between carpets via the **Import** feature (`ImportViewModel` + `TournamentImporter`) — not a shared file. The import path polls remote laptops on a timer, typically over UNC paths like `\\192.168.x.x\share\tournament.wrt`, and merges completed matches into the local tournament. Changes to the import flow or `.wrt` schema must keep round-trip compatibility so peer carpets with slightly different app versions can still read each other's saves.
+Each mat PC keeps its own local copy of the tournament `.wrt`. Results move between mats via the **Import** feature (`ImportViewModel` + `TournamentImporter`) — not a shared file. The import path polls remote laptops on a timer, typically over UNC paths like `\\192.168.x.x\share\tournament.wrt`, and merges completed matches into the local tournament. Changes to the import flow or `.wrt` schema must keep round-trip compatibility so peer mats with slightly different app versions can still read each other's saves.
 
 ### Error handling and crash recovery
 

@@ -20,7 +20,7 @@ namespace Wrestling.UI.Material.Tests;
 //   - Items mirror the cached IResultsService.TeamResults (no recompute,
 //     orderer-only).
 //   - ChangeSystemCommand sets SelectedSystem from a TeamResultsSystemItem
-//     parameter (mirrors carpet-picker pattern).
+//     parameter (mirrors mat-picker pattern).
 public sealed class TeamResultsViewModelTests
 {
     [Fact]

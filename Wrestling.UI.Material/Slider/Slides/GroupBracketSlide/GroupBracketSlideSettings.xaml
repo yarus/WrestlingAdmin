@@ -18,9 +18,9 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ComboBox Grid.Row="0" Grid.Column="0" materialDesign:HintAssist.Hint="{loc:Loc Slide_Carpet}" Style="{DynamicResource MaterialDesignFloatingHintComboBox}"
+        <ComboBox Grid.Row="0" Grid.Column="0" materialDesign:HintAssist.Hint="{loc:Loc Slide_Mat}" Style="{DynamicResource MaterialDesignFloatingHintComboBox}"
                   IsEditable="False" Margin="0 0 0 5" FontSize="18"
-                  ItemsSource="{Binding Carpets}" SelectedItem="{Binding SelectedCarpet}">
+                  ItemsSource="{Binding Mats}" SelectedItem="{Binding SelectedMat}">
             <ComboBox.ItemTemplate>
                 <DataTemplate>
                     <TextBlock Margin="0" Padding="0" Text="{Binding Name}" />

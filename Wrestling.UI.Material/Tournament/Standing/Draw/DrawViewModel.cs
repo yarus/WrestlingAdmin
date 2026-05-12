@@ -89,7 +89,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         public int GroupsCount => DataContext.Tournament.GroupsCount;
         public int WrestlersCount => Groups?.SelectMany(gr => gr.Wrestlers).Count() ?? 0;
 
-        // Counts only "real" matches operators must run on the carpet —
+        // Counts only "real" matches operators must run on the mat —
         // bye/walkover slots that the bracket processor auto-completes with
         // WinType=FreeWin during generation are excluded.
         public int MatchesCount => DataContext.Tournament.Groups
@@ -207,7 +207,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                 
                 if (ageWeightGroup.Bracket != null)
                 {
-                    if (DataContext.Tournament.Carpets.FirstOrDefault(c => c.Groups.Contains(ageWeightGroup)) != null)
+                    if (DataContext.Tournament.Mats.FirstOrDefault(c => c.Groups.Contains(ageWeightGroup)) != null)
                     {
                         _matchNumbersGenerator.Generate(DataContext.Tournament, _drawTypes);
                     }
@@ -280,7 +280,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
             if (group.Bracket != null)
             {
-                if (DataContext.Tournament.Carpets.FirstOrDefault(c => c.Groups.Contains(group)) != null)
+                if (DataContext.Tournament.Mats.FirstOrDefault(c => c.Groups.Contains(group)) != null)
                 {
                     _matchNumbersGenerator.Generate(DataContext.Tournament, _drawTypes);
                 }

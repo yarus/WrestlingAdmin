@@ -5,13 +5,13 @@ using System.Linq;
 
 namespace Wrestling.Entities
 {
-    public class Carpet : INotifyPropertyChanged, ICloneable
+    public class Mat : INotifyPropertyChanged, ICloneable
     {
         private Guid? _id;
         private string _name;
         private ObservableCollection<AgeWeightGroup> _groups;
 
-        public Carpet()
+        public Mat()
         {
             _groups = new ObservableCollection<AgeWeightGroup>();
         }
@@ -24,7 +24,7 @@ namespace Wrestling.Entities
         public string ProgressLabel => $"{CompletedMatchesCount} / {TotalMatchesCount}";
 
         // Sum of (round * 2 + timeout) seconds across every pending match of
-        // every group on this carpet. Auto-completed FreeWin matches are
+        // every group on this mat. Auto-completed FreeWin matches are
         // excluded by PendingMatchesCount, so this represents work remaining.
         public int ExpectedDurationSeconds => _groups.Sum(g => g.PendingMatchesCount * (g.MaxRoundSecond * 2 + g.MaxTimeoutSecond));
 
@@ -92,16 +92,16 @@ namespace Wrestling.Entities
         }
         public object Clone()
         {
-            var tmp = new Carpet();
+            var tmp = new Mat();
             tmp.Sync(this);
             return tmp;
         }
 
-        public void Sync(Carpet carpet)
+        public void Sync(Mat mat)
         {
-            ID = carpet.ID;
-            Name = carpet.Name;
-            Groups = carpet.Groups;
+            ID = mat.ID;
+            Name = mat.Name;
+            Groups = mat.Groups;
         }
     }
 }

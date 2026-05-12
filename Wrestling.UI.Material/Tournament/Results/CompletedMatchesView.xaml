@@ -58,8 +58,8 @@
             </StackPanel>
 
             <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="{loc:Loc Completed_CarpetsLabel}" />
-                <Run Text="{Binding CarpetsCount, Mode=OneWay}" />
+                <Run Text="{loc:Loc Completed_MatsLabel}" />
+                <Run Text="{Binding MatsCount, Mode=OneWay}" />
             </TextBlock>
 
             <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
@@ -103,7 +103,7 @@
                                         </TextBlock>
 
                                         <TextBlock Grid.Column="1" TextWrapping="NoWrap" FontSize="16" Margin="20,0,20,0" VerticalAlignment="Center">
-                                            <Run Text="{Binding CarpetLabel}"></Run>
+                                            <Run Text="{Binding MatLabel}"></Run>
                                         </TextBlock>
 
                                         <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">

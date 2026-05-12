@@ -7,17 +7,17 @@ using Wrestling.Entities;
 
 namespace Wrestling.UI.Material.Model
 {
-    public class CarpetStats : ObservableObject
+    public class MatStats : ObservableObject
     {
-        private Guid _carpetId;
-        private string _carpetLabel;
+        private Guid _matId;
+        private string _matLabel;
         private int _groupsCount;
         private int _wrestlersCount;
         private bool _isExpanded;
         private ObservableCollection<WrestlingMatch> _matches;
         private readonly ObservableCollection<WrestlingMatch> _matchesReady;
 
-        public CarpetStats()
+        public MatStats()
         {
             _matches = new ObservableCollection<WrestlingMatch>();
             _matchesReady = new ObservableCollection<WrestlingMatch>();
@@ -34,25 +34,25 @@ namespace Wrestling.UI.Material.Model
             }
         }
 
-        public Guid CarpetID
+        public Guid MatID
         {
-            get { return _carpetId; }
+            get { return _matId; }
             set
             {
-                _carpetId = value;
+                _matId = value;
 
-                OnPropertyChanged("CarpetID");
+                OnPropertyChanged("MatID");
             }
         }
 
-        public string CarpetLabel
+        public string MatLabel
         {
-            get { return _carpetLabel; }
+            get { return _matLabel; }
             set
             {
-                _carpetLabel = value;
+                _matLabel = value;
 
-                OnPropertyChanged("CarpetLabel");
+                OnPropertyChanged("MatLabel");
             }
         }
 

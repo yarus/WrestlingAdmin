@@ -120,7 +120,7 @@ namespace Wrestling.Providers
 
             var groups = info.Groups?.Select(g => GetEntityFromInfo(g, wrestlers)).ToList() ?? new List<AgeWeightGroup>();
 
-            var carpets = info.Carpets?.Select(c => GetEntityFromInfo(c, groups)).ToList() ?? new List<Carpet>();
+            var mats = info.Mats?.Select(c => GetEntityFromInfo(c, groups)).ToList() ?? new List<Mat>();
 
             var slideChannels = info.SlideChannels?.Select(GetEntityFromInfo).ToList() ?? new List<SlideChannel>();
 
@@ -177,12 +177,12 @@ namespace Wrestling.Providers
 
             foreach (var ageWeightGroup in groups)
             {
-                if (ageWeightGroup.CarpetID.HasValue)
+                if (ageWeightGroup.MatID.HasValue)
                 {
-                    var carpet = carpets.FirstOrDefault(c => c.ID == ageWeightGroup.CarpetID);
-                    if (carpet != null)
+                    var mat = mats.FirstOrDefault(c => c.ID == ageWeightGroup.MatID);
+                    if (mat != null)
                     {
-                        ageWeightGroup.CarpetLabel = carpet.Name;
+                        ageWeightGroup.MatLabel = mat.Name;
                     }
                 }
             }
@@ -202,7 +202,7 @@ namespace Wrestling.Providers
                 Groups = new ObservableCollection<AgeWeightGroup>(groups),
                 Wrestlers = new ObservableCollection<Wrestler>(wrestlers),
                 Settings = settings,
-                Carpets = new ObservableCollection<Carpet>(carpets),
+                Mats = new ObservableCollection<Mat>(mats),
                 SlideChannels = new ObservableCollection<SlideChannel>(slideChannels),
                 HashTag = info.HashTag,
                 MainJudgeEmail = info.MainJudgeEmail,
@@ -249,11 +249,11 @@ namespace Wrestling.Providers
             };
         }
 
-        private Carpet GetEntityFromInfo(CarpetInfo info, IEnumerable<AgeWeightGroup> groups)
+        private Mat GetEntityFromInfo(MatInfo info, IEnumerable<AgeWeightGroup> groups)
         {
             if (info == null) return null;
 
-            var entity = new Carpet
+            var entity = new Mat
             {
                 ID = info.ID,
                 Name = info.Name,
@@ -297,8 +297,8 @@ namespace Wrestling.Providers
                 MaxActionSecond = info.MaxActionSecond,
                 MaxRoundSecond = info.MaxRoundSecond,
                 MaxTimeoutSecond = info.MaxTimeoutSecond,
-                CarpetLabel = info.CarpetLabel,
-                CarpetID = info.CarpetID,
+                MatLabel = info.MatLabel,
+                MatID = info.MatID,
                 BirthYearMax = info.BirthYearMax,
                 BirthYearMin = info.BirthYearMin,
                 ID = info.ID,
@@ -451,7 +451,7 @@ namespace Wrestling.Providers
                 Settings = settings,
                 TeamApplications = item.TeamApplications.Select(GetInfoFromEntity),
                 Wrestlers = item.Wrestlers.Select(GetInfoFromEntity),
-                Carpets = item.Carpets.Select(GetInfoFromEntity),
+                Mats = item.Mats.Select(GetInfoFromEntity),
                 SlideChannels = item.SlideChannels.Select(GetInfoFromEntity),
                 HashTag = item.HashTag,
                 MainJudgeEmail = item.MainJudgeEmail,
@@ -496,11 +496,11 @@ namespace Wrestling.Providers
             };
         }
 
-        private CarpetInfo GetInfoFromEntity(Carpet entity)
+        private MatInfo GetInfoFromEntity(Mat entity)
         {
             if (entity?.ID == null) return null;
 
-            var info = new CarpetInfo
+            var info = new MatInfo
             {
                 ID = entity.ID.Value,
                 Name = entity.Name,
@@ -544,8 +544,8 @@ namespace Wrestling.Providers
                 MaxRoundSecond = group.MaxRoundSecond,
                 MaxTimeoutSecond = group.MaxTimeoutSecond,
                 Wrestlers = new List<Guid>(group.Wrestlers.Select(w => w.ID)),
-                CarpetLabel = group.CarpetLabel,
-                CarpetID = group.CarpetID,
+                MatLabel = group.MatLabel,
+                MatID = group.MatID,
                 ID = group.ID,
                 BirthYearMax = group.BirthYearMax,
                 BirthYearMin = group.BirthYearMin,

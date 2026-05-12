@@ -20,7 +20,7 @@ using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Settings;
 using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Material.Slider.Slides;
-using Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide;
+using Wrestling.UI.Material.Slider.Slides.MatBracketsSlide;
 using Wrestling.UI.Material.Slider.Slides.GroupBracketSlide;
 using Wrestling.UI.Material.Slider.Slides.ImageSlide;
 using Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide;
@@ -30,7 +30,7 @@ using Wrestling.UI.Material.Tournament.Results;
 using Wrestling.UI.Material.Tournament.Print;
 using Wrestling.UI.Material.Tournament.Print.PrintBracket;
 using Wrestling.UI.Material.Tournament.Standing.Applications;
-using Wrestling.UI.Material.Tournament.Standing.Carpets;
+using Wrestling.UI.Material.Tournament.Standing.Mats;
 using Wrestling.UI.Material.Tournament.Standing.Details;
 using Wrestling.UI.Material.Tournament.Standing.Draw;
 using Wrestling.UI.Material.Utils;
@@ -166,8 +166,8 @@ namespace Wrestling.UI.Material
                     typeof(DrawViewModel),
                     new RelayCommand(_ => navService.NavigateToView<DrawViewModel>())),
                 new NavigationItem("Nav_Schedule", PackIconKind.Calendar,
-                    typeof(CarpetsViewModel),
-                    new RelayCommand(_ => navService.NavigateToView<CarpetsViewModel>())),
+                    typeof(MatsViewModel),
+                    new RelayCommand(_ => navService.NavigateToView<MatsViewModel>())),
                 new NavigationItem("Nav_Conducting", PackIconKind.Scoreboard,
                     typeof(ConductingViewModel),
                     new RelayCommand(_ => navService.NavigateToView<ConductingViewModel>())),
@@ -417,7 +417,7 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             // longer DI singletons. Only the settings VMs (which back the one
             // AddSlide dialog) stay singletons.
             di.Add<GroupBracketSlideSettingsViewModel>(new GroupBracketSlideSettingsViewModel(di));
-            di.Add<CarpetBracketsSlideSettingsViewModel>(new CarpetBracketsSlideSettingsViewModel(di));
+            di.Add<MatBracketsSlideSettingsViewModel>(new MatBracketsSlideSettingsViewModel(di));
             di.Add<ImageSlideSettingsViewModel>(new ImageSlideSettingsViewModel(di));
             di.Add<VideoSlideSettingsViewModel>(new VideoSlideSettingsViewModel(di));
             di.Add<UpcomingMatchesSlideSettingsViewModel>(new UpcomingMatchesSlideSettingsViewModel(di));
@@ -425,13 +425,13 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             di.Add<List<ISlideType>>(new List<ISlideType>
             {
                 new GroupBracketSlide(di),
-                new CarpetBracketsSlide(di),
+                new MatBracketsSlide(di),
                 new UpcomingMatchesSlide(di),
                 new ImageSlide(di),
                 new VideoSlide(di)
             });
 
-            di.Add<IMatchNumbersGenerator>(new CarpetMatchNumbersGenerator());
+            di.Add<IMatchNumbersGenerator>(new MatMatchNumbersGenerator());
 
             di.Add<ITournamentImporter>(new TournamentImporter(
                 di.Resolve<ITournamentsManager>(),

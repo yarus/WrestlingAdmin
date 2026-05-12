@@ -720,7 +720,7 @@ namespace Wrestling.UI.Material.Match
 
             // ResultsService and autosave both need a Tournament — gate them
             // on that. Always return the operator to their previous screen
-            // (carpet/schedule/etc) via NavigateToMatches; there is no
+            // (mat/schedule/etc) via NavigateToMatches; there is no
             // legitimate path where completing a match should drop the user
             // back to the «open tournament» chooser.
             if (DataContext.Tournament != null)
@@ -805,7 +805,7 @@ namespace Wrestling.UI.Material.Match
         }
 
         // Restores the screen the operator was on before MatchControl took
-        // over (Phase 5 wrapper for the carpet/schedule path, Phase 6 for the
+        // over (Phase 5 wrapper for the mat/schedule path, Phase 6 for the
         // CompletedMatches path, etc.). Captured by MainWindowViewModel on
         // the transition into the overlay.
         private void NavigateToReturnTarget()

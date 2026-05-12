@@ -11,7 +11,7 @@ using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Tournament.Conducting;
 using Wrestling.UI.Material.Tournament.Results;
 using Wrestling.UI.Material.Tournament.Standing.Applications;
-using Wrestling.UI.Material.Tournament.Standing.Carpets;
+using Wrestling.UI.Material.Tournament.Standing.Mats;
 using Wrestling.UI.Material.Tournament.Standing.Details;
 using Wrestling.UI.Utils;
 using Wrestling.UI.Utils.Localization;
@@ -117,7 +117,7 @@ namespace Wrestling.UI.Material.Home
                     _resultsService.Recalculate(tournament);
 
                     // Land the operator on the phase that matches the
-                    // tournament's current state (e.g. carpets configured →
+                    // tournament's current state (e.g. mats configured →
                     // straight to «Проведение») instead of always sending
                     // them through «Положение».
                     NavigateToOpenedTournamentPhase();
@@ -126,7 +126,7 @@ namespace Wrestling.UI.Material.Home
         }
 
         // Picks the most relevant phase screen for a freshly-opened tournament.
-        // Order matters — completion wins over carpets, carpets over brackets,
+        // Order matters — completion wins over mats, mats over brackets,
         // etc. — so we check the most-progressed conditions first.
         private void NavigateToOpenedTournamentPhase()
         {
@@ -144,17 +144,17 @@ namespace Wrestling.UI.Material.Home
                 return;
             }
 
-            // Rule 4: at least one carpet configured → Проведение.
-            if (t.CarpetsCount > 0)
+            // Rule 4: at least one mat configured → Проведение.
+            if (t.MatsCount > 0)
             {
                 NavigateToView<ConductingViewModel>();
                 return;
             }
 
-            // Rule 3: brackets generated, no carpets yet → Расписание (carpets setup).
+            // Rule 3: brackets generated, no mats yet → Расписание (mats setup).
             if (t.MatchesCount > 0)
             {
-                NavigateToView<CarpetsViewModel>();
+                NavigateToView<MatsViewModel>();
                 return;
             }
 

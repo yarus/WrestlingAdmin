@@ -284,14 +284,14 @@ namespace Wrestling.UI.Material.Model
             // bracket WrestlerInRed/WrestlerInBlue references against them.
             result += SyncWrestlers(target, tournament);
 
-            // New carpets next — bare add (no version on Carpet). A group
-            // arriving in this same Apply pass with CarpetID pointing at one
-            // of these new carpets needs to find it in target.Carpets when
+            // New mats next — bare add (no version on Mat). A group
+            // arriving in this same Apply pass with MatID pointing at one
+            // of these new mats needs to find it in target.Mats when
             // ApplyGroupFieldChanges / AddNewGroup wires up membership.
-            foreach (var carpet in tournament.Carpets)
+            foreach (var mat in tournament.Mats)
             {
-                if (target.Carpets.Any(c => c.ID == carpet.ID)) continue;
-                target.Carpets.Add(new Carpet { ID = carpet.ID, Name = carpet.Name });
+                if (target.Mats.Any(c => c.ID == mat.ID)) continue;
+                target.Mats.Add(new Mat { ID = mat.ID, Name = mat.Name });
                 result++;
                 structuralChange = true;
             }
@@ -311,7 +311,7 @@ namespace Wrestling.UI.Material.Model
                 }
 
                 // Per-group structural merge — independent of match-completion
-                // merge below. FieldsVersion covers timing/CarpetID/name/age/
+                // merge below. FieldsVersion covers timing/MatID/name/age/
                 // weight changes that don't touch bracket shape; BracketVersion
                 // fires only on Generate() and replaces bracket+wrestlers
                 // wholesale. They're separate so a peer that completed matches
@@ -345,8 +345,8 @@ namespace Wrestling.UI.Material.Model
                 {
                     // Match identity by BracketFullNumber (stable per-group
                     // RoundNumber.BracketNumber pair). MatchNumber is per-
-                    // carpet and gets renumbered when a group moves between
-                    // carpets or a new group is added — using it as the merge
+                    // mat and gets renumbered when a group moves between
+                    // mats or a new group is added — using it as the merge
                     // key would silently match wrong matches across peers.
                     var baseMatch = matches.FirstOrDefault(p => p.BracketFullNumber == importedMatch.BracketFullNumber);
                     if (baseMatch == null) continue;
@@ -394,9 +394,9 @@ namespace Wrestling.UI.Material.Model
                 }
             }
 
-            // Renumber per-carpet match numbers locally so peer's UI shows the
+            // Renumber per-mat match numbers locally so peer's UI shows the
             // same MatchNumber sequence as secretary's after any structural
-            // change (new group, carpet membership shift, bracket regen). The
+            // change (new group, mat membership shift, bracket regen). The
             // generator is deterministic for identical Tournament state, so
             // peers converge to the same numbering without explicitly copying
             // MatchNumber across the wire.
@@ -445,12 +445,12 @@ namespace Wrestling.UI.Material.Model
 
             target.Groups.Add(remoteGroup);
 
-            if (remoteGroup.CarpetID.HasValue)
+            if (remoteGroup.MatID.HasValue)
             {
-                var carpet = target.Carpets.FirstOrDefault(c => c.ID == remoteGroup.CarpetID.Value);
-                if (carpet != null && !carpet.Groups.Contains(remoteGroup))
+                var mat = target.Mats.FirstOrDefault(c => c.ID == remoteGroup.MatID.Value);
+                if (mat != null && !mat.Groups.Contains(remoteGroup))
                 {
-                    carpet.Groups.Add(remoteGroup);
+                    mat.Groups.Add(remoteGroup);
                 }
             }
         }
@@ -498,7 +498,7 @@ namespace Wrestling.UI.Material.Model
         // are intentionally untouched: those travel through BracketVersion.
         private static void ApplyGroupFieldChanges(Entities.Tournament target, AgeWeightGroup local, AgeWeightGroup remote)
         {
-            var oldCarpetId = local.CarpetID;
+            var oldMatId = local.MatID;
 
             local.MaxRoundSecond = remote.MaxRoundSecond;
             local.MaxTimeoutSecond = remote.MaxTimeoutSecond;
@@ -507,8 +507,8 @@ namespace Wrestling.UI.Material.Model
             local.BirthYearMax = remote.BirthYearMax;
             local.WeightMax = remote.WeightMax;
             local.IsFemale = remote.IsFemale;
-            local.CarpetID = remote.CarpetID;
-            local.CarpetLabel = remote.CarpetLabel;
+            local.MatID = remote.MatID;
+            local.MatLabel = remote.MatLabel;
 
             if (local.Bracket?.Rounds != null)
             {
@@ -525,19 +525,19 @@ namespace Wrestling.UI.Material.Model
                 }
             }
 
-            if (oldCarpetId != local.CarpetID)
+            if (oldMatId != local.MatID)
             {
-                if (oldCarpetId.HasValue)
+                if (oldMatId.HasValue)
                 {
-                    var oldCarpet = target.Carpets.FirstOrDefault(c => c.ID == oldCarpetId.Value);
-                    oldCarpet?.Groups.Remove(local);
+                    var oldMat = target.Mats.FirstOrDefault(c => c.ID == oldMatId.Value);
+                    oldMat?.Groups.Remove(local);
                 }
-                if (local.CarpetID.HasValue)
+                if (local.MatID.HasValue)
                 {
-                    var newCarpet = target.Carpets.FirstOrDefault(c => c.ID == local.CarpetID.Value);
-                    if (newCarpet != null && !newCarpet.Groups.Contains(local))
+                    var newMat = target.Mats.FirstOrDefault(c => c.ID == local.MatID.Value);
+                    if (newMat != null && !newMat.Groups.Contains(local))
                     {
-                        newCarpet.Groups.Add(local);
+                        newMat.Groups.Add(local);
                     }
                 }
             }
@@ -546,7 +546,7 @@ namespace Wrestling.UI.Material.Model
         }
 
         // Replaces local group's bracket and wrestlers list from remote, but
-        // preserves any locally-newer match completions (other carpets that
+        // preserves any locally-newer match completions (other mats that
         // had completed matches before the secretary's bracket regeneration
         // landed do not lose their work — match-Version > local takes precedence).
         // Wrestler instances are re-resolved against target.Wrestlers so the
@@ -556,7 +556,7 @@ namespace Wrestling.UI.Material.Model
         private void ReplaceGroupBracket(Entities.Tournament target, AgeWeightGroup local, AgeWeightGroup remote)
         {
             // Snapshot local match state by stable identity before we drop
-            // the bracket. MatchNumber is per-carpet (renumbered on group move),
+            // the bracket. MatchNumber is per-mat (renumbered on group move),
             // BracketFullNumber is stable as long as the bracket shape itself
             // didn't change for that match — exactly the matches we want to
             // preserve.

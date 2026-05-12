@@ -4,7 +4,7 @@ using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
 
-namespace Wrestling.UI.Material.Tournament.Standing.Carpets
+namespace Wrestling.UI.Material.Tournament.Standing.Mats
 {
     public class BindGroupViewModel : ViewModelBase
     {
@@ -19,7 +19,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
         {
             base.InitData();
 
-            Groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups.Where(g => !g.CarpetID.HasValue && g.IsBracketGenerated)).OrderByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax).ToList();
+            Groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups.Where(g => !g.MatID.HasValue && g.IsBracketGenerated)).OrderByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax).ToList();
         }
 
         public AgeWeightGroup SelectedGroup

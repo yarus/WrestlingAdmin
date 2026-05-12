@@ -6,22 +6,22 @@ using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
 using Wrestling.UI.Utils.Localization;
 
-namespace Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide
+namespace Wrestling.UI.Material.Slider.Slides.MatBracketsSlide
 {
-    public class CarpetBracketsSlideSettingsViewModel : ViewModelBase, ISliderSettingsControl
+    public class MatBracketsSlideSettingsViewModel : ViewModelBase, ISliderSettingsControl
     {
         // Auto-title format. Set at write-time so a language switch after the
         // user saves the slide does not retroactively rewrite their title.
-        private static string AutoTitleFor(Carpet carpet)
+        private static string AutoTitleFor(Mat mat)
         {
-            if (carpet == null) return null;
-            var format = LocalizationService.Instance?.T("SlideAutoTitle_CarpetBrackets");
-            if (string.IsNullOrEmpty(format) || format == "SlideAutoTitle_CarpetBrackets") format = "Сетки: {0}";
-            return string.Format(format, carpet.Name);
+            if (mat == null) return null;
+            var format = LocalizationService.Instance?.T("SlideAutoTitle_MatBrackets");
+            if (string.IsNullOrEmpty(format) || format == "SlideAutoTitle_MatBrackets") format = "Сетки: {0}";
+            return string.Format(format, mat.Name);
         }
 
-        private ObservableCollection<Carpet> _carpets;
-        private Carpet _selectedCarpet;
+        private ObservableCollection<Mat> _mats;
+        private Mat _selectedMat;
         private ScreenSlide _item;
 
         // Auto-title: pre-fill the dialog's Title field with a sensible default
@@ -31,7 +31,7 @@ namespace Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide
         private bool _isInitializing;
         private string _lastAutoTitle;
 
-        public CarpetBracketsSlideSettingsViewModel(IDiContainer container) : base(container)
+        public MatBracketsSlideSettingsViewModel(IDiContainer container) : base(container)
         {
         }
 
@@ -39,34 +39,34 @@ namespace Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide
         {
             base.InitData();
 
-            Carpets = DataContext.Tournament.Carpets;
+            Mats = DataContext.Tournament.Mats;
         }
 
-        public ObservableCollection<Carpet> Carpets
+        public ObservableCollection<Mat> Mats
         {
-            get { return _carpets; }
+            get { return _mats; }
             set
             {
-                _carpets = value;
-                OnPropertyChanged("Carpets");
+                _mats = value;
+                OnPropertyChanged("Mats");
             }
         }
 
-        public Carpet SelectedCarpet
+        public Mat SelectedMat
         {
-            get { return _selectedCarpet; }
+            get { return _selectedMat; }
             set
             {
-                _selectedCarpet = value;
+                _selectedMat = value;
 
-                _item?.SetNamedValue("CarpetID", _selectedCarpet?.ID);
+                _item?.SetNamedValue("MatID", _selectedMat?.ID);
 
                 if (!_isInitializing)
                 {
-                    UpdateAutoTitle(AutoTitleFor(_selectedCarpet));
+                    UpdateAutoTitle(AutoTitleFor(_selectedMat));
                 }
 
-                OnPropertyChanged("SelectedCarpet");
+                OnPropertyChanged("SelectedMat");
                 OnPropertyChanged("PlannedSlidesCount");
             }
         }
@@ -74,7 +74,7 @@ namespace Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide
         // Bound by the settings view to show the user how many slides will be
         // produced when the dialog is confirmed. Pure UX nicety; the actual
         // dedup/expansion happens in SliderControlViewModel.
-        public int PlannedSlidesCount => _selectedCarpet?.Groups?.Count ?? 0;
+        public int PlannedSlidesCount => _selectedMat?.Groups?.Count ?? 0;
 
         public void InitContext(ScreenSlide slide)
         {
@@ -87,24 +87,24 @@ namespace Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide
 
                 if (slide == null)
                 {
-                    SelectedCarpet = null;
+                    SelectedMat = null;
                     return;
                 }
 
-                var carpetID = _item.GetNamedValue("CarpetID");
-                if (carpetID != null)
+                var matID = _item.GetNamedValue("MatID");
+                if (matID != null)
                 {
-                    var carpetGuid = new Guid(carpetID.ToString());
-                    SelectedCarpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == carpetGuid);
+                    var matGuid = new Guid(matID.ToString());
+                    SelectedMat = DataContext.Tournament.Mats.FirstOrDefault(c => c.ID == matGuid);
                 }
                 else
                 {
-                    SelectedCarpet = null;
+                    SelectedMat = null;
                 }
             }
             finally
             {
-                _lastAutoTitle = AutoTitleFor(_selectedCarpet);
+                _lastAutoTitle = AutoTitleFor(_selectedMat);
                 _isInitializing = false;
             }
         }

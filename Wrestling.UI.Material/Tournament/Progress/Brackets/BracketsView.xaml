@@ -37,9 +37,9 @@
 
             <ComboBox Grid.Column="0" Width="220"
                       Style="{DynamicResource MaterialDesignFloatingHintComboBox}"
-                      materialDesign:HintAssist.Hint="{loc:Loc Slide_Carpet}"
-                      ItemsSource="{Binding Carpets}"
-                      SelectedItem="{Binding SelectedCarpet}"
+                      materialDesign:HintAssist.Hint="{loc:Loc Slide_Mat}"
+                      ItemsSource="{Binding Mats}"
+                      SelectedItem="{Binding SelectedMat}"
                       DisplayMemberPath="Name"
                       VerticalAlignment="Bottom" />
 
@@ -56,11 +56,11 @@
 
             <StackPanel Grid.Column="3" Orientation="Horizontal"
                         Margin="20,0,0,0" VerticalAlignment="Bottom"
-                        ToolTip="{loc:Loc Brackets_RemainingOnCarpet_Tooltip}">
+                        ToolTip="{loc:Loc Brackets_RemainingOnMat_Tooltip}">
                 <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
                                          VerticalAlignment="Center"
                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                <TextBlock Text="{Binding SelectedCarpet.MatchesCount, Mode=OneWay}"
+                <TextBlock Text="{Binding SelectedMat.MatchesCount, Mode=OneWay}"
                            FontSize="16" VerticalAlignment="Center"
                            Margin="6,0,0,0" />
             </StackPanel>

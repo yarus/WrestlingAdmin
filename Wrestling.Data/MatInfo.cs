@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 namespace Wrestling.Data
 {
     [DataContract]
-    public class CarpetInfo
+    public class MatInfo
     {
         [DataMember]
         public Guid ID { get; set; }

@@ -14,7 +14,7 @@
         <converters:BracketColumnTopMarginConverter x:Key="BracketColTopMargin" />
         <converters:BracketRoundVertLineVisibilityConverter x:Key="VertVis" />
         <converters:PathToImageConverter x:Key="PathToImage" />
-        <converters:MatchToCarpetConverter x:Key="MatchToCarpet" />
+        <converters:MatchToMatConverter x:Key="MatchToMat" />
     </UserControl.Resources>
 
     <UserControl.Background>
@@ -38,7 +38,7 @@
                  VerticalAlignment="Center">
             <TextBlock>
                 <Run Text="{loc:Loc Slide_UpcomingMatches_Header}" />
-                <Run Text="{Binding CarpetName, Mode=OneWay}" />
+                <Run Text="{Binding MatName, Mode=OneWay}" />
             </TextBlock>
         </Viewbox>
 

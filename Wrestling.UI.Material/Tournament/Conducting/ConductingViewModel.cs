@@ -16,7 +16,7 @@ using Wrestling.UI.Utils.Localization;
 namespace Wrestling.UI.Material.Tournament.Conducting
 {
     // «Проведение» — admin landing page. Central pane is an aggregator
-    // dashboard (tournament progress, per-carpet status, last 3 results).
+    // dashboard (tournament progress, per-mat status, last 3 results).
     // Sidebar carries navigation cards (Schedule, Slider) and peer-sync status.
     public class ConductingViewModel : TournamentViewModelBase
     {
@@ -25,7 +25,7 @@ namespace Wrestling.UI.Material.Tournament.Conducting
         private bool _resultsSubscribed;
 
         private ICommand _openScheduleCommand;
-        private ICommand _openCarpetScheduleCommand;
+        private ICommand _openMatScheduleCommand;
         private ICommand _openSliderCommand;
         private ICommand _openRecentMatchCommand;
 
@@ -45,8 +45,8 @@ namespace Wrestling.UI.Material.Tournament.Conducting
 
         public bool HasBrackets => DataContext?.Tournament != null && DataContext.Tournament.MatchesCount > 0;
 
-        public bool HasPendingCarpets =>
-            DataContext?.Tournament != null && DataContext.Tournament.Carpets.Any(c => c.MatchesCount > 0);
+        public bool HasPendingMats =>
+            DataContext?.Tournament != null && DataContext.Tournament.Mats.Any(c => c.MatchesCount > 0);
 
         public bool HasRecentResults => RecentResults.Count > 0;
 
@@ -72,8 +72,8 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             }
         }
 
-        public IEnumerable<Carpet> PendingCarpets =>
-            DataContext?.Tournament?.Carpets?.Where(c => c.MatchesCount > 0) ?? Enumerable.Empty<Carpet>();
+        public IEnumerable<Mat> PendingMats =>
+            DataContext?.Tournament?.Mats?.Where(c => c.MatchesCount > 0) ?? Enumerable.Empty<Mat>();
 
         public string TournamentDurationLabel
         {
@@ -105,23 +105,23 @@ namespace Wrestling.UI.Material.Tournament.Conducting
                 _ => NavigateToView<ScheduleViewModel>(),
                 _ => true));
 
-        // Carpet card click on the dashboard — opens Schedule with the clicked
-        // carpet pre-selected so the operator lands directly on that queue.
-        public ICommand OpenCarpetScheduleCommand =>
-            _openCarpetScheduleCommand ?? (_openCarpetScheduleCommand = new RelayCommand(
-                param => OpenCarpetSchedule(param as Carpet),
-                param => param is Carpet));
+        // Mat card click on the dashboard — opens Schedule with the clicked
+        // mat pre-selected so the operator lands directly on that queue.
+        public ICommand OpenMatScheduleCommand =>
+            _openMatScheduleCommand ?? (_openMatScheduleCommand = new RelayCommand(
+                param => OpenMatSchedule(param as Mat),
+                param => param is Mat));
 
-        private void OpenCarpetSchedule(Carpet carpet)
+        private void OpenMatSchedule(Mat mat)
         {
-            if (carpet?.ID.HasValue != true) return;
+            if (mat?.ID.HasValue != true) return;
             // ScheduleViewModel lives in NavigationService's singleton list, not
             // DiContainer — Resolve<T> returns null. Navigation.GetViewModel<T>
             // is the correct lookup for nav-managed singletons.
             var schedule = Navigation.GetViewModel<ScheduleViewModel>();
             if (schedule != null)
             {
-                schedule.PreselectedCarpetId = carpet.ID.Value;
+                schedule.PreselectedMatId = mat.ID.Value;
             }
             NavigateToView<ScheduleViewModel>();
         }
@@ -249,24 +249,24 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             {
                 RecentResults.Clear();
                 OnPropertyChanged(nameof(HasBrackets));
-                OnPropertyChanged(nameof(HasPendingCarpets));
+                OnPropertyChanged(nameof(HasPendingMats));
                 OnPropertyChanged(nameof(HasRecentResults));
-                OnPropertyChanged(nameof(PendingCarpets));
+                OnPropertyChanged(nameof(PendingMats));
                 OnPropertyChanged(nameof(TournamentDurationLabel));
                 return;
             }
 
             RebuildRecentResults(tournament);
             tournament.RefreshAggregates();
-            foreach (var carpet in tournament.Carpets)
+            foreach (var mat in tournament.Mats)
             {
-                carpet.RefreshStats();
+                mat.RefreshStats();
             }
 
             OnPropertyChanged(nameof(HasBrackets));
-            OnPropertyChanged(nameof(HasPendingCarpets));
+            OnPropertyChanged(nameof(HasPendingMats));
             OnPropertyChanged(nameof(HasRecentResults));
-            OnPropertyChanged(nameof(PendingCarpets));
+            OnPropertyChanged(nameof(PendingMats));
             OnPropertyChanged(nameof(TournamentDurationLabel));
             OnPropertyChanged(nameof(IsTournamentCompleted));
 
@@ -289,12 +289,12 @@ namespace Wrestling.UI.Material.Tournament.Conducting
 
         private void RebuildRecentResults(Entities.Tournament tournament)
         {
-            var carpetByGroup = new Dictionary<Guid, Carpet>();
-            foreach (var carpet in tournament.Carpets)
+            var matByGroup = new Dictionary<Guid, Mat>();
+            foreach (var mat in tournament.Mats)
             {
-                foreach (var group in carpet.Groups)
+                foreach (var group in mat.Groups)
                 {
-                    carpetByGroup[group.ID] = carpet;
+                    matByGroup[group.ID] = mat;
                 }
             }
 
@@ -305,7 +305,7 @@ namespace Wrestling.UI.Material.Tournament.Conducting
                 .Where(x => x.Match.Status == MatchStatusEnum.Completed && x.Match.StartDateTime.HasValue)
                 .OrderByDescending(x => x.Match.StartDateTime.Value)
                 .Take(RecentResultsLimit)
-                .Select(x => BuildSummary(x.Group, x.Match, carpetByGroup))
+                .Select(x => BuildSummary(x.Group, x.Match, matByGroup))
                 .ToList();
 
             RecentResults.Clear();
@@ -318,10 +318,10 @@ namespace Wrestling.UI.Material.Tournament.Conducting
         private static RecentMatchSummary BuildSummary(
             AgeWeightGroup group,
             WrestlingMatch match,
-            IReadOnlyDictionary<Guid, Carpet> carpetByGroup)
+            IReadOnlyDictionary<Guid, Mat> matByGroup)
         {
             var time = match.StartDateTime?.ToString("HH:mm") ?? string.Empty;
-            var carpetName = carpetByGroup.TryGetValue(group.ID, out var carpet) ? carpet.Name : string.Empty;
+            var matName = matByGroup.TryGetValue(group.ID, out var mat) ? mat.Name : string.Empty;
             var weightLabel = group.Name ?? string.Empty;
 
             var redName = match.WrestlerInRed?.LastFirstNameShort ?? "—";
@@ -354,7 +354,7 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             return new RecentMatchSummary
             {
                 Time = time,
-                CarpetName = carpetName,
+                MatName = matName,
                 WeightLabel = weightLabel,
                 Pair = pair,
                 ResultLine = resultLine,
@@ -394,7 +394,7 @@ namespace Wrestling.UI.Material.Tournament.Conducting
     public sealed class RecentMatchSummary
     {
         public string Time { get; set; }
-        public string CarpetName { get; set; }
+        public string MatName { get; set; }
         public string WeightLabel { get; set; }
         public string Pair { get; set; }
         public string ResultLine { get; set; }

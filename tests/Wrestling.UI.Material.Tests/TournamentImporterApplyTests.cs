@@ -114,7 +114,7 @@ public sealed class TournamentImporterApplyTests
         new TournamentImporter(
             new NullTournamentsManager(),
             new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() },
-            new CarpetMatchNumbersGenerator());
+            new MatMatchNumbersGenerator());
 
     // Round-trip a tournament through the production adapter. Models the
     // "save and reload as another peer" step end-to-end scenarios need —
@@ -140,14 +140,14 @@ public sealed class TournamentImporterApplyTests
         SeedNumber = seed
     };
 
-    // Two-group tournament on one carpet, both groups with brackets generated
-    // and per-carpet match numbers assigned. Models a typical pre-tournament
+    // Two-group tournament on one mat, both groups with brackets generated
+    // and per-mat match numbers assigned. Models a typical pre-tournament
     // ready-to-go state.
-    private static (WTournament Tournament, AgeWeightGroup G1, AgeWeightGroup G2, Carpet Carpet) BuildTwoGroupTournament(int g1Size, int g2Size)
+    private static (WTournament Tournament, AgeWeightGroup G1, AgeWeightGroup G2, Mat Mat) BuildTwoGroupTournament(int g1Size, int g2Size)
     {
         var t = new WTournament(new GlobalSettings()) { ID = Guid.NewGuid(), Name = "T", Status = TournamentStatus.InProgress };
-        var carpet = new Carpet { ID = Guid.NewGuid(), Name = "Ковёр 1" };
-        t.Carpets.Add(carpet);
+        var mat = new Mat { ID = Guid.NewGuid(), Name = "Ковёр 1" };
+        t.Mats.Add(mat);
 
         var g1Id = Guid.NewGuid();
         var g1Wrestlers = new List<Wrestler>();
@@ -156,10 +156,10 @@ public sealed class TournamentImporterApplyTests
         {
             ID = g1Id, BirthYearMin = 2005, BirthYearMax = 2006, WeightMax = 55,
             MaxRoundSecond = 180, MaxTimeoutSecond = 30, MaxActionSecond = 30,
-            CarpetID = carpet.ID, Wrestlers = g1Wrestlers
+            MatID = mat.ID, Wrestlers = g1Wrestlers
         };
         t.Groups.Add(g1);
-        carpet.Groups.Add(g1);
+        mat.Groups.Add(g1);
         foreach (var w in g1Wrestlers) t.Wrestlers.Add(w);
 
         var g2Id = Guid.NewGuid();
@@ -169,23 +169,23 @@ public sealed class TournamentImporterApplyTests
         {
             ID = g2Id, BirthYearMin = 2005, BirthYearMax = 2006, WeightMax = 60,
             MaxRoundSecond = 180, MaxTimeoutSecond = 30, MaxActionSecond = 30,
-            CarpetID = carpet.ID, Wrestlers = g2Wrestlers
+            MatID = mat.ID, Wrestlers = g2Wrestlers
         };
         t.Groups.Add(g2);
-        carpet.Groups.Add(g2);
+        mat.Groups.Add(g2);
         foreach (var w in g2Wrestlers) t.Wrestlers.Add(w);
 
         var processor = new OlympicGroupBracketProcessor();
         processor.Generate(t, g1);
         processor.Generate(t, g2);
-        new CarpetMatchNumbersGenerator().Generate(t,
+        new MatMatchNumbersGenerator().Generate(t,
             new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
 
-        return (t, g1, g2, carpet);
+        return (t, g1, g2, mat);
     }
 
     // Compares the structurally-syncable parts of two tournaments (groups,
-    // wrestlers, brackets, match identities, status, version). Carpets and
+    // wrestlers, brackets, match identities, status, version). Mats and
     // settings/import sources are intentionally local-per-laptop and not
     // checked here.
     private static void AssertEquivalent(WTournament expected, WTournament actual)
@@ -199,7 +199,7 @@ public sealed class TournamentImporterApplyTests
             actualGroup.Wrestlers.Select(w => w.ID).Should().BeEquivalentTo(
                 expectedGroup.Wrestlers.Select(w => w.ID),
                 $"group {expectedGroup.ID} membership");
-            actualGroup.CarpetID.Should().Be(expectedGroup.CarpetID, $"group {expectedGroup.ID} carpet");
+            actualGroup.MatID.Should().Be(expectedGroup.MatID, $"group {expectedGroup.ID} mat");
             actualGroup.MaxRoundSecond.Should().Be(expectedGroup.MaxRoundSecond);
             actualGroup.BracketVersion.Should().Be(expectedGroup.BracketVersion);
             actualGroup.FieldsVersion.Should().Be(expectedGroup.FieldsVersion);
@@ -452,7 +452,7 @@ public sealed class TournamentImporterApplyTests
     // Per-group structural sync — TodoList #5 / #10.
     // -------------------------------------------------------------------------
     // Two independent counters per group:
-    //   FieldsVersion  — timing / CarpetID / age / weight / female / name edits
+    //   FieldsVersion  — timing / MatID / age / weight / female / name edits
     //                    that don't touch bracket shape; cascade timing into
     //                    pending matches.
     //   BracketVersion — bracket regeneration only; replaces wrestlers list +
@@ -500,31 +500,31 @@ public sealed class TournamentImporterApplyTests
         matchToFinish.MaxRoundSecond.Should().Be(originalCompletedTiming);
     }
 
-    // Scenario 5: secretary moves group from carpet 1 to carpet 2. CarpetID is
-    // a "field" (no bracket change) but membership in target.Carpets[].Groups
-    // must update so each carpet's schedule view sees the right groups.
+    // Scenario 5: secretary moves group from mat 1 to mat 2. MatID is
+    // a "field" (no bracket change) but membership in target.Mats[].Groups
+    // must update so each mat's schedule view sees the right groups.
     [Fact]
-    public void FieldsVersion_propagates_carpet_reassignment_and_updates_membership()
+    public void FieldsVersion_propagates_mat_reassignment_and_updates_membership()
     {
         var (target, tgtGroup, _) = BuildPair();
-        var carpet1 = new Carpet { ID = Guid.NewGuid(), Name = "Ковёр 1" };
-        var carpet2 = new Carpet { ID = Guid.NewGuid(), Name = "Ковёр 2" };
-        carpet1.Groups.Add(tgtGroup);
-        tgtGroup.CarpetID = carpet1.ID;
-        target.Carpets.Add(carpet1);
-        target.Carpets.Add(carpet2);
+        var mat1 = new Mat { ID = Guid.NewGuid(), Name = "Ковёр 1" };
+        var mat2 = new Mat { ID = Guid.NewGuid(), Name = "Ковёр 2" };
+        mat1.Groups.Add(tgtGroup);
+        tgtGroup.MatID = mat1.ID;
+        target.Mats.Add(mat1);
+        target.Mats.Add(mat2);
 
         var (remote, remGroup, _) = Mirror(target);
-        // Mirror clears CarpetID — re-set on both sides to model that local started on carpet 1
-        // and remote moved to carpet 2.
-        remGroup.CarpetID = carpet2.ID;
+        // Mirror clears MatID — re-set on both sides to model that local started on mat 1
+        // and remote moved to mat 2.
+        remGroup.MatID = mat2.ID;
         remGroup.FieldsVersion = 1;
 
         MakeImporter().Apply(target, ImportPlan.Proceed(remote));
 
-        tgtGroup.CarpetID.Should().Be(carpet2.ID);
-        carpet1.Groups.Should().BeEmpty("group moved off carpet 1");
-        carpet2.Groups.Should().ContainSingle(g => g.ID == tgtGroup.ID, "group landed on carpet 2");
+        tgtGroup.MatID.Should().Be(mat2.ID);
+        mat1.Groups.Should().BeEmpty("group moved off mat 1");
+        mat2.Groups.Should().ContainSingle(g => g.ID == tgtGroup.ID, "group landed on mat 2");
     }
 
     // Scenario from grilling: secretary regenerated group X's bracket after
@@ -630,7 +630,7 @@ public sealed class TournamentImporterApplyTests
 
     // Secretary added a brand-new weight category mid-tournament. Peer that
     // didn't know the group existed must absorb it on next import — group,
-    // wrestlers, optional bracket and carpet membership all wired in.
+    // wrestlers, optional bracket and mat membership all wired in.
     [Fact]
     public void New_group_in_remote_is_added_to_target()
     {
@@ -681,18 +681,18 @@ public sealed class TournamentImporterApplyTests
         }
     }
 
-    // Same flow but the new group lands assigned to a carpet that already
+    // Same flow but the new group lands assigned to a mat that already
     // exists locally — membership must wire up.
     [Fact]
-    public void New_group_with_carpet_id_joins_existing_carpet_membership()
+    public void New_group_with_mat_id_joins_existing_mat_membership()
     {
         var (target, _, _) = BuildPair();
-        var carpet = new Carpet { ID = Guid.NewGuid(), Name = "Ковёр 2" };
-        target.Carpets.Add(carpet);
+        var mat = new Mat { ID = Guid.NewGuid(), Name = "Ковёр 2" };
+        target.Mats.Add(mat);
 
         var (remote, _, _) = Mirror(target);
-        var remoteCarpetCopy = new Carpet { ID = carpet.ID, Name = carpet.Name };
-        remote.Carpets.Add(remoteCarpetCopy);
+        var remoteMatCopy = new Mat { ID = mat.ID, Name = mat.Name };
+        remote.Mats.Add(remoteMatCopy);
 
         var newGroupId = Guid.NewGuid();
         var newGroup = new AgeWeightGroup
@@ -700,61 +700,61 @@ public sealed class TournamentImporterApplyTests
             ID = newGroupId,
             BirthYearMin = 2010, BirthYearMax = 2011, WeightMax = 50,
             MaxRoundSecond = 180, MaxTimeoutSecond = 30, MaxActionSecond = 30,
-            CarpetID = carpet.ID,
+            MatID = mat.ID,
             Wrestlers = new List<Wrestler>()
         };
-        remoteCarpetCopy.Groups.Add(newGroup);
+        remoteMatCopy.Groups.Add(newGroup);
         remote.Groups.Add(newGroup);
 
         MakeImporter().Apply(target, ImportPlan.Proceed(remote));
 
         target.Groups.Should().Contain(g => g.ID == newGroupId);
-        carpet.Groups.Should().ContainSingle(g => g.ID == newGroupId);
+        mat.Groups.Should().ContainSingle(g => g.ID == newGroupId);
     }
 
-    // Secretary added a new carpet (fourth mat brought in mid-tournament).
+    // Secretary added a new mat (fourth mat brought in mid-tournament).
     [Fact]
-    public void New_carpet_in_remote_is_added_to_target()
+    public void New_mat_in_remote_is_added_to_target()
     {
         var (target, _, _) = BuildPair();
         var (remote, _, _) = Mirror(target);
 
-        var newCarpetId = Guid.NewGuid();
-        remote.Carpets.Add(new Carpet { ID = newCarpetId, Name = "Ковёр 4" });
+        var newMatId = Guid.NewGuid();
+        remote.Mats.Add(new Mat { ID = newMatId, Name = "Ковёр 4" });
 
         var result = MakeImporter().Apply(target, ImportPlan.Proceed(remote));
 
         result.Outcome.Should().Be(ImportOutcome.Imported);
-        target.Carpets.Should().Contain(c => c.ID == newCarpetId && c.Name == "Ковёр 4");
+        target.Mats.Should().Contain(c => c.ID == newMatId && c.Name == "Ковёр 4");
     }
 
-    // Adding a new group to a carpet causes CarpetMatchNumbersGenerator to
-    // renumber EVERY match on that carpet (not just the new group's). The
+    // Adding a new group to a mat causes MatMatchNumbersGenerator to
+    // renumber EVERY match on that mat (not just the new group's). The
     // peer must perform the same renumbering locally after Apply, otherwise
     // its UI shows stale numbers on the existing groups and subsequent imports
     // can't find matches by MatchNumber.
     [Fact]
-    public void New_group_on_carpet_renumbers_existing_matches_on_same_carpet()
+    public void New_group_on_mat_renumbers_existing_matches_on_same_mat()
     {
         var (target, tgtGroup, _) = BuildPair();
-        var carpet = new Carpet { ID = Guid.NewGuid(), Name = "Ковёр 1" };
-        carpet.Groups.Add(tgtGroup);
-        tgtGroup.CarpetID = carpet.ID;
-        target.Carpets.Add(carpet);
+        var mat = new Mat { ID = Guid.NewGuid(), Name = "Ковёр 1" };
+        mat.Groups.Add(tgtGroup);
+        tgtGroup.MatID = mat.ID;
+        target.Mats.Add(mat);
 
         // Renumber locally to baseline so we can detect a shift.
-        new CarpetMatchNumbersGenerator().Generate(target,
+        new MatMatchNumbersGenerator().Generate(target,
             new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
         var firstQualMatchKey = tgtGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
                                          .First(m => m.RoundNumber == 1).BracketFullNumber;
 
-        // Remote: clone target (with the same carpet+group), then add a brand-
-        // new group on the same carpet and renumber the carpet there too.
+        // Remote: clone target (with the same mat+group), then add a brand-
+        // new group on the same mat and renumber the mat there too.
         var (remote, remGroup, _) = Mirror(target);
-        var remCarpet = new Carpet { ID = carpet.ID, Name = carpet.Name };
-        remCarpet.Groups.Add(remGroup);
-        remGroup.CarpetID = carpet.ID;
-        remote.Carpets.Add(remCarpet);
+        var remMat = new Mat { ID = mat.ID, Name = mat.Name };
+        remMat.Groups.Add(remGroup);
+        remGroup.MatID = mat.ID;
+        remote.Mats.Add(remMat);
 
         var newGroupId = Guid.NewGuid();
         var newWrestlers = new List<Wrestler>();
@@ -774,12 +774,12 @@ public sealed class TournamentImporterApplyTests
         {
             ID = newGroupId, BirthYearMin = 2007, BirthYearMax = 2008, WeightMax = 75,
             MaxRoundSecond = 180, MaxTimeoutSecond = 30, MaxActionSecond = 30,
-            CarpetID = carpet.ID, Wrestlers = newWrestlers
+            MatID = mat.ID, Wrestlers = newWrestlers
         };
         remote.Groups.Add(newGroup);
-        remCarpet.Groups.Add(newGroup);
+        remMat.Groups.Add(newGroup);
         new OlympicGroupBracketProcessor().Generate(remote, newGroup);
-        new CarpetMatchNumbersGenerator().Generate(remote,
+        new MatMatchNumbersGenerator().Generate(remote,
             new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
 
         var remoteFirstQualNumber = remGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
@@ -790,7 +790,7 @@ public sealed class TournamentImporterApplyTests
 
         // After Apply, the same first-qual match on the existing group should
         // carry the same MatchNumber as on remote — i.e. the peer ran its own
-        // CarpetMatchNumbersGenerator pass.
+        // MatMatchNumbersGenerator pass.
         var localFirstQual = tgtGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
                                      .First(m => m.BracketFullNumber == firstQualMatchKey);
         localFirstQual.MatchNumber.Should().Be(remoteFirstQualNumber, "peer must renumber after structural change");
@@ -825,11 +825,11 @@ public sealed class TournamentImporterApplyTests
         transferred.GroupID = g2.ID;
 
         // Both groups get bracket regen — Generate() bumps each group's
-        // BracketVersion. CarpetMatchNumbersGenerator runs because the
-        // operation also reshuffles the carpet's match queue.
+        // BracketVersion. MatMatchNumbersGenerator runs because the
+        // operation also reshuffles the mat's match queue.
         new OlympicGroupBracketProcessor().Generate(admin, g1);
         new OlympicGroupBracketProcessor().Generate(admin, g2);
-        new CarpetMatchNumbersGenerator().Generate(admin,
+        new MatMatchNumbersGenerator().Generate(admin,
             new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
 
         var result = MakeImporter().Apply(peer, ImportPlan.Proceed(admin));
@@ -906,9 +906,9 @@ public sealed class TournamentImporterApplyTests
         admin.Wrestlers.Add(duplicate);
         g2.Wrestlers.Add(duplicate);
 
-        // Regenerate G2 bracket with the new participant + renumber carpet.
+        // Regenerate G2 bracket with the new participant + renumber mat.
         processor.Generate(admin, g2);
-        new CarpetMatchNumbersGenerator().Generate(admin,
+        new MatMatchNumbersGenerator().Generate(admin,
             new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
 
         var result = MakeImporter().Apply(peer, ImportPlan.Proceed(admin));
@@ -944,34 +944,34 @@ public sealed class TournamentImporterApplyTests
         AssertEquivalent(admin, peer);
     }
 
-    // Scenario 3 — secretary moves group between carpets mid-tournament
-    // (TodoList #10). Tracks CarpetID change + carpet membership swap +
+    // Scenario 3 — secretary moves group between mats mid-tournament
+    // (TodoList #10). Tracks MatID change + mat membership swap +
     // peer-side renumbering.
     [Fact]
-    public void EndToEnd_carpet_move_results_in_equivalent_tournaments()
+    public void EndToEnd_mat_move_results_in_equivalent_tournaments()
     {
-        var (admin, g1, _, carpet1) = BuildTwoGroupTournament(g1Size: 4, g2Size: 4);
-        var carpet2 = new Carpet { ID = Guid.NewGuid(), Name = "Ковёр 2" };
-        admin.Carpets.Add(carpet2);
+        var (admin, g1, _, mat1) = BuildTwoGroupTournament(g1Size: 4, g2Size: 4);
+        var mat2 = new Mat { ID = Guid.NewGuid(), Name = "Ковёр 2" };
+        admin.Mats.Add(mat2);
 
         var peer = CloneViaAdapter(admin);
 
-        // Mimics CarpetsViewModel.UnbindGroup + BindGroup sequence on admin.
-        carpet1.Groups.Remove(g1);
-        g1.CarpetID = carpet2.ID;
-        g1.CarpetLabel = carpet2.Name;
+        // Mimics MatsViewModel.UnbindGroup + BindGroup sequence on admin.
+        mat1.Groups.Remove(g1);
+        g1.MatID = mat2.ID;
+        g1.MatLabel = mat2.Name;
         g1.FieldsVersion++;
-        carpet2.Groups.Add(g1);
-        new CarpetMatchNumbersGenerator().Generate(admin,
+        mat2.Groups.Add(g1);
+        new MatMatchNumbersGenerator().Generate(admin,
             new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
 
         var result = MakeImporter().Apply(peer, ImportPlan.Proceed(admin));
 
         result.Outcome.Should().Be(ImportOutcome.Imported);
         var peerG1 = peer.Groups.First(g => g.ID == g1.ID);
-        peerG1.CarpetID.Should().Be(carpet2.ID);
-        peer.Carpets.First(c => c.ID == carpet1.ID).Groups.Should().NotContain(g => g.ID == g1.ID);
-        peer.Carpets.First(c => c.ID == carpet2.ID).Groups.Should().Contain(g => g.ID == g1.ID);
+        peerG1.MatID.Should().Be(mat2.ID);
+        peer.Mats.First(c => c.ID == mat1.ID).Groups.Should().NotContain(g => g.ID == g1.ID);
+        peer.Mats.First(c => c.ID == mat2.ID).Groups.Should().Contain(g => g.ID == g1.ID);
         AssertEquivalent(admin, peer);
     }
 
@@ -1062,7 +1062,7 @@ public sealed class TournamentImporterApplyTests
     [Fact]
     public void EndToEnd_combined_new_group_and_wrestler_transfer_replicates()
     {
-        var (admin, g1, _, carpet1) = BuildTwoGroupTournament(g1Size: 5, g2Size: 4);
+        var (admin, g1, _, mat1) = BuildTwoGroupTournament(g1Size: 5, g2Size: 4);
         var peer = CloneViaAdapter(admin);
 
         // Create G3 with one initial wrestler so it can host a bracket.
@@ -1073,10 +1073,10 @@ public sealed class TournamentImporterApplyTests
         {
             ID = g3Id, BirthYearMin = 2007, BirthYearMax = 2008, WeightMax = 65,
             MaxRoundSecond = 180, MaxTimeoutSecond = 30, MaxActionSecond = 30,
-            CarpetID = carpet1.ID, Wrestlers = new List<Wrestler> { seed }
+            MatID = mat1.ID, Wrestlers = new List<Wrestler> { seed }
         };
         admin.Groups.Add(g3);
-        carpet1.Groups.Add(g3);
+        mat1.Groups.Add(g3);
 
         // Transfer wrestler[0] from G1 → G3.
         var transferred = g1.Wrestlers[0];
@@ -1087,7 +1087,7 @@ public sealed class TournamentImporterApplyTests
 
         new OlympicGroupBracketProcessor().Generate(admin, g1);
         new OlympicGroupBracketProcessor().Generate(admin, g3);
-        new CarpetMatchNumbersGenerator().Generate(admin,
+        new MatMatchNumbersGenerator().Generate(admin,
             new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
 
         MakeImporter().Apply(peer, ImportPlan.Proceed(admin));
@@ -1104,7 +1104,7 @@ public sealed class TournamentImporterApplyTests
     [Fact]
     public void EndToEnd_offline_peer_catches_up_multiple_changes_in_single_apply()
     {
-        var (admin, g1, g2, carpet1) = BuildTwoGroupTournament(g1Size: 4, g2Size: 4);
+        var (admin, g1, g2, mat1) = BuildTwoGroupTournament(g1Size: 4, g2Size: 4);
         var peer = CloneViaAdapter(admin);
 
         // 1. FieldsVersion bump on G1 (timing edit).
@@ -1128,24 +1128,24 @@ public sealed class TournamentImporterApplyTests
         {
             ID = g3Id, BirthYearMin = 2009, BirthYearMax = 2010, WeightMax = 50,
             MaxRoundSecond = 180, MaxTimeoutSecond = 30, MaxActionSecond = 30,
-            CarpetID = carpet1.ID, Wrestlers = g3Wrestlers
+            MatID = mat1.ID, Wrestlers = g3Wrestlers
         };
         admin.Groups.Add(g3);
-        carpet1.Groups.Add(g3);
+        mat1.Groups.Add(g3);
         new OlympicGroupBracketProcessor().Generate(admin, g3);
 
-        // 4. New carpet.
-        var carpet2 = new Carpet { ID = Guid.NewGuid(), Name = "Ковёр 2" };
-        admin.Carpets.Add(carpet2);
+        // 4. New mat.
+        var mat2 = new Mat { ID = Guid.NewGuid(), Name = "Ковёр 2" };
+        admin.Mats.Add(mat2);
 
-        // 5. Move G1 onto the new carpet.
-        carpet1.Groups.Remove(g1);
-        g1.CarpetID = carpet2.ID;
-        g1.CarpetLabel = carpet2.Name;
-        carpet2.Groups.Add(g1);
+        // 5. Move G1 onto the new mat.
+        mat1.Groups.Remove(g1);
+        g1.MatID = mat2.ID;
+        g1.MatLabel = mat2.Name;
+        mat2.Groups.Add(g1);
         g1.FieldsVersion++;
 
-        new CarpetMatchNumbersGenerator().Generate(admin,
+        new MatMatchNumbersGenerator().Generate(admin,
             new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
 
         var result = MakeImporter().Apply(peer, ImportPlan.Proceed(admin));

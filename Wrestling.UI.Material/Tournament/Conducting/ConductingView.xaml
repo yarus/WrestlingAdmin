@@ -14,8 +14,8 @@
         </Grid.ColumnDefinitions>
 
         <!-- Main zone: aggregator dashboard.
-             Z1 — global progress + ETA, Z2 — carpets card (natural height,
-             grows to fit all carpet cards), Z3 — recent results feed.
+             Z1 — global progress + ETA, Z2 — mats card (natural height,
+             grows to fit all mat cards), Z3 — recent results feed.
              Z3 fills the remaining space (`*` row) and runs its own inner
              ScrollViewer when the result list doesn't fit; this is the only
              scroll on the main zone, and on short windows Z3 simply shrinks
@@ -54,17 +54,17 @@
                 </StackPanel>
             </materialDesign:Card>
 
-            <!-- Z2: «Ковры Турнира» — per-carpet status cards in a titled card.
+            <!-- Z2: «Ковры Турнира» — per-mat status cards in a titled card.
                  Each inner card is a button; click opens Schedule with the
-                 clicked carpet pre-selected. WrapPanel left-aligns naturally. -->
+                 clicked mat pre-selected. WrapPanel left-aligns naturally. -->
             <materialDesign:Card Grid.Row="1" Margin="0,0,0,12" Padding="0"
-                                 Visibility="{Binding HasPendingCarpets, Converter={StaticResource BoolToVis}}">
+                                 Visibility="{Binding HasPendingMats, Converter={StaticResource BoolToVis}}">
                 <DockPanel LastChildFill="True">
                     <TextBlock DockPanel.Dock="Top"
-                               Text="{loc:Loc Conducting_Carpets_Header}" FontWeight="SemiBold" FontSize="14"
+                               Text="{loc:Loc Conducting_Mats_Header}" FontWeight="SemiBold" FontSize="14"
                                Margin="16,16,16,8"
                                Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                    <ItemsControl ItemsSource="{Binding PendingCarpets}" Margin="16,0,16,16">
+                    <ItemsControl ItemsSource="{Binding PendingMats}" Margin="16,0,16,16">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <WrapPanel Orientation="Horizontal" />
@@ -76,8 +76,8 @@
                                         Background="Transparent" BorderThickness="0"
                                         HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                                         Style="{x:Null}"
-                                        ToolTip="{loc:Loc Conducting_OpenCarpetSchedule_Tooltip}"
-                                        Command="{Binding ElementName=RootControl, Path=DataContext.OpenCarpetScheduleCommand}"
+                                        ToolTip="{loc:Loc Conducting_OpenMatSchedule_Tooltip}"
+                                        Command="{Binding ElementName=RootControl, Path=DataContext.OpenMatScheduleCommand}"
                                         CommandParameter="{Binding}">
                                     <materialDesign:Card Width="220" Padding="12"
                                                          BorderThickness="1"
@@ -87,7 +87,7 @@
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,8" />
 
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4"
-                                                        ToolTip="{loc:Loc Conducting_CarpetProgress_Tooltip}">
+                                                        ToolTip="{loc:Loc Conducting_MatProgress_Tooltip}">
                                                 <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
                                                                          VerticalAlignment="Center"
                                                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -97,7 +97,7 @@
                                             </StackPanel>
 
                                             <StackPanel Orientation="Horizontal"
-                                                        ToolTip="{loc:Loc Conducting_CarpetEta_Tooltip}">
+                                                        ToolTip="{loc:Loc Conducting_MatEta_Tooltip}">
                                                 <materialDesign:PackIcon Kind="ClockOutline" Width="20" Height="20"
                                                                          VerticalAlignment="Center"
                                                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
@@ -143,7 +143,7 @@
                                                 <TextBlock FontSize="14" TextTrimming="CharacterEllipsis">
                                                     <Run Text="{Binding Time, Mode=OneWay}" FontWeight="SemiBold" />
                                                     <Run Text=" · " />
-                                                    <Run Text="{Binding CarpetName, Mode=OneWay}" />
+                                                    <Run Text="{Binding MatName, Mode=OneWay}" />
                                                     <Run Text=" · " />
                                                     <Run Text="{Binding WeightLabel, Mode=OneWay}" />
                                                     <Run Text=" · " />
@@ -174,7 +174,7 @@
             <StackPanel Orientation="Vertical" Margin="12">
 
                 <!-- Режим Проведения — entry points to the two operator-facing
-                     fullscreen overlays. "Ковёр" → Schedule (per-carpet match
+                     fullscreen overlays. "Ковёр" → Schedule (per-mat match
                      queue), "Слайдер" → projector slideshow. -->
                 <materialDesign:Card Margin="0,0,0,12">
                     <Grid>
@@ -203,10 +203,10 @@
                                 <Button VerticalAlignment="Center"
                                         Style="{StaticResource MaterialDesignRaisedButton}"
                                         Command="{Binding OpenScheduleCommand}"
-                                        ToolTip="{loc:Loc Conducting_CarpetButton_Tooltip}">
+                                        ToolTip="{loc:Loc Conducting_MatButton_Tooltip}">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="Wrestling" Margin="0,0,6,0" />
-                                        <TextBlock Text="{loc:Loc Conducting_CarpetButton}" />
+                                        <TextBlock Text="{loc:Loc Conducting_MatButton}" />
                                     </StackPanel>
                                 </Button>
 

@@ -143,8 +143,8 @@ namespace Wrestling.Entities.Bracket
             {
                 BirthYearMax = Group.BirthYearMax,
                 BirthYearMin = Group.BirthYearMin,
-                CarpetID = Group.CarpetID,
-                CarpetLabel = Group.CarpetLabel,
+                MatID = Group.MatID,
+                MatLabel = Group.MatLabel,
                 IsFemale = Group.IsFemale,
                 MaxActionSecond = Group.MaxActionSecond,
                 MaxRoundSecond = Group.MaxRoundSecond,

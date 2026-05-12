@@ -1,7 +1,9 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Wrestling.Data;
 using Wrestling.DataAccess;
 using Xunit;
 
@@ -153,5 +155,68 @@ public sealed class JsonStorageDataAccessTests : IDisposable
 
         act.Should().NotThrow("invalid paths (e.g. from stale ImportSources) must not crash");
         result.Should().BeNull();
+    }
+
+    // Load compat: pre-rename .wrt files (when mats were called "carpets") used
+    // "Carpets", "CarpetID", "CarpetLabel" property names. LegacyMatNameConverter
+    // remaps them to the new names so old tournaments still open.
+    [Fact]
+    public void ReadFromFile_maps_legacy_carpet_keys_to_mat_properties()
+    {
+        var path = Path_("legacy.wrt");
+        var matId = Guid.NewGuid();
+        var groupId = Guid.NewGuid();
+        File.WriteAllText(path, $@"{{
+  ""Name"": ""Old"",
+  ""Carpets"": [{{ ""ID"": ""{matId}"", ""Name"": ""Mat 1"", ""Groups"": [] }}],
+  ""Groups"": [{{ ""ID"": ""{groupId}"", ""CarpetID"": ""{matId}"", ""CarpetLabel"": ""Mat 1"", ""Wrestlers"": [] }}]
+}}");
+
+        var info = _storage.ReadFromFile<TournamentInfo>(path);
+
+        info.Should().NotBeNull();
+        info.Mats.Should().HaveCount(1);
+        info.Mats.Single().ID.Should().Be(matId);
+        info.Groups.Should().HaveCount(1);
+        info.Groups.Single().MatID.Should().Be(matId);
+        info.Groups.Single().MatLabel.Should().Be("Mat 1");
+    }
+
+    [Fact]
+    public async Task ReadFromFileAsync_maps_legacy_carpet_keys_to_mat_properties()
+    {
+        var path = Path_("legacy-async.wrt");
+        var matId = Guid.NewGuid();
+        var groupId = Guid.NewGuid();
+        File.WriteAllText(path, $@"{{
+  ""Carpets"": [{{ ""ID"": ""{matId}"", ""Name"": ""A"", ""Groups"": [] }}],
+  ""Groups"": [{{ ""ID"": ""{groupId}"", ""CarpetID"": ""{matId}"", ""CarpetLabel"": ""A"", ""Wrestlers"": [] }}]
+}}");
+
+        var info = await _storage.ReadFromFileAsync<TournamentInfo>(path);
+
+        info.Should().NotBeNull();
+        info.Mats.Single().ID.Should().Be(matId);
+        info.Groups.Single().MatID.Should().Be(matId);
+    }
+
+    // Save path always emits the new names. After a save+reload cycle the
+    // legacy keys must not reappear.
+    [Fact]
+    public void Save_then_Load_uses_new_mat_keys_only()
+    {
+        var path = Path_("roundtrip.wrt");
+        var matId = Guid.NewGuid();
+        var info = new TournamentInfo
+        {
+            Mats = new[] { new MatInfo { ID = matId, Name = "Mat" } },
+            Groups = new[] { new AgeWeightGroupInfo { ID = Guid.NewGuid(), MatID = matId, MatLabel = "Mat" } },
+        };
+
+        _storage.SaveToFile(info, path).Should().BeTrue();
+        var json = File.ReadAllText(path);
+
+        json.Should().Contain("\"Mats\"").And.Contain("\"MatID\"").And.Contain("\"MatLabel\"");
+        json.Should().NotContain("\"Carpets\"").And.NotContain("\"CarpetID\"").And.NotContain("\"CarpetLabel\"");
     }
 }

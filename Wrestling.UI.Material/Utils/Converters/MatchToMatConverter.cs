@@ -6,16 +6,16 @@ using Wrestling.Entities;
 
 namespace Wrestling.UI.Material.Utils.Converters
 {
-    public class MatchToCarpetConverter : IMultiValueConverter
+    public class MatchToMatConverter : IMultiValueConverter
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
             if (values[0] is WrestlingMatch match && values[1] is Entities.Tournament tournament)
             {
-                var carpet = tournament.Carpets.FirstOrDefault(c => c.Groups.Any(g => g.ID == match.GroupID));
-                if (carpet != null)
+                var mat = tournament.Mats.FirstOrDefault(c => c.Groups.Any(g => g.ID == match.GroupID));
+                if (mat != null)
                 {
-                    return carpet.Name;
+                    return mat.Name;
                 }
             }
 

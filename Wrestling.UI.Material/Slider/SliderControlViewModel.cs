@@ -11,7 +11,7 @@ using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Slider.Slides;
-using Wrestling.UI.Material.Slider.Slides.CarpetBracketsSlide;
+using Wrestling.UI.Material.Slider.Slides.MatBracketsSlide;
 using Wrestling.UI.Material.Slider.Slides.GroupBracketSlide;
 using Wrestling.UI.Material.Tournament;
 using Wrestling.UI.Utils;
@@ -501,12 +501,12 @@ namespace Wrestling.UI.Material.Slider
 
             if (result != null && (bool)result)
             {
-                if (vm.Item.SlideType == CarpetBracketsSlide.TypeName)
+                if (vm.Item.SlideType == MatBracketsSlide.TypeName)
                 {
                     // Macro: expand to one regular GroupBracketSlide per group
-                    // of the chosen carpet (with dedup by GroupID). The macro
+                    // of the chosen mat (with dedup by GroupID). The macro
                     // itself is never persisted into the channel.
-                    ExpandCarpetBracketsMacro(vm.Item);
+                    ExpandMatBracketsMacro(vm.Item);
                     return;
                 }
 
@@ -518,19 +518,19 @@ namespace Wrestling.UI.Material.Slider
             }
         }
 
-        private void ExpandCarpetBracketsMacro(ScreenSlide macro)
+        private void ExpandMatBracketsMacro(ScreenSlide macro)
         {
             if (_selectedChannel == null) return;
 
-            var carpetIdRaw = macro.GetNamedValue("CarpetID");
-            if (carpetIdRaw == null) return;
+            var matIdRaw = macro.GetNamedValue("MatID");
+            if (matIdRaw == null) return;
 
-            Guid carpetId;
-            try { carpetId = new Guid(carpetIdRaw.ToString()); }
+            Guid matId;
+            try { matId = new Guid(matIdRaw.ToString()); }
             catch { return; }
 
-            var carpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == carpetId);
-            if (carpet == null) return;
+            var mat = DataContext.Tournament.Mats.FirstOrDefault(c => c.ID == matId);
+            if (mat == null) return;
 
             var groupBracketTypeName = Resolve<List<ISlideType>>()
                 .OfType<GroupBracketSlide>()
@@ -547,7 +547,7 @@ namespace Wrestling.UI.Material.Slider
                     .Where(g => g.HasValue)
                     .Select(g => g.Value));
 
-            foreach (var group in carpet.Groups)
+            foreach (var group in mat.Groups)
             {
                 if (!existingGroupIds.Add(group.ID)) continue;
 

@@ -23,8 +23,8 @@ namespace Wrestling.UI.Material.Tournament.Results
 
         private ICommand _openMatchCommand;
 
-        private ObservableCollection<Carpet> _carpets;
-        private ObservableCollection<CarpetStats> _filteredStats;
+        private ObservableCollection<Mat> _mats;
+        private ObservableCollection<MatStats> _filteredStats;
 
         private IList<CommandButtonItem> _quickButtons;
         
@@ -32,7 +32,7 @@ namespace Wrestling.UI.Material.Tournament.Results
         
         public override string PageTitle => T("Completed_PageTitle", "Завершенные поединки");
 
-        public int CarpetsCount => DataContext.Tournament.Carpets.Count;
+        public int MatsCount => DataContext.Tournament.Mats.Count;
         public int MatchesCount => DataContext.Tournament.Groups.Sum(g => g.Bracket?.MatchesCount ?? 0);
         public int CompletedMatchesCount => DataContext.Tournament.Groups.Sum(g => g.Bracket?.CompletedMatchesCount ?? 0);
 
@@ -50,7 +50,7 @@ namespace Wrestling.UI.Material.Tournament.Results
             _quickButtons = null;
             Stats = null;
 
-            _carpets = DataContext.Tournament.Carpets;
+            _mats = DataContext.Tournament.Mats;
 
             Filter(FilterString);
         }
@@ -67,7 +67,7 @@ namespace Wrestling.UI.Material.Tournament.Results
             }
         }
 
-        public ObservableCollection<CarpetStats> Stats
+        public ObservableCollection<MatStats> Stats
         {
             get { return _filteredStats; }
             set
@@ -109,22 +109,22 @@ namespace Wrestling.UI.Material.Tournament.Results
             }
         }
 
-        private ObservableCollection<CarpetStats> GenerateStats()
+        private ObservableCollection<MatStats> GenerateStats()
         {
-            var result = new ObservableCollection<CarpetStats>();
+            var result = new ObservableCollection<MatStats>();
 
-            foreach (var carpet in _carpets)
+            foreach (var mat in _mats)
             {
-                var groupsWithBrackets = carpet.Groups.Where(x => x.Bracket != null).SelectMany(g => g.Bracket.Rounds);
+                var groupsWithBrackets = mat.Groups.Where(x => x.Bracket != null).SelectMany(g => g.Bracket.Rounds);
 
                 var matches = new ObservableCollection<WrestlingMatch>(groupsWithBrackets.SelectMany(r => r.RoundMatches).OrderBy(m => m.MatchNumber));
 
-                var stat = new CarpetStats
+                var stat = new MatStats
                 {
-                    CarpetID = carpet.ID.Value,
-                    CarpetLabel = carpet.Name,
-                    WrestlersCount = carpet.WrestlersCount,
-                    GroupsCount = carpet.Groups.Count,
+                    MatID = mat.ID.Value,
+                    MatLabel = mat.Name,
+                    WrestlersCount = mat.WrestlersCount,
+                    GroupsCount = mat.Groups.Count,
                     Matches = matches
                 };
 
@@ -141,9 +141,9 @@ namespace Wrestling.UI.Material.Tournament.Results
         {
             foreach (var stat in _filteredStats)
             {
-                var carpet = _carpets.First(c => c.ID == stat.CarpetID);
+                var mat = _mats.First(c => c.ID == stat.MatID);
 
-                var groupsWithBrackets = carpet.Groups.Where(x => x.Bracket != null).SelectMany(g => g.Bracket.Rounds);
+                var groupsWithBrackets = mat.Groups.Where(x => x.Bracket != null).SelectMany(g => g.Bracket.Rounds);
 
                 stat.Matches = new ObservableCollection<WrestlingMatch>(groupsWithBrackets
                     .SelectMany(r => r.RoundMatches)
