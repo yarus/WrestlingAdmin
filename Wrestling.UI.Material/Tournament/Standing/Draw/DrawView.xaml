@@ -125,7 +125,7 @@
 
                                 <TextBlock Grid.Column="1" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Center" Margin="20,0,0,0" Text="{Binding Name}" />
 
-                                <TextBlock Grid.Column="2" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Center" Margin="20,0,0,0" Text="{Binding Path=Bracket.BracketTypeLabel}" />
+                                <TextBlock Grid.Column="2" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Center" Margin="20,0,0,0" Text="{Binding Path=Bracket.BracketTypeDisplay}" />
 
                                 <StackPanel Grid.Row="0" Grid.Column="3">
                                     <Button Content="{loc:Loc Draw_GenerateBracket}"
@@ -150,7 +150,7 @@
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
-                            <Grid Background="{DynamicResource MaterialDesignPaper}" Visibility="{Binding ElementName=GroupControl, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
+                            <Grid Visibility="{Binding ElementName=GroupControl, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
@@ -163,9 +163,11 @@
                                 <TextBlock Grid.Row="0" TextWrapping="NoWrap" Text="{loc:Loc Draw_Seeding}"
                                            FontSize="16" TextAlignment="Center" FontWeight="SemiBold" Margin="10,8,10,8" />
 
-                                <ListView Grid.Row="1" ItemsSource="{Binding Path=Wrestlers}"
+                                <materialDesign:Card Grid.Row="1" Margin="10,10,10,10"
+                                                     UniformCornerRadius="4"
+                                                     materialDesign:ElevationAssist.Elevation="Dp4">
+                                <ListView ItemsSource="{Binding Path=Wrestlers}"
                                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                          BorderThickness="0"
                                           HorizontalContentAlignment="Stretch"
                                           TextElement.FontSize="15">
                                     <ListView.View>
@@ -245,6 +247,7 @@
 
                                     </ListView.View>
                                 </ListView>
+                                </materialDesign:Card>
 
                                 <TextBlock Grid.Row="2" TextWrapping="NoWrap" Text="{loc:Loc Draw_Results}"
                                            FontSize="16" TextAlignment="Center" FontWeight="SemiBold" Margin="10,12,10,8"

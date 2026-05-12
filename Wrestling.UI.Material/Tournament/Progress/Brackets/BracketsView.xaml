@@ -103,7 +103,7 @@
                                                    Margin="20,0,20,0" VerticalAlignment="Center">
                                             <Run Text="{Binding Name, Mode=OneWay}" />
                                             <Run Text="-"></Run>
-                                            <Run Text="{Binding Bracket.BracketTypeLabel, Mode=OneWay}"></Run>
+                                            <Run Text="{Binding Bracket.BracketTypeDisplay, Mode=OneWay}"></Run>
                                         </TextBlock>
 
                                         <StackPanel Grid.Column="2" HorizontalAlignment="Right"

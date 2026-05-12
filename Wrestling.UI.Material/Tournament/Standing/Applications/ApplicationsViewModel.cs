@@ -91,7 +91,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         #region Binding Properties
 
         public string PageName => T("Applications_PageName", "Заявки");
-        public override string PageTitle => T("Applications_PageTitle", "Заявки на участие");
+        public override string PageTitle => T("Applications_PageTitle", "Регистрация");
 
         public int AppsCount => DataContext.Tournament?.TeamApplications.Count ?? 0;
         public int WrestlersCount => DataContext.Tournament?.Wrestlers.Count ?? 0;

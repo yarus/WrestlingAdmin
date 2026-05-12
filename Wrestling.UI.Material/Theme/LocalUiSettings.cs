@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Wrestling.UI.Material.Theme
 {
     // Per-machine UI preferences. Lives in %LocalAppData%/WrestlingAdmin/
@@ -17,6 +19,7 @@ namespace Wrestling.UI.Material.Theme
             PrimaryColor = "DeepPurple";
             SecondaryColor = "Lime";
             LanguageCode = "ru";
+            RecentTournamentFiles = new List<string>();
         }
 
         public string BaseTheme { get; set; }
@@ -27,5 +30,13 @@ namespace Wrestling.UI.Material.Theme
         // against LocalizationService.AvailableLanguages — unknown values
         // fall back to the first registered language.
         public string LanguageCode { get; set; }
+
+        // Most-recent-first list of full .wrt paths the operator opened or
+        // created on this machine. Capped + deduped + pruned by
+        // RecentTournamentsService — the DTO itself is just a flat string
+        // bag. Newtonsoft uses the parameterless ctor before overlay, so
+        // legacy local_ui_settings.json files (without this field) load as
+        // an empty list.
+        public List<string> RecentTournamentFiles { get; set; }
     }
 }

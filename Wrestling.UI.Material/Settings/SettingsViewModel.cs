@@ -10,7 +10,6 @@ using System.Windows.Input;
 using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using Wrestling.Entities;
-using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Theme;
 using Wrestling.UI.Utils;
@@ -144,10 +143,8 @@ namespace Wrestling.UI.Material.Settings
         }
 
         public override string PageTitle => _localization == null
-            ? (DataContext.Tournament == null ? "Общие Настройки" : "Настройки Турнира")
-            : _localization.T(DataContext.Tournament == null ? "Settings_Page_Title_General" : "Settings_Page_Title_Tournament");
-
-        public override bool IsBackButtonAvailable => true;
+            ? "Настройки"
+            : _localization.T("Settings_PageTitle");
 
         public GlobalSettings Item { get; set; }
 
@@ -175,18 +172,6 @@ namespace Wrestling.UI.Material.Settings
                 }
 
                 OnPropertyChanged("IsAuthenticated");
-            }
-        }
-
-        protected override void OnBackCommand()
-        {
-            if (DataContext.Tournament == null)
-            {
-                NavigateToView<HomeViewModel>();
-            }
-            else
-            {
-                // Settings closes via the rail — no programmatic back nav.
             }
         }
 

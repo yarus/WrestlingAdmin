@@ -238,8 +238,12 @@
   "Home_SaveDialog_Title": "Save tournament",
   "Home_NewTournamentName": "New tournament",
 
+  "Recent_Title": "Recent",
+  "Recent_Empty": "No recently opened tournaments",
+
   "Snack_TournamentSaved": "Tournament saved!",
   "Snack_SaveError": "An error occurred while saving!",
+  "Snack_OpenError": "Failed to open file",
 
   "Round_Final": "Final",
   "Round_SemiFinal": "Semifinal",
@@ -574,13 +578,18 @@
   "Gender_FemaleShort": "F",
   "Gender_MaleShort": "M",
 
-  "Details_PageTitle": "Tournament Details",
+  "BracketType_RoundRobin": "Round-robin",
+  "BracketType_Olympic": "Single-elimination with 3rd-place match",
+  "BracketType_OlympicConsilationFinalists": "Single-elimination with finalist repechage",
+  "BracketType_SubGroupsIntoOlympic": "Pools into single-elimination with 3rd place",
+
+  "Details_PageTitle": "Standing",
   "Details_GroupGenError": "Group generation error: {0}",
   "Details_DeleteGroup_Body": "Are you sure you want to delete this group?",
   "Details_GroupChanged_Body": "Group parameters changed — entries for this group will be removed. Continue?",
 
   "Applications_PageName": "Entries",
-  "Applications_PageTitle": "Tournament entries",
+  "Applications_PageTitle": "Registration",
   "Applications_ExportWeighing_Tooltip": "Save weigh-in protocols PDF",
   "Applications_ExportCsv_Tooltip": "Export participant list",
   "Applications_AutoApprove_Body": "Are you sure you want to approve all wrestlers?",
@@ -594,7 +603,7 @@
   "WeighingExport_Snack_Building": "Building weigh-in protocols: {0} files...",
   "Snack_WrestlersExported": "Participant list exported!",
 
-  "Mats_PageTitle": "Match order by mats and groups",
+  "Mats_PageTitle": "Schedule",
   "Mats_ExportSchedules_Tooltip": "Download mat schedules PDF",
   "Mats_Delete_Body": "Are you sure you want to delete this mat?",
   "Mats_UnbindGroup_Body": "Remove the group from this mat?",
@@ -605,7 +614,7 @@
   "MatsExport_FilePrefix": "Schedule_",
   "MatsExport_Snack_Building": "Building mat schedules: {0} files...",
 
-  "Draw_PageTitle": "Participant Draw",
+  "Draw_PageTitle": "Draw",
   "Draw_ExportProtocols_Tooltip": "Save draw protocols",
 
   "Brackets_PageTitle": "Tournament Bracket",
@@ -618,8 +627,7 @@
   "Schedule_OpenScoreScreen_Tooltip": "Open scoreboard",
   "Schedule_OpenBrackets_Tooltip": "Open tournament bracket",
 
-  "Settings_Page_Title_General": "General Settings",
-  "Settings_Page_Title_Tournament": "Tournament Settings",
+  "Settings_PageTitle": "Settings",
 
   "Settings_Appearance_Header": "Appearance",
   "Settings_Appearance_Description": "Application color theme. Stored locally on this machine and not saved into the tournament file.",

@@ -191,7 +191,7 @@
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
 
-                                        <GridViewColumn Header="{loc:Loc Details_Groups_Column_Name}" Width="130">
+                                        <GridViewColumn Header="{loc:Loc Details_Groups_Column_Name}" Width="140">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding NameWithoutGender}"

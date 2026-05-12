@@ -238,8 +238,12 @@
   "Home_SaveDialog_Title": "Сохранить турнир",
   "Home_NewTournamentName": "Новый турнир",
 
+  "Recent_Title": "Недавние",
+  "Recent_Empty": "Нет недавно открытых турниров",
+
   "Snack_TournamentSaved": "Турнир сохранен!",
   "Snack_SaveError": "При сохранении произошла ошибка!",
+  "Snack_OpenError": "Не удалось открыть файл",
 
   "Round_Final": "Финал",
   "Round_SemiFinal": "Полуфинал",
@@ -574,13 +578,18 @@
   "Gender_FemaleShort": "Ж",
   "Gender_MaleShort": "М",
 
-  "Details_PageTitle": "Информация о Соревнованиях",
+  "BracketType_RoundRobin": "Круговая",
+  "BracketType_Olympic": "Олимпийская с матчем за 3-е место",
+  "BracketType_OlympicConsilationFinalists": "Олимпийская с утешением от финалистов",
+  "BracketType_SubGroupsIntoOlympic": "2 подгруппы в Олимпийскую с 3-м местом",
+
+  "Details_PageTitle": "Положение",
   "Details_GroupGenError": "Ошибка генерации групп: {0}",
   "Details_DeleteGroup_Body": "Вы уверены, что хотите удалить группу?",
   "Details_GroupChanged_Body": "Параметры группы были изменены, заявки на участие в данной группе будут удалены. Вы уверены?",
 
   "Applications_PageName": "Заявки",
-  "Applications_PageTitle": "Заявки на участие",
+  "Applications_PageTitle": "Регистрация",
   "Applications_ExportWeighing_Tooltip": "Сохранить протоколы взвешивания",
   "Applications_ExportCsv_Tooltip": "Экспортировать список участников",
   "Applications_AutoApprove_Body": "Вы уверены, что хотите допустить всех спортсменов?",
@@ -594,7 +603,7 @@
   "WeighingExport_Snack_Building": "Идет создание протоколов взвешивания: {0} файлов...",
   "Snack_WrestlersExported": "Список участников экспортирован!",
 
-  "Mats_PageTitle": "Очередность схваток по коврам и группам",
+  "Mats_PageTitle": "Расписание",
   "Mats_ExportSchedules_Tooltip": "Скачать расписания ковров PDF",
   "Mats_Delete_Body": "Вы уверены, что хотите удалить ковер?",
   "Mats_UnbindGroup_Body": "Вы уверены, что убрать группу с ковра?",
@@ -605,7 +614,7 @@
   "MatsExport_FilePrefix": "Расписание_",
   "MatsExport_Snack_Building": "Идет создание расписаний ковров: {0} файлов...",
 
-  "Draw_PageTitle": "Жеребьевка Участников",
+  "Draw_PageTitle": "Жеребьёвка",
   "Draw_ExportProtocols_Tooltip": "Сохранить протоколы жеребьевки",
 
   "Brackets_PageTitle": "Турнирная Сетка",
@@ -618,8 +627,7 @@
   "Schedule_OpenScoreScreen_Tooltip": "Открыть электронное табло",
   "Schedule_OpenBrackets_Tooltip": "Открыть турнирную сетку",
 
-  "Settings_Page_Title_General": "Общие Настройки",
-  "Settings_Page_Title_Tournament": "Настройки Турнира",
+  "Settings_PageTitle": "Настройки",
 
   "Settings_Appearance_Header": "Внешний вид",
   "Settings_Appearance_Description": "Цветовая тема приложения. Настройка хранится локально на этом компьютере и не сохраняется в файле турнира.",

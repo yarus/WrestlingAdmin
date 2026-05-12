@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows.Input;
@@ -25,14 +26,17 @@ namespace Wrestling.UI.Material.Home
         private ITournamentsManager _tournManager;
         private ICacheManager _cacheManager;
         private IResultsService _resultsService;
+        private IRecentTournamentsService _recentService;
 
         private ICommand _newTournamentCommand;
         private ICommand _openTournamentCommand;
+        private ICommand _openRecentCommand;
 
         #endregion
 
         public HomeViewModel(IDiContainer container) : base(container)
         {
+            RecentTournaments = new ObservableCollection<string>();
         }
 
         public override void InitData()
@@ -42,6 +46,27 @@ namespace Wrestling.UI.Material.Home
             _tournManager = Resolve<ITournamentsManager>();
             _cacheManager = Resolve<ICacheManager>();
             _resultsService = Resolve<IResultsService>();
+            _recentService = Resolve<IRecentTournamentsService>();
+
+            ReloadRecent();
+        }
+
+        // Most-recent-first list of .wrt paths the operator opened or created
+        // on this machine. Bound to the Recent panel on the welcome card.
+        public ObservableCollection<string> RecentTournaments { get; }
+
+        public bool IsRecentEmpty => RecentTournaments.Count == 0;
+
+        private void ReloadRecent()
+        {
+            RecentTournaments.Clear();
+            if (_recentService == null) { OnPropertyChanged(nameof(IsRecentEmpty)); return; }
+
+            foreach (var path in _recentService.LoadExisting())
+            {
+                RecentTournaments.Add(path);
+            }
+            OnPropertyChanged(nameof(IsRecentEmpty));
         }
 
         // App brand line — intentionally not localized (proper-noun "РОСБОС"
@@ -87,6 +112,21 @@ namespace Wrestling.UI.Material.Home
             }
         }
 
+        public ICommand OpenRecentCommand
+        {
+            get
+            {
+                if (_openRecentCommand == null)
+                {
+                    _openRecentCommand = new RelayCommand(
+                        param => OpenRecent(param as string),
+                        param => param is string s && !string.IsNullOrWhiteSpace(s)
+                    );
+                }
+                return _openRecentCommand;
+            }
+        }
+
         #endregion
 
         #region Private Methods
@@ -103,26 +143,53 @@ namespace Wrestling.UI.Material.Home
             bool? success = Dialog.ShowOpenFileDialog(this, settings);
             if (success == true)
             {
-                var tournament = _tournManager.LoadFromFile(settings.FileName);
-                if (tournament != null)
-                {
-                    VerifyTeamEmblems(tournament);
-
-                    VerifySettings(tournament);
-
-                    DataContext.Tournament = tournament;
-
-                    UpdateCache();
-
-                    _resultsService.Recalculate(tournament);
-
-                    // Land the operator on the phase that matches the
-                    // tournament's current state (e.g. mats configured →
-                    // straight to «Проведение») instead of always sending
-                    // them through «Положение».
-                    NavigateToOpenedTournamentPhase();
-                }
+                OpenFromFile(settings.FileName);
             }
+        }
+
+        private void OpenRecent(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName)) return;
+
+            // Reuse the same load + route sequence as the file-dialog path.
+            // If the file vanished between LoadExisting prune and the click,
+            // OpenFromFile shows a snack and we refresh the list so the
+            // dead entry disappears.
+            if (!OpenFromFile(fileName))
+            {
+                ReloadRecent();
+            }
+        }
+
+        // Returns true on a successful open. Handles the full pipeline used
+        // by both OpenTournament (file dialog) and OpenRecent (tile click).
+        private bool OpenFromFile(string fileName)
+        {
+            var tournament = _tournManager.LoadFromFile(fileName);
+            if (tournament == null)
+            {
+                ShowSnackMessage(T("Snack_OpenError", "Не удалось открыть файл"));
+                return false;
+            }
+
+            VerifyTeamEmblems(tournament);
+
+            VerifySettings(tournament);
+
+            DataContext.Tournament = tournament;
+
+            UpdateCache();
+
+            _resultsService.Recalculate(tournament);
+
+            _recentService?.Add(fileName);
+
+            // Land the operator on the phase that matches the
+            // tournament's current state (e.g. mats configured →
+            // straight to «Проведение») instead of always sending
+            // them through «Положение».
+            NavigateToOpenedTournamentPhase();
+            return true;
         }
 
         // Picks the most relevant phase screen for a freshly-opened tournament.
@@ -294,6 +361,8 @@ namespace Wrestling.UI.Material.Home
                 {
                     return;
                 }
+
+                _recentService?.Add(settings.FileName);
             }
 
             // Same routing as the «Open» path. For a brand-new empty

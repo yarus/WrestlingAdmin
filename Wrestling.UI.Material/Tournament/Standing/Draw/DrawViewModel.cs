@@ -99,7 +99,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             .Count(m => m.WinType != MatchWinTypeEnum.FreeWin);
 
         public string PageName => T("Nav_Draw", "Жеребьевка");
-        public override string PageTitle => T("Draw_PageTitle", "Жеребьевка Участников");
+        public override string PageTitle => T("Draw_PageTitle", "Жеребьёвка");
 
         public override IList<CommandButtonItem> QuickButtons
         {

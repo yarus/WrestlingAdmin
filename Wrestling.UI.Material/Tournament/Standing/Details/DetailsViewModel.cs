@@ -20,7 +20,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
         private ObservableCollection<AgeWeightGroup> _groups;
 
         public string PageName => T("Nav_Standing", "Положение");
-        public override string PageTitle => T("Details_PageTitle", "Информация о Соревнованиях");
+        public override string PageTitle => T("Details_PageTitle", "Положение");
         
         public DetailsViewModel(IDiContainer container) : base(container)
         {

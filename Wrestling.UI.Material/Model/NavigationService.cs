@@ -50,7 +50,6 @@ namespace Wrestling.UI.Material.Model
                 new PersonalResultsViewModel(_container),
                 new TeamResultsViewModel(_container),
                 new AchievementsViewModel(_container),
-                new CompletedMatchesViewModel(_container),
                 // Section wrappers.
                 new ConductingViewModel(_container),
                 new ResultsViewModel(_container)

@@ -35,7 +35,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
         private IList<CommandButtonItem> _quickButtons;
 
         public string PageName => T("Nav_Schedule", "Расписание");
-        public override string PageTitle => T("Mats_PageTitle", "Очередность схваток по коврам и группам");
+        public override string PageTitle => T("Mats_PageTitle", "Расписание");
         public int UnbindedGroups => _groups != null && _items != null ? _groups.Count - _items.SelectMany(c => c.Groups).Count() : 0;
 
         public MatsViewModel(IDiContainer container) : base(container)

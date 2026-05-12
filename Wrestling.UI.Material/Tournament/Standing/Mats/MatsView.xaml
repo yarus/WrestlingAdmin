@@ -137,12 +137,14 @@
                                 </Grid>
                             </Expander.Header>
                             <Expander.Content>
-                                <StackPanel Background="{DynamicResource MaterialDesignPaper}" Margin="0">
+                                <StackPanel Margin="0">
                                     <Button  Content="{loc:Loc Mats_AddGroup}" Width="160" HorizontalAlignment="Left" Margin="20,10,0,10"
                                              ToolTip="{loc:Loc Mats_AddGroup_Tooltip}"
                                              Command="{Binding Path=DataContext.BindGroupCommand, ElementName=RootControl}" CommandParameter="{Binding }" />
+                                    <materialDesign:Card Margin="10,0,10,10"
+                                                         UniformCornerRadius="4"
+                                                         materialDesign:ElevationAssist.Elevation="Dp4">
                                     <ListView ItemsSource="{Binding Groups}" x:Name="GroupsSource"
-                                              Margin="10,0,10,0"
                                               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                               HorizontalContentAlignment="Stretch"
                                               TextElement.FontSize="15">
@@ -243,6 +245,7 @@
                                             </i:EventTrigger>
                                         </i:Interaction.Triggers>
                                     </ListView>
+                                    </materialDesign:Card>
                                 </StackPanel>
                             </Expander.Content>
                         </Expander>

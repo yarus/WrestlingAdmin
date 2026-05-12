@@ -186,7 +186,7 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
 
         public string Name => Category?.Name ?? string.Empty;
 
-        public string BracketLabel => Category?.Bracket?.BracketTypeLabel ?? string.Empty;
+        public string BracketLabel => Category?.Bracket?.BracketTypeDisplay ?? string.Empty;
 
         public int WrestlersCount { get; }
 

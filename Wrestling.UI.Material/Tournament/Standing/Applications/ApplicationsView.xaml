@@ -199,14 +199,16 @@
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
-                            <StackPanel Background="{DynamicResource MaterialDesignPaper}" Margin="0" Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Margin="0" Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <Button Content="{loc:Loc Applications_NewWrestler}" Width="160" HorizontalAlignment="Left"
                                         Margin="20,10,0,10"
                                         ToolTip="{loc:Loc Applications_NewWrestler_Tooltip}"
                                         Command="{Binding Path=DataContext.AddWrestlerCommand, ElementName=RootControl}"
                                         CommandParameter="{Binding }" />
+                                <materialDesign:Card Margin="10,0,10,10"
+                                                     UniformCornerRadius="4"
+                                                     materialDesign:ElevationAssist.Elevation="Dp4">
                                 <ListView ItemsSource="{Binding Wrestlers}" x:Name="WrestlersSource"
-                                          Margin="10,0,10,0"
                                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                           HorizontalContentAlignment="Stretch"
                                           TextElement.FontSize="15"
@@ -383,6 +385,7 @@
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </ListView>
+                                </materialDesign:Card>
                             </StackPanel>
                         </Expander.Content>
                     </Expander>

@@ -512,6 +512,7 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             var localUiStorage = new Wrestling.UI.Material.Theme.LocalUiSettingsStorage(di.Resolve<IStorageDataAccess>());
             di.Add<Wrestling.UI.Material.Theme.ILocalUiSettingsStorage>(localUiStorage);
             di.Add<Wrestling.UI.Material.Theme.IThemeManager>(new Wrestling.UI.Material.Theme.ThemeManager(localUiStorage));
+            di.Add<Wrestling.UI.Material.Home.IRecentTournamentsService>(new Wrestling.UI.Material.Home.RecentTournamentsService(localUiStorage));
 
             // Localization — singleton (LocalizationService.Instance) so the
             // {loc:Loc Key=...} markup extension can find it from XAML, also

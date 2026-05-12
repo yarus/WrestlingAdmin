@@ -265,7 +265,7 @@ namespace Wrestling.Entities.Results
         }
 
         public string GroupName => _group != null ? _group.Name : string.Empty;
-        public string GroupBracketLabel => _group != null && _group.Bracket != null ? _group.Bracket.BracketTypeLabel : string.Empty;
+        public string GroupBracketLabel => _group != null && _group.Bracket != null ? _group.Bracket.BracketTypeDisplay : string.Empty;
 
         public string GroupLabel => $"{GroupName} - {GroupBracketLabel}";
     }

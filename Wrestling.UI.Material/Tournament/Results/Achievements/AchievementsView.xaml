@@ -72,10 +72,12 @@
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
-                            <StackPanel Background="{DynamicResource MaterialDesignPaper}" Margin="0"
+                            <StackPanel Margin="0"
                                         Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
+                                <materialDesign:Card Margin="10,10,10,10"
+                                                     UniformCornerRadius="4"
+                                                     materialDesign:ElevationAssist.Elevation="Dp4">
                                 <ListView ItemsSource="{Binding Winners}"
-                                          Margin="10,10,10,10"
                                           utils:GridViewSort.AutoSort="True"
                                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                           HorizontalContentAlignment="Stretch"
@@ -102,6 +104,7 @@
                                         </GridView>
                                     </ListView.View>
                                 </ListView>
+                                </materialDesign:Card>
                             </StackPanel>
                         </Expander.Content>
                     </Expander>
