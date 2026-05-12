@@ -159,14 +159,19 @@ namespace Wrestling.UI.Material.Tournament.Print
             // page in the PDF. Scan upward from the last row until we find any
             // dark pixel.
             var totalHeightPx = Math.Max(1, FindLastContentRow(bitmap) + 1);
-            // If the trimmed content overflows a single page by ≤25%, clamp to
-            // one page. WPF layout slack (StackPanel padding past the visible
-            // footer, ListView trailing separators) routinely pushes the
-            // bitmap a few dozen DIPs past the page boundary. Without this
-            // clamp the slicer dutifully produces an A4 second page with no
-            // visible content. Genuine two-page brackets overflow by 50%+ so
-            // they aren't affected.
-            if (totalHeightPx > pageHeightPx && totalHeightPx <= (int)(pageHeightPx * 1.25))
+            // Content-aware overflow clamp. The old "always clamp ≤25%
+            // overflow to one page" was too eager — for a bracket that
+            // fills ~80% of a page the footer (stamp + signatures ~25%
+            // of a page) pushes total to 1.05–1.25× and the footer got
+            // truncated instead of paginating to page 2.
+            //
+            // Now: only collapse the overflow region into the first page
+            // when it is itself mostly blank (WPF layout slack — thin
+            // separator lines, StackPanel trailing pad, etc.). Real
+            // content beyond the page boundary is left in place so the
+            // slicer can paginate it correctly.
+            if (totalHeightPx > pageHeightPx
+                && IsSliceMostlyBlank(bitmap, pageHeightPx, totalHeightPx - pageHeightPx))
             {
                 totalHeightPx = pageHeightPx;
             }

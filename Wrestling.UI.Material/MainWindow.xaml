@@ -226,6 +226,20 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
+                        <!-- Page title spans all columns so it stays anchored to the
+                             window center regardless of how many QuickButtons / Save
+                             buttons render on the right. Declared before the buttons
+                             so it sits beneath them in Z-order; IsHitTestVisible=False
+                             lets clicks pass through to whichever button is overlaid
+                             on top of the title's bounding box. -->
+                        <TextBlock Grid.Column="0" Grid.ColumnSpan="4"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="22"
+                                   Foreground="White"
+                                   IsHitTestVisible="False"
+                                   Text="{Binding CurrentViewModel.PageTitle}" />
+
                         <!-- Back arrow only — drawer hamburger is gone (rail is permanent) -->
                         <Button Grid.Column="0"
                                 Command="{Binding CurrentViewModel.BackCommand}"
@@ -239,13 +253,6 @@
                                 <materialDesign:PackIcon Kind="ArrowLeft" />
                             </Viewbox>
                         </Button>
-
-                        <TextBlock Grid.Column="1"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   FontSize="22"
-                                   Foreground="White"
-                                   Text="{Binding CurrentViewModel.PageTitle}" />
 
                         <ItemsControl Grid.Column="2" ItemsSource="{Binding CurrentViewModel.QuickButtons}">
                             <ItemsControl.ItemsPanel>

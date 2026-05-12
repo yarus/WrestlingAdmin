@@ -108,27 +108,35 @@
 
                                         <StackPanel Grid.Column="2" HorizontalAlignment="Right"
                                                     Orientation="Horizontal">
-                                            <StackPanel Orientation="Horizontal"
-                                                        Margin="12,0,12,0" VerticalAlignment="Center"
-                                                        ToolTip="{loc:Loc Brackets_GroupParticipants_Tooltip}">
-                                                <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
+                                            <!-- Fixed-width grids (not StackPanels) so icons stay column-
+                                                 aligned across rows regardless of count digit length. -->
+                                            <Grid Margin="12,0,12,0" VerticalAlignment="Center"
+                                                  ToolTip="{loc:Loc Brackets_GroupParticipants_Tooltip}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="34" />
+                                                </Grid.ColumnDefinitions>
+                                                <materialDesign:PackIcon Grid.Column="0" Kind="AccountMultiple" Width="20" Height="20"
                                                                          VerticalAlignment="Center"
                                                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                                                <TextBlock Text="{Binding Path=Bracket.WrestlersCount, Mode=OneWay}"
+                                                <TextBlock Grid.Column="1" Text="{Binding Path=Bracket.WrestlersCount, Mode=OneWay}"
                                                            FontSize="14" VerticalAlignment="Center"
                                                            Margin="6,0,0,0" />
-                                            </StackPanel>
+                                            </Grid>
 
-                                            <StackPanel Orientation="Horizontal"
-                                                        Margin="12,0,12,0" VerticalAlignment="Center"
-                                                        ToolTip="{loc:Loc Brackets_GroupMatches_Tooltip}">
-                                                <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
+                                            <Grid Margin="12,0,12,0" VerticalAlignment="Center"
+                                                  ToolTip="{loc:Loc Brackets_GroupMatches_Tooltip}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="34" />
+                                                </Grid.ColumnDefinitions>
+                                                <materialDesign:PackIcon Grid.Column="0" Kind="Wrestling" Width="20" Height="20"
                                                                          VerticalAlignment="Center"
                                                                          Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                                                <TextBlock Text="{Binding Path=Bracket.MatchesCount, Mode=OneWay}"
+                                                <TextBlock Grid.Column="1" Text="{Binding Path=Bracket.MatchesCount, Mode=OneWay}"
                                                            FontSize="14" VerticalAlignment="Center"
                                                            Margin="6,0,0,0" />
-                                            </StackPanel>
+                                            </Grid>
                                         </StackPanel>
                                     </Grid>
                                 </Expander.Header>

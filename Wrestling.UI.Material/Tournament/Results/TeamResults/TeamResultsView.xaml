@@ -73,7 +73,7 @@
                     <GridViewColumn Header="{loc:Loc Personal_Column_Place}" Width="70">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock HorizontalAlignment="Center"
+                                <TextBlock TextAlignment="Center"
                                            Text="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
@@ -94,7 +94,7 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding GoldMedals}" HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding GoldMedals}" TextAlignment="Center" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -106,7 +106,7 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding SilverMedals}" HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding SilverMedals}" TextAlignment="Center" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -118,7 +118,7 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding BronzeMedals}" HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding BronzeMedals}" TextAlignment="Center" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -130,7 +130,7 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding TotalMedals}" HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding TotalMedals}" TextAlignment="Center" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -142,7 +142,7 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding TotalPoints}" HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding TotalPoints}" TextAlignment="Center" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -154,7 +154,7 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding GroupCount}" HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding GroupCount}" TextAlignment="Center" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -166,7 +166,7 @@
                         </GridViewColumn.Header>
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Wrestlers.Count}" HorizontalAlignment="Center" />
+                                <TextBlock Text="{Binding Wrestlers.Count}" TextAlignment="Center" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

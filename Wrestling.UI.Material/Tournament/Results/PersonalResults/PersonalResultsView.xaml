@@ -107,27 +107,37 @@
                                     <Run Text="{Binding BracketLabel, Mode=OneWay}" />
                                 </TextBlock>
 
-                                <StackPanel Grid.Column="3" Orientation="Horizontal"
-                                            Margin="12,0,12,0" VerticalAlignment="Center"
-                                            ToolTip="{loc:Loc Personal_WrestlersCount_Tooltip}">
-                                    <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
+                                <!-- Fixed-width grids (not StackPanels) so icons stay column-
+                                     aligned across rows regardless of how many digits the
+                                     count contains. The text column reserves enough room for
+                                     three-digit values; icon column is the icon's natural width. -->
+                                <Grid Grid.Column="3" Margin="12,0,12,0" VerticalAlignment="Center"
+                                      ToolTip="{loc:Loc Personal_WrestlersCount_Tooltip}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="34" />
+                                    </Grid.ColumnDefinitions>
+                                    <materialDesign:PackIcon Grid.Column="0" Kind="AccountMultiple" Width="20" Height="20"
                                                              VerticalAlignment="Center"
                                                              Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                                    <TextBlock Text="{Binding WrestlersCount, Mode=OneWay}"
+                                    <TextBlock Grid.Column="1" Text="{Binding WrestlersCount, Mode=OneWay}"
                                                FontSize="14" VerticalAlignment="Center"
                                                Margin="6,0,0,0" />
-                                </StackPanel>
+                                </Grid>
 
-                                <StackPanel Grid.Column="4" Orientation="Horizontal"
-                                            Margin="12,0,12,0" VerticalAlignment="Center"
-                                            ToolTip="{loc:Loc Personal_MedalsCount_Tooltip}">
-                                    <materialDesign:PackIcon Kind="Medal" Width="20" Height="20"
+                                <Grid Grid.Column="4" Margin="12,0,12,0" VerticalAlignment="Center"
+                                      ToolTip="{loc:Loc Personal_MedalsCount_Tooltip}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="34" />
+                                    </Grid.ColumnDefinitions>
+                                    <materialDesign:PackIcon Grid.Column="0" Kind="Medal" Width="20" Height="20"
                                                              VerticalAlignment="Center"
                                                              Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                                    <TextBlock Text="{Binding MedalsCount, Mode=OneWay}"
+                                    <TextBlock Grid.Column="1" Text="{Binding MedalsCount, Mode=OneWay}"
                                                FontSize="14" VerticalAlignment="Center"
                                                Margin="6,0,0,0" />
-                                </StackPanel>
+                                </Grid>
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
