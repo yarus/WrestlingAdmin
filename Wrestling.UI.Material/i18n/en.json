@@ -624,7 +624,7 @@
   "Brackets_DsqRemoved_Snack": "Disqualification removed.",
 
   "Schedule_PageTitle": "Match schedule by mats",
-  "Schedule_OpenScoreScreen_Tooltip": "Open scoreboard",
+  "MatchControl_OpenScoreScreen_Tooltip": "Open scoreboard",
   "Schedule_OpenBrackets_Tooltip": "Open tournament bracket",
 
   "Settings_PageTitle": "Settings",

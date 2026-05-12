@@ -39,9 +39,6 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
         private IKeyHandler _keyHandler;
 
-        private IPanelView _scoreScreenView;
-        private ScoreScreenViewModel _scoreScreen;
-
         public string PageName => T("Nav_Schedule", "Расписание");
         public override string PageTitle => T("Schedule_PageTitle", "Расписание схваток по коврам");
 
@@ -207,7 +204,6 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
                        (
                            _quickButtons = new List<CommandButtonItem>
                            {
-                               new CommandButtonItem(T("Schedule_OpenScoreScreen_Tooltip", "Открыть электронное табло"), PackIconKind.Monitor, new AsyncRelayCommand(_ => ShowScoreScreenAsync(), _ => true)),
                                new CommandButtonItem(T("Schedule_OpenBrackets_Tooltip", "Открыть турнирную сетку"), PackIconKind.Dns, new RelayCommand(param => OpenBrackets(), param => true)),
                            }
                        );
@@ -354,32 +350,6 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         private void OpenBrackets()
         {
             NavigateToView<BracketsViewModel>();
-        }
-
-        // Opens (or re-shows) the projector window. Moved here from
-        // MatchControl so the operator can launch the score display once at
-        // the start of the day from the mat queue and have it persist
-        // across matches — no need to re-open it every time MatchControl is
-        // entered. Both _scoreScreenView and _scoreScreen are DI singletons,
-        // so the same instances stay alive throughout the session.
-        private async Task ShowScoreScreenAsync()
-        {
-            if (_scoreScreenView == null) _scoreScreenView = Resolve<IPanelView>("ScoreScreen");
-            if (_scoreScreen == null) _scoreScreen = Resolve<ScoreScreenViewModel>();
-            if (_scoreScreenView == null || _scoreScreen == null) return;
-
-            if (!_scoreScreenView.WasShown)
-            {
-                var monitor = await MonitorPicker.PickAsync();
-                if (monitor == null) return;
-
-                if (_scoreScreenView is PanelViewBase panel)
-                {
-                    panel.TargetMonitor = monitor;
-                }
-            }
-
-            _scoreScreenView.ShowScreen(_scoreScreen);
         }
 
         private void OpenMatch(WrestlingMatch match)

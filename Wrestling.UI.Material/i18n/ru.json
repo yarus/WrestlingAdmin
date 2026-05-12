@@ -624,7 +624,7 @@
   "Brackets_DsqRemoved_Snack": "Дисквалификация снята.",
 
   "Schedule_PageTitle": "Расписание схваток по коврам",
-  "Schedule_OpenScoreScreen_Tooltip": "Открыть электронное табло",
+  "MatchControl_OpenScoreScreen_Tooltip": "Открыть электронное табло",
   "Schedule_OpenBrackets_Tooltip": "Открыть турнирную сетку",
 
   "Settings_PageTitle": "Настройки",

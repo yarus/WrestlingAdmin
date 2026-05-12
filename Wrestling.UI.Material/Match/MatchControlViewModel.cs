@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Media;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
@@ -28,6 +30,7 @@ namespace Wrestling.UI.Material.Match
         private bool _isRunning;
 
         private ScoreScreenViewModel _scoreScreen;
+        private IPanelView _scoreScreenView;
         private IKeyHandler _keyHandler;
 
         private BitmapImage _action1Image;
@@ -80,13 +83,42 @@ namespace Wrestling.UI.Material.Match
             return string.IsNullOrEmpty(value) || value == key ? fallback : value;
         }
 
-        // No QuickButtons on this screen — the «Сбросить поединок» action is
-        // implicit: leaving an unfinished match via the back button resets
-        // it (with a confirmation prompt, see OnBackCommand). The «Открыть
-        // электронное табло» button moved to ScheduleViewModel.
         public override IList<CommandButtonItem> QuickButtons
         {
-            get { return _quickButtons ?? (_quickButtons = new List<CommandButtonItem>()); }
+            get
+            {
+                return _quickButtons ??
+                       (
+                           _quickButtons = new List<CommandButtonItem>
+                           {
+                               new CommandButtonItem(T("MatchControl_OpenScoreScreen_Tooltip", "Открыть электронное табло"), PackIconKind.Monitor, new AsyncRelayCommand(_ => ShowScoreScreenAsync(), _ => true)),
+                           }
+                       );
+            }
+        }
+
+        // Opens (or re-shows) the projector window. Both _scoreScreenView and
+        // _scoreScreen are DI singletons, so once shown they stay alive across
+        // subsequent matches — re-clicking simply re-surfaces the existing
+        // window on the previously-picked monitor.
+        private async Task ShowScoreScreenAsync()
+        {
+            if (_scoreScreenView == null) _scoreScreenView = Resolve<IPanelView>("ScoreScreen");
+            if (_scoreScreen == null) _scoreScreen = Resolve<ScoreScreenViewModel>();
+            if (_scoreScreenView == null || _scoreScreen == null) return;
+
+            if (!_scoreScreenView.WasShown)
+            {
+                var monitor = await MonitorPicker.PickAsync();
+                if (monitor == null) return;
+
+                if (_scoreScreenView is PanelViewBase panel)
+                {
+                    panel.TargetMonitor = monitor;
+                }
+            }
+
+            _scoreScreenView.ShowScreen(_scoreScreen);
         }
 
         public override void InitData()
