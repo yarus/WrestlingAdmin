@@ -7,7 +7,7 @@ using System.Media;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Windows.Input;
-using MvvmDialogs.FrameworkDialogs.FolderBrowser;
+using Wrestling.UI.Material.Utils;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
@@ -380,19 +380,16 @@ namespace Wrestling.UI.Material.Settings
 
         private void BrowseBackupFolder()
         {
-            var settings = new FolderBrowserDialogSettings
-            {
-                Description = T("Backup_FolderPicker_Title", "Выберите папку для резервных копий"),
-                ShowNewFolderButton = true,
-                SelectedPath = string.IsNullOrWhiteSpace(Item.BackupFolderPath)
-                    ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-                    : Item.BackupFolderPath
-            };
+            var initial = string.IsNullOrWhiteSpace(Item.BackupFolderPath)
+                ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                : Item.BackupFolderPath;
 
-            bool? success = Dialog.ShowFolderBrowserDialog(this, settings);
-            if (success == true)
+            var folder = FolderPicker.PickFolder(
+                T("Backup_FolderPicker_Title", "Выберите папку для резервных копий"),
+                initial);
+            if (!string.IsNullOrEmpty(folder))
             {
-                Item.BackupFolderPath = settings.SelectedPath;
+                Item.BackupFolderPath = folder;
                 OnPropertyChanged("Item");
             }
         }

@@ -9,8 +9,8 @@ using System.Windows;
 using System.Windows.Input;
 using CsvHelper;
 using MaterialDesignThemes.Wpf;
-using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
+using Wrestling.UI.Material.Utils;
 using Wrestling.Entities;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Model;
@@ -610,14 +610,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 ? tournamentDir
                 : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-            var settings = new FolderBrowserDialogSettings
-            {
-                Description = T("WeighingExport_FolderPicker_Title", "Выберите папку для сохранения протоколов взвешивания"),
-                ShowNewFolderButton = true,
-                SelectedPath = defaultPath
-            };
-
-            if (Dialog.ShowFolderBrowserDialog(this, settings) != true) return;
+            var selectedFolder = FolderPicker.PickFolder(
+                T("WeighingExport_FolderPicker_Title", "Выберите папку для сохранения протоколов взвешивания"),
+                defaultPath);
+            if (string.IsNullOrEmpty(selectedFolder)) return;
 
             try
             {
@@ -642,7 +638,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 ShowSnackMessage(string.Format(T("WeighingExport_Snack_Building", "Идет создание протоколов взвешивания: {0} файлов..."), jobs.Count));
 
                 var exporter = new BulkBracketPdfExporter();
-                var result = await exporter.ExportAsync(jobs, settings.SelectedPath);
+                var result = await exporter.ExportAsync(jobs, selectedFolder);
 
                 var msg = string.Format(T("Export_Snack_Done", "Готово. Сохранено PDF: {0}"), result.Succeeded);
                 if (result.Skipped > 0) msg += string.Format(T("Export_Snack_Skipped", ", пропущено: {0}"), result.Skipped);

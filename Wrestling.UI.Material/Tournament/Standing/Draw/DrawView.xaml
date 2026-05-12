@@ -158,8 +158,6 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}" />
-
                                 <TextBlock Grid.Row="0" TextWrapping="NoWrap" Text="{loc:Loc Draw_Seeding}"
                                            FontSize="16" TextAlignment="Center" FontWeight="SemiBold" Margin="10,8,10,8" />
 
@@ -253,9 +251,12 @@
                                            FontSize="16" TextAlignment="Center" FontWeight="SemiBold" Margin="10,12,10,8"
                                            Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}" />
 
-                                <Viewbox Grid.Row="3" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"
-                                         Margin="0,0,0,16"
-                                         Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}">
+                                <materialDesign:Card Grid.Row="3" Margin="10,10,10,10"
+                                                     UniformCornerRadius="4"
+                                                     materialDesign:ElevationAssist.Elevation="Dp4"
+                                                     Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}">
+                                <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"
+                                         Margin="10,10,10,10">
                                     <Grid Margin="0,0,10,0">
                                         <ItemsControl ItemsSource="{Binding Path=Bracket.Rounds}">
                                         <ItemsControl.ItemsPanel>
@@ -380,6 +381,7 @@
                                     </ItemsControl>
                                     </Grid>
                                 </Viewbox>
+                                </materialDesign:Card>
                             </Grid>
                         </Expander.Content>
                     </Expander>

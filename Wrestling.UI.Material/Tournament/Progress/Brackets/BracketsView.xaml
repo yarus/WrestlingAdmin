@@ -140,9 +140,13 @@
                                         </StackPanel>
                                     </Grid>
                                 </Expander.Header>
-                                <Expander.Content>                                    
+                                <Expander.Content>
+                                    <materialDesign:Card Margin="10,10,10,10"
+                                                         UniformCornerRadius="4"
+                                                         materialDesign:ElevationAssist.Elevation="Dp4">
                                     <Grid x:Name="GroupPanel" Background="{DynamicResource MaterialDesignPaper}">
-                                        <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                        <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"
+                                                 Margin="10,10,10,10">
                                             <ItemsControl ItemsSource="{Binding Path=Bracket.Rounds}" Margin="10">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
@@ -470,7 +474,8 @@
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                         </Viewbox>
-                                    </Grid>                                                                        
+                                    </Grid>
+                                    </materialDesign:Card>
                                 </Expander.Content>
                             </Expander>
                         </DataTemplate>

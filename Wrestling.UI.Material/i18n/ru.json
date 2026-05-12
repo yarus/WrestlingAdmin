@@ -605,7 +605,7 @@
   "Snack_WrestlersExported": "Список участников экспортирован!",
 
   "Mats_PageTitle": "Расписание",
-  "Mats_ExportSchedules_Tooltip": "Скачать расписания ковров PDF",
+  "Mats_ExportSchedules_Tooltip": "Сохранить протоколы расписания",
   "Mats_Delete_Body": "Вы уверены, что хотите удалить ковер?",
   "Mats_UnbindGroup_Body": "Вы уверены, что убрать группу с ковра?",
   "MatsExport_DialogTitle": "Расписание ковров",

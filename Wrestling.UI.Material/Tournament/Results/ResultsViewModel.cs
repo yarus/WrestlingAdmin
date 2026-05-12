@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using CsvHelper;
 using MaterialDesignThemes.Wpf;
-using MvvmDialogs.FrameworkDialogs.FolderBrowser;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
+using Wrestling.UI.Material.Utils;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.Entities.Results;
@@ -166,14 +166,10 @@ namespace Wrestling.UI.Material.Tournament.Results
 
             var defaultPath = ResolveDefaultExportFolder(tournament);
 
-            var settings = new FolderBrowserDialogSettings
-            {
-                Description = T("Export_FolderPicker_Title", "Выберите папку для сохранения пакета протоколов"),
-                ShowNewFolderButton = true,
-                SelectedPath = defaultPath
-            };
-
-            if (Dialog.ShowFolderBrowserDialog(this, settings) != true) return;
+            var selectedFolder = FolderPicker.PickFolder(
+                T("Export_FolderPicker_Title", "Выберите папку для сохранения пакета протоколов"),
+                defaultPath);
+            if (string.IsNullOrEmpty(selectedFolder)) return;
 
             try
             {
@@ -181,7 +177,7 @@ namespace Wrestling.UI.Material.Tournament.Results
                 ShowSnackMessage(string.Format(T("Export_Snack_Building", "Идет создание пакета протоколов: {0} файлов..."), jobs.Count));
 
                 var exporter = new BulkBracketPdfExporter();
-                var result = await exporter.ExportAsync(jobs, settings.SelectedPath);
+                var result = await exporter.ExportAsync(jobs, selectedFolder);
 
                 var msg = string.Format(T("Export_Snack_Done", "Готово. Сохранено PDF: {0}"), result.Succeeded);
                 if (result.Skipped > 0) msg += string.Format(T("Export_Snack_Skipped", ", пропущено: {0}"), result.Skipped);

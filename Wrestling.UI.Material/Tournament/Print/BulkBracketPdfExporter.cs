@@ -242,13 +242,20 @@ namespace Wrestling.UI.Material.Tournament.Print
             }
         }
 
-        // Scans bottom-up within [topLine..bottomLine) for a row of low color
-        // variance (whitespace) and returns its index. Falls back to bottomLine
-        // if nothing clean is found, so we never make zero-progress slices.
+        // Scans bottom-up within (topLine..bottomLine) for an essentially blank
+        // row (≤ WhitespaceTolerance dark pixels) and returns its index. Picks
+        // the lowest such row so we maximize content per page without cutting
+        // through a content row. Falls back to bottomLine (hard cut) when no
+        // gap is found, so we never make zero-progress slices.
+        //
+        // Variance was too brittle: thin vertical column borders (e.g. the
+        // 8 cell dividers in the points table) gave non-zero variance to
+        // otherwise-blank rows and the algorithm cut mid-row instead.
+        // Counting dark pixels with the same darkness/alpha thresholds used
+        // by FindLastContentRow / IsSliceMostlyBlank keeps behavior aligned.
+        private const int WhitespaceTolerance = 2;
         private static int FindCleanBreakRow(RenderTargetBitmap bmp, int topLine, int bottomLine)
         {
-            const double deviationThreshold = 1500.0;
-
             int width = bmp.PixelWidth;
             if (width <= 0 || bottomLine <= topLine) return bottomLine;
 
@@ -258,25 +265,23 @@ namespace Wrestling.UI.Material.Tournament.Print
             {
                 bmp.CopyPixels(new Int32Rect(0, i, width, 1), rowBuffer, width * 4, 0);
 
-                long sum = 0;
+                int darkCount = 0;
                 for (int c = 0; c < width; c++)
                 {
                     int o = c * 4;
-                    int pixel = (rowBuffer[o + 2] << 16) | (rowBuffer[o + 1] << 8) | rowBuffer[o];
-                    sum += pixel;
-                }
-                double avg = sum / (double)width;
-
-                double variance = 0;
-                for (int c = 0; c < width; c++)
-                {
-                    int o = c * 4;
-                    int pixel = (rowBuffer[o + 2] << 16) | (rowBuffer[o + 1] << 8) | rowBuffer[o];
-                    double diff = pixel - avg;
-                    variance += diff * diff;
+                    byte a = rowBuffer[o + 3];
+                    if (a < ContentAlphaThreshold) continue;
+                    byte b = rowBuffer[o];
+                    byte g = rowBuffer[o + 1];
+                    byte r = rowBuffer[o + 2];
+                    if (r < ContentDarkThreshold || g < ContentDarkThreshold || b < ContentDarkThreshold)
+                    {
+                        darkCount++;
+                        if (darkCount > WhitespaceTolerance) break;
+                    }
                 }
 
-                if (Math.Sqrt(variance / width) < deviationThreshold)
+                if (darkCount <= WhitespaceTolerance)
                 {
                     return i;
                 }

@@ -91,7 +91,16 @@ namespace Wrestling.UI.Material
             var localization = di.Resolve<ILocalizationService>();
             if (localization != null)
             {
-                if (!localization.SetLanguage(savedUi.LanguageCode) && localization.AvailableLanguages.Count > 0)
+                // Resolution order:
+                //   1. Saved preference (explicit operator choice).
+                //   2. OS UI culture two-letter code (e.g. ru-RU → "ru").
+                //   3. English ("en") as the universal default.
+                //   4. First registered language — last-resort guard so a
+                //      packaged build without en.json still picks something.
+                if (!localization.SetLanguage(savedUi.LanguageCode)
+                    && !localization.SetLanguage(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName)
+                    && !localization.SetLanguage("en")
+                    && localization.AvailableLanguages.Count > 0)
                 {
                     localization.SetLanguage(localization.AvailableLanguages[0].Code);
                 }

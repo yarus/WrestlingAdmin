@@ -159,12 +159,14 @@ namespace Wrestling.UI.Material.Theme
 
         private LocalUiSettings Snapshot()
         {
-            return new LocalUiSettings
-            {
-                BaseTheme = _isDark ? "Dark" : "Light",
-                PrimaryColor = _selectedPrimary?.Id ?? "DeepPurple",
-                SecondaryColor = _secondaryColorId
-            };
+            // Load first so non-theme fields (RecentTournamentFiles, LanguageCode)
+            // survive — otherwise toggling theme silently wipes the recents list
+            // and resets language to the locale default on next launch.
+            var snapshot = _storage.Load() ?? new LocalUiSettings();
+            snapshot.BaseTheme = _isDark ? "Dark" : "Light";
+            snapshot.PrimaryColor = _selectedPrimary?.Id ?? "DeepPurple";
+            snapshot.SecondaryColor = _secondaryColorId;
+            return snapshot;
         }
 
         private NamedSwatch ResolvePrimary(string id)

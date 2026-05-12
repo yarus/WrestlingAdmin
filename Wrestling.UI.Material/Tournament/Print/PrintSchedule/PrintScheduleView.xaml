@@ -54,7 +54,7 @@
             <TextBlock Grid.Column="1" Text="{loc:Loc Completed_Column_GroupStage}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
             <TextBlock Grid.Column="2" Text="{loc:Loc Completed_Column_Wrestlers}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
             <TextBlock Grid.Column="3" Text="{loc:Loc Completed_Column_Teams}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
-            <TextBlock Grid.Column="4" Text="{loc:Loc PrintSchedule_Column_Points}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" Width="300" />
+            <TextBlock Grid.Column="4" Text="{loc:Loc PrintSchedule_Column_Points}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" Width="240" />
             <TextBlock Grid.Column="5" Text="{loc:Loc PrintSchedule_Column_Result}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" TextWrapping="NoWrap" />
         </Grid>
 
@@ -107,12 +107,10 @@
                                 <ColumnDefinition Width="30" />
                                 <ColumnDefinition Width="30" />
                                 <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="30" />
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="10" BorderThickness="1,1,1,0" BorderBrush="Black" />
-                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="10" BorderThickness="1,1,1,1" BorderBrush="Black" />
+                            <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="8" BorderThickness="1,1,1,0" BorderBrush="Black" />
+                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="8" BorderThickness="1,1,1,1" BorderBrush="Black" />
 
                             <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
                             <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
@@ -121,8 +119,6 @@
                             <Border Grid.Row="0" Grid.Column="4" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
                             <Border Grid.Row="0" Grid.Column="5" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
                             <Border Grid.Row="0" Grid.Column="6" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
-                            <Border Grid.Row="0" Grid.Column="7" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
-                            <Border Grid.Row="0" Grid.Column="8" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
                         </Grid>
 
                         <StackPanel Grid.Column="5" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">

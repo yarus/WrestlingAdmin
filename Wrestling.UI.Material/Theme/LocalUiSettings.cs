@@ -18,7 +18,7 @@ namespace Wrestling.UI.Material.Theme
             BaseTheme = "Light";
             PrimaryColor = "DeepPurple";
             SecondaryColor = "Lime";
-            LanguageCode = "ru";
+            LanguageCode = null;
             RecentTournamentFiles = new List<string>();
         }
 
@@ -26,9 +26,10 @@ namespace Wrestling.UI.Material.Theme
         public string PrimaryColor { get; set; }
         public string SecondaryColor { get; set; }
 
-        // ISO 639-1 language code (e.g. "ru", "en"). Resolved at startup
-        // against LocalizationService.AvailableLanguages — unknown values
-        // fall back to the first registered language.
+        // ISO 639-1 language code (e.g. "ru", "en"). Null/empty means the
+        // operator has never picked a language — startup auto-detects from
+        // the OS UI culture, then falls back to English, then to the first
+        // registered language. Saving from Settings writes an explicit code.
         public string LanguageCode { get; set; }
 
         // Most-recent-first list of full .wrt paths the operator opened or

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
-using MvvmDialogs.FrameworkDialogs.FolderBrowser;
+using Wrestling.UI.Material.Utils;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
 using Wrestling.UI.Material.Model;
@@ -59,7 +59,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
                         },
                         canExecute: _ => true);
                     printBtn = new CommandButtonItem(
-                        T("Mats_ExportSchedules_Tooltip", "Скачать расписания ковров PDF"),
+                        T("Mats_ExportSchedules_Tooltip", "Сохранить протоколы расписания"),
                         PackIconKind.PrinterOutline,
                         printCmd);
 
@@ -354,14 +354,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
                 ? tournamentDir
                 : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-            var settings = new FolderBrowserDialogSettings
-            {
-                Description = T("MatsExport_FolderPicker_Title", "Выберите папку для сохранения расписаний ковров"),
-                ShowNewFolderButton = true,
-                SelectedPath = defaultPath
-            };
-
-            if (Dialog.ShowFolderBrowserDialog(this, settings) != true) return;
+            var selectedFolder = FolderPicker.PickFolder(
+                T("MatsExport_FolderPicker_Title", "Выберите папку для сохранения расписаний ковров"),
+                defaultPath);
+            if (string.IsNullOrEmpty(selectedFolder)) return;
 
             try
             {
@@ -385,7 +381,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
                 ShowSnackMessage(string.Format(T("MatsExport_Snack_Building", "Идет создание расписаний ковров: {0} файлов..."), jobs.Count));
 
                 var exporter = new BulkBracketPdfExporter();
-                var result = await exporter.ExportAsync(jobs, settings.SelectedPath);
+                var result = await exporter.ExportAsync(jobs, selectedFolder);
 
                 var msg = string.Format(T("Export_Snack_Done", "Готово. Сохранено PDF: {0}"), result.Succeeded);
                 if (result.Skipped > 0) msg += string.Format(T("Export_Snack_Skipped", ", пропущено: {0}"), result.Skipped);

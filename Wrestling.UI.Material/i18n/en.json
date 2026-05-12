@@ -605,7 +605,7 @@
   "Snack_WrestlersExported": "Participant list exported!",
 
   "Mats_PageTitle": "Schedule",
-  "Mats_ExportSchedules_Tooltip": "Download mat schedules PDF",
+  "Mats_ExportSchedules_Tooltip": "Save schedule protocols",
   "Mats_Delete_Body": "Are you sure you want to delete this mat?",
   "Mats_UnbindGroup_Body": "Remove the group from this mat?",
   "MatsExport_DialogTitle": "Mat schedules",
