@@ -17,7 +17,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         private AgeWeightGroup _selectedGroup;
         private ObservableCollection<AgeWeightGroup> _groups;
         private ObservableCollection<Wrestler> _cachedAthletes;
-        private ObservableCollection<string> _levels;
+        private ObservableCollection<WrestlerLevelEnum> _levels;
 
         public AddWrestlerViewModel(IDiContainer container, Wrestler item) : base(container)
         {
@@ -33,9 +33,21 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 throw new InvalidOperationException("Tournament is not set on the data context. Navigate to a tournament before opening this view.");
             }
 
-            _levels = new ObservableCollection<string>()
+            // Order in the picker (highest rank first) mirrors LevelNormalizer's
+            // ordering. "None" is omitted intentionally — the textbox stays
+            // unselected for "no rank" rather than offering an explicit empty
+            // option, matching the legacy free-form-string behavior.
+            _levels = new ObservableCollection<WrestlerLevelEnum>()
             {
-                "МСМК", "МС", "КМС", "I", "II", "III", "I юн", "II юн", "III юн"
+                WrestlerLevelEnum.MSMK,
+                WrestlerLevelEnum.MS,
+                WrestlerLevelEnum.KMS,
+                WrestlerLevelEnum.Adult1,
+                WrestlerLevelEnum.Adult2,
+                WrestlerLevelEnum.Adult3,
+                WrestlerLevelEnum.Junior1,
+                WrestlerLevelEnum.Junior2,
+                WrestlerLevelEnum.Junior3,
             };
             
             _groups = DataContext.Tournament.Groups;
@@ -45,7 +57,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             CachedAthletes = new ObservableCollection<Wrestler>(DataContext.WrestlersCache);
         }
 
-        public ObservableCollection<string> Levels => _levels;
+        public ObservableCollection<WrestlerLevelEnum> Levels => _levels;
 
         public Func<string, object, bool> AthleteFilter
         {

@@ -60,7 +60,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                         },
                         canExecute: _ => true);
                     weighingBtn = new CommandButtonItem(
-                        "Сохранить протоколы взвешивания",
+                        T("Applications_ExportWeighing_Tooltip", "Сохранить протоколы взвешивания"),
                         PackIconKind.PrinterOutline,
                         weighingCmd);
 
@@ -74,7 +74,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                         },
                         canExecute: _ => true);
                     wrestlersCsvBtn = new CommandButtonItem(
-                        "Экспортировать список участников",
+                        T("Applications_ExportCsv_Tooltip", "Экспортировать список участников"),
                         PackIconKind.DatabaseExport,
                         wrestlersCsvCmd);
 
@@ -90,8 +90,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         #region Binding Properties
 
-        public string PageName => "Заявки";
-        public override string PageTitle => "Заявки на участие";
+        public string PageName => T("Applications_PageName", "Заявки");
+        public override string PageTitle => T("Applications_PageTitle", "Заявки на участие");
 
         public int AppsCount => DataContext.Tournament?.TeamApplications.Count ?? 0;
         public int WrestlersCount => DataContext.Tournament?.Wrestlers.Count ?? 0;
@@ -305,7 +305,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         private void ApproveAllWrestlers()
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите допустить всех спортсменов?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Applications_AutoApprove_Body", "Вы уверены, что хотите допустить всех спортсменов?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var wrestler in Tournament.Wrestlers)
             {
@@ -387,7 +387,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         private void DeleteApplication(TeamApplicationViewModel app)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить заявку?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Applications_DeleteApp_Body", "Вы уверены, что хотите удалить заявку?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var wrestler in app.Wrestlers)
             {
@@ -575,7 +575,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         private void DeleteWrestler(Wrestler wrestler)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить спортсмена из заявки?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Applications_DeleteWrestler_Body", "Вы уверены, что хотите удалить спортсмена из заявки?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             RemoveWrestlerFromGroup(wrestler);
 
@@ -598,8 +598,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             if (groupsWithWrestlers.Count == 0)
             {
                 Dialog.ShowMessageBox(this,
-                    "Нет групп с зарегистрированными участниками.",
-                    "Экспорт протоколов взвешивания", MessageBoxButton.OK, MessageBoxImage.Information);
+                    T("Applications_NoGroupsWithWrestlers", "Нет групп с зарегистрированными участниками."),
+                    T("WeighingExport_DialogTitle", "Экспорт протоколов взвешивания"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -612,7 +612,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
             var settings = new FolderBrowserDialogSettings
             {
-                Description = "Выберите папку для сохранения протоколов взвешивания",
+                Description = T("WeighingExport_FolderPicker_Title", "Выберите папку для сохранения протоколов взвешивания"),
                 ShowNewFolderButton = true,
                 SelectedPath = defaultPath
             };
@@ -627,7 +627,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                     var capturedGroup = group;
                     jobs.Add(new BulkPdfExportJob
                     {
-                        FileName = "Взвешивание_" + BulkBracketPdfExporter.MakeSafeFileName(capturedGroup.Name) + ".pdf",
+                        FileName = T("WeighingExport_FilePrefix", "Взвешивание_") + BulkBracketPdfExporter.MakeSafeFileName(capturedGroup.Name) + ".pdf",
                         Landscape = false,
                         ViewFactory = () =>
                         {
@@ -639,28 +639,28 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                     });
                 }
 
-                ShowSnackMessage($"Идет создание протоколов взвешивания: {jobs.Count} файлов...");
+                ShowSnackMessage(string.Format(T("WeighingExport_Snack_Building", "Идет создание протоколов взвешивания: {0} файлов..."), jobs.Count));
 
                 var exporter = new BulkBracketPdfExporter();
                 var result = await exporter.ExportAsync(jobs, settings.SelectedPath);
 
-                var msg = $"Готово. Сохранено PDF: {result.Succeeded}";
-                if (result.Skipped > 0) msg += $", пропущено: {result.Skipped}";
-                if (result.Failures.Count > 0) msg += $", ошибок: {result.Failures.Count}";
+                var msg = string.Format(T("Export_Snack_Done", "Готово. Сохранено PDF: {0}"), result.Succeeded);
+                if (result.Skipped > 0) msg += string.Format(T("Export_Snack_Skipped", ", пропущено: {0}"), result.Skipped);
+                if (result.Failures.Count > 0) msg += string.Format(T("Export_Snack_Failed", ", ошибок: {0}"), result.Failures.Count);
                 ShowSnackMessage(msg);
 
                 if (result.Failures.Count > 0)
                 {
                     Dialog.ShowMessageBox(this,
-                        "Не удалось сохранить часть протоколов:\n\n" + string.Join("\n", result.Failures),
-                        "Экспорт протоколов взвешивания", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        T("Export_PartialFailure", "Не удалось сохранить часть протоколов:") + "\n\n" + string.Join("\n", result.Failures),
+                        T("WeighingExport_DialogTitle", "Экспорт протоколов взвешивания"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
             {
                 Dialog.ShowMessageBox(this,
-                    "Ошибка экспорта: " + ex.Message,
-                    "Экспорт протоколов взвешивания", MessageBoxButton.OK, MessageBoxImage.Error);
+                    T("Export_ErrorPrefix", "Ошибка экспорта: ") + ex.Message,
+                    T("WeighingExport_DialogTitle", "Экспорт протоколов взвешивания"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -669,13 +669,13 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             var tournament = DataContext.Tournament;
             if (tournament == null)
             {
-                ShowSnackMessage("Турнир не открыт.");
+                ShowSnackMessage(T("Snack_TournamentNotOpen", "Турнир не открыт."));
                 return;
             }
 
             var settings = new SaveFileDialogSettings
             {
-                Title = "Экспортировать участников в файл",
+                Title = T("Applications_ExportCsv_DialogTitle", "Экспортировать участников в файл"),
                 CheckFileExists = false,
                 OverwritePrompt = true,
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -701,11 +701,11 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                     csv.WriteRecords(exportData);
                 }
 
-                ShowSnackMessage("Список участников экспортирован!");
+                ShowSnackMessage(T("Snack_WrestlersExported", "Список участников экспортирован!"));
             }
             catch (Exception ex)
             {
-                ShowSnackMessage($"Произошла ошибка экспорта: {ex.Message}");
+                ShowSnackMessage(string.Format(T("Snack_ExportError", "Произошла ошибка экспорта: {0}"), ex.Message));
             }
         }
 

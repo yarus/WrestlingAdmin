@@ -56,7 +56,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintApplications
                 SeedNumber = y.SeedNumber,
                 AthleteName = y.LastFirstName,
                 BirthYear = y.BirthDate?.Year,
-                Level = y.Level,
+                Level = y.LevelDisplay,
                 TeamName = y.TeamName,
                 TeamCity = y.TeamCity,
                 Weight = y.Weight

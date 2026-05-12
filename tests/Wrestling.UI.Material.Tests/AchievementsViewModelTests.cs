@@ -17,9 +17,11 @@ namespace Wrestling.UI.Material.Tests;
 //   - Items group all WrestlerAchievement entries by AchievementType so each
 //     nomination shows up once with all its winners (ties produce >1 winner
 //     under the same group).
-//   - Each group's Title and Definition come from the first achievement of
-//     that type — definition is the user-visible "за что" tooltip in the
-//     accordion header.
+//   - Title and Definition are looked up by AchievementType through
+//     AchievementLabels (a localization-aware mapping) at access time, so
+//     a language switch surfaces immediately without rebuilding the cache.
+//     The values stored on the WrestlerAchievement instance itself are not
+//     surfaced by the group header.
 //   - ResultsChanged event triggers a rebuild without manual refresh.
 public sealed class AchievementsViewModelTests
 {
@@ -43,11 +45,14 @@ public sealed class AchievementsViewModelTests
     }
 
     [Fact]
-    public void Group_header_carries_title_and_definition_from_first_achievement()
+    public void Group_header_resolves_title_and_definition_from_AchievementLabels()
     {
+        // Custom title/def on the WrestlerAchievement is intentionally ignored —
+        // the group header pulls fresh values from AchievementLabels keyed by
+        // AchievementType so the labels stay current on language switch.
         var ach = new[]
         {
-            MakeAchievement(type: "FastestWin", title: "Молния", def: "Самая быстрая победа", value: "30 сек"),
+            MakeAchievement(type: "FastestWin", title: "ignored", def: "ignored", value: "30 сек"),
         };
         var di = BuildContainer(ach);
 
@@ -55,8 +60,10 @@ public sealed class AchievementsViewModelTests
         vm.InitData();
 
         var group = vm.Items.Single();
+        // Tests run with no LocalizationService language registered, so
+        // AchievementLabels returns the Russian fallback for FastestWin.
         group.Title.Should().Be("Молния");
-        group.Definition.Should().Be("Самая быстрая победа");
+        group.Definition.Should().Be("Борец, выигравший схватку быстрее всех");
     }
 
     [Fact]

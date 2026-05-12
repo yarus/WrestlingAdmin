@@ -30,10 +30,46 @@ namespace Wrestling.UI.Material.Theme
         {
             _storage = storage;
 
-            AvailablePrimaryColors = BuildCuratedPalette();
+            _availablePrimaryColors = BuildCuratedPalette();
+
+            // The curated palette is baked at construction time, but
+            // LocalizationService.Instance may not have a language registered
+            // yet — first-paint labels come from the Russian fallbacks inside
+            // BuildCuratedPalette. Subscribe so a later language switch (or
+            // first-load language application from App.xaml.cs) rebuilds the
+            // list and re-resolves SelectedPrimary by Id, since the swatch
+            // reference would otherwise point to the old (stale-label) list.
+            LocalizationService.Instance.PropertyChanged += OnLocalizationChanged;
         }
 
-        public IReadOnlyList<NamedSwatch> AvailablePrimaryColors { get; }
+        private IReadOnlyList<NamedSwatch> _availablePrimaryColors;
+        public IReadOnlyList<NamedSwatch> AvailablePrimaryColors
+        {
+            get => _availablePrimaryColors;
+            private set
+            {
+                _availablePrimaryColors = value;
+                OnPropertyChanged(nameof(AvailablePrimaryColors));
+            }
+        }
+
+        private void OnLocalizationChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != "Item[]" && e.PropertyName != nameof(LocalizationService.CurrentLanguage)) return;
+
+            var previousId = _selectedPrimary?.Id;
+            AvailablePrimaryColors = BuildCuratedPalette();
+
+            // Re-resolve SelectedPrimary against the new list by Id. Without
+            // this the picker still shows a check on the old (now-stale)
+            // swatch reference and the binding to SelectedPrimary breaks.
+            var resolved = ResolvePrimary(previousId);
+            if (!ReferenceEquals(_selectedPrimary, resolved))
+            {
+                _selectedPrimary = resolved;
+                OnPropertyChanged(nameof(SelectedPrimary));
+            }
+        }
 
         public bool IsDark
         {

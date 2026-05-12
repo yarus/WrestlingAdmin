@@ -26,7 +26,7 @@ namespace Wrestling.Entities
         private bool _isEntryFeePaid;
         private decimal? _paidAmount;
         private bool _isWeightApproved;
-        private string _level;
+        private WrestlerLevelEnum _level;
         private DateTime? _timestamp;
         private bool _isDisqualified;
         private bool _isNoShow;
@@ -47,15 +47,22 @@ namespace Wrestling.Entities
             }
         }
 
-        public string Level
+        public WrestlerLevelEnum Level
         {
             get { return _level; }
             set
             {
+                if (_level == value) return;
                 _level = value;
                 OnPropertyChanged("Level");
+                OnPropertyChanged("LevelDisplay");
             }
         }
+
+        // Localized display label backing UI bindings ({Binding LevelDisplay}).
+        // Computed every access so language switch flips text via list rebuild
+        // or PropertyChanged tick on Level.
+        public string LevelDisplay => WrestlerLevelLabels.GetDisplay(_level);
 
         public decimal? PaidAmount
         {

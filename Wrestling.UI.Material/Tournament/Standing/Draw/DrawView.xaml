@@ -226,7 +226,7 @@
                                             <GridViewColumn Header="{loc:Loc Applications_Column_Level}" Width="80">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding Level}" TextWrapping="NoWrap" FontSize="15"
+                                                        <TextBlock Text="{Binding LevelDisplay}" TextWrapping="NoWrap" FontSize="15"
                                                                    VerticalAlignment="Center" HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>

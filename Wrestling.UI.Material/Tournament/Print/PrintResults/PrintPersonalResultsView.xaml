@@ -110,7 +110,7 @@
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LastFirstName}" Header="{loc:Loc Personal_Column_LastFirstName}" Width="180" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="{loc:Loc Draw_Column_Team}" Width="100" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamCity}" Header="{loc:Loc Personal_Column_Region}" Width="115" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.Level}" Header="{loc:Loc Applications_Column_Level}" Width="50" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LevelDisplay}" Header="{loc:Loc Applications_Column_Level}" Width="50" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Wins}" Header="{loc:Loc PrintResults_Column_Wins}" Width="45" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=Loses}" Header="{loc:Loc PrintResults_Column_Losses}" Width="50" />
                     <GridViewColumn DisplayMemberBinding="{Binding Path=OverallTournamentClassificationPoints}" Header="{loc:Loc PrintResults_Column_Classif}" Width="55" />

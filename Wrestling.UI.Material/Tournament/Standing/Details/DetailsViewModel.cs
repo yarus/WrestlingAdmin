@@ -19,8 +19,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
         private ObservableCollection<AgeWeightGroup> _groups;
 
-        public string PageName => "Положение";
-        public override string PageTitle => "Информация о Соревнованиях";
+        public string PageName => T("Nav_Standing", "Положение");
+        public override string PageTitle => T("Details_PageTitle", "Информация о Соревнованиях");
         
         public DetailsViewModel(IDiContainer container) : base(container)
         {
@@ -157,7 +157,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
                 if (response.IsFailed)
                 {
-                    ShowSnackMessage($"Ошибка генерации групп: {string.Join(",", response.Errors.Select(x => x.Message).ToList())}");
+                    ShowSnackMessage(string.Format(T("Details_GroupGenError", "Ошибка генерации групп: {0}"), string.Join(",", response.Errors.Select(x => x.Message).ToList())));
                     return;
                 }
 
@@ -196,7 +196,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
         private void DeleteGroup(AgeWeightGroup group)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить группу?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Details_DeleteGroup_Body", "Вы уверены, что хотите удалить группу?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var wr in DataContext.Tournament.Wrestlers)
             {
@@ -304,8 +304,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             if (originalItem == null || originalItem.Name == vm.Item.Name || originalItem.Wrestlers.Count == 0) return;
 
             if (Dialog.ShowMessageBox(this,
-                    "Параметры группы были изменены, заявки на участие в данной группе будут удалены. Вы уверены?",
-                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
+                    T("Details_GroupChanged_Body", "Параметры группы были изменены, заявки на участие в данной группе будут удалены. Вы уверены?"),
+                    T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
             {
                 eventArgs.Cancel();
             }

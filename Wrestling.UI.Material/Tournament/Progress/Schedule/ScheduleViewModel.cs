@@ -42,8 +42,8 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         private IPanelView _scoreScreenView;
         private ScoreScreenViewModel _scoreScreen;
 
-        public string PageName => "Расписание";
-        public override string PageTitle => "Расписание схваток по коврам";
+        public string PageName => T("Nav_Schedule", "Расписание");
+        public override string PageTitle => T("Schedule_PageTitle", "Расписание схваток по коврам");
 
         public int CarpetsCount => DataContext.Tournament.Carpets.Count;
         public int MatchesCount => DataContext.Tournament.Groups.Sum(g => g.Bracket?.MatchesCount ?? 0);
@@ -207,8 +207,8 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
                        (
                            _quickButtons = new List<CommandButtonItem>
                            {
-                               new CommandButtonItem("Открыть электронное табло", PackIconKind.Monitor, new AsyncRelayCommand(_ => ShowScoreScreenAsync(), _ => true)),
-                               new CommandButtonItem("Открыть турнирную сетку", PackIconKind.Dns, new RelayCommand(param => OpenBrackets(), param => true)),
+                               new CommandButtonItem(T("Schedule_OpenScoreScreen_Tooltip", "Открыть электронное табло"), PackIconKind.Monitor, new AsyncRelayCommand(_ => ShowScoreScreenAsync(), _ => true)),
+                               new CommandButtonItem(T("Schedule_OpenBrackets_Tooltip", "Открыть турнирную сетку"), PackIconKind.Dns, new RelayCommand(param => OpenBrackets(), param => true)),
                            }
                        );
             }

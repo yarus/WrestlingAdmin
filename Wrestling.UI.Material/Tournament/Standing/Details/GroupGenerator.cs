@@ -28,18 +28,29 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
                 var result = new List<AgeWeightGroup>();
 
+                // Locale-aware female marker. The dialog example shows the
+                // current language's letter ("Ж" for Russian, "F" for English),
+                // and this parser accepts that letter as the IsFemale=true flag
+                // for the line. Anything else (including missing third part)
+                // means male.
+                var femaleMarker = T("Gender_FemaleShort", "Ж");
+
                 foreach (var line in lines)
                 {
                     var parts = line.Split(':');
 
-                    if (parts.Length != 2)
+                    // Two parts = "year-range:weights" (male is the implicit
+                    // default). Three parts = "year-range:weights:genderLetter".
+                    if (parts.Length < 2 || parts.Length > 3)
                     {
                         return Result.Fail(T("GroupGen_Error_Format", "Неправильный формат записи. Ожидаемый формат: <Год рождения от>-<Год рождения до>:<вес1>,<вес2>"));
                     }
 
                     var ages = parts[0].Split('-');
                     var weights = parts[1].Split(',');
-                    var gender = parts.Length > 2 ? parts[2] : null;
+                    var gender = parts.Length > 2 ? parts[2]?.Trim() : null;
+                    var isFemale = !string.IsNullOrEmpty(gender)
+                                   && string.Equals(gender, femaleMarker, StringComparison.OrdinalIgnoreCase);
 
                     var minAge = ages[0];
                     var maxAge = ages.Length > 1 ? ages[1] : null;
@@ -76,7 +87,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
                         var group = new AgeWeightGroup()
                         {
                             ID = Guid.NewGuid(),
-                            IsFemale = !string.IsNullOrEmpty(gender) && gender == "Ж",
+                            IsFemale = isFemale,
                             WeightMax = parsedWeight,
                             BirthYearMin = parsedMinAge,
                             BirthYearMax = nullableMaxAge,

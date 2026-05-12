@@ -34,8 +34,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
 
         private IList<CommandButtonItem> _quickButtons;
 
-        public string PageName => "Расписание";
-        public override string PageTitle => "Очередность схваток по коврам и группам";
+        public string PageName => T("Nav_Schedule", "Расписание");
+        public override string PageTitle => T("Carpets_PageTitle", "Очередность схваток по коврам и группам");
         public int UnbindedGroups => _groups != null && _items != null ? _groups.Count - _items.SelectMany(c => c.Groups).Count() : 0;
 
         public CarpetsViewModel(IDiContainer container) : base(container)
@@ -59,7 +59,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
                         },
                         canExecute: _ => true);
                     printBtn = new CommandButtonItem(
-                        "Скачать расписания ковров PDF",
+                        T("Carpets_ExportSchedules_Tooltip", "Скачать расписания ковров PDF"),
                         PackIconKind.PrinterOutline,
                         printCmd);
 
@@ -255,7 +255,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
 
         private void DeleteCarpet(Carpet carpet)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить ковер?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Carpets_Delete_Body", "Вы уверены, что хотите удалить ковер?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             var groups = _groups.Where(g => g.CarpetID.HasValue && g.CarpetID.Value == carpet.ID.Value).ToList();
 
@@ -299,7 +299,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
 
         private void UnbindGroup(AgeWeightGroup group)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что убрать группу с ковра?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Carpets_UnbindGroup_Body", "Вы уверены, что убрать группу с ковра?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             var carpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == group.CarpetID);
             if (carpet != null)
@@ -326,8 +326,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             if (carpets == null || carpets.Count == 0)
             {
                 Dialog.ShowMessageBox(this,
-                    "Нет ковров для печати расписания.",
-                    "Расписание ковров", MessageBoxButton.OK, MessageBoxImage.Information);
+                    T("CarpetsExport_NoCarpets", "Нет ковров для печати расписания."),
+                    T("CarpetsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -342,8 +342,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
             if (carpetsWithPending.Count == 0)
             {
                 Dialog.ShowMessageBox(this,
-                    "На коврах нет непройденных схваток.",
-                    "Расписание ковров", MessageBoxButton.OK, MessageBoxImage.Information);
+                    T("CarpetsExport_NoPending", "На коврах нет непройденных схваток."),
+                    T("CarpetsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -356,7 +356,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
 
             var settings = new FolderBrowserDialogSettings
             {
-                Description = "Выберите папку для сохранения расписаний ковров",
+                Description = T("CarpetsExport_FolderPicker_Title", "Выберите папку для сохранения расписаний ковров"),
                 ShowNewFolderButton = true,
                 SelectedPath = defaultPath
             };
@@ -371,7 +371,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
                     var capturedCarpet = carpet;
                     jobs.Add(new BulkPdfExportJob
                     {
-                        FileName = "Расписание_" + BulkBracketPdfExporter.MakeSafeFileName(capturedCarpet.Name) + ".pdf",
+                        FileName = T("CarpetsExport_FilePrefix", "Расписание_") + BulkBracketPdfExporter.MakeSafeFileName(capturedCarpet.Name) + ".pdf",
                         Landscape = false,
                         ViewFactory = () =>
                         {
@@ -382,28 +382,28 @@ namespace Wrestling.UI.Material.Tournament.Standing.Carpets
                     });
                 }
 
-                ShowSnackMessage($"Идет создание расписаний ковров: {jobs.Count} файлов...");
+                ShowSnackMessage(string.Format(T("CarpetsExport_Snack_Building", "Идет создание расписаний ковров: {0} файлов..."), jobs.Count));
 
                 var exporter = new BulkBracketPdfExporter();
                 var result = await exporter.ExportAsync(jobs, settings.SelectedPath);
 
-                var msg = $"Готово. Сохранено PDF: {result.Succeeded}";
-                if (result.Skipped > 0) msg += $", пропущено: {result.Skipped}";
-                if (result.Failures.Count > 0) msg += $", ошибок: {result.Failures.Count}";
+                var msg = string.Format(T("Export_Snack_Done", "Готово. Сохранено PDF: {0}"), result.Succeeded);
+                if (result.Skipped > 0) msg += string.Format(T("Export_Snack_Skipped", ", пропущено: {0}"), result.Skipped);
+                if (result.Failures.Count > 0) msg += string.Format(T("Export_Snack_Failed", ", ошибок: {0}"), result.Failures.Count);
                 ShowSnackMessage(msg);
 
                 if (result.Failures.Count > 0)
                 {
                     Dialog.ShowMessageBox(this,
-                        "Не удалось сохранить часть расписаний:\n\n" + string.Join("\n", result.Failures),
-                        "Расписание ковров", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        T("Export_PartialFailure", "Не удалось сохранить часть протоколов:") + "\n\n" + string.Join("\n", result.Failures),
+                        T("CarpetsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
             {
                 Dialog.ShowMessageBox(this,
-                    "Ошибка экспорта: " + ex.Message,
-                    "Расписание ковров", MessageBoxButton.OK, MessageBoxImage.Error);
+                    T("Export_ErrorPrefix", "Ошибка экспорта: ") + ex.Message,
+                    T("CarpetsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

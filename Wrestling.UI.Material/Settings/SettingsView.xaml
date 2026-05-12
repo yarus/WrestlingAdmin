@@ -26,7 +26,7 @@
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" HorizontalAlignment="Center" VerticalAlignment="Center">
         <WrapPanel Orientation="Horizontal">
 
-            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="350">
                 <Grid VerticalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -121,7 +121,7 @@
             </materialDesign:Card>
 
 
-            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="350">
                 <Grid VerticalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -144,13 +144,14 @@
                         <ComboBox ItemsSource="{Binding AvailableLanguages}"
                                   SelectedItem="{Binding SelectedLanguage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   DisplayMemberPath="DisplayName"
-                                  HorizontalAlignment="Stretch" />
+                                  HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Top" />
                     </Border>
                 </Grid>
             </materialDesign:Card>
 
 
-            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="350">
                 <Grid VerticalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -217,7 +218,7 @@
                 </Grid>
             </materialDesign:Card>
 
-            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="350">
                 <Grid VerticalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -311,7 +312,7 @@
                 </Grid>
             </materialDesign:Card>
 
-            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="350">
                 <Grid VerticalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -412,7 +413,7 @@
                 </Grid>
             </materialDesign:Card>
 
-            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="350">
                 <Grid VerticalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -500,7 +501,7 @@
                 </Grid>
             </materialDesign:Card>
 
-            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="400">
+            <materialDesign:Card Width="420" Margin="8 2 4 16" Height="350">
                 <Grid VerticalAlignment="Stretch">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

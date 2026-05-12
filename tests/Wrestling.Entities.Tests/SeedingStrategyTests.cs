@@ -20,7 +20,7 @@ public class SeedingStrategyTests
             BirthDate = new DateTime(2010, 1, 1),
             TeamID = teamId,
             TeamCity = city,
-            Level = level,
+            Level = WrestlerLevelLabels.FromString(level),
         };
     }
 

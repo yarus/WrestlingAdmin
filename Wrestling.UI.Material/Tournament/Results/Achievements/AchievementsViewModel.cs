@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Wrestling.Entities;
+using Wrestling.Entities.Results.Achievements;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Tournament.Standing;
 using Wrestling.UI.Utils;
@@ -16,6 +18,7 @@ namespace Wrestling.UI.Material.Tournament.Results.Achievements
 
         private IResultsService _resultsService;
         private bool _resultsSubscribed;
+        private bool _localizationSubscribed;
 
         private IList<AchievementCategoryViewModel> _items;
 
@@ -52,6 +55,16 @@ namespace Wrestling.UI.Material.Tournament.Results.Achievements
                 _resultsSubscribed = true;
             }
 
+            // Subscribe to language changes so achievement titles/definitions
+            // re-render without re-opening the tournament. The Items list is
+            // rebuilt with fresh AchievementCategoryViewModel instances whose
+            // Title/Definition pull through AchievementLabels at access time.
+            if (!_localizationSubscribed)
+            {
+                LocalizationService.Instance.PropertyChanged += OnLocalizationChanged;
+                _localizationSubscribed = true;
+            }
+
             Refresh();
         }
 
@@ -65,6 +78,12 @@ namespace Wrestling.UI.Material.Tournament.Results.Achievements
             Refresh();
         }
 
+        private void OnLocalizationChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != "Item[]" && e.PropertyName != nameof(LocalizationService.CurrentLanguage)) return;
+            Refresh();
+        }
+
         private void Refresh()
         {
             if (_resultsService == null)
@@ -74,12 +93,13 @@ namespace Wrestling.UI.Material.Tournament.Results.Achievements
             }
 
             // Group by AchievementType so each nomination shows up once with
-            // all its winners (ties produce >1 wrestler per category).
+            // all its winners (ties produce >1 wrestler per category). Title
+            // and Definition are computed from AchievementType via
+            // AchievementLabels so language switches reflect immediately on
+            // the next Refresh().
             Items = _resultsService.Achievements
                 .GroupBy(a => a.AchievementType)
                 .Select(g => new AchievementCategoryViewModel(
-                    title: g.First().Title,
-                    definition: g.First().AchievementDefinition,
                     achievementType: g.Key,
                     winners: g.ToList()))
                 .ToList();
@@ -88,16 +108,16 @@ namespace Wrestling.UI.Material.Tournament.Results.Achievements
 
     public class AchievementCategoryViewModel
     {
-        public AchievementCategoryViewModel(string title, string definition, string achievementType, IList<WrestlerAchievement> winners)
+        public AchievementCategoryViewModel(string achievementType, IList<WrestlerAchievement> winners)
         {
-            Title = title;
-            Definition = definition;
             AchievementType = achievementType;
             Winners = winners ?? new List<WrestlerAchievement>();
         }
 
-        public string Title { get; }
-        public string Definition { get; }
+        // Computed via AchievementLabels each access so a language switch
+        // followed by Items refresh produces a fresh display value.
+        public string Title => AchievementLabels.GetTitle(AchievementType);
+        public string Definition => AchievementLabels.GetDefinition(AchievementType);
         public string AchievementType { get; }
         public IList<WrestlerAchievement> Winners { get; }
 

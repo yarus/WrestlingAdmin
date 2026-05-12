@@ -24,9 +24,14 @@
 
         <TextBlock Grid.Row="1" FontSize="12" TextWrapping="Wrap" Margin="10 5 10 0" Text="{loc:Loc GenerateGroups_FormatHint}" />
 
+        <!-- Format example. The trailing letter is the locale-aware female
+             marker (Ж for Russian, F for English) — GroupGenerator.Generate
+             reads Gender_FemaleShort to decide which letter triggers the
+             IsFemale=true flag, so the example must show the same letter. -->
         <TextBlock Grid.Row="2" FontSize="12" TextWrapping="Wrap" Margin="10 5 10 0"
-                   ToolTip="{loc:Loc GenerateGroups_ExampleTooltip}"
-                   Text="2010-2011:30,35,40,45,50:Ж" />
+                   ToolTip="{loc:Loc GenerateGroups_ExampleTooltip}">
+            <Run Text="2010-2011:30,35,40,45,50:" /><Run Text="{Binding [Gender_FemaleShort], Source={x:Static loc:LocalizationService.Instance}, Mode=OneWay}" />
+        </TextBlock>
 
         <TextBlock Grid.Row="3" FontSize="12" TextWrapping="Wrap" Margin="10 5 10 0" Text="{loc:Loc GenerateGroups_NewLineHint}" />
 

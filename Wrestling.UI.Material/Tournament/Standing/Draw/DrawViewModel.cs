@@ -98,8 +98,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             .SelectMany(r => r.RoundMatches)
             .Count(m => m.WinType != MatchWinTypeEnum.FreeWin);
 
-        public string PageName => "Жеребьевка";
-        public override string PageTitle => "Жеребьевка Участников";
+        public string PageName => T("Nav_Draw", "Жеребьевка");
+        public override string PageTitle => T("Draw_PageTitle", "Жеребьевка Участников");
 
         public override IList<CommandButtonItem> QuickButtons
         {
@@ -117,7 +117,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                         },
                         canExecute: _ => true);
                     printBtn = new CommandButtonItem(
-                        "Сохранить протоколы жеребьевки",
+                        T("Draw_ExportProtocols_Tooltip", "Сохранить протоколы жеребьевки"),
                         PackIconKind.PrinterOutline,
                         printCmd);
 

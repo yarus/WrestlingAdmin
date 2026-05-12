@@ -135,6 +135,8 @@
                                         Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <ListView ItemsSource="{Binding Wrestlers}"
                                           Margin="10,10,10,10"
+                                          Background="{DynamicResource MaterialDesignPaper}"
+                                          BorderThickness="0"
                                           utils:GridViewSort.AutoSort="True"
                                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                           HorizontalContentAlignment="Stretch"
@@ -188,7 +190,7 @@
                                                             utils:GridViewSort.PropertyName="Wrestler.Level">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding Wrestler.Level}"
+                                                        <TextBlock Text="{Binding Wrestler.LevelDisplay}"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>

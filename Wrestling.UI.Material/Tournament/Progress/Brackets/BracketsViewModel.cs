@@ -36,7 +36,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
         {
         }
         
-        public override string PageTitle => "Турнирная Сетка";
+        public override string PageTitle => T("Brackets_PageTitle", "Турнирная Сетка");
 
         public override bool IsBackButtonAvailable => true;
 
@@ -66,7 +66,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
                        (
                            _quickButtons = new List<CommandButtonItem>
                            {
-                               new CommandButtonItem("Открыть расписание схваток", PackIconKind.Timetable, new RelayCommand(param => OpenSchedule(), param => true))
+                               new CommandButtonItem(T("Brackets_OpenSchedule_Tooltip", "Открыть расписание схваток"), PackIconKind.Timetable, new RelayCommand(param => OpenSchedule(), param => true))
                            }
                        );
             }
@@ -188,9 +188,8 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
                 .FirstOrDefault(g => g.Wrestlers.Any(w => w.SameAs(wrestler)));
             if (hostGroup?.Bracket == null) return;
 
-            var msg = $"Снять дисквалификацию со спортсмена «{wrestler.FullName}»?\n" +
-                      $"Матч с обоюдной дисквалификацией будет освобождён для повторной игры.";
-            if (Dialog.ShowMessageBox(this, msg, "Подтверждение",
+            var msg = string.Format(T("Brackets_RemoveDsq_Body", "Снять дисквалификацию со спортсмена «{0}»?\nМатч с обоюдной дисквалификацией будет освобождён для повторной игры."), wrestler.FullName);
+            if (Dialog.ShowMessageBox(this, msg, T("Brackets_RemoveDsq_Title", "Подтверждение"),
                     MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
             {
                 return;
@@ -201,14 +200,14 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             {
                 concrete.LoadTournamentGroup(DataContext.Tournament, hostGroup);
                 concrete.ClearWrestlerDisqualify(wrestler);
-                ShowSnackMessage("Дисквалификация снята.");
+                ShowSnackMessage(T("Brackets_DsqRemoved_Snack", "Дисквалификация снята."));
             }
             else
             {
                 // Processor missing or doesn't expose ClearWrestlerDisqualify —
                 // graceful fallback so the operator isn't stuck.
                 wrestler.IsDisqualified = false;
-                ShowSnackMessage("Дисквалификация снята.");
+                ShowSnackMessage(T("Brackets_DsqRemoved_Snack", "Дисквалификация снята."));
             }
         }
 

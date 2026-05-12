@@ -151,7 +151,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 }
                 catch(Exception ex)
                 {
-                    ShowSnackMessage($"При сохранении изображения произошла ошибка: {ex.Message}");
+                    ShowSnackMessage(string.Format(T("Snack_SaveImageError", "Не удалось сохранить изображение: {0}"), ex.Message));
                     Item.EmblemPath = previousPath;
                 }                
             }

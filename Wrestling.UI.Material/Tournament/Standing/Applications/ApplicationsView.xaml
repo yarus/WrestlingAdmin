@@ -272,7 +272,7 @@
                                                             utils:GridViewSort.PropertyName="Level">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding Level}" Margin="0,5,0,0"
+                                                        <TextBlock Text="{Binding LevelDisplay}" Margin="0,5,0,0"
                                                                    TextWrapping="NoWrap" FontSize="15"
                                                                    VerticalAlignment="Center"
                                                                    HorizontalAlignment="Center" />

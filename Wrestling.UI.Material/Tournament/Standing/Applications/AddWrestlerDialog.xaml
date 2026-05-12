@@ -8,6 +8,7 @@
              xmlns:system="clr-namespace:System;assembly=mscorlib"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:matConverters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
              xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:controls="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:wpfToolkit="http://schemas.communitytoolkit.org/wpf"
@@ -19,6 +20,7 @@
 
     <UserControl.Resources>
         <converters:BoolInverterConverter x:Key="BoolInverter" />
+        <matConverters:WrestlerLevelToStringConverter x:Key="LevelDisplay" />
     </UserControl.Resources>
 
     <Grid Margin="16">
@@ -166,10 +168,10 @@
                       ItemsSource="{Binding Levels}">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding}" Margin="0" Padding="0" />
+                        <TextBlock Text="{Binding Converter={StaticResource LevelDisplay}}" Margin="0" Padding="0" />
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
-                
+
                 <ComboBox.SelectedItem>
                     <Binding Path="Item.Level" UpdateSourceTrigger="PropertyChanged" />
                 </ComboBox.SelectedItem>

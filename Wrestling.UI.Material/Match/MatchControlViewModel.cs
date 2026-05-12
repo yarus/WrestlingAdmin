@@ -3,18 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Media;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
-using Wrestling.UI.Material.Tournament.Progress.Brackets;
-using Wrestling.UI.Material.Tournament.Progress.Schedule;
 using Wrestling.UI.Utils;
 using Wrestling.UI.Utils.Localization;
 

@@ -334,7 +334,10 @@ namespace Wrestling.Providers
                 IsEntryFeePaid = info.IsEntryFeePaid,
                 TeamID = info.TeamID,
                 HashTag = info.HashTag,
-                Level = info.Level,
+                // info.Level is a string for wire compat — accepts both
+                // canonical enum names ("MSMK") written by current clients
+                // and legacy cyrillic literals ("МСМК") from older .wrt files.
+                Level = WrestlerLevelLabels.FromString(info.Level),
                 PaidAmount = info.PaidAmount,
                 IsWeightApproved = info.IsWeightApproved,
                 Timestamp = info.Timestamp,
@@ -577,7 +580,13 @@ namespace Wrestling.Providers
                 PaidAmount = entity.PaidAmount,
                 IsWeightApproved = entity.IsWeightApproved,
                 HashTag = entity.HashTag,
-                Level = entity.Level,
+                // Persist the enum *name* on the wire ("MSMK"). Old clients
+                // reading this string via WrestlerLevelLabels.FromString get
+                // a recognized enum back. Old clients reading via the legacy
+                // free-form string path see "MSMK" — not display-localized
+                // but harmless (the value never displayed; only the enum
+                // identity matters for sorting/seeding).
+                Level = entity.Level == WrestlerLevelEnum.None ? string.Empty : entity.Level.ToString(),
                 Timestamp = entity.Timestamp,
                 IsDisqualified = entity.IsDisqualified,
                 IsNoShow = entity.IsNoShow
