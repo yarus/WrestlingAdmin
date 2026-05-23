@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk -F/ '{print $\\(NF-1\\)}')",
+      "mcp__context7__query-docs",
+      "mcp__context7__resolve-library-id",
+      "Bash(jq --version)",
+      "Bash(python *)",
+      "Bash(dotnet --list-sdks)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet sln *)",
+      "Bash(dotnet restore *)",
+      "Bash(dotnet build *)",
+      "Bash(dotnet test *)",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(powershell.exe *)",
+      "Bash(where pwsh *)",
+      "Bash(pwsh.exe -NoProfile -Command '$PSVersionTable.PSVersion')",
+      "Bash(git mv *)",
+      "Bash(ls /c/Python*)",
+      "Bash(where.exe python *)",
+      "Bash(node *)",
+      "PowerShell(Join-Path *)",
+      "PowerShell($data = Get-Content 'C:\\\\Users\\\\Aleksey Kardash\\\\Desktop\\\\WrestlingAdmin\\\\teams_dedup.json' -Raw -Encoding UTF8 | ConvertFrom-Json; Write-Output \"Entries: $\\($data.Count\\)\"; Write-Output \"Sum: $\\(\\($data | Measure-Object -Property SourceRowCount -Sum\\).Sum\\)\")",
+      "PowerShell(python --version)",
+      "PowerShell(Import-Csv *)",
+      "PowerShell(& 'C:\\\\Users\\\\Aleksey Kardash\\\\Desktop\\\\WrestlingAdmin\\\\_assign_wrestlers.ps1')",
+      "PowerShell(Get-Command *)",
+      "PowerShell($content = [System.IO.File]::ReadAllText\\('C:\\\\Users\\\\Aleksey Kardash\\\\Desktop\\\\WrestlingAdmin\\\\_assign_wrestlers.ps1', [System.Text.Encoding]::UTF8\\); [System.IO.File]::WriteAllText\\('C:\\\\Users\\\\Aleksey Kardash\\\\Desktop\\\\WrestlingAdmin\\\\_assign_wrestlers.ps1', $content, \\(New-Object System.Text.UTF8Encoding\\($true\\)\\)\\); Write-Output 'Re-saved with BOM')",
+      "PowerShell($content = [System.IO.File]::ReadAllText\\('C:\\\\Users\\\\Aleksey Kardash\\\\Desktop\\\\WrestlingAdmin\\\\_assign_wrestlers.ps1', [System.Text.Encoding]::UTF8\\); [System.IO.File]::WriteAllText\\('C:\\\\Users\\\\Aleksey Kardash\\\\Desktop\\\\WrestlingAdmin\\\\_assign_wrestlers.ps1', $content, \\(New-Object System.Text.UTF8Encoding\\($true\\)\\)\\); & 'C:\\\\Users\\\\Aleksey Kardash\\\\Desktop\\\\WrestlingAdmin\\\\_assign_wrestlers.ps1')",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-CimInstance *)",
+      "PowerShell(Get-ScheduledTask *)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "context7"
+  ],
+  "spinnerTipsEnabled": true
+}

@@ -295,12 +295,7 @@ namespace Wrestling.DataAccess
                         useAsync: true))
                     using (var reader = new StreamReader(stream))
                     {
-                        // StreamReader.ReadToEndAsync has no CT overload on
-                        // netstandard2.0 — but the FileStream above honors the
-                        // OS-level cancellation through async I/O completion
-                        // ports, and we re-check the token between retries
-                        // and after the read completes.
-                        string jsonContent = await reader.ReadToEndAsync().ConfigureAwait(false);
+                        string jsonContent = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
                         cancellationToken.ThrowIfCancellationRequested();
                         return JsonConvert.DeserializeObject<T>(jsonContent, CreateLoadSettings());
                     }

@@ -10,8 +10,8 @@ namespace Wrestling.Providers.Network
     // tournament. Two peers with the same fingerprint hold equivalent state
     // for the purposes of import; a difference triggers a pull-on-divergence
     // in PeerSyncService. SHA256 is overkill for collision resistance but is
-    // built into netstandard2.0 — no NuGet add. We truncate to 8 bytes
-    // (16 hex chars) to keep the UDP advertisement compact.
+    // in-box. We truncate to 8 bytes (16 hex chars) to keep the UDP
+    // advertisement compact.
     //
     // The canonicalization order (groups by ID, matches by BracketFullNumber)
     // is critical: two peers must compute the same hash for the same state
