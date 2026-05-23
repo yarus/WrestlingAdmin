@@ -6,6 +6,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
              xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              mc:Ignorable="d"
              md:DialogServiceViews.IsRegistered="True"
@@ -40,26 +41,48 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Row="0" Grid.Column="0" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Button Content="Пересоздать Все Сетки"
+                <Button Content="{loc:Loc Draw_RegenerateAll}"
                         HorizontalAlignment="Left" Margin="5,0,5,0"
                         Command="{Binding Path=DataContext.RegenerateAllBrackets, ElementName=RootControl}"
                         CommandParameter="{Binding }" />
+                <Button Content="{loc:Loc Draw_UnfixAllSeeds}"
+                        HorizontalAlignment="Left" Margin="5,0,5,0"
+                        ToolTip="{loc:Loc Draw_UnfixAllSeeds_Tooltip}"
+                        Command="{Binding Path=DataContext.UnfixAllSeedsCommand, ElementName=RootControl}" />
             </TextBlock>
             
-            <TextBlock Grid.Row="0" Grid.Column="1" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Групп:" />
-                <Run Text="{Binding GroupsCount, Mode=OneWay}" />
-            </TextBlock>
+            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal"
+                        Margin="12,0,12,0" VerticalAlignment="Center"
+                        ToolTip="{loc:Loc Draw_GroupsCount_Tooltip}">
+                <materialDesign:PackIcon Kind="FormatListBulleted" Width="20" Height="20"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                <TextBlock Text="{Binding GroupsCount, Mode=OneWay}"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="6,0,0,0" />
+            </StackPanel>
 
-            <TextBlock Grid.Row="0" Grid.Column="2" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Допущено Участников:" />
-                <Run Text="{Binding WrestlersCount, Mode=OneWay}" />
-            </TextBlock>
+            <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal"
+                        Margin="12,0,12,0" VerticalAlignment="Center"
+                        ToolTip="{loc:Loc Draw_WrestlersCount_Tooltip}">
+                <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                <TextBlock Text="{Binding WrestlersCount, Mode=OneWay}"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="6,0,0,0" />
+            </StackPanel>
 
-            <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Схваток:" />
-                <Run Text="{Binding MatchesCount, Mode=OneWay}" />
-            </TextBlock>
+            <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal"
+                        Margin="12,0,20,0" VerticalAlignment="Center"
+                        ToolTip="{loc:Loc Draw_MatchesCount_Tooltip}">
+                <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                <TextBlock Text="{Binding MatchesCount, Mode=OneWay}"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="6,0,0,0" />
+            </StackPanel>
         </Grid>
         
         <ItemsControl Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Groups}">            
@@ -79,7 +102,8 @@
             
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Expander x:Name="GroupControl" Background="LightGray" Margin="0" Padding="0">
+                    <Expander x:Name="GroupControl" Background="{DynamicResource MaterialDesignToolBarBackground}" Margin="0" Padding="0"
+                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                         <Expander.Header>
                             <Grid Margin="0">
                                 <Grid.ColumnDefinitions>
@@ -88,7 +112,6 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="100" />
                                 </Grid.ColumnDefinitions>
 
                                 <TextBlock Grid.Column="0" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -102,17 +125,10 @@
 
                                 <TextBlock Grid.Column="1" TextWrapping="NoWrap" FontSize="16" VerticalAlignment="Center" Margin="20,0,0,0" Text="{Binding Name}" />
 
-                                <TextBlock Grid.Column="2" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Center" Margin="20,0,0,0" Text="{Binding Path=Bracket.BracketTypeLabel}" />
+                                <TextBlock Grid.Column="2" TextWrapping="Wrap" FontSize="16" VerticalAlignment="Center" Margin="20,0,0,0" Text="{Binding Path=Bracket.BracketTypeDisplay}" />
 
-                                <StackPanel Grid.Row="0" Grid.Column="3" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}">
-                                    <Button Content="Удалить сетку"
-                                            HorizontalAlignment="Right" Margin="5,0,5,0"
-                                            Command="{Binding Path=DataContext.RemoveBracketCommand, ElementName=RootControl}"
-                                            CommandParameter="{Binding }" />
-                                </StackPanel>
-
-                                <StackPanel Grid.Row="0" Grid.Column="3" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource InvBoolToVis}}">
-                                    <Button Content="Создать сетку"
+                                <StackPanel Grid.Row="0" Grid.Column="3">
+                                    <Button Content="{loc:Loc Draw_GenerateBracket}"
                                             HorizontalAlignment="Right" Margin="5,0,5,0"
                                             Command="{Binding Path=DataContext.GenerateBracketCommand, ElementName=RootControl}"
                                             CommandParameter="{Binding }" />
@@ -125,108 +141,102 @@
                                         <ColumnDefinition Width="1*" />
                                     </Grid.ColumnDefinitions>
 
-                                    <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="32" Height="32" Margin="0" Padding="0" 
-                                                             ToolTip="Жеребьевка проведена успешно." Kind="CheckboxMarkedOutline" 
+                                    <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="32" Height="32" Margin="0" Padding="0"
+                                                             ToolTip="{loc:Loc Draw_BracketGenerated_Tooltip}" Kind="CheckboxMarkedOutline"
                                                              Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}" />
-                                    <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="32" Height="32" Margin="0" Padding="0" 
-                                                             ToolTip="Жеребьевка не проведена." Kind="CloseBoxOutline" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource InvBoolToVis}}" />
-                                </Grid>
-
-                                <Grid Grid.Column="5" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="1*" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <Button Grid.Column="1" ToolTip="Распечатать протоколы взвешивания" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}"
-                                        VerticalAlignment="Center" HorizontalAlignment="Center"
-                                        Command="{Binding Path=DataContext.PrintProtocolCommand, ElementName=RootControl}" CommandParameter="{Binding }" Margin="0,0,0,0">
-                                        <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0" Padding="0" />
-                                    </Button>
-
+                                    <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="32" Height="32" Margin="0" Padding="0"
+                                                             ToolTip="{loc:Loc Draw_BracketMissing_Tooltip}" Kind="CloseBoxOutline" Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource InvBoolToVis}}" />
                                 </Grid>
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
-                            <Grid Background="White" Visibility="{Binding ElementName=GroupControl, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
+                            <Grid Visibility="{Binding ElementName=GroupControl, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="5" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Row="0" TextWrapping="NoWrap" Text="{loc:Loc Draw_Seeding}"
+                                           FontSize="16" TextAlignment="Center" FontWeight="SemiBold" Margin="10,8,10,8" />
 
-                                <GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Width="5" VerticalAlignment="Stretch" HorizontalAlignment="Center"></GridSplitter>
-                                
-                                <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
-                                <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="{DynamicResource MaterialDesignDivider}"></Border>
-                                
-                                <TextBlock Grid.Row="0" Grid.Column="0" TextWrapping="NoWrap" Text="Посев"
-                                           FontSize="18" TextAlignment="Center" FontWeight="Normal" Margin="10" />
-
-                                <TextBlock Grid.Row="0" Grid.Column="2" TextWrapping="NoWrap" Text="Результаты Жеребьевки"
-                                           FontSize="18" TextAlignment="Center" FontWeight="Normal" Margin="10" />
-                                
-                                <ListView Grid.Row="1" Grid.Column="0" ItemsSource="{Binding Path=Wrestlers}">
+                                <materialDesign:Card Grid.Row="1" Margin="10,10,10,10"
+                                                     UniformCornerRadius="4"
+                                                     materialDesign:ElevationAssist.Elevation="Dp4">
+                                <ListView ItemsSource="{Binding Path=Wrestlers}"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          HorizontalContentAlignment="Stretch"
+                                          TextElement.FontSize="15">
                                     <ListView.View>
-                                        <GridView AllowsColumnReorder="true">
-                                            <GridViewColumn Width="Auto" Header="Фикс.">
+                                        <GridView AllowsColumnReorder="false">
+                                            <GridView.ColumnHeaderContainerStyle>
+                                                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+                                                    <Setter Property="Padding" Value="4,8,4,8" />
+                                                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                                    <Setter Property="FontSize" Value="14" />
+                                                </Style>
+                                            </GridView.ColumnHeaderContainerStyle>
+
+                                            <GridViewColumn Width="50" Header="{loc:Loc Draw_Column_Fixed}">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <CheckBox IsChecked="{Binding IsSeedFixed}" Margin="0,5,0,0" HorizontalAlignment="Center" VerticalAlignment="Bottom" />
+                                                        <CheckBox IsChecked="{Binding IsSeedFixed}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Width="Auto" Header="Посев">
+                                            <GridViewColumn Width="60" Header="{loc:Loc Draw_Column_Seed}">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBox Text="{Binding SeedNumber}" Margin="0" MinWidth="20" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                                        <TextBox Text="{Binding SeedNumber}" MinWidth="36" TextWrapping="NoWrap" FontSize="15"
+                                                                 VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                                 HorizontalContentAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="ФИО" Width="Auto">
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_FullName}" Width="220">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding FullNameShort}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="{Binding FullNameShort}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                                   FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Left" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Команда" Width="Auto">
+                                            <GridViewColumn Header="{loc:Loc Draw_Column_Team}" Width="160">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding TeamName}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                                                    </DataTemplate>
-                                                </GridViewColumn.CellTemplate>
-                                            </GridViewColumn>
-                                            
-                                            <GridViewColumn Header="Город" Width="Auto">
-                                                <GridViewColumn.CellTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding TeamCity}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                                                    </DataTemplate>
-                                                </GridViewColumn.CellTemplate>
-                                            </GridViewColumn>
-                                            
-                                            <GridViewColumn Header="Разряд" Width="Auto">
-                                                <GridViewColumn.CellTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding Level}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="{Binding TeamName}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                                   FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Left" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Г.р." Width="Auto">
+                                            <GridViewColumn Header="{loc:Loc Draw_Column_City}" Width="200">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding BirthDate, StringFormat={}{0:d}}" Margin="0,5,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="{Binding TeamCity}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                                   FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
+
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_Level}" Width="80">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding LevelDisplay}" TextWrapping="NoWrap" FontSize="15"
+                                                                   VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                                    </DataTemplate>
+                                                </GridViewColumn.CellTemplate>
+                                            </GridViewColumn>
+
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_BirthYear}" Width="90">
+                                                <GridViewColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding BirthDate, StringFormat={}{0:d}}" TextWrapping="NoWrap"
+                                                                   FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
@@ -235,8 +245,18 @@
 
                                     </ListView.View>
                                 </ListView>
+                                </materialDesign:Card>
 
-                                <Viewbox Grid.Row="1" Grid.Column="2" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                <TextBlock Grid.Row="2" TextWrapping="NoWrap" Text="{loc:Loc Draw_Results}"
+                                           FontSize="16" TextAlignment="Center" FontWeight="SemiBold" Margin="10,12,10,8"
+                                           Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}" />
+
+                                <materialDesign:Card Grid.Row="3" Margin="10,10,10,10"
+                                                     UniformCornerRadius="4"
+                                                     materialDesign:ElevationAssist.Elevation="Dp4"
+                                                     Visibility="{Binding Path=IsBracketGenerated, Converter={StaticResource BoolToVis}}">
+                                <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"
+                                         Margin="10,10,10,10">
                                     <Grid Margin="0,0,10,0">
                                         <ItemsControl ItemsSource="{Binding Path=Bracket.Rounds}">
                                         <ItemsControl.ItemsPanel>
@@ -247,7 +267,7 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <StackPanel Margin="0">
-                                                    <TextBlock x:Name="RoundLabel" Text="{Binding RoundName}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock x:Name="RoundLabel" Text="{loc:LocRound RoundName}" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                         <TextBlock.Margin>
                                                             <MultiBinding Converter="{StaticResource BracketColTopMargin}">
                                                                 <Binding Path="." />
@@ -361,6 +381,7 @@
                                     </ItemsControl>
                                     </Grid>
                                 </Viewbox>
+                                </materialDesign:Card>
                             </Grid>
                         </Expander.Content>
                     </Expander>

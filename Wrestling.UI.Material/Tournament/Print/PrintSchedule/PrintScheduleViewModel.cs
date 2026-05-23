@@ -12,21 +12,21 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
 {
     public class PrintScheduleViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
-        private Carpet _carpet;
-        private CarpetStats _stat;
+        private Mat _mat;
+        private MatStats _stat;
         private List<AgeWeightGroup> _groups;
 
-        public string PageName => "Расписание";
-        public override string PageTitle => "Расписание схваток по коврам";
+        public string PageName => T("Nav_Schedule", "Расписание");
+        public override string PageTitle => T("PrintSchedule_PageTitle", "Расписание схваток по коврам");
         
-        public PrintScheduleViewModel(IDiContainer container, Carpet carpet) : base(container)
+        public PrintScheduleViewModel(IDiContainer container, Mat mat) : base(container)
         {
-            _carpet = carpet;
+            _mat = mat;
         }
 
         public override bool IsBackButtonAvailable => true;
 
-        public CarpetStats Stat
+        public MatStats Stat
         {
             get { return _stat; }
             set
@@ -41,8 +41,8 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
         {
             base.InitData();
 
-            // carpet groups
-            _groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups.Where(g => g.Bracket != null && g.CarpetID == _carpet.ID));
+            // mat groups
+            _groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups.Where(g => g.Bracket != null && g.MatID == _mat.ID));
 
             if (_groups.Count == 0) return;
 
@@ -96,12 +96,12 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
             }
             */
 
-            Stat = new CarpetStats
+            Stat = new MatStats
             {
-                CarpetID = _carpet.ID.Value,
-                CarpetLabel = _carpet.Name,
-                WrestlersCount = _carpet.WrestlersCount,
-                GroupsCount = _carpet.Groups.Count,
+                MatID = _mat.ID.Value,
+                MatLabel = _mat.Name,
+                WrestlersCount = _mat.WrestlersCount,
+                GroupsCount = _mat.Groups.Count,
                 Matches = new ObservableCollection<WrestlingMatch>(matches)//matches.OrderBy(m => m.MatchNumber))
             };
         }

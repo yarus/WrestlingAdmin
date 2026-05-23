@@ -10,10 +10,12 @@ using System.Windows.Input;
 using CsvHelper;
 using MaterialDesignThemes.Wpf;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
+using Wrestling.UI.Material.Utils;
 using Wrestling.Entities;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.Tournament.Print.PrintTeamApplication;
+using Wrestling.UI.Material.Tournament.Print;
+using Wrestling.UI.Material.Tournament.Print.PrintApplications;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Tournament.Standing.Applications
@@ -31,7 +33,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         private ICommand _addWrestlerCommand;
         private ICommand _editWrestlerCommand;
         private ICommand _deleteWrestlerCommand;
-        private ICommand _printTeamApplicationCommand;
 
         private string _filterString;
         private bool _isOnlyUnapprovedVisible;
@@ -47,20 +48,50 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         {
             get
             {
-                return _quickButtons ??
-                       (
-                           _quickButtons = new List<CommandButtonItem>
-                           {
-                               new CommandButtonItem("Экспортировать список в Excel", PackIconKind.DatabaseExport, new RelayCommand(param => ExportData(), param => true))
-                           }
-                       );
+                if (_quickButtons == null)
+                {
+                    CommandButtonItem weighingBtn = null;
+                    var weighingCmd = new AsyncRelayCommand(
+                        execute: async _ =>
+                        {
+                            weighingBtn.IsBusy = true;
+                            try { await ExportWeighingProtocolsAsync(); }
+                            finally { weighingBtn.IsBusy = false; }
+                        },
+                        canExecute: _ => true);
+                    weighingBtn = new CommandButtonItem(
+                        T("Applications_ExportWeighing_Tooltip", "Сохранить протоколы взвешивания"),
+                        PackIconKind.PrinterOutline,
+                        weighingCmd);
+
+                    CommandButtonItem wrestlersCsvBtn = null;
+                    var wrestlersCsvCmd = new RelayCommand(
+                        execute: _ =>
+                        {
+                            wrestlersCsvBtn.IsBusy = true;
+                            try { ExportWrestlersCsv(); }
+                            finally { wrestlersCsvBtn.IsBusy = false; }
+                        },
+                        canExecute: _ => true);
+                    wrestlersCsvBtn = new CommandButtonItem(
+                        T("Applications_ExportCsv_Tooltip", "Экспортировать список участников"),
+                        PackIconKind.DatabaseExport,
+                        wrestlersCsvCmd);
+
+                    _quickButtons = new List<CommandButtonItem>
+                    {
+                        weighingBtn,
+                        wrestlersCsvBtn
+                    };
+                }
+                return _quickButtons;
             }
         }
 
         #region Binding Properties
 
-        public string PageName => "Заявки";
-        public override string PageTitle => "Заявки на участие";
+        public string PageName => T("Applications_PageName", "Заявки");
+        public override string PageTitle => T("Applications_PageTitle", "Регистрация");
 
         public int AppsCount => DataContext.Tournament?.TeamApplications.Count ?? 0;
         public int WrestlersCount => DataContext.Tournament?.Wrestlers.Count ?? 0;
@@ -73,6 +104,18 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 _items = value;
 
                 OnPropertyChanged("Items");
+                OnPropertyChanged("ShouldAutoExpand");
+            }
+        }
+
+        public bool ShouldAutoExpand
+        {
+            get
+            {
+                if (!IsFilterEnabled || _items == null || _items.Count == 0) return false;
+                if (_items.Count == 1) return true;
+
+                return _items.Sum(i => i.Wrestlers.Count) <= 5;
             }
         }
 
@@ -86,6 +129,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
                 Filter(_filterString, IsOnlyUnapprovedVisible);
                 OnPropertyChanged("IsFilterEnabled");
+                OnPropertyChanged("ShouldAutoExpand");
             }
         }
 
@@ -105,8 +149,9 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                         Filter(_filterString, IsOnlyUnapprovedVisible);
                     }
                 }
-                
+
                 OnPropertyChanged("IsFilterEnabled");
+                OnPropertyChanged("ShouldAutoExpand");
             }
         }
 
@@ -120,26 +165,18 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
             if (DataContext.Tournament == null)
             {
-                throw new ApplicationException("Tournament property is not set!");
+                throw new InvalidOperationException("Tournament is not set on the data context. Navigate to a tournament before opening this view.");
             }
 
-            Items = new ObservableCollection<TeamApplicationViewModel>(DataContext.Tournament.TeamApplications.Select(x => new TeamApplicationViewModel(x, DataContext.Tournament)));
+            // VM is a singleton (registered once in App.xaml.cs and reused across
+            // navigations). Reset cached QuickButtons so a returning visit
+            // re-evaluates conditional buttons (e.g. tournament-state checks).
+            _quickButtons = null;
+
+            Filter(_filterString, _isOnlyUnapprovedVisible);
         }
 
         #region Command Properties
-
-        public ICommand PrintTeamApplicationCommand
-        {
-            get
-            {
-                if (_printTeamApplicationCommand == null)
-                {
-                    _printTeamApplicationCommand = new RelayCommand(param => PrintTeamApplication(param as TeamApplicationViewModel), param => param != null);
-                }
-
-                return _printTeamApplicationCommand;
-            }
-        }
 
         public ICommand ApproveAllCommand
         {
@@ -159,7 +196,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_addAppCommand == null)
                 {
-                    _addAppCommand = new RelayCommand(async (param) => await AddApplication(), param => true);
+                    _addAppCommand = new AsyncRelayCommand(_ => AddApplication(), _ => true);
                 }
                 return _addAppCommand;
             }
@@ -171,7 +208,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_editAppCommand == null)
                 {
-                    _editAppCommand = new RelayCommand(async (param) => await EditApplication(param as TeamApplicationViewModel), param => param != null);
+                    _editAppCommand = new AsyncRelayCommand(param => EditApplication(param as TeamApplicationViewModel), param => param != null);
                 }
                 return _editAppCommand;
             }
@@ -195,7 +232,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_addWrestlerCommand == null)
                 {
-                    _addWrestlerCommand = new RelayCommand(async (param) => await AddWrestler(param as TeamApplicationViewModel), param => param != null);
+                    _addWrestlerCommand = new AsyncRelayCommand(param => AddWrestler(param as TeamApplicationViewModel), param => param != null);
                 }
                 return _addWrestlerCommand;
             }
@@ -207,7 +244,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 if (_editWrestlerCommand == null)
                 {
-                    _editWrestlerCommand = new RelayCommand(async (param) => await EditWrestler(param as Wrestler), param => param != null);
+                    _editWrestlerCommand = new AsyncRelayCommand(param => EditWrestler(param as Wrestler), param => param != null);
                 }
                 return _editWrestlerCommand;
             }
@@ -237,9 +274,22 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 return;
             }
 
-            var filteredWrestlers = DataContext.Tournament.Wrestlers.Where(w => (!isOnlyUnapprovedVisible || !w.IsRegistrationApproved)
-                    && (filter == null || filter.Length <= 2 || (filter.Length > 2 && w.LastName.StartsWith(filter, true, CultureInfo.InvariantCulture)))).ToList();
-            var filtered = new ObservableCollection<TeamApplicationViewModel>(DataContext.Tournament.TeamApplications.Where(a => filteredWrestlers.Select(w => w.TeamID).Contains(a.ID)).Select(a => new TeamApplicationViewModel(a.Clone() as TeamApplication, DataContext.Tournament)));
+            var hasTextFilter = !string.IsNullOrEmpty(filter) && filter.Length > 2;
+
+            var matchingWrestlerTeamIds = new HashSet<Guid>(DataContext.Tournament.Wrestlers
+                .Where(w => (!isOnlyUnapprovedVisible || !w.IsRegistrationApproved)
+                            && (!hasTextFilter || ContainsCi(w.FullName, filter)))
+                .Where(w => w.TeamID.HasValue)
+                .Select(w => w.TeamID.Value));
+
+            var matched = DataContext.Tournament.TeamApplications.Where(app =>
+                matchingWrestlerTeamIds.Contains(app.ID)
+                || (hasTextFilter
+                    && (ContainsCi(app.ShortName, filter) || ContainsCi(app.FullName, filter) || ContainsCi(app.City, filter))
+                    && (!isOnlyUnapprovedVisible
+                        || DataContext.Tournament.Wrestlers.Any(w => w.TeamID == app.ID && !w.IsRegistrationApproved))));
+
+            var filtered = new ObservableCollection<TeamApplicationViewModel>(matched.Select(a => new TeamApplicationViewModel(a, DataContext.Tournament)));
             foreach (var teamApplication in filtered)
             {
                 teamApplication.SetFilter(filter, isOnlyUnapprovedVisible);
@@ -248,9 +298,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             Items = filtered;
         }
 
+        private static bool ContainsCi(string source, string value) =>
+            !string.IsNullOrEmpty(source)
+            && !string.IsNullOrEmpty(value)
+            && source.IndexOf(value, StringComparison.InvariantCultureIgnoreCase) >= 0;
+
         private void ApproveAllWrestlers()
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите допустить всех спортсменов?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Applications_AutoApprove_Body", "Вы уверены, что хотите допустить всех спортсменов?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var wrestler in Tournament.Wrestlers)
             {
@@ -297,15 +352,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
         }
 
-        private void PrintTeamApplication(TeamApplicationViewModel teamApplication)
-        {
-            if (teamApplication == null) return;
-
-            DataContext.Team = teamApplication;
-
-            ShowPrintPreview(new PrintTeamApplicationViewModel(DiContainer));            
-        }
-        
         private async Task EditApplication(TeamApplicationViewModel app)
         {
             var tmpApp = app.Team.Clone() as TeamApplication;
@@ -341,7 +387,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         private void DeleteApplication(TeamApplicationViewModel app)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить заявку?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Applications_DeleteApp_Body", "Вы уверены, что хотите удалить заявку?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var wrestler in app.Wrestlers)
             {
@@ -360,11 +406,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
 
             DataContext.Tournament.TeamApplications.Remove(app.Team);
+            Items.Remove(app);
 
             OnPropertyChanged("AppsCount");
             OnPropertyChanged("WrestlersCount");
-
-            OnPropertyChanged("Items");
         }
 
         private async Task AddWrestler(TeamApplicationViewModel app)
@@ -530,7 +575,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
         private void DeleteWrestler(Wrestler wrestler)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить спортсмена из заявки?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Applications_DeleteWrestler_Body", "Вы уверены, что хотите удалить спортсмена из заявки?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             RemoveWrestlerFromGroup(wrestler);
 
@@ -543,64 +588,133 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             OnPropertyChanged("WrestlersCount");            
         }
 
-        private void ExportData()
+        // Bulk-PDF export of weighing protocols, one PDF per group with wrestlers.
+        // Identical pipeline to the «Данные» card it replaces.
+        private async Task ExportWeighingProtocolsAsync()
         {
-            if (DataContext.Tournament == null)
+            var tournament = DataContext.Tournament;
+            var groupsWithWrestlers = tournament?.Groups?
+                .Where(g => g?.Wrestlers != null && g.Wrestlers.Count > 0).ToList() ?? new List<AgeWeightGroup>();
+            if (groupsWithWrestlers.Count == 0)
             {
+                Dialog.ShowMessageBox(this,
+                    T("Applications_NoGroupsWithWrestlers", "Нет групп с зарегистрированными участниками."),
+                    T("WeighingExport_DialogTitle", "Экспорт протоколов взвешивания"), MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var tournamentDir = !string.IsNullOrWhiteSpace(tournament.FileName)
+                ? Path.GetDirectoryName(tournament.FileName)
+                : null;
+            var defaultPath = !string.IsNullOrWhiteSpace(tournamentDir) && Directory.Exists(tournamentDir)
+                ? tournamentDir
+                : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            var selectedFolder = FolderPicker.PickFolder(
+                T("WeighingExport_FolderPicker_Title", "Выберите папку для сохранения протоколов взвешивания"),
+                defaultPath);
+            if (string.IsNullOrEmpty(selectedFolder)) return;
+
+            try
+            {
+                var jobs = new List<BulkPdfExportJob>();
+                foreach (var group in groupsWithWrestlers)
+                {
+                    var capturedGroup = group;
+                    jobs.Add(new BulkPdfExportJob
+                    {
+                        FileName = T("WeighingExport_FilePrefix", "Взвешивание_") + BulkBracketPdfExporter.MakeSafeFileName(capturedGroup.Name) + ".pdf",
+                        Landscape = false,
+                        ViewFactory = () =>
+                        {
+                            DataContext.Group = capturedGroup;
+                            var vm = new PrintApplicationsViewModel(DiContainer);
+                            vm.InitData();
+                            return new PrintApplicationsView { DataContext = vm };
+                        }
+                    });
+                }
+
+                ShowSnackMessage(string.Format(T("WeighingExport_Snack_Building", "Идет создание протоколов взвешивания: {0} файлов..."), jobs.Count));
+
+                var exporter = new BulkBracketPdfExporter();
+                var result = await exporter.ExportAsync(jobs, selectedFolder);
+
+                var msg = string.Format(T("Export_Snack_Done", "Готово. Сохранено PDF: {0}"), result.Succeeded);
+                if (result.Skipped > 0) msg += string.Format(T("Export_Snack_Skipped", ", пропущено: {0}"), result.Skipped);
+                if (result.Failures.Count > 0) msg += string.Format(T("Export_Snack_Failed", ", ошибок: {0}"), result.Failures.Count);
+                ShowSnackMessage(msg);
+
+                if (result.Failures.Count > 0)
+                {
+                    Dialog.ShowMessageBox(this,
+                        T("Export_PartialFailure", "Не удалось сохранить часть протоколов:") + "\n\n" + string.Join("\n", result.Failures),
+                        T("WeighingExport_DialogTitle", "Экспорт протоколов взвешивания"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                Dialog.ShowMessageBox(this,
+                    T("Export_ErrorPrefix", "Ошибка экспорта: ") + ex.Message,
+                    T("WeighingExport_DialogTitle", "Экспорт протоколов взвешивания"), MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ExportWrestlersCsv()
+        {
+            var tournament = DataContext.Tournament;
+            if (tournament == null)
+            {
+                ShowSnackMessage(T("Snack_TournamentNotOpen", "Турнир не открыт."));
                 return;
             }
 
             var settings = new SaveFileDialogSettings
             {
-                Title = "Экспортировать участников в файл",
+                Title = T("Applications_ExportCsv_DialogTitle", "Экспортировать участников в файл"),
                 CheckFileExists = false,
                 OverwritePrompt = true,
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                 Filter = "CSV (*.csv)|*.csv|All Files (*.*)|*.*"
             };
 
-            bool? success = Dialog.ShowSaveFileDialog(this, settings);
-            if (success == true)
+            if (Dialog.ShowSaveFileDialog(this, settings) != true) return;
+
+            try
             {
-                try
+                using (var writer = new StreamWriter(settings.FileName))
+                using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
                 {
-                    using (var writer = new StreamWriter(settings.FileName))
-
-                    using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+                    var exportData = tournament.Wrestlers.Select(item => new ExportedWrestler
                     {
-                        var exportData = DataContext.Tournament.Wrestlers.Select(item =>
-                        {
-                            return new ExportedWrestler()
-                            {
-                                FullName = item.FullName,
-                                BirthDate = item.BirthDate.HasValue ? item.BirthDate.Value.ToString("dd/MM/yyyy") : string.Empty,
-                                GroupName = item.GroupName,
-                                TeamCity = item.TeamCity,
-                                TeamName = item.TeamName
-                            };
-                        }).OrderBy(x => x.GroupName).ThenBy(x => x.FullName);
+                        FullName = item.FullName,
+                        BirthDate = item.BirthDate.HasValue ? item.BirthDate.Value.ToString("dd/MM/yyyy") : string.Empty,
+                        GroupName = item.GroupName,
+                        TeamCity = item.TeamCity,
+                        TeamName = item.TeamName
+                    }).OrderBy(x => x.GroupName).ThenBy(x => x.FullName);
 
-                        csv.WriteRecords(exportData);
-                    }
+                    csv.WriteRecords(exportData);
+                }
 
-                    ShowSnackMessage("Список участников экспортирован!");
-                }
-                catch (Exception ex)
-                {
-                    ShowSnackMessage($"Произошла ошибка экспорта: {ex.Message}");
-                }
+                ShowSnackMessage(T("Snack_WrestlersExported", "Список участников экспортирован!"));
+            }
+            catch (Exception ex)
+            {
+                ShowSnackMessage(string.Format(T("Snack_ExportError", "Произошла ошибка экспорта: {0}"), ex.Message));
             }
         }
 
         #endregion
-    }
-}
 
-public class ExportedWrestler
-{
-    public string GroupName { get; set; }
-    public string FullName { get; set; }
-    public string TeamName { get; set; }
-    public string TeamCity { get; set; }
-    public string BirthDate { get; set; }
+        // CsvHelper writes by reflection on this POCO's properties.
+        private sealed class ExportedWrestler
+        {
+            public string GroupName { get; set; }
+            public string FullName { get; set; }
+            public string TeamName { get; set; }
+            public string TeamCity { get; set; }
+            public string BirthDate { get; set; }
+        }
+    }
 }

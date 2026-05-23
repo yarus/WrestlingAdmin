@@ -1,13 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities.Results.Achievements
 {
     public class WinInLast10SecondsAchievementCalculator : IAchievementCalculator
     {
-        public string AchievementTitle => "Никогда не сдаваться";
+        public string AchievementTitle => EntityLocalization.T("Achievement_NeverGiveUp_Title", "Никогда не сдаваться");
         public string AchievementType => "NeverGiveUp";
-        public string AchievementDefinition => "Борец, набравший победные баллы за последние 10 секунд схватки";
+        public string AchievementDefinition => EntityLocalization.T("Achievement_NeverGiveUp_Definition", "Борец, набравший победные баллы за последние 10 секунд схватки");
 
         public List<WrestlerAchievement> CalculateAchievement(Tournament tournament, List<TournamentResult> results)
         {
@@ -30,7 +31,7 @@ namespace Wrestling.Entities.Results.Achievements
                 var wonMatches = allMatches
                     .Where(m => 
                         (m.LastSecondInMatch >= (result.Group.MaxRoundSecond * 2) - 10) && 
-                        ((m.IsRedWon.HasValue && m.IsRedWon.Value && m.WrestlerInRed.SameAs(result.Wrestler)) || (m.IsRedWon.HasValue && !m.IsRedWon.Value && m.WrestlerInBlue.SameAs(result.Wrestler)))                        
+                        ((m.IsRedWinner && m.WrestlerInRed.SameAs(result.Wrestler)) || (m.IsBlueWon && m.WrestlerInBlue.SameAs(result.Wrestler)))
                     )
                     .ToList();                
 
@@ -46,28 +47,31 @@ namespace Wrestling.Entities.Results.Achievements
                             break;
                         }
 
-                        if (action.Points > 0 || action.Points < 0)
+                        // Only real points actions count toward the «before
+                        // last 10 seconds» score. Warnings and reverts must
+                        // not inflate the running totals — they share the
+                        // Points field but have a different Type.
+                        if (action.Type != MatchActionType.SetPoints) continue;
+
+                        if (action.IsForRed.HasValue && action.IsForRed.Value)
                         {
-                            if (action.IsForRed.HasValue && action.IsForRed.Value)
-                            {
-                                redPoints += action.Points;
-                            }
-                            else if (action.IsForRed.HasValue && !action.IsForRed.Value)
-                            {
-                                bluePoints += action.Points;
-                            }
+                            redPoints += action.Points;
+                        }
+                        else if (action.IsForRed.HasValue && !action.IsForRed.Value)
+                        {
+                            bluePoints += action.Points;
                         }
                     }
 
-                    if ((redPoints < bluePoints && match.WrestlerInRed.SameAs(result.Wrestler) && match.IsRedWon.HasValue && match.IsRedWon.Value)
-                        || (redPoints > bluePoints && match.WrestlerInBlue.SameAs(result.Wrestler) && match.IsRedWon.HasValue && !match.IsRedWon.Value))
+                    if ((redPoints < bluePoints && match.WrestlerInRed.SameAs(result.Wrestler) && match.IsRedWinner)
+                        || (redPoints > bluePoints && match.WrestlerInBlue.SameAs(result.Wrestler) && match.IsBlueWon))
                     {
                         response.Add(new WrestlerAchievement
                         {
                             Title = AchievementTitle,
                             Wrestler = result.Wrestler,
                             AchievementType = AchievementType,
-                            AchievementValue = "Схватка #" + match.MatchNumber,
+                            AchievementValue = string.Format(EntityLocalization.T("Achievement_Value_MatchNumber", "Схватка #{0}"), match.MatchNumber),
                             AchievementDefinition = AchievementDefinition
                         });
                     }

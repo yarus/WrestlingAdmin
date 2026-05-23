@@ -20,9 +20,9 @@ namespace Wrestling.Data
         [DataMember]
         public int MaxActionSecond { get; set; }
         [DataMember]
-        public string CarpetLabel { get; set; }
+        public string MatLabel { get; set; }
         [DataMember]
-        public Guid? CarpetID { get; set; }
+        public Guid? MatID { get; set; }
         [DataMember]
         public bool IsFemale { get; set; }
         [DataMember]
@@ -31,5 +31,9 @@ namespace Wrestling.Data
         public int? BirthYearMax { get; set; }
         [DataMember]
         public double? WeightMax { get; set; }
+        [DataMember]
+        public int FieldsVersion { get; set; }
+        [DataMember]
+        public int BracketVersion { get; set; }
     }
 }

@@ -64,12 +64,10 @@ public class AdapterRoundTripTests
             MaxActionSecond = 15,
             IsTimerBackward = true,
             IsSoundEnabled = false,
-            IsAutosaveEnabled = true,
-            AutosaveMaxSecond = 45,
-            IsTournamentScoreInternational = false,
             IsOverlayOlympic = false,
-            IsVideoRecordingEnabled = true,
-            VideoStoragePath = @"C:\videos"
+            IsBackupEnabled = false,
+            MaxBackupCount = 7,
+            BackupFolderPath = @"D:\shared-backups"
         };
         var t = new Tournament(settings) { ID = Guid.NewGuid(), Name = "N" };
 
@@ -80,11 +78,29 @@ public class AdapterRoundTripTests
         restored.Settings.MaxActionSecond.Should().Be(15);
         restored.Settings.IsTimerBackward.Should().BeTrue();
         restored.Settings.IsSoundEnabled.Should().BeFalse();
-        restored.Settings.IsAutosaveEnabled.Should().BeTrue();
-        restored.Settings.AutosaveMaxSecond.Should().Be(45);
-        restored.Settings.IsTournamentScoreInternational.Should().BeFalse();
-        restored.Settings.IsVideoRecordingEnabled.Should().BeTrue();
-        restored.Settings.VideoStoragePath.Should().Be(@"C:\videos");
+        restored.Settings.IsBackupEnabled.Should().BeFalse();
+        restored.Settings.MaxBackupCount.Should().Be(7);
+        restored.Settings.BackupFolderPath.Should().Be(@"D:\shared-backups");
+    }
+
+    [Fact]
+    public void Legacy_info_without_backup_fields_applies_safe_defaults()
+    {
+        // Simulates a .wrt saved before the backup feature: the persisted
+        // MaxBackupCount is missing (0) and IsBackupEnabled is missing.
+        // The info constructor seeds safe defaults so Newtonsoft loads the
+        // pre-feature JSON with backups enabled.
+        var legacyInfo = new Wrestling.Data.TournamentInfo
+        {
+            ID = Guid.NewGuid(),
+            Name = "legacy",
+            Settings = new Wrestling.Data.GlobalSettingsInfo { MaxBackupCount = 0 }
+        };
+
+        var restored = _adapter.GetEntityFromInfo(legacyInfo);
+
+        restored.Settings.IsBackupEnabled.Should().BeTrue("safe default must enable backups for legacy files");
+        restored.Settings.MaxBackupCount.Should().Be(20, "zero is normalized to the default retention");
     }
 
     [Fact]
@@ -131,6 +147,60 @@ public class AdapterRoundTripTests
     }
 
     [Fact]
+    public void Round_trip_preserves_IsDisqualified_flag_on_wrestler()
+    {
+        var group = new AgeWeightGroup { ID = Guid.NewGuid(), BirthYearMin = 2005, BirthYearMax = 2006, WeightMax = 60, MaxRoundSecond = 180 };
+        var w = new Wrestler
+        {
+            ID = Guid.NewGuid(),
+            FirstName = "Иван",
+            LastName = "Иванов",
+            BirthDate = new DateTime(2005, 3, 1),
+            GroupID = group.ID,
+            IsDisqualified = true
+        };
+        group.Wrestlers = new System.Collections.Generic.List<Wrestler> { w };
+        var t = new Tournament(new GlobalSettings()) { ID = Guid.NewGuid(), Name = "T" };
+        t.Groups.Add(group);
+        t.Wrestlers.Add(w);
+
+        var info = _adapter.GetInfoFromEntity(t);
+        var restored = _adapter.GetEntityFromInfo(info);
+
+        restored.Wrestlers[0].IsDisqualified.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Legacy_wrt_without_IsDisqualified_field_loads_as_false()
+    {
+        // Simulate a DTO that came from old JSON: IsDisqualified defaults to
+        // false (Newtonsoft fills missing fields from the parameterless ctor
+        // / default(bool)). The adapter must not require the field to be set.
+        var info = new TournamentInfo
+        {
+            ID = Guid.NewGuid(),
+            Name = "Legacy",
+            Groups = new ObservableCollection<AgeWeightGroupInfo>(),
+            Wrestlers = new ObservableCollection<WrestlerInfo>
+            {
+                new WrestlerInfo
+                {
+                    ID = Guid.NewGuid(),
+                    FirstName = "Иван",
+                    LastName = "Иванов",
+                    BirthDate = new DateTime(2005, 3, 1)
+                    // IsDisqualified not set — defaults to false
+                }
+            },
+            TeamApplications = new ObservableCollection<TeamApplicationInfo>(),
+            Settings = new GlobalSettingsInfo()
+        };
+
+        var restored = _adapter.GetEntityFromInfo(info);
+        restored.Wrestlers[0].IsDisqualified.Should().BeFalse();
+    }
+
+    [Fact]
     public void Round_trip_assigns_a_new_Guid_when_tournament_has_none()
     {
         var t = new Tournament(new GlobalSettings()) { Name = "No-ID" };
@@ -138,6 +208,53 @@ public class AdapterRoundTripTests
 
         info.ID.Should().NotBeNull();
         t.ID.Should().Be(info.ID, "the entity is mutated to carry the new Guid");
+    }
+
+    [Fact]
+    public void Round_trip_preserves_network_settings()
+    {
+        var settings = new GlobalSettings
+        {
+            DiscoveryPort = 40000,
+            IsHttpServerEnabled = false,
+            HttpServerPort = 40001,
+            NodeName = "Ковёр 3",
+            AnnounceIpOverride = "192.168.88.42"
+        };
+        var t = new Tournament(settings) { ID = Guid.NewGuid(), Name = "N" };
+
+        var info = _adapter.GetInfoFromEntity(t);
+        var restored = _adapter.GetEntityFromInfo(info);
+
+        restored.Settings.DiscoveryPort.Should().Be(40000);
+        restored.Settings.IsHttpServerEnabled.Should().BeFalse();
+        restored.Settings.HttpServerPort.Should().Be(40001);
+        restored.Settings.NodeName.Should().Be("Ковёр 3");
+        restored.Settings.AnnounceIpOverride.Should().Be("192.168.88.42");
+    }
+
+    [Fact]
+    public void Legacy_info_without_network_fields_applies_safe_defaults()
+    {
+        // Simulates a .wrt saved before the discovery feature: the persisted
+        // DiscoveryPort/HttpServerPort are missing (0), NodeName absent.
+        // The info constructor seeds defaults, the adapter normalizes zero-ports
+        // and falls back to MachineName for an empty NodeName so the laptop is
+        // discoverable out of the box.
+        var legacyInfo = new Wrestling.Data.TournamentInfo
+        {
+            ID = Guid.NewGuid(),
+            Name = "legacy",
+            Settings = new Wrestling.Data.GlobalSettingsInfo { DiscoveryPort = 0, HttpServerPort = 0 }
+        };
+
+        var restored = _adapter.GetEntityFromInfo(legacyInfo);
+
+        restored.Settings.DiscoveryPort.Should().Be(24565);
+        restored.Settings.IsHttpServerEnabled.Should().BeTrue();
+        restored.Settings.HttpServerPort.Should().Be(24566);
+        restored.Settings.NodeName.Should().Be(Environment.MachineName);
+        restored.Settings.AnnounceIpOverride.Should().BeEmpty();
     }
 
     [Fact]

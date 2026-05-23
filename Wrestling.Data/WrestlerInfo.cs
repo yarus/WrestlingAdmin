@@ -55,5 +55,9 @@ namespace Wrestling.Data
         public string Level { get; set; }
         [DataMember]
         public DateTime? Timestamp { get; set; }
+        [DataMember]
+        public bool IsDisqualified { get; set; }
+        [DataMember]
+        public bool IsNoShow { get; set; }
     }
 }

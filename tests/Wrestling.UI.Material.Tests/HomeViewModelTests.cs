@@ -8,24 +8,23 @@ namespace Wrestling.UI.Material.Tests;
 public class HomeViewModelTests
 {
     [Fact]
-    public void PageTitle_contains_Russian_tournament_administrator_label()
+    public void PageTitle_contains_program_brand_label()
     {
         var di = TestContainerBuilder.MakeDefault();
         var vm = new HomeViewModel(di);
 
-        vm.PageTitle.Should().Contain("Вольная борьба");
-        vm.PageTitle.Should().Contain("Администратор");
+        vm.PageTitle.Should().Contain("РОСБОС");
+        vm.PageTitle.Should().Contain("Сетка");
     }
 
     [Fact]
-    public void DrawerItems_include_settings_and_exit_buttons()
+    public void Open_and_new_tournament_commands_are_available_on_home_page()
     {
         var di = TestContainerBuilder.MakeDefault();
         var vm = new HomeViewModel(di);
 
-        vm.DrawerItems.Should().HaveCount(2);
-        vm.DrawerItems[0].Label.Should().Be("Настройки");
-        vm.DrawerItems[1].Label.Should().Be("Выйти");
+        vm.OpenTournamentCommand.Should().NotBeNull();
+        vm.NewTournamentCommand.Should().NotBeNull();
     }
 
     [Fact]
@@ -45,6 +44,6 @@ public class HomeViewModelTests
         var vm = new HomeViewModel(di);
         vm.InitData();
 
-        vm.WindowTitle.Should().Be("Вольная борьба - Администратор турниров");
+        vm.WindowTitle.Should().Be("РОСБОС © Сетка 2.0");
     }
 }

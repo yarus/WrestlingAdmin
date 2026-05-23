@@ -6,6 +6,7 @@
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
              xmlns:converters2="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              md:DialogServiceViews.IsRegistered="True"
              mc:Ignorable="d"
@@ -13,7 +14,6 @@
 
     <UserControl.Resources>
         <converters1:IndexItemsConverter x:Key="ItemsIndexConverter" />
-        <converters1:HighlightSelectedItemConverter x:Key="HighlightSelectedItem" />
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters2:BracketCellLineHeightConverter x:Key="BracketCellHeight" />
         <converters2:BracketCellLeftLineVisConverter x:Key="LeftLineVis" />
@@ -27,37 +27,51 @@
             <RowDefinition Height="1*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
-            <ItemsControl ItemsSource="{Binding Carpets}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Margin="0" Orientation="Horizontal" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Button ToolTip="Выбрать ковер" VerticalAlignment="Center"
-                                HorizontalAlignment="Center" Content="{Binding Name}" MinWidth="100"
-                                Command="{Binding Path=DataContext.ChangeCarpetCommand, ElementName=RootControl}"
-                                CommandParameter="{Binding }" Margin="0,0,20,0">
-                            <Button.Background>
-                                <MultiBinding Converter="{StaticResource HighlightSelectedItem}">
-                                    <Binding Path="DataContext.SelectedCarpet" ElementName="RootControl" />
-                                    <Binding Path="." />
-                                </MultiBinding>
-                            </Button.Background>
-                        </Button>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </StackPanel>
+        <Grid Grid.Row="0" Margin="20,16,20,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <ComboBox Grid.Column="0" Width="220"
+                      Style="{DynamicResource MaterialDesignFloatingHintComboBox}"
+                      materialDesign:HintAssist.Hint="{loc:Loc Slide_Mat}"
+                      ItemsSource="{Binding Mats}"
+                      SelectedItem="{Binding SelectedMat}"
+                      DisplayMemberPath="Name"
+                      VerticalAlignment="Bottom" />
+
+            <materialDesign:PackIcon Grid.Column="1" Kind="Magnify" Opacity=".56"
+                                     Width="20" Height="20"
+                                     VerticalAlignment="Bottom" Margin="24,0,8,6" />
+
+            <TextBox Grid.Column="2"
+                     Style="{DynamicResource MaterialDesignFloatingHintTextBox}"
+                     materialDesign:HintAssist.Hint="{loc:Loc Search_NameTeamCity_Hint}"
+                     MinWidth="200" MaxWidth="320" HorizontalAlignment="Left"
+                     VerticalAlignment="Bottom"
+                     Text="{Binding FilterString, UpdateSourceTrigger=PropertyChanged, Delay=1000}" />
+
+            <StackPanel Grid.Column="3" Orientation="Horizontal"
+                        Margin="20,0,0,0" VerticalAlignment="Bottom"
+                        ToolTip="{loc:Loc Brackets_RemainingOnMat_Tooltip}">
+                <materialDesign:PackIcon Kind="Wrestling" Width="20" Height="20"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                <TextBlock Text="{Binding SelectedMat.MatchesCount, Mode=OneWay}"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="6,0,0,0" />
+            </StackPanel>
+        </Grid>
 
         <Border Grid.Row="0" Grid.Column="0" BorderThickness="0,0,0,1"
-                BorderBrush="{DynamicResource MaterialDesignDivider}" />
+                BorderBrush="{DynamicResource MaterialDesignDivider}" VerticalAlignment="Bottom" />
 
         <ScrollViewer Grid.Row="1" Margin="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <Grid>
-                <ItemsControl ItemsSource="{Binding Path=SelectedCarpet.Groups}">
+                <ItemsControl ItemsSource="{Binding Path=FilteredGroups}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Margin="0" />
@@ -65,7 +79,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Expander Background="LightGray" Margin="0" Padding="0" IsExpanded="{Binding IsExpanded}">
+                            <Expander Background="{DynamicResource MaterialDesignToolBarBackground}" Margin="0" Padding="0" IsExpanded="{Binding IsExpanded}">
                                 <Expander.Header>
                                     <Grid Margin="0">
                                         <Grid.ColumnDefinitions>
@@ -89,34 +103,50 @@
                                                    Margin="20,0,20,0" VerticalAlignment="Center">
                                             <Run Text="{Binding Name, Mode=OneWay}" />
                                             <Run Text="-"></Run>
-                                            <Run Text="{Binding Bracket.BracketTypeLabel, Mode=OneWay}"></Run>
+                                            <Run Text="{Binding Bracket.BracketTypeDisplay, Mode=OneWay}"></Run>
                                         </TextBlock>
 
                                         <StackPanel Grid.Column="2" HorizontalAlignment="Right"
                                                     Orientation="Horizontal">
-                                            <TextBlock Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                                                <Run Text="Участников:" />
-                                                <Run Text="{Binding Path=Bracket.WrestlersCount, Mode=OneWay}" />
-                                            </TextBlock>
+                                            <!-- Fixed-width grids (not StackPanels) so icons stay column-
+                                                 aligned across rows regardless of count digit length. -->
+                                            <Grid Margin="12,0,12,0" VerticalAlignment="Center"
+                                                  ToolTip="{loc:Loc Brackets_GroupParticipants_Tooltip}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="34" />
+                                                </Grid.ColumnDefinitions>
+                                                <materialDesign:PackIcon Grid.Column="0" Kind="AccountMultiple" Width="20" Height="20"
+                                                                         VerticalAlignment="Center"
+                                                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Path=Bracket.WrestlersCount, Mode=OneWay}"
+                                                           FontSize="14" VerticalAlignment="Center"
+                                                           Margin="6,0,0,0" />
+                                            </Grid>
 
-                                            <TextBlock Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                                                <Run Text="Поединков:" />
-                                                <Run Text="{Binding Path=Bracket.MatchesCount, Mode=OneWay}" />
-                                            </TextBlock>
-
-                                            <Button ToolTip="Распечатать сетку группы" VerticalAlignment="Center"
-                                                    HorizontalAlignment="Center"
-                                                    Command="{Binding Path=DataContext.PrintBracketCommand, ElementName=RootControl}"
-                                                    CommandParameter="{Binding }" Margin="20,0,0,0">
-                                                <materialDesign:PackIcon Kind="Printer" Width="22" Height="22"
-                                                                         Margin="0" Padding="0" />
-                                            </Button>
+                                            <Grid Margin="12,0,12,0" VerticalAlignment="Center"
+                                                  ToolTip="{loc:Loc Brackets_GroupMatches_Tooltip}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="34" />
+                                                </Grid.ColumnDefinitions>
+                                                <materialDesign:PackIcon Grid.Column="0" Kind="Wrestling" Width="20" Height="20"
+                                                                         VerticalAlignment="Center"
+                                                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Path=Bracket.MatchesCount, Mode=OneWay}"
+                                                           FontSize="14" VerticalAlignment="Center"
+                                                           Margin="6,0,0,0" />
+                                            </Grid>
                                         </StackPanel>
                                     </Grid>
                                 </Expander.Header>
-                                <Expander.Content>                                    
-                                    <Grid x:Name="GroupPanel" Background="White">
-                                        <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                <Expander.Content>
+                                    <materialDesign:Card Margin="10,10,10,10"
+                                                         UniformCornerRadius="4"
+                                                         materialDesign:ElevationAssist.Elevation="Dp4">
+                                    <Grid x:Name="GroupPanel" Background="{DynamicResource MaterialDesignPaper}">
+                                        <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"
+                                                 Margin="10,10,10,10">
                                             <ItemsControl ItemsSource="{Binding Path=Bracket.Rounds}" Margin="10">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
@@ -126,7 +156,7 @@
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
                                                         <StackPanel Margin="0">
-                                                            <TextBlock x:Name="RoundLabel" Text="{Binding RoundName}"
+                                                            <TextBlock x:Name="RoundLabel" Text="{loc:LocRound RoundName}"
                                                                     HorizontalAlignment="Center"
                                                                     VerticalAlignment="Center">
                                                                 <TextBlock.Margin>
@@ -244,15 +274,51 @@
                                                                                     VerticalAlignment="Center"
                                                                                     HorizontalAlignment="Center"
                                                                                     Margin="0">
-
+                                                                                    <!-- Win check: winner of this match. Suppressed when the
+                                                                                         winner was later DSQ'd (mutual DSQ in a downstream final
+                                                                                         flips this flag on the wrestler). -->
                                                                                     <materialDesign:PackIcon
                                                                                     Kind="CheckboxMarked"
                                                                                     HorizontalAlignment="Center"
                                                                                     VerticalAlignment="Center"
                                                                                     Margin="0" Padding="0"
                                                                                     Foreground="Red"
-                                                                                    Visibility="{Binding IsRedWon, Converter={StaticResource BoolToVis}}"
-                                                                                    Height="16" Width="16" />
+                                                                                    Height="16" Width="16">
+                                                                                        <materialDesign:PackIcon.Visibility>
+                                                                                            <MultiBinding Converter="{StaticResource MultiBoolAndToVis}" ConverterParameter="1">
+                                                                                                <Binding Path="IsRedWon" />
+                                                                                                <Binding Path="WrestlerInRed.IsDisqualified" />
+                                                                                            </MultiBinding>
+                                                                                        </materialDesign:PackIcon.Visibility>
+                                                                                    </materialDesign:PackIcon>
+                                                                                    <!-- DSQ marker: replaces the win-check when the winning
+                                                                                         wrestler was later disqualified. Click → confirm →
+                                                                                         revert the originating mutual-DSQ match. Click is
+                                                                                         attached via InputBindings on the PackIcon itself
+                                                                                         (instead of a Button wrapper) to preserve the exact
+                                                                                         original layout — Button chrome would shift the
+                                                                                         icon out of its 16-px column. -->
+                                                                                    <materialDesign:PackIcon
+                                                                                    Kind="CloseOctagon"
+                                                                                    HorizontalAlignment="Center"
+                                                                                    VerticalAlignment="Center"
+                                                                                    Margin="0" Padding="0"
+                                                                                    Foreground="DarkOrange"
+                                                                                    ToolTip="{loc:Loc Brackets_RemoveDsq_Tooltip}"
+                                                                                    Cursor="Hand"
+                                                                                    Height="20" Width="20">
+                                                                                        <materialDesign:PackIcon.Visibility>
+                                                                                            <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
+                                                                                                <Binding Path="IsRedWon" />
+                                                                                                <Binding Path="WrestlerInRed.IsDisqualified" />
+                                                                                            </MultiBinding>
+                                                                                        </materialDesign:PackIcon.Visibility>
+                                                                                        <materialDesign:PackIcon.InputBindings>
+                                                                                            <MouseBinding Gesture="LeftClick"
+                                                                                                Command="{Binding ElementName=RootControl, Path=DataContext.ClearDisqualifyCommand}"
+                                                                                                CommandParameter="{Binding WrestlerInRed}" />
+                                                                                        </materialDesign:PackIcon.InputBindings>
+                                                                                    </materialDesign:PackIcon>
                                                                                 </Grid>
 
                                                                                 <Grid Grid.Row="1" Grid.Column="4"
@@ -266,8 +332,58 @@
                                                                                     VerticalAlignment="Center"
                                                                                     Margin="0" Padding="0"
                                                                                     Foreground="Blue"
-                                                                                    Visibility="{Binding IsBlueWon, Converter={StaticResource BoolToVis}}"
-                                                                                    Height="16" Width="16" />
+                                                                                    Height="16" Width="16">
+                                                                                        <materialDesign:PackIcon.Visibility>
+                                                                                            <MultiBinding Converter="{StaticResource MultiBoolAndToVis}" ConverterParameter="1">
+                                                                                                <Binding Path="IsBlueWon" />
+                                                                                                <Binding Path="WrestlerInBlue.IsDisqualified" />
+                                                                                            </MultiBinding>
+                                                                                        </materialDesign:PackIcon.Visibility>
+                                                                                    </materialDesign:PackIcon>
+                                                                                    <materialDesign:PackIcon
+                                                                                    Kind="CloseOctagon"
+                                                                                    HorizontalAlignment="Center"
+                                                                                    VerticalAlignment="Center"
+                                                                                    Margin="0" Padding="0"
+                                                                                    Foreground="DarkOrange"
+                                                                                    ToolTip="{loc:Loc Brackets_RemoveDsq_Tooltip}"
+                                                                                    Cursor="Hand"
+                                                                                    Height="20" Width="20">
+                                                                                        <materialDesign:PackIcon.Visibility>
+                                                                                            <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
+                                                                                                <Binding Path="IsBlueWon" />
+                                                                                                <Binding Path="WrestlerInBlue.IsDisqualified" />
+                                                                                            </MultiBinding>
+                                                                                        </materialDesign:PackIcon.Visibility>
+                                                                                        <materialDesign:PackIcon.InputBindings>
+                                                                                            <MouseBinding Gesture="LeftClick"
+                                                                                                Command="{Binding ElementName=RootControl, Path=DataContext.ClearDisqualifyCommand}"
+                                                                                                CommandParameter="{Binding WrestlerInBlue}" />
+                                                                                        </materialDesign:PackIcon.InputBindings>
+                                                                                    </materialDesign:PackIcon>
+                                                                                </Grid>
+
+                                                                                <Grid Grid.Row="0" Grid.Column="4" Grid.RowSpan="2"
+                                                                                    Visibility="{Binding IsMutualDisqualify, Converter={StaticResource BoolToVis}}"
+                                                                                    VerticalAlignment="Center"
+                                                                                    HorizontalAlignment="Center"
+                                                                                    Margin="0">
+                                                                                    <!-- Match-level mutual DSQ marker — click → revert match. -->
+                                                                                    <materialDesign:PackIcon
+                                                                                    Kind="CloseOctagon"
+                                                                                    HorizontalAlignment="Center"
+                                                                                    VerticalAlignment="Center"
+                                                                                    Margin="0" Padding="0"
+                                                                                    Foreground="DarkOrange"
+                                                                                    ToolTip="{loc:Loc Brackets_RemoveMutualDsq_Tooltip}"
+                                                                                    Cursor="Hand"
+                                                                                    Height="20" Width="20">
+                                                                                        <materialDesign:PackIcon.InputBindings>
+                                                                                            <MouseBinding Gesture="LeftClick"
+                                                                                                Command="{Binding ElementName=RootControl, Path=DataContext.ClearDisqualifyCommand}"
+                                                                                                CommandParameter="{Binding WrestlerInRed}" />
+                                                                                        </materialDesign:PackIcon.InputBindings>
+                                                                                    </materialDesign:PackIcon>
                                                                                 </Grid>
 
                                                                                 <StackPanel Grid.Row="0" Grid.Column="5"
@@ -280,7 +396,7 @@
                                                                                     CommandParameter="{Binding }"
                                                                                     Margin="5" Padding="5,0,5,0"
                                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.OpenMatchCommand}"
-                                                                                    ToolTip="Загрузить поединок">
+                                                                                    ToolTip="{loc:Loc Brackets_LoadMatch_Tooltip}">
                                                                                         <materialDesign:PackIcon
                                                                                         Kind="Play"
                                                                                         Width="22"
@@ -288,11 +404,11 @@
                                                                                     </Button>
 
                                                                                     <Button
-                                                                                    Visibility="{Binding IsMatchCompleted, Converter={StaticResource BoolToVis}}"
+                                                                                    Visibility="{Binding HasViewableResults, Converter={StaticResource BoolToVis}}"
                                                                                     CommandParameter="{Binding }"
                                                                                     Margin="5" Padding="5,0,5,0"
                                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.OpenMatchCommand}"
-                                                                                    ToolTip="Открыть результаты поединка"
+                                                                                    ToolTip="{loc:Loc Completed_OpenMatch_Tooltip}"
                                                                                     Background="DarkGray"
                                                                                     BorderBrush="DarkGray">
                                                                                         <materialDesign:PackIcon
@@ -358,7 +474,8 @@
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                         </Viewbox>
-                                    </Grid>                                                                        
+                                    </Grid>
+                                    </materialDesign:Card>
                                 </Expander.Content>
                             </Expander>
                         </DataTemplate>

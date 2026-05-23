@@ -9,8 +9,8 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintTeamApplication
     {
         private TeamApplicationViewModel _selectedTeam;
 
-        public string PageName => "Заявка";
-        public override string PageTitle => "Заявка от команды";
+        public string PageName => T("AddApp_Title", "Заявка");
+        public override string PageTitle => T("PrintTeamApp_PageTitle", "Заявка от команды");
         
         public PrintTeamApplicationViewModel(IDiContainer container) : base(container)
         {

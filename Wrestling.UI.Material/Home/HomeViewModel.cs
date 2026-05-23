@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows.Input;
@@ -7,11 +7,14 @@ using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
 using Wrestling.Providers;
-using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.Settings;
-using Wrestling.UI.Material.Tournament.Dashboard;
+using Wrestling.UI.Material.Tournament.Conducting;
+using Wrestling.UI.Material.Tournament.Results;
+using Wrestling.UI.Material.Tournament.Standing.Applications;
+using Wrestling.UI.Material.Tournament.Standing.Mats;
+using Wrestling.UI.Material.Tournament.Standing.Details;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Home
 {
@@ -21,17 +24,18 @@ namespace Wrestling.UI.Material.Home
 
         private ITournamentsManager _tournManager;
         private ICacheManager _cacheManager;
-        private IList<CommandButtonItem> _drawerItems;
+        private IResultsService _resultsService;
+        private IRecentTournamentsService _recentService;
 
         private ICommand _newTournamentCommand;
         private ICommand _openTournamentCommand;
-        private ICommand _openSettingsCommand;
-        private ICommand _newQuickMatchCommand;
+        private ICommand _openRecentCommand;
 
         #endregion
 
         public HomeViewModel(IDiContainer container) : base(container)
         {
+            RecentTournaments = new ObservableCollection<string>();
         }
 
         public override void InitData()
@@ -40,53 +44,42 @@ namespace Wrestling.UI.Material.Home
 
             _tournManager = Resolve<ITournamentsManager>();
             _cacheManager = Resolve<ICacheManager>();
+            _resultsService = Resolve<IResultsService>();
+            _recentService = Resolve<IRecentTournamentsService>();
+
+            ReloadRecent();
         }
 
-        public override string PageTitle => "Вольная борьба - Администратор турниров версия 20251101";
+        // Most-recent-first list of .wrt paths the operator opened or created
+        // on this machine. Bound to the Recent panel on the welcome card.
+        public ObservableCollection<string> RecentTournaments { get; }
 
-        public override IList<CommandButtonItem> DrawerItems
+        public bool IsRecentEmpty => RecentTournaments.Count == 0;
+
+        private void ReloadRecent()
         {
-            get
+            RecentTournaments.Clear();
+            if (_recentService == null) { OnPropertyChanged(nameof(IsRecentEmpty)); return; }
+
+            foreach (var path in _recentService.LoadExisting())
             {
-                return _drawerItems ?? (_drawerItems = new List<CommandButtonItem>
-                {
-                    new CommandButtonItem("Настройки", new RelayCommand(param => OpenSettings(), param => true)),
-                    new CommandButtonItem("Выйти", new RelayCommand(param => CloseApp(), param => true))
-                });
+                RecentTournaments.Add(path);
             }
+            OnPropertyChanged(nameof(IsRecentEmpty));
+        }
+
+        // App brand line — intentionally not localized (proper-noun "РОСБОС"
+        // is a brand identifier). If marketing ever wants per-locale variants
+        // promote this to T("Home_PageTitle", ...) with a fallback.
+        public override string PageTitle => "РОСБОС © Сетка 2.0";
+
+        private static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
         }
 
         #region Commands
-
-        public ICommand NewQuickMatchCommand
-        {
-            get
-            {
-                if (_newQuickMatchCommand == null)
-                {
-                    _newQuickMatchCommand = new RelayCommand(
-                        param => NewQuickMatch(),
-                        param => true
-                    );
-                }
-                return _newQuickMatchCommand;
-            }
-        }
-        
-        public ICommand OpenSettingsCommand
-        {
-            get
-            {
-                if (_openSettingsCommand == null)
-                {
-                    _openSettingsCommand = new RelayCommand(
-                        param => OpenSettings(),
-                        param => true
-                    );
-                }
-                return _openSettingsCommand;
-            }
-        }
 
         public ICommand NewTournamentCommand
         {
@@ -118,6 +111,21 @@ namespace Wrestling.UI.Material.Home
             }
         }
 
+        public ICommand OpenRecentCommand
+        {
+            get
+            {
+                if (_openRecentCommand == null)
+                {
+                    _openRecentCommand = new RelayCommand(
+                        param => OpenRecent(param as string),
+                        param => param is string s && !string.IsNullOrWhiteSpace(s)
+                    );
+                }
+                return _openRecentCommand;
+            }
+        }
+
         #endregion
 
         #region Private Methods
@@ -126,7 +134,7 @@ namespace Wrestling.UI.Material.Home
         {
             var settings = new OpenFileDialogSettings
             {
-                Title = "Открыть турнир",
+                Title = T("Home_OpenDialog_Title", "Открыть турнир"),
                 InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                 Filter = "Wrestling Tournament (*.wrt)|*.wrt|All Files (*.*)|*.*"
             };
@@ -134,20 +142,97 @@ namespace Wrestling.UI.Material.Home
             bool? success = Dialog.ShowOpenFileDialog(this, settings);
             if (success == true)
             {
-                var tournament = _tournManager.LoadFromFile(settings.FileName);
-                if (tournament != null)
-                {
-                    VerifyTeamEmblems(tournament);
-
-                    VerifySettings(tournament);
-
-                    DataContext.Tournament = tournament;
-
-                    UpdateCache();
-
-                    NavigateToView<DashboardViewModel>();
-                }
+                OpenFromFile(settings.FileName);
             }
+        }
+
+        private void OpenRecent(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName)) return;
+
+            // Reuse the same load + route sequence as the file-dialog path.
+            // If the file vanished between LoadExisting prune and the click,
+            // OpenFromFile shows a snack and we refresh the list so the
+            // dead entry disappears.
+            if (!OpenFromFile(fileName))
+            {
+                ReloadRecent();
+            }
+        }
+
+        // Returns true on a successful open. Handles the full pipeline used
+        // by both OpenTournament (file dialog) and OpenRecent (tile click).
+        private bool OpenFromFile(string fileName)
+        {
+            var tournament = _tournManager.LoadFromFile(fileName);
+            if (tournament == null)
+            {
+                ShowSnackMessage(T("Snack_OpenError", "Не удалось открыть файл"));
+                return false;
+            }
+
+            VerifyTeamEmblems(tournament);
+
+            VerifySettings(tournament);
+
+            DataContext.Tournament = tournament;
+
+            UpdateCache();
+
+            _resultsService.Recalculate(tournament);
+
+            _recentService?.Add(fileName);
+
+            // Land the operator on the phase that matches the
+            // tournament's current state (e.g. mats configured →
+            // straight to «Проведение») instead of always sending
+            // them through «Положение».
+            NavigateToOpenedTournamentPhase();
+            return true;
+        }
+
+        // Picks the most relevant phase screen for a freshly-opened tournament.
+        // Order matters — completion wins over mats, mats over brackets,
+        // etc. — so we check the most-progressed conditions first.
+        private void NavigateToOpenedTournamentPhase()
+        {
+            var t = DataContext.Tournament;
+            if (t == null)
+            {
+                NavigateToView<DetailsViewModel>();
+                return;
+            }
+
+            // Rule 5: every match in every group is completed → Результаты.
+            if (t.MatchesCount > 0 && t.PendingMatchesCount == 0)
+            {
+                NavigateToView<ResultsViewModel>();
+                return;
+            }
+
+            // Rule 4: at least one mat configured → Проведение.
+            if (t.MatsCount > 0)
+            {
+                NavigateToView<ConductingViewModel>();
+                return;
+            }
+
+            // Rule 3: brackets generated, no mats yet → Расписание (mats setup).
+            if (t.MatchesCount > 0)
+            {
+                NavigateToView<MatsViewModel>();
+                return;
+            }
+
+            // Rule 2: groups exist but no brackets → Регистрация.
+            if (t.GroupsCount > 0)
+            {
+                NavigateToView<ApplicationsViewModel>();
+                return;
+            }
+
+            // Rule 1: brand-new / empty tournament → Положение.
+            NavigateToView<DetailsViewModel>();
         }
 
         private void UpdateCache()
@@ -244,38 +329,46 @@ namespace Wrestling.UI.Material.Home
             DataContext.Tournament = new Entities.Tournament(GetSettingsObject())
             {
                 ID = Guid.NewGuid(),
-                Name = "Новый турнир",
+                Name = T("Home_NewTournamentName", "Новый турнир"),
                 Status = TournamentStatus.Pending,
                 StartDate = DateTime.Now.AddDays(1)
             };
 
-            if (DataContext.Tournament.Settings.IsAutosaveEnabled)
+            _resultsService.Recalculate(DataContext.Tournament);
+
+            // Prompt for save location up front so event-driven autosaves
+            // (after each match approval / peer-sync merge) have a target.
+            // The dashboard re-prompts if the operator dismissed this dialog.
+            var settings = new SaveFileDialogSettings
             {
-                var settings = new SaveFileDialogSettings
+                Title = T("Home_SaveDialog_Title", "Сохранить турнир"),
+                CheckFileExists = false,
+                OverwritePrompt = true,
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                Filter = "Wrestling Tournament (*.wrt)|*.wrt|All Files (*.*)|*.*"
+            };
+
+            bool? success = Dialog.ShowSaveFileDialog(this, settings);
+            if (success == true)
+            {
+                var result = _tournManager.SaveToFile(DataContext.Tournament, settings.FileName);
+                ShowSnackMessage(result
+                    ? T("Snack_TournamentSaved", "Турнир сохранен!")
+                    : T("Snack_SaveError", "При сохранении произошла ошибка!"));
+
+                if (!result)
                 {
-                    Title = "Сохранить турнир",
-                    CheckFileExists = false,
-                    OverwritePrompt = true,
-                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    Filter = "Wrestling Tournament (*.wrt)|*.wrt|All Files (*.*)|*.*"
-                };
-
-                bool? success = Dialog.ShowSaveFileDialog(this, settings);
-                if (success == true)
-                {
-                    var tournService = Resolve<ITournamentsManager>();
-
-                    var result = tournService.SaveToFile(DataContext.Tournament, settings.FileName);
-                    ShowSnackMessage(result ? "Турнир сохранен! Автосохранение включено." : "При сохранении произошла ошибка!");
-
-                    if (!result)
-                    {
-                        return;
-                    }
+                    return;
                 }
+
+                _recentService?.Add(settings.FileName);
             }
 
-            NavigateToView<DashboardViewModel>();
+            // Same routing as the «Open» path. For a brand-new empty
+            // tournament this resolves to «Положение» (rule 1) just like
+            // before; consolidating means future copy-from-template flows
+            // automatically pick the right phase.
+            NavigateToOpenedTournamentPhase();
         }
 
         private GlobalSettings GetSettingsObject()
@@ -292,35 +385,10 @@ namespace Wrestling.UI.Material.Home
                 StartGongSoundPath = GlobalSettings.StartGongSoundPath,
                 SliderMaxSecond = GlobalSettings.SliderMaxSecond,
                 SliderOpacityValue = GlobalSettings.SliderOpacityValue,
-                IsAutosaveEnabled = GlobalSettings.IsAutosaveEnabled,
-                AutosaveMaxSecond = GlobalSettings.AutosaveMaxSecond,
-                IsTournamentScoreInternational = GlobalSettings.IsTournamentScoreInternational,
-                IsOverlayOlympic = GlobalSettings.IsOverlayOlympic,
-                IsVideoRecordingEnabled = GlobalSettings.IsVideoRecordingEnabled,
-                VideoStoragePath = GlobalSettings.VideoStoragePath
+                IsOverlayOlympic = GlobalSettings.IsOverlayOlympic
             };
 
             return settings;
-        }
-
-        private void OpenSettings()
-        {
-            NavigateToView<SettingsViewModel>();
-        }
-        
-        private void NewQuickMatch()
-        {
-            DataContext.WrestlingMatch = new WrestlingMatch
-            {
-                MaxTimeoutSecond = 30,
-                MaxRoundSecond = 180,
-                MaxActionSecond = 30,
-                MatchNumber = 1,
-                WrestlerInRed = new Wrestler { ID = Guid.NewGuid()},
-                WrestlerInBlue = new Wrestler { ID = Guid.NewGuid()}
-            };
-
-            NavigateToView<MatchControlViewModel>();
         }
 
         #endregion

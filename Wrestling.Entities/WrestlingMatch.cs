@@ -23,6 +23,7 @@ namespace Wrestling.Entities
         private string _note;
         private MatchStatusEnum _status;
         private MatchWinTypeEnum? _winType;
+        private int _version;
 
         private Wrestler _wrestlerInRed;
         private Wrestler _wrestlerInBlue;
@@ -180,6 +181,7 @@ namespace Wrestling.Entities
             {
                 _winType = value;
                 OnPropertyChanged("WinType");
+                OnPropertyChanged("IsMutualDisqualify");
             }
         }
 
@@ -221,6 +223,7 @@ namespace Wrestling.Entities
                 _wrestlerInRed = value;
                 OnPropertyChanged("WrestlerInRed");
                 OnPropertyChanged("IsMatchCanStart");
+                OnPropertyChanged("HasViewableResults");
             }
         }
 
@@ -232,6 +235,7 @@ namespace Wrestling.Entities
                 _wrestlerInBlue = value;
                 OnPropertyChanged("WrestlerInBlue");
                 OnPropertyChanged("IsMatchCanStart");
+                OnPropertyChanged("HasViewableResults");
             }
         }
 
@@ -262,6 +266,8 @@ namespace Wrestling.Entities
             {
                 _isRedWon = value;
                 OnPropertyChanged("IsRedWon");
+                OnPropertyChanged("IsBlueWon");
+                OnPropertyChanged("IsRedWinner");
             }
         }
 
@@ -273,8 +279,16 @@ namespace Wrestling.Entities
                 _isRedWon = !value;
                 OnPropertyChanged("IsBlueWon");
                 OnPropertyChanged("IsRedWon");
+                OnPropertyChanged("IsRedWinner");
             }
         }
+
+        // Null-safe red-winner check. Mirror of IsBlueWon: returns false for
+        // any state where the red corner did not strictly win — including
+        // mutual DSQ (IsRedWon=null) where neither wrestler won. Prefer this
+        // over `IsRedWon.HasValue && IsRedWon.Value` and over `IsRedWon.Value`
+        // (which throws NRE on mutual DSQ).
+        public bool IsRedWinner => _isRedWon == true;
 
         public int LastSecondInMatch
         {
@@ -314,10 +328,39 @@ namespace Wrestling.Entities
                 _status = value;
                 OnPropertyChanged("Status");
                 OnPropertyChanged("IsMatchCanStart");
+                OnPropertyChanged("IsMatchCompleted");
+                OnPropertyChanged("HasViewableResults");
             }
         }
 
         public bool IsMatchCompleted => _status == MatchStatusEnum.Completed;
+        public bool IsMutualDisqualify => _winType == MatchWinTypeEnum.MutualDisqualify;
+
+        // Auto-FreeWin'd empty consolation slots (no wrestlers, no winner) are
+        // Completed but have nothing to show — opening them throws because
+        // MatchResultsViewModel requires IsRedWon for non-mutual-DSQ wins. Use
+        // this flag to gate the «open results» button in the bracket UI.
+        public bool HasViewableResults => _status == MatchStatusEnum.Completed
+                                          && (_wrestlerInRed != null || _wrestlerInBlue != null);
+
+        // Monotonic per-match counter. Bumped exactly once on every state
+        // transition the importer propagates (Pending→Completed by ApproveAsync,
+        // Completed→Pending by RejectAsync). Never touched on mid-match scoring,
+        // timer adjustments, or bracket structure changes — those are not
+        // exported by the importer. Import comparison is strict ">" so equal
+        // versions keep the local copy; this is the cheap escape hatch when two
+        // peers concurrently approve the same match. Legacy .wrt files load with
+        // 0 for Pending and 1 for Completed via the adapter (see
+        // EntityToInfoAdapter.GetEntityFromInfo).
+        public int Version
+        {
+            get { return _version; }
+            set
+            {
+                _version = value;
+                OnPropertyChanged("Version");
+            }
+        }
 
         public int BestActionRed
         {

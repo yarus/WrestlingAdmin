@@ -19,8 +19,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
         private ObservableCollection<AgeWeightGroup> _groups;
 
-        public string PageName => "Положение";
-        public override string PageTitle => "Информация о Соревнованиях";
+        public string PageName => T("Nav_Standing", "Положение");
+        public override string PageTitle => T("Details_PageTitle", "Положение");
         
         public DetailsViewModel(IDiContainer container) : base(container)
         {
@@ -32,7 +32,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
             if (DataContext.Tournament == null)
             {
-                throw new ApplicationException("Tournament property is not set!");
+                throw new InvalidOperationException("Tournament is not set on the data context. Navigate to a tournament before opening this view.");
             }
 
             Groups = new ObservableCollection<AgeWeightGroup>(DataContext.Tournament.Groups.OrderBy(g => g.IsFemale).ThenByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax));
@@ -43,10 +43,40 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             get { return _groups; }
             set
             {
+                if (_groups != null) _groups.CollectionChanged -= OnGroupsCollectionChanged;
                 _groups = value;
+                if (_groups != null) _groups.CollectionChanged += OnGroupsCollectionChanged;
 
                 OnPropertyChanged("Groups");
+                OnPropertyChanged(nameof(HasMixedGenders));
+                OnPropertyChanged(nameof(GenderColumnWidth));
             }
+        }
+
+        public bool HasMixedGenders
+        {
+            get
+            {
+                if (_groups == null || _groups.Count == 0) return false;
+                bool anyMale = false;
+                bool anyFemale = false;
+                foreach (var g in _groups)
+                {
+                    if (g.IsFemale) anyFemale = true; else anyMale = true;
+                    if (anyMale && anyFemale) return true;
+                }
+                return false;
+            }
+        }
+
+        // Drives the Пол GridViewColumn.Width — 0 collapses the column entirely
+        // when the list is single-gender, so the trailing X column stays in view.
+        public double GenderColumnWidth => HasMixedGenders ? 40d : 0d;
+
+        private void OnGroupsCollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(HasMixedGenders));
+            OnPropertyChanged(nameof(GenderColumnWidth));
         }
 
         #region Command Properties
@@ -57,20 +87,20 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             {
                 if (_generateGroupsCommand == null)
                 {
-                    _generateGroupsCommand = new RelayCommand(async (param) => await GenerateGroups());
+                    _generateGroupsCommand = new AsyncRelayCommand(_ => GenerateGroups());
                 }
 
                 return _generateGroupsCommand;
             }
         }
-        
+
         public ICommand AddGroupCommand
         {
             get
             {
                 if (_addGroupCommand == null)
                 {
-                    _addGroupCommand = new RelayCommand(async (param) => await AddGroup());
+                    _addGroupCommand = new AsyncRelayCommand(_ => AddGroup());
                 }
                 return _addGroupCommand;
             }
@@ -97,8 +127,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             {
                 if (_editGroupCommand == null)
                 {
-                    _editGroupCommand = new RelayCommand(
-                        param => EditGroup(param as AgeWeightGroup),
+                    _editGroupCommand = new AsyncRelayCommand(
+                        param => EditGroupAsync(param as AgeWeightGroup),
                         param => param != null
                     );
                 }
@@ -127,7 +157,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
                 if (response.IsFailed)
                 {
-                    ShowSnackMessage($"Ошибка генерации групп: {string.Join(",", response.Errors.Select(x => x.Message).ToList())}");
+                    ShowSnackMessage(string.Format(T("Details_GroupGenError", "Ошибка генерации групп: {0}"), string.Join(",", response.Errors.Select(x => x.Message).ToList())));
                     return;
                 }
 
@@ -166,7 +196,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
 
         private void DeleteGroup(AgeWeightGroup group)
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить группу?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Details_DeleteGroup_Body", "Вы уверены, что хотите удалить группу?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var wr in DataContext.Tournament.Wrestlers)
             {
@@ -181,7 +211,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             Groups.Remove(group);
         }
 
-        private async void EditGroup(AgeWeightGroup group)
+        private async Task EditGroupAsync(AgeWeightGroup group)
         {
             var tmp = group.Clone() as AgeWeightGroup;
 
@@ -200,8 +230,36 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
                 {
                     item.Sync(tmp);
 
+                    ApplyTimingsToPendingMatches(item);
                     RemoveWrestlersWhichNotFeatToGroupLimits(item);
                     UpdateWrestlersGroupData(item);
+
+                    // Bump per-group FieldsVersion so peers pick up the new
+                    // timing / age / weight / female / name on next import tick
+                    // and cascade timing into their own pending matches.
+                    item.FieldsVersion++;
+
+                    OnPropertyChanged(nameof(HasMixedGenders));
+                    OnPropertyChanged(nameof(GenderColumnWidth));
+                }
+            }
+        }
+
+        private void ApplyTimingsToPendingMatches(AgeWeightGroup item)
+        {
+            if (item.Bracket?.Rounds == null) return;
+
+            foreach (var round in item.Bracket.Rounds)
+            {
+                if (round.RoundMatches == null) continue;
+
+                foreach (var match in round.RoundMatches)
+                {
+                    if (match.Status == MatchStatusEnum.Completed) continue;
+
+                    match.MaxRoundSecond = item.MaxRoundSecond;
+                    match.MaxTimeoutSecond = item.MaxTimeoutSecond;
+                    match.MaxActionSecond = item.MaxActionSecond;
                 }
             }
         }
@@ -246,8 +304,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Details
             if (originalItem == null || originalItem.Name == vm.Item.Name || originalItem.Wrestlers.Count == 0) return;
 
             if (Dialog.ShowMessageBox(this,
-                    "Параметры группы были изменены, заявки на участие в данной группе будут удалены. Вы уверены?",
-                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK)
+                    T("Details_GroupChanged_Body", "Параметры группы были изменены, заявки на участие в данной группе будут удалены. Вы уверены?"),
+                    T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
             {
                 eventArgs.Cancel();
             }

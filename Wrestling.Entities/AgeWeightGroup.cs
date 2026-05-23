@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities
 {
@@ -17,11 +18,13 @@ namespace Wrestling.Entities
         private int _maxRoundSecond;
         private int _maxTimeoutSecond;
         private int _maxActionSecond;
-        private string _carpetLabel;
-        private Guid? _carpetId;
+        private string _matLabel;
+        private Guid? _matId;
         private GroupBracket _bracket;
         private List<Wrestler> _wrestlers;
         private bool _isExpanded;
+        private int _fieldsVersion;
+        private int _bracketVersion;
 
         #endregion
 
@@ -50,13 +53,13 @@ namespace Wrestling.Entities
             }
         }
 
-        public Guid? CarpetID
+        public Guid? MatID
         {
-            get { return _carpetId; }
+            get { return _matId; }
             set
             {
-                _carpetId = value;
-                OnPropertyChanged("CarpetID");
+                _matId = value;
+                OnPropertyChanged("MatID");
             }
         }
 
@@ -68,6 +71,7 @@ namespace Wrestling.Entities
                 _weightMax = value;
                 OnPropertyChanged("WeightMax");
                 OnPropertyChanged("Name");
+                OnPropertyChanged("NameWithoutGender");
             }
         }
 
@@ -79,6 +83,7 @@ namespace Wrestling.Entities
                 _birthYearMax = value;
                 OnPropertyChanged("BirthYearMax");
                 OnPropertyChanged("Name");
+                OnPropertyChanged("NameWithoutGender");
             }
         }
 
@@ -90,6 +95,7 @@ namespace Wrestling.Entities
                 _birthYearMin = value;
                 OnPropertyChanged("BirthYearMin");
                 OnPropertyChanged("Name");
+                OnPropertyChanged("NameWithoutGender");
             }
         }
 
@@ -114,13 +120,13 @@ namespace Wrestling.Entities
             }
         }
 
-        public string CarpetLabel
+        public string MatLabel
         {
-            get { return _carpetLabel; }
+            get { return _matLabel; }
             set
             {
-                _carpetLabel = value;
-                OnPropertyChanged("CarpetLabel");
+                _matLabel = value;
+                OnPropertyChanged("MatLabel");
             }
         }
 
@@ -165,6 +171,34 @@ namespace Wrestling.Entities
             }
         }
 
+        // Bumped by high-level group field edits (timing, MatID, name/age/
+        // weight ranges) — anything that does NOT change bracket shape. Apply
+        // copies the new field values onto the local group and cascades the
+        // new timing into local pending matches without touching the bracket.
+        public int FieldsVersion
+        {
+            get { return _fieldsVersion; }
+            set
+            {
+                _fieldsVersion = value;
+                OnPropertyChanged("FieldsVersion");
+            }
+        }
+
+        // Bumped only by IGroupBracketProcessor.Generate() — i.e. the bracket
+        // was rebuilt from scratch. Apply replaces the bracket and Wrestlers
+        // list wholesale, then re-applies any locally-newer match completions
+        // so other mats do not lose their work.
+        public int BracketVersion
+        {
+            get { return _bracketVersion; }
+            set
+            {
+                _bracketVersion = value;
+                OnPropertyChanged("BracketVersion");
+            }
+        }
+
         #region Readonly Properties
 
         public int PendingMatchesCount => _bracket?.Rounds.SelectMany(r => r.RoundMatches).Count(m => m.Status == MatchStatusEnum.Pending) ?? 0;
@@ -184,30 +218,53 @@ namespace Wrestling.Entities
 
         public bool IsBracketGenerated => Bracket != null;
 
-        public bool IsBracketCompleted => Bracket != null && Bracket.Rounds.SelectMany(r => r.RoundMatches.Where(m => m.Status == MatchStatusEnum.Pending)).FirstOrDefault() == null;
+        public bool IsBracketCompleted => Bracket != null
+            && !Bracket.Rounds.SelectMany(r => r.RoundMatches).Any(m => m.Status == MatchStatusEnum.Pending);
         public string Name
         {
             get
             {
-                string result;
+                var yearSingle = EntityLocalization.T("Group_YearSuffix", "г.");
+                var yearRange = EntityLocalization.T("Group_YearRangeSuffix", "гг.");
+                var weight = EntityLocalization.T("Group_WeightSuffix", "кг.");
 
+                string result;
                 if (BirthYearMax == BirthYearMin)
                 {
-                    result = BirthYearMax + " г. ";
+                    result = BirthYearMax + " " + yearSingle + " ";
                 }
                 else
                 {
-                    result = $"{BirthYearMin}-{BirthYearMax} гг. ";
+                    result = string.Format("{0}-{1} {2} ", BirthYearMin, BirthYearMax, yearRange);
                 }
 
-                result += WeightMax + " кг. " + IsFemaleLabel + ".";
+                result += WeightMax + " " + weight + " " + IsFemaleLabel + ".";
 
                 return result;
             }
         }
 
-        // TODO: Remove after refactoring
-        public string IsFemaleLabel => IsFemale ? "Ж" : "М";
+        // Name without the trailing gender suffix (e.g. "2018 г. 18 кг.").
+        // Used by UIs that surface gender separately when both genders are present.
+        public string NameWithoutGender
+        {
+            get
+            {
+                var yearSingle = EntityLocalization.T("Group_YearSuffix", "г.");
+                var yearRange = EntityLocalization.T("Group_YearRangeSuffix", "гг.");
+                var weight = EntityLocalization.T("Group_WeightSuffix", "кг.");
+
+                if (BirthYearMax == BirthYearMin)
+                {
+                    return BirthYearMax + " " + yearSingle + " " + WeightMax + " " + weight;
+                }
+                return string.Format("{0}-{1} {2} {3} {4}", BirthYearMin, BirthYearMax, yearRange, WeightMax, weight);
+            }
+        }
+
+        public string IsFemaleLabel => IsFemale
+            ? EntityLocalization.T("Gender_FemaleShort", "Ж")
+            : EntityLocalization.T("Gender_MaleShort", "М");
 
         #endregion
         
@@ -223,7 +280,7 @@ namespace Wrestling.Entities
             if (item == null) return;
             ID = item.ID;
             Bracket = item.Bracket;
-            CarpetLabel = item.CarpetLabel;
+            MatLabel = item.MatLabel;
             MaxActionSecond = item.MaxActionSecond;
             MaxRoundSecond = item.MaxRoundSecond;
             MaxTimeoutSecond = item.MaxTimeoutSecond;

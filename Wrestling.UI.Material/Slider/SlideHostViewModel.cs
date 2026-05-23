@@ -8,6 +8,7 @@ using Wrestling.Entities;
 using Wrestling.UI.Material.Slider.Slides;
 using Wrestling.UI.Material.Tournament;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Slider
 {
@@ -21,10 +22,18 @@ namespace Wrestling.UI.Material.Slider
         private int _slideSeconds;
 
         private ScreenSlide _currentSlide;
+        private SlideChannel _channel;
 
         private ObservableCollection<ScreenSlide> _slides;
         private List<ISlideType> _slideTypes;
-       
+
+        // Each host owns one ISliderViewControl per slide-type string, created
+        // via the slide type's factory. Caching here keeps the control's state
+        // stable across repeated selections of the same slide type within this
+        // host (e.g., an image doesn't reload on every rotation), while still
+        // giving a different host its own independent set of controls.
+        private readonly Dictionary<string, ISliderViewControl> _viewControlsByType = new Dictionary<string, ISliderViewControl>();
+
         private ICommand _changePageCommand;
         private ICommand _prevPageCommand;
         private ICommand _nextPageCommand;
@@ -34,22 +43,37 @@ namespace Wrestling.UI.Material.Slider
         public SlideHostViewModel(IDiContainer container) : base(container)
         {
         }
-        
+
+        // Bind the host to a specific SlideChannel before calling InitData().
+        // Slide list, rotation timer default, and preview state all come from
+        // this channel; InitData pulls them in.
+        public SlideChannel Channel
+        {
+            get { return _channel; }
+            set
+            {
+                _channel = value;
+                OnPropertyChanged("Channel");
+            }
+        }
+
         public override void InitData()
         {
             base.InitData();
 
-            Slides = DataContext.Tournament.Slides;
-
             _slideTypes = Resolve<List<ISlideType>>();
 
-            if (Tournament.Settings.SliderMaxSecond == 0 && SlideSeconds == 0)
+            if (_channel != null)
             {
-                SlideSeconds = GlobalSettings.SliderMaxSecond;
+                Slides = _channel.Slides;
+                SlideSeconds = _channel.SliderMaxSecond > 0
+                    ? _channel.SliderMaxSecond
+                    : GlobalSettings.SliderMaxSecond;
             }
             else
             {
-                SlideSeconds = Tournament.Settings.SliderMaxSecond;
+                Slides = new ObservableCollection<ScreenSlide>();
+                SlideSeconds = GlobalSettings.SliderMaxSecond;
             }
 
             if (_slides.Count > 0)
@@ -100,7 +124,8 @@ namespace Wrestling.UI.Material.Slider
                     return CurrentSlide.Title;
                 }
 
-                return "Турнир";
+                var v = LocalizationService.Instance?.T("Slide_DefaultTitle");
+                return string.IsNullOrEmpty(v) || v == "Slide_DefaultTitle" ? "Турнир" : v;
             }
         }
 
@@ -121,7 +146,7 @@ namespace Wrestling.UI.Material.Slider
                     var slideType = _slideTypes.FirstOrDefault(s => s.SlideType == _currentSlide.SlideType);
                     if (slideType != null)
                     {
-                        CurrentView = slideType.ViewControl;
+                        CurrentView = GetOrCreateViewControl(slideType);
                         CurrentView.InitContext(CurrentSlide);
                         CurrentSecond = 0;
                         SlideSeconds = _currentSlide.Duration;
@@ -241,9 +266,9 @@ namespace Wrestling.UI.Material.Slider
 
         private void SetupTimer()
         {
-            _timer?.Stop();
+            StopTimer();
 
-            if (Slides == null || Slides.Count == 0) return;            
+            if (Slides == null || Slides.Count == 0) return;
 
             _timer = new DispatcherTimer();
             _timer.Tick += OnTimerTick;
@@ -252,11 +277,53 @@ namespace Wrestling.UI.Material.Slider
             _timer.Start();
         }
 
+        private void StopTimer()
+        {
+            if (_timer == null) return;
+
+            _timer.Stop();
+            _timer.Tick -= OnTimerTick;
+            _timer = null;
+        }
+
+        // Stops the rotation timer and detaches event handlers so this VM can
+        // be collected. Call from the slider window's Closed handler so every
+        // closed slide-host window releases its timer.
+        public void Shutdown()
+        {
+            StopTimer();
+            _isTimerEnabled = false;
+        }
+
+        private ISliderViewControl GetOrCreateViewControl(ISlideType slideType)
+        {
+            if (!_viewControlsByType.TryGetValue(slideType.SlideType, out var view))
+            {
+                view = slideType.CreateViewControl();
+                _viewControlsByType[slideType.SlideType] = view;
+            }
+            return view;
+        }
+
         private void OnTimerTick(object sender, EventArgs e)
         {
             if (Slides.Count == 0)
             {
                 _timer?.Stop();
+                return;
+            }
+
+            // Two ways CurrentView can be null here: (a) InitData ran with an
+            // empty Slides collection and slides were added afterwards, so the
+            // first ChangeSlide call never happened; (b) the current slide's
+            // SlideType string doesn't match any registered ISlideType, so the
+            // CurrentSlide setter never assigned CurrentView. In both cases we
+            // recover by (re)selecting the first slide and skip this tick.
+            if (CurrentSlide == null || CurrentView == null || !Slides.Contains(CurrentSlide))
+            {
+                CurrentSlide = Slides[0];
+                _currentSecond = 0;
+                OnPropertyChanged("CurrentSecond");
                 return;
             }
 
@@ -281,7 +348,7 @@ namespace Wrestling.UI.Material.Slider
             }
             else
             {
-                CurrentView.TimerTick();
+                CurrentView?.TimerTick();
             }
 
             OnPropertyChanged("CurrentSecond");

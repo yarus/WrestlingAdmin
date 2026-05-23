@@ -5,6 +5,7 @@ using MvvmDialogs.FrameworkDialogs.OpenFile;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 using System.Linq;
 
 namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
@@ -13,14 +14,20 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
     {
         private ScreenSlide _item;
 
-        private ObservableCollection<Carpet> _carpets;
+        private ObservableCollection<Mat> _mats;
         private ObservableCollection<AgeWeightGroup> _groups;
         private int _sliderOpacityValue;
         private int _showMatchesCount;
         private string _sliderBackgroundImagePath;
-        private Carpet _selectedCarpet;
+        private Mat _selectedMat;
 
         private ICommand _setSliderBackgroundCommand;
+
+        // Auto-title state — see GroupBracketSlideSettingsViewModel for the full
+        // rationale. Title auto-fills from the slide type + mat name when
+        // the user hasn't typed a custom title.
+        private bool _isInitializing;
+        private string _lastAutoTitle;
 
         public UpcomingMatchesSlideSettingsViewModel(IDiContainer container) : base(container)
         {
@@ -30,7 +37,7 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
         {
             base.InitData();
 
-            Carpets = DataContext.Tournament.Carpets;
+            Mats = DataContext.Tournament.Mats;
         }
 
         public ICommand SetSliderBackgroundCommand
@@ -48,25 +55,49 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             }
         }
 
-        public Carpet SelectedCarpet
+        public Mat SelectedMat
         {
-            get { return _selectedCarpet; }
+            get { return _selectedMat; }
             set
             {
-                _selectedCarpet = value;
+                _selectedMat = value;
 
-                _item.SetNamedValue("CarpetID", _selectedCarpet?.ID);
+                _item.SetNamedValue("MatID", _selectedMat?.ID);
 
-                if (_selectedCarpet == null)
+                if (_selectedMat == null)
                 {
                     Groups = DataContext.Tournament.Groups;
                 }
                 else
                 {
-                    Groups = _selectedCarpet.Groups;
+                    Groups = _selectedMat.Groups;
                 }
 
-                OnPropertyChanged("SelectedCarpet");
+                if (!_isInitializing)
+                {
+                    UpdateAutoTitle(BuildAutoTitle(_selectedMat?.Name));
+                }
+
+                OnPropertyChanged("SelectedMat");
+            }
+        }
+
+        private static string BuildAutoTitle(string matName)
+        {
+            if (string.IsNullOrEmpty(matName)) return null;
+            var format = LocalizationService.Instance?.T("SlideAutoTitle_Upcoming");
+            if (string.IsNullOrEmpty(format) || format == "SlideAutoTitle_Upcoming") format = "Ближайшие Поединки - {0}";
+            return string.Format(format, matName);
+        }
+
+        private void UpdateAutoTitle(string newAutoTitle)
+        {
+            if (_item == null || string.IsNullOrEmpty(newAutoTitle)) return;
+
+            if (string.IsNullOrWhiteSpace(_item.Title) || _item.Title == _lastAutoTitle)
+            {
+                _item.Title = newAutoTitle;
+                _lastAutoTitle = newAutoTitle;
             }
         }
 
@@ -80,13 +111,13 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             }
         }
 
-        public ObservableCollection<Carpet> Carpets
+        public ObservableCollection<Mat> Mats
         {
-            get { return _carpets; }
+            get { return _mats; }
             set
             {
-                _carpets = value;
-                OnPropertyChanged("Carpets");
+                _mats = value;
+                OnPropertyChanged("Mats");
             }
         }
 
@@ -132,28 +163,42 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
 
         public void InitContext(ScreenSlide slide)
         {
+            _isInitializing = true;
+            try
+            {
+                InitContextCore(slide);
+            }
+            finally
+            {
+                _lastAutoTitle = BuildAutoTitle(_selectedMat?.Name);
+                _isInitializing = false;
+            }
+        }
+
+        private void InitContextCore(ScreenSlide slide)
+        {
             InitData();
 
             _item = slide;
 
             if (slide == null) return;
 
-            var carpetID = _item.GetNamedValue("CarpetID");
-            if (carpetID != null)
+            var matID = _item.GetNamedValue("MatID");
+            if (matID != null)
             {
-                var carpetGuid = new Guid(carpetID.ToString());
-                SelectedCarpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == carpetGuid);
+                var matGuid = new Guid(matID.ToString());
+                SelectedMat = DataContext.Tournament.Mats.FirstOrDefault(c => c.ID == matGuid);
             }
             else
             {
-                SelectedCarpet = null;
+                SelectedMat = null;
             }
 
             var showMatchesCount = _item.GetNamedValue("ShowMatchesCount");
             if (showMatchesCount != null)
             {
 
-                var carpetGuid = new Guid(carpetID.ToString());
+                var matGuid = new Guid(matID.ToString());
                 ShowMatchesCount = Convert.ToInt32(showMatchesCount);
             }
             else
@@ -182,13 +227,19 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
             }
         }
 
+        private static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+        }
+
         private void SetSliderBackground()
         {
             var settings = new OpenFileDialogSettings
             {
-                Title = "Открыть файл с изображением",
+                Title = T("OpenImage_DialogTitle", "Открыть файл с изображением"),
                 InitialDirectory = string.IsNullOrEmpty(SliderBackgroundImagePath) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : SliderBackgroundImagePath,
-                Filter = "Изображения (*.jpg)|*.jpg|All Files (*.*)|*.*"
+                Filter = T("ImageFilter", "Изображения (*.jpg)|*.jpg|All Files (*.*)|*.*")
             };
 
             bool? success = Dialog.ShowOpenFileDialog(this, settings);

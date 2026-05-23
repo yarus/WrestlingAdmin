@@ -1,10 +1,17 @@
-﻿<UserControl x:Class="Wrestling.UI.Material.Tournament.Print.PrintSchedule.PrintScheduleView"
+<UserControl x:Class="Wrestling.UI.Material.Tournament.Print.PrintSchedule.PrintScheduleView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" Foreground="Black" Background="LightGray"
              d:DesignHeight="600" d:DesignWidth="1000">
+
+    <UserControl.Resources>
+        <converters:OptionalImagePathConverter x:Key="OptionalImage" />
+        <converters:FullNameToShortConverter x:Key="ShortName" />
+    </UserControl.Resources>
 
     <StackPanel Background="White">
         <TextBlock Text="{Binding Tournament.Name}"
@@ -22,137 +29,145 @@
                        FontWeight="Normal" />
 
             <TextBlock Grid.Row="0" Grid.Column="1"
-                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Stat.CarpetLabel}"
+                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Stat.MatLabel}"
                        FontSize="16" TextAlignment="Right" FontWeight="Normal" />
 
         </Grid>
 
         <TextBlock
-            TextWrapping="NoWrap" Foreground="Black" Text="Протокол хода поединков"
+            TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc PrintSchedule_Title}"
             FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,5,10,0" />
 
         <Border BorderBrush="Black" BorderThickness="0,1,0,0" />
 
-        <Grid Margin="0">
-            <ListView ItemsSource="{Binding Path=Stat.Matches}">
-                <ListView.View>
-                    <GridView AllowsColumnReorder="true">
-                        <GridViewColumn Header="#" Width="Auto">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding MatchNumber}" Margin="0,20,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-
-                        <GridViewColumn Header="Группа/Стадия" Width="Auto">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding GroupName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
-                                        <TextBlock Text="{Binding RoundName}" Margin="0,10,0,0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-
-                        <GridViewColumn Header="Спортсмены" Width="Auto">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                            <TextBlock Text="{Binding WrestlerInRed.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                            <TextBlock Text="{Binding WrestlerInBlue.LastFirstName}" Margin="0" TextWrapping="Wrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-
-                        <GridViewColumn Header="Команды" Width="120">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding WrestlerInRed.TeamName}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
-                                        <TextBlock Text="{Binding WrestlerInBlue.TeamName}" Margin="0,10,0,0" TextWrapping="NoWrap" FontSize="14" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-
-                        <GridViewColumn Header="Баллы" Width="Auto">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="30" />
-                                            <RowDefinition Height="30" />
-                                        </Grid.RowDefinitions>
-                                        
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="30" />
-                                            <ColumnDefinition Width="30" />
-                                            <ColumnDefinition Width="30" />
-                                            <ColumnDefinition Width="30" />
-                                            <ColumnDefinition Width="30" />
-                                            <ColumnDefinition Width="30" />
-                                            <ColumnDefinition Width="30" />
-                                            <ColumnDefinition Width="30" />
-                                        </Grid.ColumnDefinitions>
-                                        
-                                        <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="8" BorderThickness="1,1,1,0" BorderBrush="Black"></Border>
-                                        <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="8" BorderThickness="1,1,1,1" BorderBrush="Black"></Border>
-
-                                        <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black"></Border>
-                                        <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black"></Border>
-                                        <Border Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black"></Border>
-                                        <Border Grid.Row="0" Grid.Column="3" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black"></Border>
-                                        <Border Grid.Row="0" Grid.Column="4" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black"></Border>
-                                        <Border Grid.Row="0" Grid.Column="5" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black"></Border>
-                                        <Border Grid.Row="0" Grid.Column="6" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black"></Border>
-                                        <Border Grid.Row="0" Grid.Column="7" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black"></Border>
-                                    </Grid>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-        </Grid>
-
-        <Grid Margin="0,30,0,10">
+        <Grid Margin="0,4,0,0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="40" />
+                <ColumnDefinition Width="150" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="120" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="40" />
             </Grid.ColumnDefinitions>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+            <TextBlock Grid.Column="0" Text="#" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
+            <TextBlock Grid.Column="1" Text="{loc:Loc Completed_Column_GroupStage}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
+            <TextBlock Grid.Column="2" Text="{loc:Loc Completed_Column_Wrestlers}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
+            <TextBlock Grid.Column="3" Text="{loc:Loc Completed_Column_Teams}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
+            <TextBlock Grid.Column="4" Text="{loc:Loc PrintSchedule_Column_Points}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" Width="240" />
+            <TextBlock Grid.Column="5" Text="{loc:Loc PrintSchedule_Column_Result}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" TextWrapping="NoWrap" />
+        </Grid>
 
-            <TextBlock Grid.Column="0" Grid.Row="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="Главный судья соревнований"
-                       FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,10,10,0" />
+        <Border BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0,2,0,0" />
 
-            <TextBlock Grid.Column="2" Grid.Row="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Tournament.MainJudge}"
-                       FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,10,10,0" />
+        <ItemsControl ItemsSource="{Binding Path=Stat.Matches}"
+                      VirtualizingPanel.IsVirtualizing="False">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0,8,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="40" />
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="40" />
+                        </Grid.ColumnDefinitions>
 
-            <Border Grid.Row="0" Grid.Column="1" BorderThickness="0,0,0,1" BorderBrush="Black" />
+                        <TextBlock Grid.Column="0" Text="{Binding MatchNumber}"
+                                   TextWrapping="NoWrap" FontSize="14"
+                                   VerticalAlignment="Center" HorizontalAlignment="Center" />
 
-            <TextBlock Grid.Row="1" Grid.Column="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь соревнований"
-                       FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding GroupName}" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
+                            <TextBlock Text="{loc:LocRound RoundName}" Margin="0,4,0,0" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
+                        </StackPanel>
 
-            <TextBlock Grid.Row="1" Grid.Column="2"
-                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Tournament.MainSecretary}"
-                       FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" />
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding WrestlerInRed.LastFirstNameShort}" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
+                            <TextBlock Text="{Binding WrestlerInBlue.LastFirstNameShort}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
+                        </StackPanel>
 
-            <Border Grid.Row="1" Grid.Column="1" BorderThickness="0,0,0,1" BorderBrush="Black" />
+                        <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding WrestlerInRed.TeamName}" TextWrapping="NoWrap" FontSize="14" HorizontalAlignment="Left" />
+                            <TextBlock Text="{Binding WrestlerInBlue.TeamName}" Margin="0,8,0,0" TextWrapping="NoWrap" FontSize="14" HorizontalAlignment="Left" />
+                        </StackPanel>
+
+                        <Grid Grid.Column="4" Margin="0" VerticalAlignment="Center">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="30" />
+                                <RowDefinition Height="30" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="30" />
+                                <ColumnDefinition Width="30" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="8" BorderThickness="1,1,1,0" BorderBrush="Black" />
+                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="8" BorderThickness="1,1,1,1" BorderBrush="Black" />
+
+                            <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
+                            <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
+                            <Border Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
+                            <Border Grid.Row="0" Grid.Column="3" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
+                            <Border Grid.Row="0" Grid.Column="4" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
+                            <Border Grid.Row="0" Grid.Column="5" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
+                            <Border Grid.Row="0" Grid.Column="6" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
+                        </Grid>
+
+                        <StackPanel Grid.Column="5" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Border Width="30" Height="30" BorderThickness="1" BorderBrush="Black" />
+                            <Border Width="30" Height="30" BorderThickness="1,0,1,1" BorderBrush="Black" />
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Grid Margin="0,30,0,10">
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Column="0" Grid.Row="0"
+                           TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc Details_Judge_Header}"
+                           FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,10,10,0" />
+
+                <TextBlock Grid.Column="2" Grid.Row="0"
+                           TextWrapping="NoWrap" Foreground="Black"
+                           Text="{Binding Path=Tournament.MainJudge, Converter={StaticResource ShortName}}"
+                           FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,10,10,0" MinWidth="100" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                           TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc Details_Secretary_Header}"
+                           FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
+
+                <TextBlock Grid.Row="1" Grid.Column="2"
+                           TextWrapping="NoWrap" Foreground="Black"
+                           Text="{Binding Path=Tournament.MainSecretary, Converter={StaticResource ShortName}}"
+                           FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" MinWidth="100" />
+            </Grid>
+
+            <Image Source="{Binding Path=Tournament.Settings.SignatureFooterImagePath, Converter={StaticResource OptionalImage}}"
+                   Stretch="Uniform"
+                   Height="150"
+                   HorizontalAlignment="Center" VerticalAlignment="Top"
+                   Margin="0,30,0,0"
+                   IsHitTestVisible="False" />
         </Grid>
 
     </StackPanel>

@@ -24,7 +24,7 @@ namespace Wrestling.Entities
         private string _mainSecretaryPhone;
         private decimal? _entryFee;
 
-        private ObservableCollection<ScreenSlide> _slides;
+        private ObservableCollection<SlideChannel> _slideChannels;
 
         private ObservableCollection<AgeWeightGroup> _groups;
 
@@ -32,18 +32,15 @@ namespace Wrestling.Entities
 
         private ObservableCollection<Wrestler> _wrestlers;
 
-        private ObservableCollection<Carpet> _carpets;
-
-        private ObservableCollection<string> _importSources;
+        private ObservableCollection<Mat> _mats;
 
         public Tournament(GlobalSettings settings)
         {
             _groups = new ObservableCollection<AgeWeightGroup>();
             _applications = new ObservableCollection<TeamApplication>();
             _wrestlers = new ObservableCollection<Wrestler>();
-            _carpets = new ObservableCollection<Carpet>();
-            _slides = new ObservableCollection<ScreenSlide>();
-            _importSources = new ObservableCollection<string>();
+            _mats = new ObservableCollection<Mat>();
+            _slideChannels = new ObservableCollection<SlideChannel>();
 
             Settings = settings ?? new GlobalSettings();
         }
@@ -51,46 +48,39 @@ namespace Wrestling.Entities
         public int AppliedWrestlersCount => Wrestlers.Count;
         public int ApprovedWrestlersCount => Groups.Sum(g => g.WrestlersApprovedCount);
         public int GroupsCount => Groups.Count;
-        public int CarpetsCount => Carpets.Count;
+        public int MatsCount => Mats.Count;
         public int MatchesCount => Groups.Where(g => g.Bracket != null).Sum(g => g.Bracket.MatchesCount);
         public int CompletedMatchesCount => Groups.Where(g => g.Bracket != null).Sum(g => g.Bracket.CompletedMatchesCount);
         public int PendingMatchesCount => MatchesCount - CompletedMatchesCount;
         public int ApplicationsCount => TeamApplications.Count;
         public int ProgressPercent => MatchesCount == 0 ? 0 : CompletedMatchesCount * 100 / MatchesCount;
 
-        public int ExpectedDurationInSeconds { 
+        // Tournament-wide ETA: the largest per-mat pending workload, sized
+        // by theoretical per-match time (round × 2 + timeout). Conservative
+        // upper bound that assumes mats run in parallel — the slowest mat
+        // bounds the whole tournament. Operators read this as «when the
+        // last running mat will finish».
+        public int ExpectedDurationInSeconds
+        {
             get
             {
-                if (PendingMatchesCount == 0)
-                {
-                    return 0;
-                }
+                if (PendingMatchesCount == 0) return 0;
 
                 int maxDurationInSeconds = 0;
-
-                foreach (var carpet in _carpets)
+                foreach (var mat in _mats)
                 {
-                    var carpetMaxDurationInSeconds = 0;
-                    var groupsWithBrackets = carpet.Groups.Where(g => g.IsBracketGenerated).ToList();
-
-                    foreach (var group in groupsWithBrackets)
+                    var matDurationInSeconds = 0;
+                    foreach (var group in mat.Groups)
                     {
-                        var roundLength = group.MaxRoundSecond;
-                        var timeoutLength = group.MaxTimeoutSecond;
-
-                        var uncompleted = group.Bracket.MatchesCount - group.Bracket.CompletedMatchesCount;
-
-                        var groupDuration = uncompleted * (roundLength * 2 + timeoutLength);
-
-                        carpetMaxDurationInSeconds += groupDuration;
+                        if (group?.Bracket == null) continue;
+                        matDurationInSeconds += group.PendingMatchesCount
+                            * (group.MaxRoundSecond * 2 + group.MaxTimeoutSecond);
                     }
-
-                    if (carpetMaxDurationInSeconds > maxDurationInSeconds)
+                    if (matDurationInSeconds > maxDurationInSeconds)
                     {
-                        maxDurationInSeconds = carpetMaxDurationInSeconds;
+                        maxDurationInSeconds = matDurationInSeconds;
                     }
                 }
-
                 return maxDurationInSeconds;
             }
         }
@@ -100,16 +90,6 @@ namespace Wrestling.Entities
         public bool IsStandingCompleted => Status == TournamentStatus.InProgress;
 
         public GlobalSettings Settings { get; set; }
-
-        public ObservableCollection<string> ImportSources
-        {
-            get { return _importSources; }
-            set
-            {
-                _importSources = value;
-                OnPropertyChanged();
-            }
-        }
 
         public decimal? EntryFee
         {
@@ -261,12 +241,12 @@ namespace Wrestling.Entities
             }
         }
 
-        public ObservableCollection<ScreenSlide> Slides
+        public ObservableCollection<SlideChannel> SlideChannels
         {
-            get { return _slides; }
+            get { return _slideChannels; }
             set
             {
-                _slides = value;
+                _slideChannels = value;
                 OnPropertyChanged();
             }
         }
@@ -302,17 +282,26 @@ namespace Wrestling.Entities
             }
         }
 
-        public ObservableCollection<Carpet> Carpets
+        public ObservableCollection<Mat> Mats
         {
-            get { return _carpets; }
+            get { return _mats; }
             set
             {
-                _carpets = value;
+                _mats = value;
                 OnPropertyChanged();
             }
         }
 
         public Guid? ID { get; set; }
+
+        public void RefreshAggregates()
+        {
+            OnPropertyChanged(nameof(MatchesCount));
+            OnPropertyChanged(nameof(CompletedMatchesCount));
+            OnPropertyChanged(nameof(PendingMatchesCount));
+            OnPropertyChanged(nameof(ProgressPercent));
+            OnPropertyChanged(nameof(ExpectedDurationInSeconds));
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
 

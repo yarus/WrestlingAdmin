@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
@@ -54,7 +55,7 @@ namespace Wrestling.DataAccess
             return true;
         }
 
-        public Task<bool> SaveToFileAsync<T>(T item, string fileName)
+        public Task<bool> SaveToFileAsync<T>(T item, string fileName, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -187,11 +188,13 @@ namespace Wrestling.DataAccess
             return xmlDoc;
         }
 
-        public async Task<T> ReadFromFileAsync<T>(string path)
+        public async Task<T> ReadFromFileAsync<T>(string path, CancellationToken cancellationToken = default)
         {
             var fullPath = path.Contains(".xml") ? path : path + ".xml";
 
+            cancellationToken.ThrowIfCancellationRequested();
             var content = await GetXmlStringAsync(fullPath);
+            cancellationToken.ThrowIfCancellationRequested();
             return Deserialize<T>(content);
         }
 

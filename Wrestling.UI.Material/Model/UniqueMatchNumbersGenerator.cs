@@ -9,7 +9,7 @@ namespace Wrestling.UI.Material.Model
     {
         public void Generate(Entities.Tournament tournament, List<IGroupBracketProcessor> processors)
         {
-            var groupList = tournament.Carpets.SelectMany(c => c.Groups).ToList();
+            var groupList = tournament.Mats.SelectMany(c => c.Groups).ToList();
 
             int currentMatchNumber = 1;
 

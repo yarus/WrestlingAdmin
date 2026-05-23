@@ -1,17 +1,29 @@
 ﻿using System;
 using System.Threading.Tasks;
-using System.Windows;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
+using Wrestling.UI.Material.Slider;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Tournament
 {
     public abstract class TournamentViewModelBase : ViewModelBase
     {
+        // Shared lazy-resolve helper for the few snack/dialog strings produced
+        // by the autosave path. Static so derived VMs can call without
+        // per-instance state.
+        protected static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+        }
+
         private ITournamentsManager _tournService;
+        private IResultsService _resultsService;
+        private ISliderWindowManager _sliderWindowManager;
 
         protected TournamentViewModelBase(IDiContainer container) : base(container)
         {
@@ -21,49 +33,51 @@ namespace Wrestling.UI.Material.Tournament
         {
             base.InitData();
 
+            // Cache infrastructure dependencies once. Per repo convention
+            // (CLAUDE.md, Wave 5.2 audit) all DI lookups happen in InitData;
+            // method-time Resolve<T> hides dependencies and complicates testing.
             _tournService = Resolve<ITournamentsManager>();
-
-            OnPropertyChanged("IsAutosaveEnabled");
+            _resultsService = Resolve<IResultsService>();
+            _sliderWindowManager = Resolve<ISliderWindowManager>();
         }
 
         protected ITournamentsManager TournamentManager => _tournService;
+        protected IResultsService ResultsService => _resultsService;
+        protected ISliderWindowManager SliderWindowManager => _sliderWindowManager;
 
         public Entities.Tournament Tournament => DataContext.Tournament;
 
-        public bool IsAutosaveEnabled => DataContext.Tournament?.Settings.IsAutosaveEnabled ?? false;
-        
         protected async Task CloseTournament()
         {
-            bool saveRequired = true;
+            await SaveDataAsync();
 
-            if (!IsAutosaveEnabled)
-            {
-                if (Dialog.ShowMessageBox(this,
-                        "Автосохранение выключено. Сохранить турнир перед выходом?",
-                        "Требуется подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Information) != MessageBoxResult.Yes) saveRequired = false;
-            }
-
-            if(saveRequired) await SaveDataAsync();
+            // Close any open slider windows before dropping the tournament so
+            // they don't hold stale references; the score screen stays registered
+            // as a singleton and is simply hidden by its own CloseScreen() on next
+            // navigation.
+            _sliderWindowManager?.CloseAll();
 
             DataContext.Tournament = null;
             DataContext.Group = null;
             DataContext.WrestlingMatch = null;
 
+            _resultsService?.Recalculate(null);
+
             NavigateToView<HomeViewModel>();
         }
 
-        protected async Task SaveDataAsync()
+        public async Task SaveDataAsync()
         {
             if (!string.IsNullOrEmpty(DataContext.Tournament.FileName))
             {
                 var result = await TournamentManager.SaveToFileAsync(DataContext.Tournament, DataContext.Tournament.FileName);
-                ShowSnackMessage(result ? "Турнир сохранен!" : "При сохранении произошла ошибка!");
+                ShowSnackMessage(result ? T("Snack_TournamentSaved", "Турнир сохранен!") : T("Snack_SaveError", "При сохранении произошла ошибка!"));
             }
             else
             {
                 var settings = new SaveFileDialogSettings
                 {
-                    Title = "Сохранить турнир",
+                    Title = T("Home_SaveDialog_Title", "Сохранить турнир"),
                     CheckFileExists = false,
                     OverwritePrompt = true,
                     InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -73,14 +87,27 @@ namespace Wrestling.UI.Material.Tournament
                 bool? success = Dialog.ShowSaveFileDialog(this, settings);
                 if (success == true)
                 {
-                    DataContext.Tournament.Settings.IsAutosaveEnabled = true;
-                    DataContext.Tournament.Settings.AutosaveMaxSecond = GlobalSettings.AutosaveMaxSecond;
-
                     var result = await TournamentManager.SaveToFileAsync(DataContext.Tournament, settings.FileName);
-                    ShowSnackMessage(result ? "Турнир сохранен! Автосохранение включено." : "При сохранении произошла ошибка!");
+                    ShowSnackMessage(result ? T("Snack_TournamentSaved", "Турнир сохранен!") : T("Snack_SaveError", "При сохранении произошла ошибка!"));
                 }
             }
         }
 
+        // Event-driven autosave hook. Call after any in-memory state change
+        // that should be persisted (match completion, successful import,
+        // peer-sync merge). No-op when no tournament is loaded or the file
+        // has never been saved (no FileName) — the operator must pick a path
+        // via the "Сохранить турнир" quick button on the dashboard first.
+        // We deliberately do NOT pop a SaveAs dialog here: this hook fires on
+        // background events (timer-driven imports, match approvals) and a
+        // modal dialog mid-tournament would block the operator.
+        public async Task SaveIfAutosaveEnabledAsync()
+        {
+            if (DataContext.Tournament == null) return;
+            if (string.IsNullOrEmpty(DataContext.Tournament.FileName)) return;
+
+            var result = await TournamentManager.SaveToFileAsync(DataContext.Tournament, DataContext.Tournament.FileName);
+            ShowSnackMessage(result ? T("Snack_TournamentSaved", "Турнир сохранен!") : T("Snack_SaveError", "При сохранении произошла ошибка!"));
+        }
     }
 }

@@ -1,14 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities.Results.Achievements
 {
     public class MostDominationWinsAchievementCalculator : IAchievementCalculator
     {
-        public string AchievementTitle => "Доминатор";
+        public string AchievementTitle => EntityLocalization.T("Achievement_MostDomination_Title", "Доминатор");
 
         public string AchievementType => "MostDominationWins";
-        public string AchievementDefinition => "Борец, выигравший больше всего схваток по техническому превосходству";
+        public string AchievementDefinition => EntityLocalization.T("Achievement_MostDomination_Definition", "Борец, выигравший больше всего схваток по техническому превосходству");
 
         public List<WrestlerAchievement> CalculateAchievement(Tournament tournament, List<TournamentResult> results)
         {

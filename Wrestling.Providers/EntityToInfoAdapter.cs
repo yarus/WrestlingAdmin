@@ -38,13 +38,41 @@ namespace Wrestling.Providers
                 StartGongSoundPath = info.StartGongSoundPath,
                 SliderMaxSecond = info.SliderMaxSecond,
                 SliderOpacityValue = info.SliderOpacityValue,
-                IsAutosaveEnabled = info.IsAutosaveEnabled,
-                AutosaveMaxSecond = info.AutosaveMaxSecond,
-                IsTournamentScoreInternational = info.IsTournamentScoreInternational,
                 IsOverlayOlympic = info.IsOverlayOlympic,
-                IsVideoRecordingEnabled = info.IsVideoRecordingEnabled,
-                VideoStoragePath = info.VideStoragePath
+                IsBackupEnabled = info.IsBackupEnabled,
+                MaxBackupCount = info.MaxBackupCount,
+                BackupFolderPath = info.BackupFolderPath,
+                DiscoveryPort = info.DiscoveryPort,
+                IsHttpServerEnabled = info.IsHttpServerEnabled,
+                HttpServerPort = info.HttpServerPort,
+                NodeName = info.NodeName ?? string.Empty,
+                AnnounceIpOverride = info.AnnounceIpOverride ?? string.Empty,
+                SignatureFooterImagePath = info.SignatureFooterImagePath
             };
+
+            // Legacy .wrt files saved before NodeName was an auto-default field
+            // come back with NodeName="". Without a NodeName the laptop is
+            // invisible to peers — fall back to MachineName so the user is
+            // discoverable out of the box and can rename later in Settings.
+            if (string.IsNullOrWhiteSpace(entity.NodeName))
+            {
+                try { entity.NodeName = Environment.MachineName ?? string.Empty; } catch { entity.NodeName = string.Empty; }
+            }
+
+            // Legacy .wrt files saved before the backup feature shipped don't
+            // carry MaxBackupCount. The GlobalSettingsInfo constructor seeds
+            // the default for newly-constructed instances, but pre-feature
+            // JSON that explicitly serialized MaxBackupCount = 0 is
+            // indistinguishable from "missing". Treat 0 as "use default".
+            if (entity.MaxBackupCount <= 0) entity.MaxBackupCount = 20;
+
+            // Same kind of legacy-zero concern: .wrt files saved before the
+            // network feature shipped can deserialize with DiscoveryPort = 0 /
+            // HttpServerPort = 0 (field missing → DTO ctor seeds defaults, but
+            // a pre-feature file that ever serialized them as zero is possible
+            // in theory). Re-seed to defaults so listeners start on usable ports.
+            if (entity.DiscoveryPort <= 0) entity.DiscoveryPort = 24565;
+            if (entity.HttpServerPort <= 0) entity.HttpServerPort = 24566;
 
             return entity;
         }
@@ -65,12 +93,16 @@ namespace Wrestling.Providers
                 StartGongSoundPath = entity.StartGongSoundPath,
                 SliderMaxSecond = entity.SliderMaxSecond,
                 SliderOpacityValue = entity.SliderOpacityValue,
-                IsAutosaveEnabled = entity.IsAutosaveEnabled,
-                AutosaveMaxSecond = entity.AutosaveMaxSecond,
-                IsTournamentScoreInternational = entity.IsTournamentScoreInternational,
                 IsOverlayOlympic = entity.IsOverlayOlympic,
-                IsVideoRecordingEnabled = entity.IsVideoRecordingEnabled,
-                VideStoragePath = entity.VideoStoragePath
+                IsBackupEnabled = entity.IsBackupEnabled,
+                MaxBackupCount = entity.MaxBackupCount,
+                BackupFolderPath = entity.BackupFolderPath,
+                DiscoveryPort = entity.DiscoveryPort,
+                IsHttpServerEnabled = entity.IsHttpServerEnabled,
+                HttpServerPort = entity.HttpServerPort,
+                NodeName = entity.NodeName ?? string.Empty,
+                AnnounceIpOverride = entity.AnnounceIpOverride ?? string.Empty,
+                SignatureFooterImagePath = entity.SignatureFooterImagePath
             };
 
             return info;
@@ -88,11 +120,25 @@ namespace Wrestling.Providers
 
             var groups = info.Groups?.Select(g => GetEntityFromInfo(g, wrestlers)).ToList() ?? new List<AgeWeightGroup>();
 
-            var carpets = info.Carpets?.Select(c => GetEntityFromInfo(c, groups)).ToList() ?? new List<Carpet>();
+            var mats = info.Mats?.Select(c => GetEntityFromInfo(c, groups)).ToList() ?? new List<Mat>();
 
-            var slides = info.Slides?.Select(GetEntityFromInfo).ToList() ?? new List<ScreenSlide>();
+            var slideChannels = info.SlideChannels?.Select(GetEntityFromInfo).ToList() ?? new List<SlideChannel>();
 
-            var importSources = info.ImportSources?.ToList() ?? new List<string>();
+            // Legacy .wrt files serialize a flat `Slides` list instead of channels.
+            // When SlideChannels is empty and Slides is not, migrate into one
+            // default channel so old tournaments keep their slides on load.
+            if (slideChannels.Count == 0 && info.Slides != null)
+            {
+                var legacy = info.Slides.Select(GetEntityFromInfo).ToList();
+                if (legacy.Count > 0)
+                {
+                    slideChannels.Add(new SlideChannel
+                    {
+                        Name = "Основной",
+                        Slides = new ObservableCollection<ScreenSlide>(legacy)
+                    });
+                }
+            }
 
             foreach (var wrestler in wrestlers)
             {
@@ -131,12 +177,12 @@ namespace Wrestling.Providers
 
             foreach (var ageWeightGroup in groups)
             {
-                if (ageWeightGroup.CarpetID.HasValue)
+                if (ageWeightGroup.MatID.HasValue)
                 {
-                    var carpet = carpets.FirstOrDefault(c => c.ID == ageWeightGroup.CarpetID);
-                    if (carpet != null)
+                    var mat = mats.FirstOrDefault(c => c.ID == ageWeightGroup.MatID);
+                    if (mat != null)
                     {
-                        ageWeightGroup.CarpetLabel = carpet.Name;
+                        ageWeightGroup.MatLabel = mat.Name;
                     }
                 }
             }
@@ -156,15 +202,14 @@ namespace Wrestling.Providers
                 Groups = new ObservableCollection<AgeWeightGroup>(groups),
                 Wrestlers = new ObservableCollection<Wrestler>(wrestlers),
                 Settings = settings,
-                Carpets = new ObservableCollection<Carpet>(carpets),
-                Slides = new ObservableCollection<ScreenSlide>(slides),
+                Mats = new ObservableCollection<Mat>(mats),
+                SlideChannels = new ObservableCollection<SlideChannel>(slideChannels),
                 HashTag = info.HashTag,
                 MainJudgeEmail = info.MainJudgeEmail,
                 MainJudgePhone = info.MainJudgePhone,
                 MainSecretaryEmail = info.MainSecretaryEmail,
                 MainSecretaryPhone = info.MainSecretaryPhone,
-                EntryFee = info.EntryFee,
-                ImportSources = new ObservableCollection<string>(importSources)
+                EntryFee = info.EntryFee
             };
 
             if (!tournEntity.ID.HasValue)
@@ -190,11 +235,25 @@ namespace Wrestling.Providers
             return entity;
         }
 
-        private Carpet GetEntityFromInfo(CarpetInfo info, IEnumerable<AgeWeightGroup> groups)
+        private SlideChannel GetEntityFromInfo(SlideChannelInfo info)
         {
             if (info == null) return null;
 
-            var entity = new Carpet
+            var slides = info.Slides?.Select(GetEntityFromInfo).ToList() ?? new List<ScreenSlide>();
+
+            return new SlideChannel
+            {
+                Name = info.Name,
+                SliderMaxSecond = info.SliderMaxSecond,
+                Slides = new ObservableCollection<ScreenSlide>(slides)
+            };
+        }
+
+        private Mat GetEntityFromInfo(MatInfo info, IEnumerable<AgeWeightGroup> groups)
+        {
+            if (info == null) return null;
+
+            var entity = new Mat
             {
                 ID = info.ID,
                 Name = info.Name,
@@ -238,14 +297,16 @@ namespace Wrestling.Providers
                 MaxActionSecond = info.MaxActionSecond,
                 MaxRoundSecond = info.MaxRoundSecond,
                 MaxTimeoutSecond = info.MaxTimeoutSecond,
-                CarpetLabel = info.CarpetLabel,
-                CarpetID = info.CarpetID,
+                MatLabel = info.MatLabel,
+                MatID = info.MatID,
                 BirthYearMax = info.BirthYearMax,
                 BirthYearMin = info.BirthYearMin,
                 ID = info.ID,
                 IsFemale = info.IsFemale,
                 WeightMax = info.WeightMax,
-                Wrestlers = groupWrestlers
+                Wrestlers = groupWrestlers,
+                FieldsVersion = info.FieldsVersion,
+                BracketVersion = info.BracketVersion
             };
 
             entity.Bracket = GetEntityFromInfo(info.Bracket, entity, groupWrestlers);
@@ -273,10 +334,15 @@ namespace Wrestling.Providers
                 IsEntryFeePaid = info.IsEntryFeePaid,
                 TeamID = info.TeamID,
                 HashTag = info.HashTag,
-                Level = info.Level,
+                // info.Level is a string for wire compat — accepts both
+                // canonical enum names ("MSMK") written by current clients
+                // and legacy cyrillic literals ("МСМК") from older .wrt files.
+                Level = WrestlerLevelLabels.FromString(info.Level),
                 PaidAmount = info.PaidAmount,
                 IsWeightApproved = info.IsWeightApproved,
-                Timestamp = info.Timestamp
+                Timestamp = info.Timestamp,
+                IsDisqualified = info.IsDisqualified,
+                IsNoShow = info.IsNoShow
             };
 
             return wrestler;
@@ -309,9 +375,19 @@ namespace Wrestling.Providers
         {
             if (info == null) return null;
 
+            var status = ParseEnumOrDefault(info.Status, MatchStatusEnum.Pending);
+            // Legacy migration: pre-version .wrt files have info.Version == 0
+            // for every match. Bumping legacy Completed matches to V=1 prevents
+            // an accidental local Approve (V=0→V=1) on one peer from auto-
+            // overwriting an already-completed match on a sibling peer who is
+            // still on V=0 — equal versions keep local, so legacy completions
+            // are protected by the symmetric ceiling.
+            var version = info.Version;
+            if (version == 0 && status == MatchStatusEnum.Completed) version = 1;
+
             return new WrestlingMatch
             {
-                Status = ParseEnumOrDefault(info.Status, MatchStatusEnum.Pending),
+                Status = status,
                 WrestlerInBlue = info.WrestlerInBlue.HasValue ? wrestlers.FirstOrDefault(w => w.ID == info.WrestlerInBlue.Value) : null,
                 WrestlerInRed = info.WrestlerInRed.HasValue ? wrestlers.FirstOrDefault(w => w.ID == info.WrestlerInRed.Value) : null,
                 MatchNumber = info.MatchNumber,
@@ -322,6 +398,7 @@ namespace Wrestling.Providers
                 PointsRed = info.PointsRed,
                 WarningsNumberBlue = info.WarningsNumberBlue,
                 WarningsNumberRed = info.WarningsNumberRed,
+                Version = version,
                 StartDateTime = info.StartDateTime,
                 RoundNumber = info.RoundNumber,
                 MaxRoundSecond = info.MaxRoundSecond,
@@ -334,10 +411,13 @@ namespace Wrestling.Providers
                 {
                     RoundNumber = m.RoundNumber,
                     DateTime = m.DateTime,
-                    Text = m.Text,
                     SecondInRound = m.SecondInRound,
                     IsForRed = m.IsForRed,
-                    Points = m.Points
+                    Points = m.Points,
+                    // Prefer the explicit discriminator. Fall back to the
+                    // legacy text-based inferrer for .wrt files written
+                    // before MatchActionType existed.
+                    Type = ResolveActionType(m),
                 }).ToList(),
                 GroupID = group.ID,
                 BracketNumber = info.BracketNumber,
@@ -371,15 +451,14 @@ namespace Wrestling.Providers
                 Settings = settings,
                 TeamApplications = item.TeamApplications.Select(GetInfoFromEntity),
                 Wrestlers = item.Wrestlers.Select(GetInfoFromEntity),
-                Carpets = item.Carpets.Select(GetInfoFromEntity),
-                Slides = item.Slides.Select(GetInfoFromEntity),
+                Mats = item.Mats.Select(GetInfoFromEntity),
+                SlideChannels = item.SlideChannels.Select(GetInfoFromEntity),
                 HashTag = item.HashTag,
                 MainJudgeEmail = item.MainJudgeEmail,
                 MainJudgePhone = item.MainJudgePhone,
                 MainSecretaryPhone = item.MainSecretaryPhone,
                 MainSecretaryEmail = item.MainSecretaryEmail,
-                EntryFee = item.EntryFee,
-                ImportSources = item.ImportSources.ToList()
+                EntryFee = item.EntryFee
             };
 
             if (!info.ID.HasValue)
@@ -405,11 +484,23 @@ namespace Wrestling.Providers
             return info;
         }
 
-        private CarpetInfo GetInfoFromEntity(Carpet entity)
+        private SlideChannelInfo GetInfoFromEntity(SlideChannel entity)
+        {
+            if (entity == null) return null;
+
+            return new SlideChannelInfo
+            {
+                Name = entity.Name,
+                SliderMaxSecond = entity.SliderMaxSecond,
+                Slides = entity.Slides?.Select(GetInfoFromEntity).ToList()
+            };
+        }
+
+        private MatInfo GetInfoFromEntity(Mat entity)
         {
             if (entity?.ID == null) return null;
 
-            var info = new CarpetInfo
+            var info = new MatInfo
             {
                 ID = entity.ID.Value,
                 Name = entity.Name,
@@ -453,13 +544,15 @@ namespace Wrestling.Providers
                 MaxRoundSecond = group.MaxRoundSecond,
                 MaxTimeoutSecond = group.MaxTimeoutSecond,
                 Wrestlers = new List<Guid>(group.Wrestlers.Select(w => w.ID)),
-                CarpetLabel = group.CarpetLabel,
-                CarpetID = group.CarpetID,
+                MatLabel = group.MatLabel,
+                MatID = group.MatID,
                 ID = group.ID,
                 BirthYearMax = group.BirthYearMax,
                 BirthYearMin = group.BirthYearMin,
                 WeightMax = group.WeightMax,
-                IsFemale = group.IsFemale
+                IsFemale = group.IsFemale,
+                FieldsVersion = group.FieldsVersion,
+                BracketVersion = group.BracketVersion
             };
 
             return groupInfo;
@@ -487,8 +580,16 @@ namespace Wrestling.Providers
                 PaidAmount = entity.PaidAmount,
                 IsWeightApproved = entity.IsWeightApproved,
                 HashTag = entity.HashTag,
-                Level = entity.Level,
-                Timestamp = entity.Timestamp
+                // Persist the enum *name* on the wire ("MSMK"). Old clients
+                // reading this string via WrestlerLevelLabels.FromString get
+                // a recognized enum back. Old clients reading via the legacy
+                // free-form string path see "MSMK" — not display-localized
+                // but harmless (the value never displayed; only the enum
+                // identity matters for sorting/seeding).
+                Level = entity.Level == WrestlerLevelEnum.None ? string.Empty : entity.Level.ToString(),
+                Timestamp = entity.Timestamp,
+                IsDisqualified = entity.IsDisqualified,
+                IsNoShow = entity.IsNoShow
             };
 
             return info;
@@ -543,6 +644,7 @@ namespace Wrestling.Providers
                 PointsRed = entity.PointsRed,
                 WarningsNumberRed = entity.WarningsNumberRed,
                 WarningsNumberBlue = entity.WarningsNumberBlue,
+                Version = entity.Version,
                 StartDateTime = entity.StartDateTime,
                 WinType = entity.WinType.ToString(),
                 RoundNumber = entity.RoundNumber,
@@ -566,13 +668,24 @@ namespace Wrestling.Providers
             {
                 RoundNumber = entity.RoundNumber,
                 DateTime = entity.DateTime,
-                Text = entity.Text,
                 SecondInRound = entity.SecondInRound,
                 IsForRed = entity.IsForRed,
-                Points = entity.Points
+                Points = entity.Points,
+                Type = entity.Type.ToString(),
+                // Computed display text — kept in the schema purely so an
+                // older app version reading this .wrt still shows meaningful
+                // protocol entries (it has no awareness of Type).
+                Text = MatchActionDescriber.Describe(entity.Type, entity.IsForRed, entity.Points),
             };
 
             return info;
+        }
+
+        private static MatchActionType ResolveActionType(MatchActionInfo info)
+        {
+            var parsed = ParseEnumOrDefault(info.Type, MatchActionType.Unknown);
+            if (parsed != MatchActionType.Unknown) return parsed;
+            return LegacyMatchActionTypeInferrer.Infer(info.Text, info.Points, info.IsForRed);
         }
     }
 }

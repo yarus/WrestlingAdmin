@@ -5,15 +5,36 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" Foreground="Black" Background="LightGray"
              d:DesignHeight="600" d:DesignWidth="1000">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters1:ValueConverterGroup x:Key="InvBoolToVis"
+                                         xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils">
+            <converters1:BoolInverterConverter />
+            <converters1:GroupedBoolToVisConverter />
+        </converters1:ValueConverterGroup>
+        <converters2:MultiBoolAndToVisConverter x:Key="MultiBoolAndToVis"
+                                                xmlns:converters2="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils" />
         <converters:BracketCellLineHeightConverter x:Key="BracketCellHeight" />
         <converters:BracketCellLeftLineVisConverter x:Key="LeftLineVis" />
         <converters:BracketColumnTopMarginConverter x:Key="BracketColTopMargin" />
         <converters:BracketRoundVertLineVisibilityConverter x:Key="VertVis" />
+        <converters:OptionalImagePathConverter x:Key="OptionalImage" />
+        <converters:FullNameToShortConverter x:Key="ShortName" />
+
+        <!-- Tight column-header style: collapse Material Design's default padding
+             so a 6-char "Разряд" actually fits inside a 60-DIP column. The default
+             style added ~12 DIP padding on each side which clipped narrow headers
+             into invisible width. Mirrors the pattern used in PrintPersonalResultsView
+             and PrintApplicationsView. -->
+        <Style x:Key="CompactColumnHeader" TargetType="GridViewColumnHeader">
+            <Setter Property="Padding" Value="2,0,2,0" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
     </UserControl.Resources>
 
     <StackPanel Background="White" x:Name="RootControl">
@@ -32,7 +53,7 @@
                        FontWeight="Normal" />
 
             <TextBlock Grid.Row="0" Grid.Column="1"
-                       TextWrapping="NoWrap" Foreground="Black" Text="Весовая категория"
+                       TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc AddGroup_Title}"
                        FontSize="16" TextAlignment="Right" FontWeight="Normal" />
 
         </Grid>
@@ -44,7 +65,7 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=SelectedGroup.CarpetLabel}"
+                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=SelectedGroup.MatLabel}"
                        FontSize="16" TextAlignment="Left" FontWeight="Normal" />
 
             <TextBlock Grid.Row="0" Grid.Column="1"
@@ -53,7 +74,7 @@
         </Grid>
 
         <TextBlock
-            TextWrapping="NoWrap" Foreground="Black" Text="Протокол"
+            TextWrapping="NoWrap" Foreground="Black" Text="{Binding ProtocolTitle}"
             FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,5,10,0" />
 
         <Border BorderBrush="Black" BorderThickness="0,1,0,0" />
@@ -68,7 +89,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Margin="0">
-                            <TextBlock x:Name="RoundLabel" Text="{Binding RoundName}" HorizontalAlignment="Center"
+                            <TextBlock x:Name="RoundLabel" Text="{loc:LocRound RoundName}" HorizontalAlignment="Center"
                                        VerticalAlignment="Center">
                                 <TextBlock.Margin>
                                     <MultiBinding Converter="{StaticResource BracketColTopMargin}">
@@ -175,8 +196,28 @@
                                                                              HorizontalAlignment="Center"
                                                                              VerticalAlignment="Center"
                                                                              Margin="0" Padding="0"
-                                                                             Visibility="{Binding IsRedWon, Converter={StaticResource BoolToVis}}"
-                                                                             Height="16" Width="16" />
+                                                                             Height="16" Width="16">
+                                                        <materialDesign:PackIcon.Visibility>
+                                                            <MultiBinding Converter="{StaticResource MultiBoolAndToVis}" ConverterParameter="1">
+                                                                <Binding Path="IsRedWon" />
+                                                                <Binding Path="WrestlerInRed.IsDisqualified" />
+                                                            </MultiBinding>
+                                                        </materialDesign:PackIcon.Visibility>
+                                                    </materialDesign:PackIcon>
+                                                    <materialDesign:PackIcon Kind="CloseOctagon"
+                                                                             HorizontalAlignment="Center"
+                                                                             VerticalAlignment="Center"
+                                                                             Margin="0" Padding="0"
+                                                                             Foreground="Black"
+                                                                             ToolTip="{loc:Loc Print_Dsq_Tooltip}"
+                                                                             Height="20" Width="20">
+                                                        <materialDesign:PackIcon.Visibility>
+                                                            <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
+                                                                <Binding Path="IsRedWon" />
+                                                                <Binding Path="WrestlerInRed.IsDisqualified" />
+                                                            </MultiBinding>
+                                                        </materialDesign:PackIcon.Visibility>
+                                                    </materialDesign:PackIcon>
                                                 </Grid>
 
                                                 <Grid Grid.Row="1" Grid.Column="4"
@@ -187,8 +228,40 @@
                                                                              HorizontalAlignment="Center"
                                                                              VerticalAlignment="Center"
                                                                              Margin="0" Padding="0"
-                                                                             Visibility="{Binding IsBlueWon, Converter={StaticResource BoolToVis}}"
-                                                                             Height="16" Width="16" />
+                                                                             Height="16" Width="16">
+                                                        <materialDesign:PackIcon.Visibility>
+                                                            <MultiBinding Converter="{StaticResource MultiBoolAndToVis}" ConverterParameter="1">
+                                                                <Binding Path="IsBlueWon" />
+                                                                <Binding Path="WrestlerInBlue.IsDisqualified" />
+                                                            </MultiBinding>
+                                                        </materialDesign:PackIcon.Visibility>
+                                                    </materialDesign:PackIcon>
+                                                    <materialDesign:PackIcon Kind="CloseOctagon"
+                                                                             HorizontalAlignment="Center"
+                                                                             VerticalAlignment="Center"
+                                                                             Margin="0" Padding="0"
+                                                                             Foreground="Black"
+                                                                             ToolTip="{loc:Loc Print_Dsq_Tooltip}"
+                                                                             Height="20" Width="20">
+                                                        <materialDesign:PackIcon.Visibility>
+                                                            <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
+                                                                <Binding Path="IsBlueWon" />
+                                                                <Binding Path="WrestlerInBlue.IsDisqualified" />
+                                                            </MultiBinding>
+                                                        </materialDesign:PackIcon.Visibility>
+                                                    </materialDesign:PackIcon>
+                                                </Grid>
+
+                                                <Grid Grid.Row="0" Grid.Column="4" Grid.RowSpan="2"
+                                                      Visibility="{Binding IsMutualDisqualify, Converter={StaticResource BoolToVis}}"
+                                                      VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                      Margin="0">
+                                                    <materialDesign:PackIcon Kind="CloseOctagon"
+                                                                             HorizontalAlignment="Center"
+                                                                             VerticalAlignment="Center"
+                                                                             Margin="0" Padding="0"
+                                                                             Foreground="Black"
+                                                                             Height="20" Width="20" />
                                                 </Grid>
                                             </Grid>
 
@@ -254,7 +327,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Margin="0">
-                            <TextBlock x:Name="RoundLabel" Text="{Binding RoundName}"
+                            <TextBlock x:Name="RoundLabel" Text="{loc:LocRound RoundName}"
                                        HorizontalAlignment="Center" Foreground="Black" />
 
                             <ItemsControl ItemsSource="{Binding RoundMatches}">
@@ -340,8 +413,28 @@
                                                                          HorizontalAlignment="Center"
                                                                          VerticalAlignment="Center"
                                                                          Margin="0" Padding="0"
-                                                                         Visibility="{Binding IsRedWon, Converter={StaticResource BoolToVis}}"
-                                                                         Height="16" Width="16" />
+                                                                         Height="16" Width="16">
+                                                    <materialDesign:PackIcon.Visibility>
+                                                        <MultiBinding Converter="{StaticResource MultiBoolAndToVis}" ConverterParameter="1">
+                                                            <Binding Path="IsRedWon" />
+                                                            <Binding Path="WrestlerInRed.IsDisqualified" />
+                                                        </MultiBinding>
+                                                    </materialDesign:PackIcon.Visibility>
+                                                </materialDesign:PackIcon>
+                                                <materialDesign:PackIcon Kind="CloseOctagon"
+                                                                         HorizontalAlignment="Center"
+                                                                         VerticalAlignment="Center"
+                                                                         Margin="0" Padding="0"
+                                                                         Foreground="Black"
+                                                                         ToolTip="{loc:Loc Print_Dsq_Tooltip}"
+                                                                         Height="20" Width="20">
+                                                    <materialDesign:PackIcon.Visibility>
+                                                        <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
+                                                            <Binding Path="IsRedWon" />
+                                                            <Binding Path="WrestlerInRed.IsDisqualified" />
+                                                        </MultiBinding>
+                                                    </materialDesign:PackIcon.Visibility>
+                                                </materialDesign:PackIcon>
                                             </Grid>
 
                                             <Grid Grid.Row="1" Grid.Column="4"
@@ -351,8 +444,28 @@
                                                                          HorizontalAlignment="Center"
                                                                          VerticalAlignment="Center"
                                                                          Margin="0" Padding="0"
-                                                                         Visibility="{Binding IsBlueWon, Converter={StaticResource BoolToVis}}"
-                                                                         Height="16" Width="16" />
+                                                                         Height="16" Width="16">
+                                                    <materialDesign:PackIcon.Visibility>
+                                                        <MultiBinding Converter="{StaticResource MultiBoolAndToVis}" ConverterParameter="1">
+                                                            <Binding Path="IsBlueWon" />
+                                                            <Binding Path="WrestlerInBlue.IsDisqualified" />
+                                                        </MultiBinding>
+                                                    </materialDesign:PackIcon.Visibility>
+                                                </materialDesign:PackIcon>
+                                                <materialDesign:PackIcon Kind="CloseOctagon"
+                                                                         HorizontalAlignment="Center"
+                                                                         VerticalAlignment="Center"
+                                                                         Margin="0" Padding="0"
+                                                                         Foreground="Black"
+                                                                         ToolTip="{loc:Loc Print_Dsq_Tooltip}"
+                                                                         Height="20" Width="20">
+                                                    <materialDesign:PackIcon.Visibility>
+                                                        <MultiBinding Converter="{StaticResource MultiBoolAndToVis}">
+                                                            <Binding Path="IsBlueWon" />
+                                                            <Binding Path="WrestlerInBlue.IsDisqualified" />
+                                                        </MultiBinding>
+                                                    </materialDesign:PackIcon.Visibility>
+                                                </materialDesign:PackIcon>
                                             </Grid>
                                         </Grid>
 
@@ -366,33 +479,41 @@
             </ItemsControl>
         </Grid>
 
-        <Grid Margin="0, 20, 0, 0">
+        <Grid Margin="0, 10, 0, 0">
+            <!-- Results variant: Место first, no Жребий column hidden but Жребий
+                 still appears at the right for context. -->
             <ListView ItemsSource="{Binding Path=GroupWrestlers}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-              ScrollViewer.CanContentScroll="True" HorizontalContentAlignment="Stretch">
+              ScrollViewer.CanContentScroll="False" HorizontalContentAlignment="Stretch"
+              VirtualizingPanel.IsVirtualizing="False"
+              Visibility="{Binding IsDrawProtocol, Converter={StaticResource InvBoolToVis}}">
                 <ListView.View>
-                    <GridView AllowsColumnReorder="true">
-                        <GridViewColumn Width="60">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Место" HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                    <GridView AllowsColumnReorder="false" ColumnHeaderContainerStyle="{StaticResource CompactColumnHeader}">
+                        <GridViewColumn Header="{loc:Loc Personal_Column_Place}" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Order}" 
-                                      HorizontalAlignment="Center"
-                                      VerticalAlignment="Bottom"
-                                      Margin="0,8,0,0"
-                                      FontSize="14"/>
+                                    <Grid>
+                                        <TextBlock Text="{Binding Order}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Bottom"
+                                          Margin="0,8,0,0"
+                                          FontSize="14"
+                                          Visibility="{Binding IsDisqualified, Converter={StaticResource InvBoolToVis}}"/>
+                                        <TextBlock Text="DSQ"
+                                          Foreground="Black" FontWeight="Bold"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Bottom"
+                                          Margin="0,8,0,0"
+                                          FontSize="14"
+                                          Visibility="{Binding IsDisqualified, Converter={StaticResource BoolToVis}}"/>
+                                    </Grid>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Width="250">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="ФИО" HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="{loc:Loc Applications_Column_FullName}" Width="250">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding AthleteName}" 
+                                    <TextBlock Text="{Binding AthleteName}"
                                       HorizontalAlignment="Left"
                                       VerticalAlignment="Bottom"
                                       Margin="8,8,0,0"
@@ -402,13 +523,10 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Width="120">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Команда" HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="{loc:Loc Draw_Column_Team}" Width="120">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding TeamName}" 
+                                    <TextBlock Text="{Binding TeamName}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Bottom"
                                       Margin="0,8,0,0"
@@ -418,13 +536,10 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Width="60">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Г.р." HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="{loc:Loc Applications_Column_BirthYear}" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding BirthYear}" 
+                                    <TextBlock Text="{Binding BirthYear}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Bottom"
                                       Margin="0,8,0,0"
@@ -433,13 +548,10 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Width="60">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Разряд" HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="{loc:Loc Applications_Column_Level}" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Level}" 
+                                    <TextBlock Text="{Binding Level}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Bottom"
                                       Margin="0,8,0,0"
@@ -448,13 +560,10 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Width="60">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Вес" HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="{loc:Loc Applications_Column_Weight}" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Weight}" 
+                                    <TextBlock Text="{Binding Weight}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Bottom"
                                       Margin="0,8,8,0"
@@ -463,13 +572,10 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
 
-                        <GridViewColumn Width="60">
-                            <GridViewColumn.Header>
-                                <GridViewColumnHeader Content="Жребий" HorizontalContentAlignment="Center" Padding="0"/>
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="{loc:Loc PrintBracket_Column_Lot}" Width="60">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding SeedNumber}" 
+                                    <TextBlock Text="{Binding SeedNumber}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Bottom"
                                       Margin="0,8,0,0"
@@ -480,40 +586,140 @@
                     </GridView>
                 </ListView.View>
             </ListView>
+
+            <!-- Draw-protocol variant: Жребий first, Место column dropped. -->
+            <ListView ItemsSource="{Binding Path=GroupWrestlers}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+              ScrollViewer.CanContentScroll="False" HorizontalContentAlignment="Stretch"
+              VirtualizingPanel.IsVirtualizing="False"
+              Visibility="{Binding IsDrawProtocol, Converter={StaticResource BoolToVis}}">
+                <ListView.View>
+                    <GridView AllowsColumnReorder="false" ColumnHeaderContainerStyle="{StaticResource CompactColumnHeader}">
+                        <GridViewColumn Header="{loc:Loc PrintBracket_Column_Lot}" Width="60">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding SeedNumber}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      FontSize="14"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="{loc:Loc Applications_Column_FullName}" Width="250">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding AthleteName}"
+                                      HorizontalAlignment="Left"
+                                      VerticalAlignment="Bottom"
+                                      Margin="8,8,0,0"
+                                      TextWrapping="Wrap"
+                                      FontSize="14"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="{loc:Loc Draw_Column_Team}" Width="120">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding TeamName}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      TextWrapping="Wrap"
+                                      FontSize="14"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="{loc:Loc Applications_Column_BirthYear}" Width="60">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding BirthYear}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      FontSize="14"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="{loc:Loc Applications_Column_Level}" Width="60">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Level}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,0,0"
+                                      FontSize="14"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn Header="{loc:Loc Applications_Column_Weight}" Width="60">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Weight}"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,8,8,0"
+                                      FontSize="14"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                    </GridView>
+                </ListView.View>
+            </ListView>
         </Grid>
 
-        <Grid Margin="0,30,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="3*" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <Grid Margin="0,5,0,5">
+            <!-- Inner Grid sizes by text rows only — image is a sibling and
+                 doesn't expand row heights. VerticalAlignment="Center" centers
+                 the text rows within the outer Grid's height (determined by
+                 the taller image), so the stamp midline lands between the
+                 judge and secretary rows instead of below them. -->
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <TextBlock Grid.Column="0" Grid.Row="0"
-                        TextWrapping="NoWrap" Foreground="Black" Text="Главный судья соревнований"
-                        FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
+                <TextBlock Grid.Column="0" Grid.Row="0"
+                            TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc Details_Judge_Header}"
+                            FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
-            <TextBlock Grid.Column="3" Grid.Row="0"
-                        TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Tournament.MainJudge}"
-                        FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" MinWidth="100"/>
+                <TextBlock Grid.Column="2" Grid.Row="0"
+                            TextWrapping="NoWrap" Foreground="Black"
+                            Text="{Binding Path=Tournament.MainJudge, Converter={StaticResource ShortName}}"
+                            FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" MinWidth="100"/>
 
-            <Border Grid.Row="0" Grid.Column="2" BorderThickness="0,0,0,1" BorderBrush="Black" Width="180" />
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                            TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc Details_Secretary_Header}"
+                            FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
-            <TextBlock Grid.Row="1" Grid.Column="0"
-                        TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь соревнований"
-                        FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
+                <TextBlock Grid.Row="1" Grid.Column="2"
+                            TextWrapping="NoWrap" Foreground="Black"
+                            Text="{Binding Path=Tournament.MainSecretary, Converter={StaticResource ShortName}}"
+                            FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" MinWidth="100" />
+            </Grid>
 
-            <TextBlock Grid.Row="1" Grid.Column="3"
-                        TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Tournament.MainSecretary}"
-                        FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" MinWidth="100" />
-
-            <Border Grid.Row="1" Grid.Column="2" BorderThickness="0,0,0,1" BorderBrush="Black" Width="180" />
+            <!-- Stamp + signatures sibling of the inner Grid in this single-cell
+                 outer Grid. Image position is independent of inner row sizing —
+                 rows stay compact regardless of stamp height. Image rendered
+                 last → on top in z-order (relevant only if the user's image has
+                 transparent background; with opaque white bg it's irrelevant). -->
+            <Image Source="{Binding Path=Tournament.Settings.SignatureFooterImagePath, Converter={StaticResource OptionalImage}}"
+                   Stretch="Uniform"
+                   Height="150"
+                   HorizontalAlignment="Center" VerticalAlignment="Top"
+                   Margin="0,30,0,0"
+                   IsHitTestVisible="False" />
         </Grid>
 
     </StackPanel>

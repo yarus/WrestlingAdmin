@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using Wrestling.UI.Utils;
 
 namespace Wrestling.UI.Material.Utils
@@ -8,11 +8,11 @@ namespace Wrestling.UI.Material.Utils
     {
         private static volatile DiContainer _instance;
         private static readonly object SyncRoot = new Object();
-        private readonly Dictionary<string, object> _container;
+        private readonly ConcurrentDictionary<string, object> _container;
 
         private DiContainer()
         {
-            _container = new Dictionary<string, object>();
+            _container = new ConcurrentDictionary<string, object>();
         }
 
         public void Add<T>(object item) where T : class
@@ -22,31 +22,26 @@ namespace Wrestling.UI.Material.Utils
 
         public void Add(object item, string key)
         {
-            if (string.IsNullOrEmpty(key)) throw new ApplicationException("Key for IoC container should not be empty!");
+            if (string.IsNullOrEmpty(key)) throw new ArgumentException("Key for IoC container must not be empty.", nameof(key));
 
-            if (_container.ContainsKey(key))
+            if (!_container.TryAdd(key, item))
             {
-                throw new ApplicationException("Cant add item to container since such type already exists.");
+                throw new InvalidOperationException($"Cannot register '{key}' — it is already present in the container.");
             }
-
-            _container.Add(key, item);
         }
 
         public void Remove<T>() where T : class
         {
             var fullName = typeof(T).FullName;
 
-            if (fullName == null) throw new ApplicationException("Can't get type name for IoC container!");
+            if (fullName == null) throw new InvalidOperationException($"Type '{typeof(T)}' has no FullName — cannot derive a container key.");
 
             Remove(fullName);
         }
 
         public void Remove(string key)
         {
-            if (_container.ContainsKey(key))
-            {
-                _container.Remove(key);
-            }
+            _container.TryRemove(key, out _);
         }
 
         public T Resolve<T>() where T : class
@@ -60,9 +55,9 @@ namespace Wrestling.UI.Material.Utils
 
         public object Resolve(string key)
         {
-            if (string.IsNullOrEmpty(key) || !_container.ContainsKey(key)) return null;
+            if (string.IsNullOrEmpty(key)) return null;
 
-            return _container[key];
+            return _container.TryGetValue(key, out var value) ? value : null;
         }
 
         public static DiContainer Instance

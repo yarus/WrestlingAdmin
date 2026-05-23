@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
+using Wrestling.Entities.Bracket;
 using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.Tournament.Dashboard;
-using Wrestling.UI.Material.Tournament.Print.PrintBracket;
 using Wrestling.UI.Material.Tournament.Progress.Schedule;
 using Wrestling.UI.Utils;
 
@@ -18,12 +18,15 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
     {
         #region Fields
 
-        private Carpet _selectedCarpet;
-        private ObservableCollection<Carpet> _carpets;
-        
+        private Mat _selectedMat;
+        private ObservableCollection<Mat> _mats;
+        private ObservableCollection<AgeWeightGroup> _filteredGroups;
+        private string _filterString;
+
         private ICommand _openMatchCommand;
-        private ICommand _changeCarpetCommand;
-        private ICommand _printBracketCommand;
+        private ICommand _changeMatCommand;
+        private ICommand _clearDisqualifyCommand;
+        private List<IGroupBracketProcessor> _processors;
 
         private IList<CommandButtonItem> _quickButtons;
 
@@ -33,7 +36,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
         {
         }
         
-        public override string PageTitle => "Турнирная Сетка";
+        public override string PageTitle => T("Brackets_PageTitle", "Турнирная Сетка");
 
         public override bool IsBackButtonAvailable => true;
 
@@ -43,14 +46,16 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
 
             if (Tournament == null)
             {
-                throw new ApplicationException("Tournament property is not set!");
+                throw new InvalidOperationException("Tournament is not set on the data context. Navigate to a tournament before opening this view.");
             }
 
-            Carpets = DataContext.Tournament.Carpets;
+            _quickButtons = null;
+            _processors = Resolve<List<IGroupBracketProcessor>>();
+            Mats = DataContext.Tournament.Mats;
 
-            if (Carpets.Count > 0 && _selectedCarpet == null || (Carpets.Count > 0 && !Carpets.Contains(SelectedCarpet))) SelectedCarpet = Carpets[0];
+            if (Mats.Count > 0 && _selectedMat == null || (Mats.Count > 0 && !Mats.Contains(SelectedMat))) SelectedMat = Mats[0];
 
-            DataContext.IsBracketView = true;
+            RefreshFilteredGroups();
         }
 
         public override IList<CommandButtonItem> QuickButtons
@@ -61,7 +66,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
                        (
                            _quickButtons = new List<CommandButtonItem>
                            {
-                               new CommandButtonItem("Открыть расписание схваток", PackIconKind.Receipt, new RelayCommand(param => OpenSchedule(), param => true))
+                               new CommandButtonItem(T("Brackets_OpenSchedule_Tooltip", "Открыть расписание схваток"), PackIconKind.Timetable, new RelayCommand(param => OpenSchedule(), param => true))
                            }
                        );
             }
@@ -69,28 +74,53 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
 
         #region Binding Properties
         
-        public ObservableCollection<Carpet> Carpets
+        public ObservableCollection<Mat> Mats
         {
-            get { return _carpets; }
+            get { return _mats; }
             set
             {
-                _carpets = value;
+                _mats = value;
 
-                OnPropertyChanged("Carpets");
+                OnPropertyChanged("Mats");
             }
         }
 
-        public Carpet SelectedCarpet
+        public Mat SelectedMat
         {
-            get { return _selectedCarpet; }
+            get { return _selectedMat; }
             set
             {
-                _selectedCarpet = value;
-                
-                OnPropertyChanged("SelectedCarpet");
+                _selectedMat = value;
+
+                OnPropertyChanged("SelectedMat");
+                RefreshFilteredGroups();
             }
         }
-        
+
+        public string FilterString
+        {
+            get => _filterString;
+            set
+            {
+                if (_filterString == value) return;
+                _filterString = value;
+
+                OnPropertyChanged(nameof(FilterString));
+                RefreshFilteredGroups();
+            }
+        }
+
+        public ObservableCollection<AgeWeightGroup> FilteredGroups
+        {
+            get => _filteredGroups;
+            private set
+            {
+                _filteredGroups = value;
+
+                OnPropertyChanged(nameof(FilteredGroups));
+            }
+        }
+
         #endregion
 
         #region Command Properties
@@ -107,27 +137,33 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             }
         }
 
-        public ICommand PrintBracketCommand
+        public ICommand ChangeMatCommand
         {
             get
             {
-                if (_printBracketCommand == null)
+                if (_changeMatCommand == null)
                 {
-                    _printBracketCommand = new RelayCommand(param => PrintBracket(param as AgeWeightGroup), param => param != null);
+                    _changeMatCommand = new RelayCommand(param => ChangeMat(param as Mat), param => param != null);
                 }
-                return _printBracketCommand;
+                return _changeMatCommand;
             }
         }
 
-        public ICommand ChangeCarpetCommand
+        // Bound to the orange-X icon overlays in BracketsView. Click → confirm
+        // dialog → resolve the right processor for the wrestler's bracket →
+        // ClearWrestlerDisqualify (finds the originating mutual-DSQ match and
+        // reverts; falls back to clearing the flag if no match exists).
+        public ICommand ClearDisqualifyCommand
         {
             get
             {
-                if (_changeCarpetCommand == null)
+                if (_clearDisqualifyCommand == null)
                 {
-                    _changeCarpetCommand = new RelayCommand(param => ChangeCarpet(param as Carpet), param => param != null);
+                    _clearDisqualifyCommand = new RelayCommand(
+                        param => ClearDisqualify(param as Wrestler),
+                        param => param is Wrestler w && w.IsDisqualified);
                 }
-                return _changeCarpetCommand;
+                return _clearDisqualifyCommand;
             }
         }
 
@@ -135,33 +171,116 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
 
         #region Private Methods
 
-        private void ChangeCarpet(Carpet carpet)
+        private void ChangeMat(Mat mat)
         {
-            SelectedCarpet = carpet;
+            SelectedMat = mat;
         }
 
-        private void PrintBracket(AgeWeightGroup group)
+        private void ClearDisqualify(Wrestler wrestler)
         {
-            if (group?.Bracket == null) return;
+            if (wrestler == null || !wrestler.IsDisqualified) return;
 
-            DataContext.Group = group;
+            // Find the group whose bracket holds this wrestler so we can pick
+            // the right processor (different bracket types share the
+            // ClearWrestlerDisqualify entry point but their override behavior
+            // differs — ConsolationFinalists handles rebuilt SF specially).
+            var hostGroup = DataContext?.Tournament?.Groups
+                .FirstOrDefault(g => g.Wrestlers.Any(w => w.SameAs(wrestler)));
+            if (hostGroup?.Bracket == null) return;
 
-            ShowPrintPreview(new PrintBracketViewModel(DiContainer));
+            var msg = string.Format(T("Brackets_RemoveDsq_Body", "Снять дисквалификацию со спортсмена «{0}»?\nМатч с обоюдной дисквалификацией будет освобождён для повторной игры."), wrestler.FullName);
+            if (Dialog.ShowMessageBox(this, msg, T("Brackets_RemoveDsq_Title", "Подтверждение"),
+                    MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
+            {
+                return;
+            }
+
+            var processor = _processors?.FirstOrDefault(p => p.Code == hostGroup.Bracket.BracketTypeCode);
+            if (processor is GroupBracketProcessorBase concrete)
+            {
+                concrete.LoadTournamentGroup(DataContext.Tournament, hostGroup);
+                concrete.ClearWrestlerDisqualify(wrestler);
+                ShowSnackMessage(T("Brackets_DsqRemoved_Snack", "Дисквалификация снята."));
+            }
+            else
+            {
+                // Processor missing or doesn't expose ClearWrestlerDisqualify —
+                // graceful fallback so the operator isn't stuck.
+                wrestler.IsDisqualified = false;
+                ShowSnackMessage(T("Brackets_DsqRemoved_Snack", "Дисквалификация снята."));
+            }
         }
+
+        // Mirrors Schedule's filter behavior: case-insensitive substring match across
+        // wrestler FullName + team name + city, ignored until at least 3 characters.
+        // When active, shows only groups whose bracket contains a passing match and
+        // auto-expands those groups so the operator sees the result immediately.
+        private void RefreshFilteredGroups()
+        {
+            if (_selectedMat == null)
+            {
+                FilteredGroups = new ObservableCollection<AgeWeightGroup>();
+                return;
+            }
+
+            var hasTextFilter = !string.IsNullOrEmpty(_filterString) && _filterString.Length > 2;
+
+            if (!hasTextFilter)
+            {
+                FilteredGroups = new ObservableCollection<AgeWeightGroup>(_selectedMat.Groups);
+                return;
+            }
+
+            var matched = _selectedMat.Groups
+                .Where(g => g.Bracket != null && BracketHasMatchPassingFilter(g.Bracket, _filterString))
+                .ToList();
+
+            foreach (var group in matched)
+            {
+                group.IsExpanded = true;
+            }
+
+            FilteredGroups = new ObservableCollection<AgeWeightGroup>(matched);
+        }
+
+        private static bool BracketHasMatchPassingFilter(GroupBracket bracket, string filter)
+            => bracket.Rounds.SelectMany(r => r.RoundMatches).Any(m => MatchPassesFilter(m, filter));
+
+        private static bool MatchPassesFilter(WrestlingMatch match, string filter)
+            => WrestlerPassesFilter(match.WrestlerInRed, filter)
+               || WrestlerPassesFilter(match.WrestlerInBlue, filter);
+
+        private static bool WrestlerPassesFilter(Wrestler wrestler, string filter)
+            => wrestler != null
+               && (ContainsCi(wrestler.FullName, filter)
+                   || ContainsCi(wrestler.TeamName, filter)
+                   || ContainsCi(wrestler.TeamCity, filter));
+
+        private static bool ContainsCi(string source, string value)
+            => !string.IsNullOrEmpty(source)
+               && source.IndexOf(value, StringComparison.InvariantCultureIgnoreCase) >= 0;
 
         private void OpenSchedule()
         {
             NavigateToView<ScheduleViewModel>();
         }
 
+        // Brackets is a fullscreen overlay launched from Conducting (and reachable
+        // via the toggle from Schedule). Back goes to the admin landing — same
+        // reasoning as ScheduleViewModel.OnBackCommand.
         protected override void OnBackCommand()
         {
-            NavigateToView<DashboardViewModel>();
+            NavigateToView<Conducting.ConductingViewModel>();
         }
 
         private void OpenMatch(WrestlingMatch match)
         {
             if (match == null) return;
+
+            // Empty consolation slots resolved via auto-FreeWin (no wrestlers,
+            // no winner — see OlympicWithConsolationFromFinalists sweep) have
+            // nothing to display and break MatchResultsViewModel's invariants.
+            if (match.WrestlerInRed == null && match.WrestlerInBlue == null) return;
 
             if (match.Status == MatchStatusEnum.Completed)
             {

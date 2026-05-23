@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities
 {
@@ -25,12 +26,16 @@ namespace Wrestling.Entities
         private bool _isEntryFeePaid;
         private decimal? _paidAmount;
         private bool _isWeightApproved;
-        private string _level;
+        private WrestlerLevelEnum _level;
         private DateTime? _timestamp;
+        private bool _isDisqualified;
+        private bool _isNoShow;
         public bool IsApplicationValid => !string.IsNullOrEmpty(LastName) && !string.IsNullOrEmpty(FirstName) && BirthDate.HasValue && GroupID.HasValue;
         public bool IsRegistrationApproved => IsApplicationValid && Weight.HasValue && IsEntryFeePaid && IsWeightApproved;
 
-        public string IsFemaleLabel => IsFemale ? "Ж" : "М";
+        public string IsFemaleLabel => IsFemale
+            ? EntityLocalization.T("Gender_FemaleShort", "Ж")
+            : EntityLocalization.T("Gender_MaleShort", "М");
 
         public Guid ID
         {
@@ -42,15 +47,22 @@ namespace Wrestling.Entities
             }
         }
 
-        public string Level
+        public WrestlerLevelEnum Level
         {
             get { return _level; }
             set
             {
+                if (_level == value) return;
                 _level = value;
                 OnPropertyChanged("Level");
+                OnPropertyChanged("LevelDisplay");
             }
         }
+
+        // Localized display label backing UI bindings ({Binding LevelDisplay}).
+        // Computed every access so language switch flips text via list rebuild
+        // or PropertyChanged tick on Level.
+        public string LevelDisplay => WrestlerLevelLabels.GetDisplay(_level);
 
         public decimal? PaidAmount
         {
@@ -254,6 +266,41 @@ namespace Wrestling.Entities
             }
         }
 
+        // Set to true when the wrestler is mutually disqualified for brutality
+        // (UWW: «остается без места с отметкой дисквалификация»). FinalPlace
+        // stays null on these wrestlers so team scoring naturally awards 0.
+        public bool IsDisqualified
+        {
+            get { return _isDisqualified; }
+            set
+            {
+                _isDisqualified = value;
+                OnPropertyChanged("IsDisqualified");
+                OnPropertyChanged("IsPlaceless");
+            }
+        }
+
+        // Set to true when the wrestler is a no-show in their first match —
+        // didn't appear, opponent wins by NoShow. UWW: same outcome as DSQ
+        // for placement (placeless, 0 CP), but UI shows «Неявка» instead of
+        // «DSQ». Flag is suppressed when IsDisqualified is already true so a
+        // DSQ'd wrestler doesn't get the no-show badge from cascaded matches.
+        public bool IsNoShow
+        {
+            get { return _isNoShow; }
+            set
+            {
+                _isNoShow = value;
+                OnPropertyChanged("IsNoShow");
+                OnPropertyChanged("IsPlaceless");
+            }
+        }
+
+        // Convenience: «excluded from placement and team scoring». UWW treats
+        // DSQ and NoShow identically for placement — placeless, 0 CP — so all
+        // result calculators short-circuit on this combined flag.
+        public bool IsPlaceless => _isDisqualified || _isNoShow;
+
         public string FullName => string.Format("{0}{1}{2}", !string.IsNullOrEmpty(LastName) ? LastName : string.Empty,
             !string.IsNullOrEmpty(FirstName) ? " " + FirstName : string.Empty,
             !string.IsNullOrEmpty(MiddleName) ? " " + MiddleName : string.Empty);
@@ -296,6 +343,8 @@ namespace Wrestling.Entities
             Level = wr.Level;
             IsWeightApproved = wr.IsWeightApproved;
             Timestamp = wr.Timestamp;
+            IsDisqualified = wr.IsDisqualified;
+            IsNoShow = wr.IsNoShow;
         }
 
         public object Clone()

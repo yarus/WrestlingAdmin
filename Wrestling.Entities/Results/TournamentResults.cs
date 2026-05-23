@@ -60,11 +60,19 @@ namespace Wrestling.Entities.Results
         {
             get
             {
+                // DSQ'd / no-show wrestlers contribute 0 to classification
+                // points — UWW «остаётся без места с отметкой дисквалификация
+                // / неявка». Earlier wins they did rack up are voided when
+                // either flag flips on. Both flags are sticky, so this short-
+                // circuit is the right place to zero them out for both display
+                // and tie-break ordering.
+                if (_wrestler != null && (_wrestler.IsDisqualified || _wrestler.IsNoShow)) return 0;
+
                 var fivePoints = FivePointWins * 5;
                 var fourPoints = FourPointWins * 4;
                 var threePoints = ThreePointWin * 3;
                 var losePoints = LoseByAction + LoseByDomination + LoseByPoints;
-                
+
                 var result = fivePoints + fourPoints + threePoints + losePoints;
                 return result;
             }
@@ -112,17 +120,20 @@ namespace Wrestling.Entities.Results
             {
                 if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
 
+                // Gate on Type==SetPoints. Without this warnings (which also
+                // carry Points>0 in the legacy schema) inflate the «fastest
+                // action» heuristic.
                 var redActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
                     .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed.SameAs(_wrestler)) && x.LastSecondInMatch > 0)
                     .SelectMany(m => m.MatchActions)
-                    .Where(a => a.Points > 0 && a.IsForRed.HasValue && a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
+                    .Where(a => a.Type == MatchActionType.SetPoints && a.IsForRed.HasValue && a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
                     .OrderBy(a => a.SecondInRound)
                     .ToList();
 
                 var blueActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
                     .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue.SameAs(_wrestler)) && x.LastSecondInMatch > 0)
                     .SelectMany(m => m.MatchActions)
-                    .Where(a => a.Points > 0 && a.IsForRed.HasValue && !a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
+                    .Where(a => a.Type == MatchActionType.SetPoints && a.IsForRed.HasValue && !a.IsForRed.Value && a.RoundNumber == 1 && a.SecondInRound > 2)
                     .OrderBy(a => a.SecondInRound)
                     .ToList();
 
@@ -149,11 +160,11 @@ namespace Wrestling.Entities.Results
                 if (_group == null || _group.Bracket == null || _wrestler == null) return 0;
 
                 var redFastestWinSecond = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                        .Where(x => x.Status == MatchStatusEnum.Completed && x.WrestlerInRed.SameAs(_wrestler) && x.IsRedWon.Value && x.LastSecondInMatch > 3) // 3 because some matches can be completed manually
+                        .Where(x => x.Status == MatchStatusEnum.Completed && x.WrestlerInRed.SameAs(_wrestler) && x.IsRedWinner && x.LastSecondInMatch > 3) // 3 because some matches can be completed manually
                         .ToList();
 
                 var blueFastestWinSecond = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
-                    .Where(x => x.Status == MatchStatusEnum.Completed && x.WrestlerInBlue.SameAs(_wrestler) && !x.IsRedWon.Value && x.LastSecondInMatch > 3)
+                    .Where(x => x.Status == MatchStatusEnum.Completed && x.WrestlerInBlue.SameAs(_wrestler) && x.IsBlueWon && x.LastSecondInMatch > 3)
                     .ToList();
 
                 var redSecond = _group.MaxRoundSecond * 2;
@@ -181,12 +192,12 @@ namespace Wrestling.Entities.Results
                 var redActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
                     .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInRed.SameAs(_wrestler)))
                     .SelectMany(m => m.MatchActions)
-                    .Count(a => a.Points == 4 && a.IsForRed.HasValue && a.IsForRed.Value);
+                    .Count(a => a.Type == MatchActionType.SetPoints && a.Points == 4 && a.IsForRed.HasValue && a.IsForRed.Value);
 
                 var blueActions = _group.Bracket.Rounds.SelectMany(p => p.RoundMatches)
                     .Where(x => x.Status == MatchStatusEnum.Completed && (x.WrestlerInBlue.SameAs(_wrestler)))
                     .SelectMany(m => m.MatchActions)
-                    .Count(a => a.Points == 4 && a.IsForRed.HasValue && !a.IsForRed.Value);
+                    .Count(a => a.Type == MatchActionType.SetPoints && a.Points == 4 && a.IsForRed.HasValue && !a.IsForRed.Value);
 
                 return redActions + blueActions;
             }
@@ -208,12 +219,15 @@ namespace Wrestling.Entities.Results
 
         private int GetWinsByType(MatchWinTypeEnum? winType)
         {
+            // IsRedWon is null when WinType == MutualDisqualify (Status is
+            // still Completed). Guard with HasValue so the count skips mutual
+            // matches — neither wrestler counts as having won.
             return _group != null && _group.Bracket != null && _wrestler != null
                 ? _group.Bracket.Rounds
                     .SelectMany(p => p.RoundMatches)
                     .Where(x =>
                         x.Status == MatchStatusEnum.Completed
-                        && (x.IsRedWon.Value && x.WrestlerInRed.SameAs(_wrestler) || x.IsBlueWon && x.WrestlerInBlue.SameAs(_wrestler))
+                        && ((x.IsRedWinner && x.WrestlerInRed.SameAs(_wrestler)) || (x.IsBlueWon && x.WrestlerInBlue.SameAs(_wrestler)))
                         && (winType == null || x.WinType == winType))
                     .ToList().Count
                 : 0;
@@ -224,7 +238,7 @@ namespace Wrestling.Entities.Results
             return _group != null && _group.Bracket != null && _wrestler != null
                 ? _group.Bracket.Rounds.SelectMany(p => p.RoundMatches).Where(x =>
                     x.Status == MatchStatusEnum.Completed
-                    && (x.IsRedWon.Value && x.WrestlerInBlue.SameAs(_wrestler) || x.IsBlueWon && x.WrestlerInRed.SameAs(_wrestler))
+                    && ((x.IsRedWinner && x.WrestlerInBlue.SameAs(_wrestler)) || (x.IsBlueWon && x.WrestlerInRed.SameAs(_wrestler)))
                     && (loseType == null || x.WinType == loseType)).ToList().Count
                 : 0;
 
@@ -251,7 +265,7 @@ namespace Wrestling.Entities.Results
         }
 
         public string GroupName => _group != null ? _group.Name : string.Empty;
-        public string GroupBracketLabel => _group != null && _group.Bracket != null ? _group.Bracket.BracketTypeLabel : string.Empty;
+        public string GroupBracketLabel => _group != null && _group.Bracket != null ? _group.Bracket.BracketTypeDisplay : string.Empty;
 
         public string GroupLabel => $"{GroupName} - {GroupBracketLabel}";
     }

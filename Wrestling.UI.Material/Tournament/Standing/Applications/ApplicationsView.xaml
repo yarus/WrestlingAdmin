@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:converters1="clr-namespace:Wrestling.UI.Material.Utils.Converters"
@@ -34,18 +35,23 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Row="0" Grid.Column="0">
-                <Button Content="Новая заявка"
-                        ToolTip="Добавить заявку на участие"
+            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
+                <Button Content="{loc:Loc Applications_NewApp}"
+                        ToolTip="{loc:Loc Applications_NewApp_Tooltip}"
                         Width="160"
                         HorizontalAlignment="Left" Margin="20,10,0,10"
                         Command="{Binding AddAppCommand}" />
+                <Button Content="{loc:Loc Applications_AutoApprove}"
+                        ToolTip="{loc:Loc Applications_AutoApprove_Tooltip}"
+                        Width="120"
+                        HorizontalAlignment="Left" Margin="10,10,0,10"
+                        Command="{Binding ApproveAllCommand}" />
             </StackPanel>
 
             <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal"
@@ -63,37 +69,40 @@
                         <materialDesign:PackIcon Kind="Magnify" Opacity=".56" />
                     </Button>
 
-                    <TextBox Grid.Column="1" Margin="8 0 0 0" materialDesign:HintAssist.Hint="Поиск по фамилии"
+                    <TextBox Grid.Column="1" Margin="8 0 0 0" materialDesign:HintAssist.Hint="{loc:Loc Applications_SearchHint}"
                              materialDesign:TextFieldAssist.DecorationVisibility="Hidden" BorderThickness="0"
-                             MinWidth="200" VerticalAlignment="Center"
+                             MinWidth="260" VerticalAlignment="Center"
                              Text="{Binding FilterString, UpdateSourceTrigger=PropertyChanged, Delay=1000}" />
                 </Grid>
-                <Button Style="{DynamicResource MaterialDesignToolForegroundButton}" Margin="8 0 0 0" Panel.ZIndex="0">
-                    <materialDesign:PackIcon Kind="Send" />
-                </Button>
             </StackPanel>
 
             <CheckBox Grid.Row="0" Grid.Column="2" HorizontalAlignment="Center"
-                      IsChecked="{Binding IsOnlyUnapprovedVisible}">
-                Только недопущенные
-            </CheckBox>
+                      VerticalAlignment="Center"
+                      MinWidth="110"
+                      Margin="8,0,0,0"
+                      IsChecked="{Binding IsOnlyUnapprovedVisible}"
+                      Content="{loc:Loc Applications_OnlyUnapproved}" />
 
-            <TextBlock Grid.Row="0" Grid.Column="3" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Заявок:" />
-                <Run Text="{Binding AppsCount, Mode=OneWay}" />
-            </TextBlock>
+            <StackPanel Grid.Row="0" Grid.Column="4" Orientation="Horizontal"
+                        Margin="20,0,8,0" VerticalAlignment="Center"
+                        ToolTip="{loc:Loc Applications_TeamsCount_Tooltip}">
+                <materialDesign:PackIcon Kind="AccountGroup" Width="20" Height="20"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                <TextBlock Text="{Binding AppsCount, Mode=OneWay}"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="6,0,0,0" />
+            </StackPanel>
 
-            <TextBlock Grid.Row="0" Grid.Column="4" Margin="20,0,20,0" FontSize="16" VerticalAlignment="Center">
-                <Run Text="Участников:" />
-                <Run Text="{Binding WrestlersCount, Mode=OneWay}" />
-            </TextBlock>
-
-            <StackPanel Grid.Row="0" Grid.Column="5">
-                <Button Content="Автодопуск"
-                        ToolTip="Допустить всех участников"
-                        Width="120"
-                        HorizontalAlignment="Right" Margin="10,10,20,10"
-                        Command="{Binding ApproveAllCommand}" />
+            <StackPanel Grid.Row="0" Grid.Column="5" Orientation="Horizontal"
+                        Margin="8,0,20,0" VerticalAlignment="Center"
+                        ToolTip="{loc:Loc Applications_WrestlersCount_Tooltip}">
+                <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                <TextBlock Text="{Binding WrestlersCount, Mode=OneWay}"
+                           FontSize="16" VerticalAlignment="Center"
+                           Margin="6,0,0,0" />
             </StackPanel>
 
         </Grid>
@@ -115,15 +124,14 @@
 
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Expander Background="LightGray" Margin="0" Padding="0" x:Name="Expander"
-                              IsExpanded="{Binding Path=DataContext.IsFilterEnabled, ElementName=RootControl, Mode=OneWay}">
+                    <Expander Background="{DynamicResource MaterialDesignToolBarBackground}" Margin="0" Padding="0" x:Name="Expander"
+                              IsExpanded="{Binding Path=DataContext.ShouldAutoExpand, ElementName=RootControl, Mode=OneWay}">
                         <Expander.Header>
                             <Grid Margin="0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="40" />
                                     <ColumnDefinition Width="40" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
@@ -164,32 +172,24 @@
 
                                     <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="32"
                                                              Height="32" Margin="0" Padding="0"
-                                                             ToolTip="Заявка заполнена правильно."
+                                                             ToolTip="{loc:Loc Applications_AppValid_Tooltip}"
                                                              Kind="CheckboxMarkedOutline"
                                                              Visibility="{Binding IsApplicationValid, Converter={StaticResource BoolToVis}}" />
                                     <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="32"
                                                              Height="32" Margin="0" Padding="0"
-                                                             ToolTip="Заявка не корректно заполнена. В заявке должен быть указан хотя бы один спортсмен с корректно заполненными данными."
+                                                             ToolTip="{loc:Loc Applications_AppInvalid_Tooltip}"
                                                              Kind="CloseBoxOutline"
                                                              Visibility="{Binding IsApplicationValid, Converter={StaticResource InvBoolToVis}}" />
                                 </Grid>
 
-                                <Button Grid.Column="4" ToolTip="Редактировать заявку" VerticalAlignment="Center"
+                                <Button Grid.Column="4" ToolTip="{loc:Loc Applications_EditApp_Tooltip}" VerticalAlignment="Center"
                                         HorizontalAlignment="Center"
                                         Command="{Binding Path=DataContext.EditAppCommand, ElementName=RootControl}"
                                         CommandParameter="{Binding }">
                                     <materialDesign:PackIcon Kind="BorderColor" Width="22" Height="22" Padding="0" />
                                 </Button>
                                 
-                                <Button Grid.Column="5" ToolTip="Распечатать заявку" VerticalAlignment="Center"
-                                        HorizontalAlignment="Center"
-                                        Command="{Binding Path=DataContext.PrintTeamApplicationCommand, ElementName=RootControl}"
-                                        CommandParameter="{Binding }" Margin="20,0,0,0">
-                                    <materialDesign:PackIcon Kind="Printer" Width="22" Height="22" Margin="0"
-                                                             Padding="0" />
-                                </Button>
-
-                                <Button Grid.Column="6" ToolTip="Удалить заявку" VerticalAlignment="Center"
+                                <Button Grid.Column="5" ToolTip="{loc:Loc Applications_DeleteApp_Tooltip}" VerticalAlignment="Center"
                                         HorizontalAlignment="Center"
                                         Command="{Binding Path=DataContext.DeleteAppCommand, ElementName=RootControl}"
                                         CommandParameter="{Binding }" Margin="20,0,0,0">
@@ -199,89 +199,103 @@
                             </Grid>
                         </Expander.Header>
                         <Expander.Content>
-                            <StackPanel Background="White" Margin="0" Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
-                                <Button Content="Новый спортсмен" Width="160" HorizontalAlignment="Left"
+                            <StackPanel Margin="0" Visibility="{Binding ElementName=Expander, Path=IsExpanded, Converter={StaticResource BoolToVis}}">
+                                <Button Content="{loc:Loc Applications_NewWrestler}" Width="160" HorizontalAlignment="Left"
                                         Margin="20,10,0,10"
-                                        ToolTip="Добавить спортсмена в заявку"
+                                        ToolTip="{loc:Loc Applications_NewWrestler_Tooltip}"
                                         Command="{Binding Path=DataContext.AddWrestlerCommand, ElementName=RootControl}"
                                         CommandParameter="{Binding }" />
+                                <materialDesign:Card Margin="10,0,10,10"
+                                                     UniformCornerRadius="4"
+                                                     materialDesign:ElevationAssist.Elevation="Dp4">
                                 <ListView ItemsSource="{Binding Wrestlers}" x:Name="WrestlersSource"
-                                          Margin="40,0,0,0"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          HorizontalContentAlignment="Stretch"
+                                          TextElement.FontSize="15"
                                           utils:GridViewSort.AutoSort="True">
                                     <ListView.View>
                                         <GridView AllowsColumnReorder="true">
-                                            <GridViewColumn Header="#">
+                                            <GridView.ColumnHeaderContainerStyle>
+                                                <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}">
+                                                    <Setter Property="Padding" Value="4,8,4,8" />
+                                                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                                    <Setter Property="FontSize" Value="14" />
+                                                </Style>
+                                            </GridView.ColumnHeaderContainerStyle>
+                                            <GridViewColumn Header="#" Width="44">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Margin="0,5,0,0"
                                                                    Text="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListViewItem}}, Converter={StaticResource IndexConverter}, ConverterParameter=1}"
-                                                                   TextWrapping="NoWrap" FontSize="14"
+                                                                   TextWrapping="NoWrap" FontSize="15"
                                                                    VerticalAlignment="Center"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="ФИО" Width="Auto"
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_FullName}" Width="240"
                                                             utils:GridViewSort.PropertyName="FullName">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding FullName}" Margin="0,5,0,0"
-                                                                   TextWrapping="NoWrap" FontSize="14"
-                                                                   VerticalAlignment="Bottom"
-                                                                   HorizontalAlignment="Center" />
+                                                                   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                                   FontSize="15"
+                                                                   VerticalAlignment="Center"
+                                                                   HorizontalAlignment="Left" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Г.р." Width="Auto" utils:GridViewSort.PropertyName="BirthDate">
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_BirthYear}" Width="90" utils:GridViewSort.PropertyName="BirthDate">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding BirthDate, StringFormat={}{0:d}}"
                                                                    Margin="0,5,0,0" TextWrapping="NoWrap"
-                                                                   FontSize="14" VerticalAlignment="Bottom"
+                                                                   FontSize="15" VerticalAlignment="Center"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Вес" Width="Auto"
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_Weight}" Width="60"
                                                             utils:GridViewSort.PropertyName="Weight">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding Weight}" Margin="0,5,0,0"
-                                                                   TextWrapping="NoWrap" FontSize="14"
-                                                                   VerticalAlignment="Bottom"
+                                                                   TextWrapping="NoWrap" FontSize="15"
+                                                                   VerticalAlignment="Center"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Разряд" Width="Auto"
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_Level}" Width="70"
                                                             utils:GridViewSort.PropertyName="Level">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding Level}" Margin="0,5,0,0"
-                                                                   TextWrapping="NoWrap" FontSize="14"
-                                                                   VerticalAlignment="Bottom"
+                                                        <TextBlock Text="{Binding LevelDisplay}" Margin="0,5,0,0"
+                                                                   TextWrapping="NoWrap" FontSize="15"
+                                                                   VerticalAlignment="Center"
                                                                    HorizontalAlignment="Center" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Группа" Width="Auto"
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_Group}" Width="180"
                                                             utils:GridViewSort.PropertyName="GroupName">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <TextBlock Text="{Binding GroupName}" Margin="0,5,0,0"
-                                                                   TextWrapping="NoWrap" FontSize="14"
-                                                                   VerticalAlignment="Bottom"
-                                                                   HorizontalAlignment="Center" />
+                                                                   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                                   FontSize="15"
+                                                                   VerticalAlignment="Center"
+                                                                   HorizontalAlignment="Left" />
                                                     </DataTemplate>
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Header="Допуск" Width="Auto"
+                                            <GridViewColumn Header="{loc:Loc Applications_Column_Approval}" Width="110"
                                                             utils:GridViewSort.PropertyName="IsApplicationValid">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
@@ -295,33 +309,33 @@
                                                             </Grid.ColumnDefinitions>
 
                                                             <materialDesign:PackIcon Grid.Column="0"
-                                                                                     Foreground="Green" Width="26"
-                                                                                     Height="26" Margin="0"
+                                                                                     Foreground="Green" Width="20"
+                                                                                     Height="20" Margin="0"
                                                                                      Padding="0"
-                                                                                     ToolTip="Данные о спортсмене заполнены верно."
+                                                                                     ToolTip="{loc:Loc Applications_WrestlerValid_Tooltip}"
                                                                                      Kind="AccountCheck"
                                                                                      Visibility="{Binding IsApplicationValid, Converter={StaticResource BoolToVis}}" />
                                                             <materialDesign:PackIcon Grid.Column="0"
                                                                                      Foreground="DarkRed"
-                                                                                     Width="26" Height="26"
+                                                                                     Width="20" Height="20"
                                                                                      Margin="0" Padding="0"
-                                                                                     ToolTip="Данные о спортсмене заполнены не верно. Необходимо заполнить все обязательные поля."
+                                                                                     ToolTip="{loc:Loc Applications_WrestlerInvalid_Tooltip}"
                                                                                      Kind="AccountAlert"
                                                                                      Visibility="{Binding IsApplicationValid, Converter={StaticResource InvBoolToVis}}" />
 
-                                                            <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="26" Height="26" Margin="0" Padding="0" ToolTip="Спортсмен успешно прошел взвешивание." 
+                                                            <materialDesign:PackIcon Grid.Column="1" Foreground="Green" Width="20" Height="20" Margin="0" Padding="0" ToolTip="{loc:Loc Applications_WeightApproved_Tooltip}"
                                                                                  Kind="WeightKilogram" Visibility="{Binding IsWeightApproved, Converter={StaticResource BoolToVis}}" />
-                                                            <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="26" Height="26" Margin="0" Padding="0" ToolTip="Спортсмену необходимо пройти взвешивание." 
+                                                            <materialDesign:PackIcon Grid.Column="1" Foreground="DarkRed" Width="20" Height="20" Margin="0" Padding="0" ToolTip="{loc:Loc Applications_WeightPending_Tooltip}"
                                                                                  Kind="WeightKilogram" Visibility="{Binding IsWeightApproved, Converter={StaticResource InvBoolToVis}}" />
 
-                                                            <materialDesign:PackIcon Grid.Column="2" Foreground="Green" Width="26" Height="26" Margin="5,0,0,0" Padding="0" ToolTip="Оплата вступительного взноса подтверждена." 
+                                                            <materialDesign:PackIcon Grid.Column="2" Foreground="Green" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="{loc:Loc Applications_FeePaid_Tooltip}"
                                                                                  Kind="Cash100" Visibility="{Binding IsEntryFeePaid, Converter={StaticResource BoolToVis}}" />
-                                                            <materialDesign:PackIcon Grid.Column="2" Foreground="DarkRed" Width="26" Height="26" Margin="5,0,0,0" Padding="0" ToolTip="Необходимо подтвердить оплату." 
+                                                            <materialDesign:PackIcon Grid.Column="2" Foreground="DarkRed" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="{loc:Loc Applications_FeePending_Tooltip}"
                                                                                  Kind="Cash100" Visibility="{Binding IsEntryFeePaid, Converter={StaticResource InvBoolToVis}}" />
 
-                                                            <materialDesign:PackIcon Grid.Column="3" Foreground="Green" Width="26" Height="26" Margin="5,0,0,0" Padding="0" ToolTip="Спортсмен допущен до соревнований." 
+                                                            <materialDesign:PackIcon Grid.Column="3" Foreground="Green" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="{loc:Loc Applications_RegApproved_Tooltip}"
                                                                                  Kind="CheckboxMarkedOutline" Visibility="{Binding IsRegistrationApproved, Converter={StaticResource BoolToVis}}" />
-                                                            <materialDesign:PackIcon Grid.Column="4" Foreground="DarkRed" Width="26" Height="26" Margin="5,0,0,0" Padding="0" ToolTip="Спортсмен не допущен до соревнований. Необходимо подтвердить вес, оплату и весовую категорию." 
+                                                            <materialDesign:PackIcon Grid.Column="4" Foreground="DarkRed" Width="20" Height="20" Margin="5,0,0,0" Padding="0" ToolTip="{loc:Loc Applications_RegPending_Tooltip}"
                                                                                  Kind="CloseBoxOutline" Visibility="{Binding IsRegistrationApproved, Converter={StaticResource InvBoolToVis}}" />
 
                                                         </Grid>
@@ -329,35 +343,32 @@
                                                 </GridViewColumn.CellTemplate>
                                             </GridViewColumn>
 
-                                            <GridViewColumn Width="Auto">
+                                            <GridViewColumn Width="100">
                                                 <GridViewColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <StackPanel VerticalAlignment="Center"
-                                                                    HorizontalAlignment="Center" Margin="0"
+                                                                    HorizontalAlignment="Right" Margin="0,0,8,0"
                                                                     Orientation="Horizontal">
-                                                            <Button ToolTip="Редактировать данные спортсмена"
-                                                                    Margin="0" Padding="0" Width="22" Height="22"
+                                                            <Button ToolTip="{loc:Loc Applications_EditWrestler_Tooltip}"
+                                                                    Margin="0" Padding="0" Width="28" Height="28"
                                                                     Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.EditWrestlerCommand}"
                                                                     CommandParameter="{Binding }"
-                                                                    VerticalAlignment="Center"
-                                                                    HorizontalAlignment="Center">
-                                                                <materialDesign:PackIcon Kind="BorderColor"
-                                                                                         Width="22" Height="22"
+                                                                    VerticalAlignment="Center">
+                                                                <materialDesign:PackIcon Kind="Pencil"
+                                                                                         Width="16" Height="16"
                                                                                          Margin="0" Padding="0" />
                                                             </Button>
 
-                                                            <Button ToolTip="Удалить спортсмена из заявки"
-                                                                    Margin="20,0,0,0" Padding="0" Width="22"
-                                                                    Height="22"
+                                                            <Button ToolTip="{loc:Loc Applications_DeleteWrestler_Tooltip}"
+                                                                    Margin="8,0,0,0" Padding="0" Width="28" Height="28"
                                                                     Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                                                     Command="{Binding ElementName=RootControl, Path=DataContext.DeleteWrestlerCommand}"
                                                                     CommandParameter="{Binding }"
-                                                                    VerticalAlignment="Center"
-                                                                    HorizontalAlignment="Center">
-                                                                <materialDesign:PackIcon Kind="Close" Width="22"
-                                                                                         Height="22" Margin="0"
-                                                                                         Padding="0" />
+                                                                    VerticalAlignment="Center">
+                                                                <materialDesign:PackIcon Kind="Close"
+                                                                                         Width="16" Height="16"
+                                                                                         Margin="0" Padding="0" />
                                                             </Button>
                                                         </StackPanel>
                                                     </DataTemplate>
@@ -374,6 +385,7 @@
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </ListView>
+                                </materialDesign:Card>
                             </StackPanel>
                         </Expander.Content>
                     </Expander>

@@ -1,5 +1,5 @@
-﻿using System.Collections.ObjectModel;
-using System.Globalization;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Wrestling.Entities;
 
@@ -28,22 +28,39 @@ namespace Wrestling.UI.Material.Model
             OnPropertyChanged("Wrestlers");
         }
 
-        public ObservableCollection<Wrestler> Wrestlers 
+        public ObservableCollection<Wrestler> Wrestlers
         {
             get
             {
+                var teamWrestlers = _tournament.Wrestlers.Where(x => x.TeamID == _teamApplication.ID);
+
                 if (string.IsNullOrEmpty(_filter) && !_isOnlyUnapprovedVisible)
                 {
-                    return new ObservableCollection<Wrestler>(_tournament.Wrestlers.Where(x => x.TeamID == _teamApplication.ID).OrderBy(x => x.LastFirstName));
+                    return new ObservableCollection<Wrestler>(teamWrestlers.OrderBy(x => x.LastFirstName));
                 }
 
-                var result = _tournament.Wrestlers.Where(w => w.TeamID == _teamApplication.ID && (!_isOnlyUnapprovedVisible || !w.IsRegistrationApproved)
-                   && (_filter == null || _filter.Length <= 2 || (_filter.Length > 2 && w.LastName.StartsWith(_filter, true, CultureInfo.InvariantCulture)))).ToList();
+                var hasTextFilter = !string.IsNullOrEmpty(_filter) && _filter.Length > 2;
+                var teamNameMatched = hasTextFilter
+                    && (ContainsCi(_teamApplication.ShortName, _filter)
+                        || ContainsCi(_teamApplication.FullName, _filter)
+                        || ContainsCi(_teamApplication.City, _filter));
+
+                var result = teamWrestlers.Where(w =>
+                    (!_isOnlyUnapprovedVisible || !w.IsRegistrationApproved)
+                    && (!hasTextFilter
+                        || teamNameMatched
+                        || (!string.IsNullOrEmpty(w.FullName)
+                            && w.FullName.IndexOf(_filter, StringComparison.InvariantCultureIgnoreCase) >= 0)));
 
                 return new ObservableCollection<Wrestler>(result.OrderBy(x => x.LastFirstName));
             }
         }
 
         public bool IsApplicationValid => Wrestlers.FirstOrDefault(w => !w.IsApplicationValid) == null;
+
+        private static bool ContainsCi(string source, string value) =>
+            !string.IsNullOrEmpty(source)
+            && !string.IsNullOrEmpty(value)
+            && source.IndexOf(value, StringComparison.InvariantCultureIgnoreCase) >= 0;
     }
 }

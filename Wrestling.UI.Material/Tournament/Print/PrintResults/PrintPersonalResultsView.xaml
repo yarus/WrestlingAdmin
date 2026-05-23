@@ -4,25 +4,36 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:converters="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:matConverters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" Foreground="Black" Background="LightGray"
              d:DesignHeight="800" d:DesignWidth="800">
 
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:IndexConverter x:Key="IndexConverter" />
+        <converters:ValueConverterGroup x:Key="InvBoolToVis">
+            <converters:BoolInverterConverter />
+            <converters:GroupedBoolToVisConverter />
+        </converters:ValueConverterGroup>
+        <matConverters:OptionalImagePathConverter x:Key="OptionalImage" />
+        <matConverters:FullNameToShortConverter x:Key="ShortName" />
+
+        <!-- Tight column-header style: collapse Material Design's default padding
+             so a 5-char "Разр." actually fits inside a 45-DIP column. The default
+             style added ~12 DIP padding on each side which clipped narrow headers
+             into invisible width. -->
+        <Style x:Key="CompactColumnHeader" TargetType="GridViewColumnHeader">
+            <Setter Property="Padding" Value="2,0,2,0" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
 
         <CollectionViewSource x:Key="WrestlersGroup" Source="{Binding Path=Results}">
             <CollectionViewSource.GroupDescriptions>
                 <PropertyGroupDescription PropertyName="GroupLabel" />
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
-        
-        <Style x:Key="RotatedText" TargetType="TextBlock">
-            <Setter Property="LayoutTransform">
-                <Setter.Value>
-                    <RotateTransform Angle="-90" />
-                </Setter.Value>
-            </Setter>
-        </Style>
     </UserControl.Resources>
 
     <StackPanel Background="White">
@@ -47,17 +58,18 @@
         </Grid>
 
         <TextBlock
-            TextWrapping="NoWrap" Foreground="Black" Text="Итоги Cоревнований"
+            TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc PrintResults_Title}"
             FontSize="36" TextAlignment="Center" FontWeight="Normal" Margin="10,10,10,0" />
 
         <Border BorderBrush="Black" BorderThickness="0,1,0,0" />
 
         <ListView Grid.Row="4" Grid.Column="0" Margin="10"
                       DataContext="{StaticResource WrestlersGroup}"
-                      ItemsSource="{Binding IsAsync=True}"
+                      ItemsSource="{Binding}"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                      ScrollViewer.CanContentScroll="True" 
-                      HorizontalContentAlignment="Stretch">
+                      ScrollViewer.CanContentScroll="False"
+                      HorizontalContentAlignment="Stretch"
+                      VirtualizingPanel.IsVirtualizing="False">
             <ListView.GroupStyle>
                 <GroupStyle>
                     <GroupStyle.ContainerStyle>
@@ -79,82 +91,74 @@
             </ListView.GroupStyle>
 
             <ListView.View>
-                <GridView AllowsColumnReorder="false">
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.FinalPlace}" Header="#" Width="50" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LastFirstName}" Header="ФИО" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="Команда" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamCity}" Header="Регион" Width="Auto" />
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.Level}" Width="Auto">
-                        <GridViewColumn.Header>
-                            <StackPanel VerticalAlignment="Bottom" Orientation="Vertical" Margin="0">
-                                <TextBlock Style="{StaticResource RotatedText}">Разряд</TextBlock>
-                            </StackPanel>
-                        </GridViewColumn.Header>
+                <GridView AllowsColumnReorder="false" ColumnHeaderContainerStyle="{StaticResource CompactColumnHeader}">
+                    <GridViewColumn Header="#" Width="40">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <TextBlock Text="{Binding Wrestler.FinalPlace}"
+                                               HorizontalAlignment="Center"
+                                               Visibility="{Binding Wrestler.IsDisqualified, Converter={StaticResource InvBoolToVis}}" />
+                                    <TextBlock Text="DSQ"
+                                               Foreground="Black" FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               Visibility="{Binding Wrestler.IsDisqualified, Converter={StaticResource BoolToVis}}" />
+                                </Grid>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wins}" Width="Auto">
-                        <GridViewColumn.Header>
-                            <StackPanel VerticalAlignment="Bottom">
-                                <TextBlock Style="{StaticResource RotatedText}">Побед</TextBlock>
-                            </StackPanel>
-                        </GridViewColumn.Header>
-                    </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=Loses}" Width="Auto">
-                        <GridViewColumn.Header>
-                            <StackPanel VerticalAlignment="Bottom">
-                                <TextBlock Style="{StaticResource RotatedText}">Поражений</TextBlock>
-                            </StackPanel>
-                        </GridViewColumn.Header>
-                    </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=OverallTournamentClassificationPoints}" Width="Auto">
-                        <GridViewColumn.Header>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
-                                <TextBlock Style="{StaticResource RotatedText}">Классиф. баллов</TextBlock>
-                            </StackPanel>
-                        </GridViewColumn.Header>
-                    </GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Path=TotalPoints}" Width="Auto">
-                        <GridViewColumn.Header>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
-                                <TextBlock Style="{StaticResource RotatedText}">Командных баллов</TextBlock>
-                            </StackPanel>
-                        </GridViewColumn.Header>
-                    </GridViewColumn>
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LastFirstName}" Header="{loc:Loc Personal_Column_LastFirstName}" Width="180" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamName}" Header="{loc:Loc Draw_Column_Team}" Width="100" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.TeamCity}" Header="{loc:Loc Personal_Column_Region}" Width="115" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wrestler.LevelDisplay}" Header="{loc:Loc Applications_Column_Level}" Width="50" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Wins}" Header="{loc:Loc PrintResults_Column_Wins}" Width="45" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=Loses}" Header="{loc:Loc PrintResults_Column_Losses}" Width="50" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=OverallTournamentClassificationPoints}" Header="{loc:Loc PrintResults_Column_Classif}" Width="55" />
+                    <GridViewColumn DisplayMemberBinding="{Binding Path=TotalPoints}" Header="{loc:Loc PrintResults_Column_Team}" Width="50" />
                 </GridView>
 
             </ListView.View>
         </ListView>
 
         <Grid Margin="0,40,0,40">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <TextBlock Grid.Column="0" Grid.Row="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="Главный судья соревнований"
-                       FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,10,10,0" />
+                <TextBlock Grid.Column="0" Grid.Row="0"
+                           TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc Details_Judge_Header}"
+                           FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
-            <TextBlock Grid.Column="2" Grid.Row="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Tournament.MainJudge}"
-                       FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,10,10,0" />
+                <TextBlock Grid.Column="2" Grid.Row="0"
+                           TextWrapping="NoWrap" Foreground="Black"
+                           Text="{Binding Path=Tournament.MainJudge, Converter={StaticResource ShortName}}"
+                           FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" />
 
-            <Border Grid.Row="0" Grid.Column="1" BorderThickness="0,0,0,1" BorderBrush="Black" />
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                           TextWrapping="NoWrap" Foreground="Black" Text="{loc:Loc Details_Secretary_Header}"
+                           FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,30,10,0" />
 
-            <TextBlock Grid.Row="1" Grid.Column="0"
-                       TextWrapping="NoWrap" Foreground="Black" Text="Главный секретарь соревнований"
-                       FontSize="16" TextAlignment="Left" FontWeight="Normal" Margin="10,40,10,0" />
+                <TextBlock Grid.Row="1" Grid.Column="2"
+                           TextWrapping="NoWrap" Foreground="Black"
+                           Text="{Binding Path=Tournament.MainSecretary, Converter={StaticResource ShortName}}"
+                           FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,30,10,0" />
+            </Grid>
 
-            <TextBlock Grid.Row="1" Grid.Column="2"
-                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Tournament.MainSecretary}"
-                       FontSize="16" TextAlignment="Right" FontWeight="Normal" Margin="10,40,10,0" />
-
-            <Border Grid.Row="1" Grid.Column="1" BorderThickness="0,0,0,1" BorderBrush="Black" />
+            <!-- Stamp + signatures sibling of inner Grid. See PrintBracketView for rationale. -->
+            <Image Source="{Binding Path=Tournament.Settings.SignatureFooterImagePath, Converter={StaticResource OptionalImage}}"
+                   Stretch="Uniform"
+                   Height="150"
+                   HorizontalAlignment="Center" VerticalAlignment="Top"
+                   Margin="0,30,0,0"
+                   IsHitTestVisible="False" />
         </Grid>
 
     </StackPanel>

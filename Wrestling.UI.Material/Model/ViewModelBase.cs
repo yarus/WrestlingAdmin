@@ -17,7 +17,8 @@ namespace Wrestling.UI.Material.Model
 
         private readonly IDiContainer _container;
 
-        public virtual IList<CommandButtonItem> DrawerItems { get; }
+        // DrawerItems removed in shell refactor — the persistent NavigationRail
+        // owns top-level navigation. Per-VM drawer overrides are gone too.
         public virtual IList<CommandButtonItem> QuickButtons { get; }
 
         public virtual string WindowTitle
@@ -26,7 +27,7 @@ namespace Wrestling.UI.Material.Model
             {
                 if (DataContext.Tournament == null)
                 {
-                    return "Вольная борьба - Администратор турниров";
+                    return "РОСБОС © Сетка 2.0";
                 }
 
                 if (string.IsNullOrEmpty(DataContext.Tournament.FileName))
@@ -43,6 +44,7 @@ namespace Wrestling.UI.Material.Model
 
         protected IDiContainer DiContainer => _container;
 
+        protected INavigationService Navigation => _navService;
         protected GlobalSettings GlobalSettings => _settings;
 
         protected IDataContext DataContext => _dataContext;
@@ -53,7 +55,6 @@ namespace Wrestling.UI.Material.Model
         {
             _container = container;
 
-            DrawerItems = new List<CommandButtonItem>();
             QuickButtons = new List<CommandButtonItem>();
         }
 

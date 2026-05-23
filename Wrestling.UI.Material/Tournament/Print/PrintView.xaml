@@ -10,6 +10,7 @@
              xmlns:printResults="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintResults"
              xmlns:printApplications="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintApplications"
              xmlns:printTeamApplication="clr-namespace:Wrestling.UI.Material.Tournament.Print.PrintTeamApplication"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" Foreground="Black" Background="LightGray"
              TextElement.Foreground="{DynamicResource MaterialDesignBody}"
              TextElement.FontWeight="Regular"
@@ -18,7 +19,7 @@
              TextOptions.TextRenderingMode="Auto"
              FontFamily="{DynamicResource MaterialDesignFont}"
              Icon="../../Resources/scoreboard.ico"
-             Title="Печать"
+             Title="{loc:Loc Print_WindowTitle}"
              d:DesignHeight="600" d:DesignWidth="960">
 
     <model:ChildWindowBase.Resources>
@@ -81,7 +82,7 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" Text="Печать" />
+                <TextBlock Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" Text="{loc:Loc Print_WindowTitle}" />
 
                 <StackPanel Grid.Row="0" Grid.Column="1">
                     <Button Margin="0,0,20,0" Padding="0" Background="Transparent" BorderThickness="0" Foreground="White" Click="ButtonBase_OnClick">

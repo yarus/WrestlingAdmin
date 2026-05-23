@@ -16,7 +16,7 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
         private int _sliderOpacityValue;
         private int _showMatchesCount;
         private string _sliderBackgroundImagePath;
-        private string _carpetName;
+        private string _matName;
 
         public UpcomingMatchesViewModel(IDiContainer container) : base(container)
         {
@@ -38,13 +38,13 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
 
         public string SliderName => Item?.Title;
 
-        public string CarpetName
+        public string MatName
         {
-            get { return _carpetName; }
+            get { return _matName; }
             set
             {
-                _carpetName = value;
-                OnPropertyChanged("CarpetName");
+                _matName = value;
+                OnPropertyChanged("MatName");
             }
         }
 
@@ -135,15 +135,15 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
                 ShowMatchesCount = 4;
             }
 
-            var carpetID = _item.GetNamedValue("CarpetID");
-            if (carpetID != null)
+            var matID = _item.GetNamedValue("MatID");
+            if (matID != null)
             {
-                var carpetGuid = new Guid(carpetID.ToString());
-                var carpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == carpetGuid);
-                if (carpet != null)
+                var matGuid = new Guid(matID.ToString());
+                var mat = DataContext.Tournament.Mats.FirstOrDefault(c => c.ID == matGuid);
+                if (mat != null)
                 {
-                    Groups = carpet.Groups;
-                    CarpetName = carpet.Name;
+                    Groups = mat.Groups;
+                    MatName = mat.Name;
                 }
                 else
                 {

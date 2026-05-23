@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
+using Wrestling.UI.Material.Utils;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
+using Wrestling.Entities.Bracket.Seeding;
 using Wrestling.UI.Material.Model;
-using Wrestling.UI.Material.Tournament.Print.PrintApplications;
+using Wrestling.UI.Material.Tournament.Print;
 using Wrestling.UI.Material.Tournament.Print.PrintBracket;
 using Wrestling.UI.Utils;
 
@@ -19,14 +23,16 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         #region Fields
 
         private IMatchNumbersGenerator _matchNumbersGenerator;
-        
+        private ISeedingStrategy _seedingStrategy;
+
         private ICommand _generateBracketCommand;
-        private ICommand _removeBracketCommand;
-        private ICommand _printProtocolCommand;
         private ICommand _regenerateAllBrackets;
+        private ICommand _unfixAllSeedsCommand;
 
         private List<IGroupBracketProcessor> _drawTypes;
         private ObservableCollection<AgeWeightGroup> _groups;
+
+        private IList<CommandButtonItem> _quickButtons;
 
         private bool IsTeamTournament => true;
 
@@ -42,12 +48,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
             if (DataContext.Tournament == null)
             {
-                throw new ApplicationException("Tournament property is not set!");
+                throw new InvalidOperationException("Tournament is not set on the data context. Navigate to a tournament before opening this view.");
             }
 
+            _quickButtons = null;
             _matchNumbersGenerator = Resolve<IMatchNumbersGenerator>();
 
             _drawTypes = Resolve<List<IGroupBracketProcessor>>();
+            _seedingStrategy = Resolve<ISeedingStrategy>();
 
             var groups = DataContext.Tournament.Groups.OrderBy(g => g.IsFemale).ThenByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax).ToList();
             foreach (var group in groups)
@@ -80,10 +88,44 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
         public int GroupsCount => DataContext.Tournament.GroupsCount;
         public int WrestlersCount => Groups?.SelectMany(gr => gr.Wrestlers).Count() ?? 0;
-        public int MatchesCount => DataContext.Tournament.MatchesCount;
 
-        public string PageName => "Жеребьевка";
-        public override string PageTitle => "Жеребьевка Участников";
+        // Counts only "real" matches operators must run on the mat —
+        // bye/walkover slots that the bracket processor auto-completes with
+        // WinType=FreeWin during generation are excluded.
+        public int MatchesCount => DataContext.Tournament.Groups
+            .Where(g => g.Bracket != null)
+            .SelectMany(g => g.Bracket.Rounds)
+            .SelectMany(r => r.RoundMatches)
+            .Count(m => m.WinType != MatchWinTypeEnum.FreeWin);
+
+        public string PageName => T("Nav_Draw", "Жеребьевка");
+        public override string PageTitle => T("Draw_PageTitle", "Жеребьёвка");
+
+        public override IList<CommandButtonItem> QuickButtons
+        {
+            get
+            {
+                if (_quickButtons == null)
+                {
+                    CommandButtonItem printBtn = null;
+                    var printCmd = new AsyncRelayCommand(
+                        execute: async _ =>
+                        {
+                            printBtn.IsBusy = true;
+                            try { await ExportDrawProtocolsAsync(); }
+                            finally { printBtn.IsBusy = false; }
+                        },
+                        canExecute: _ => true);
+                    printBtn = new CommandButtonItem(
+                        T("Draw_ExportProtocols_Tooltip", "Сохранить протоколы жеребьевки"),
+                        PackIconKind.PrinterOutline,
+                        printCmd);
+
+                    _quickButtons = new List<CommandButtonItem> { printBtn };
+                }
+                return _quickButtons;
+            }
+        }
         
         public ObservableCollection<AgeWeightGroup> Groups
         {
@@ -111,40 +153,28 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                 return _regenerateAllBrackets;
             }
         }
-        
-        public ICommand PrintProtocolCommand
+
+        public ICommand UnfixAllSeedsCommand
         {
             get
             {
-                if (_printProtocolCommand == null)
+                if (_unfixAllSeedsCommand == null)
                 {
-                    _printProtocolCommand = new RelayCommand(param => PrintProtocol(param as AgeWeightGroup), param => param != null);
+                    _unfixAllSeedsCommand = new RelayCommand(param => UnfixAllSeeds(), param => true);
                 }
-                return _printProtocolCommand;
+                return _unfixAllSeedsCommand;
             }
         }
-
+        
         public ICommand GenerateBracketCommand
         {
             get
             {
                 if (_generateBracketCommand == null)
                 {
-                    _generateBracketCommand = new RelayCommand(param => GenerateBracket(param as AgeWeightGroup), param => param != null);
+                    _generateBracketCommand = new AsyncRelayCommand(param => GenerateBracketAsync(param as AgeWeightGroup), param => param != null);
                 }
                 return _generateBracketCommand;
-            }
-        }
-
-        public ICommand RemoveBracketCommand
-        {
-            get
-            {
-                if (_removeBracketCommand == null)
-                {
-                    _removeBracketCommand = new RelayCommand(param => RemoveBracket(param as AgeWeightGroup), param => param != null);
-                }
-                return _removeBracketCommand;
             }
         }
 
@@ -154,7 +184,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
         private void RegenerateBrackets()
         {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите перегенерировать все сетки! Это приведет к потере текущих результатов турнира!", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+            if (Dialog.ShowMessageBox(this, T("Draw_RegenerateAll_Body", "Вы уверены, что хотите перегенерировать все сетки! Это приведет к потере текущих результатов турнира!"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             foreach (var ageWeightGroup in Groups)
             {
@@ -177,7 +207,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                 
                 if (ageWeightGroup.Bracket != null)
                 {
-                    if (DataContext.Tournament.Carpets.FirstOrDefault(c => c.Groups.Contains(ageWeightGroup)) != null)
+                    if (DataContext.Tournament.Mats.FirstOrDefault(c => c.Groups.Contains(ageWeightGroup)) != null)
                     {
                         _matchNumbersGenerator.Generate(DataContext.Tournament, _drawTypes);
                     }
@@ -187,6 +217,16 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
                     OnPropertyChanged("MatchesCount");
                 }
+            }
+        }
+
+        private void UnfixAllSeeds()
+        {
+            if (Dialog.ShowMessageBox(this, T("Draw_UnfixAll_Body", "Снять отметку «Фикс.» у всех участников во всех группах?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+
+            foreach (var wrestler in DataContext.Tournament.Wrestlers)
+            {
+                wrestler.IsSeedFixed = false;
             }
         }
 
@@ -210,28 +250,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             return drawType;
         }
 
-        private void PrintProtocol(AgeWeightGroup group)
-        {
-            if (group?.Bracket == null) return;
-
-            DataContext.Group = group;
-
-            ShowPrintPreview(new PrintApplicationsViewModel(DiContainer));
-        }
-
-        private void RemoveBracket(AgeWeightGroup group)
-        {
-            if (Dialog.ShowMessageBox(this, "Вы уверены, что хотите удалить результаты жеребьевки?", "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
-
-            group.Bracket = null;
-
-            OnPropertyChanged("MatchesCount");
-        }
-
-        private async void GenerateBracket(AgeWeightGroup group)
+        private async Task GenerateBracketAsync(AgeWeightGroup group)
         {
             if (group == null) return;
-            
+
             var vm = new AddBracketViewModel(DiContainer, group);
             vm.InitData();
 
@@ -241,72 +263,123 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             };
 
             var result = await DialogHost.Show(view, "RootDialog");
+            if (result == null || !(bool)result) return;
 
-            if (result != null && (bool)result)
+            var drawType = _drawTypes.FirstOrDefault(d => d.Title == vm.SelectedDrawType.Title);
+            if (drawType == null) throw new ArgumentException($"Unknown bracket type code '{group.Bracket?.BracketTypeCode}' — no matching processor found.", nameof(group));
+
+            SeedWrestlers(group);
+
+            drawType.Generate(DataContext.Tournament, group);
+
+            foreach (var wr in group.Wrestlers)
             {
-                SeedWrestlers(group);
+                wr.FinalPlace = null;
+                wr.IsSeedFixed = true;
+            }
 
-                var drawType = _drawTypes.FirstOrDefault(d => d.Title == vm.SelectedDrawType.Title);
-
-                if (drawType == null) throw new ApplicationException("Wrong Bracket type!");
-
-                drawType.Generate(DataContext.Tournament, group);
-
-                foreach (var wr in group.Wrestlers)
+            if (group.Bracket != null)
+            {
+                if (DataContext.Tournament.Mats.FirstOrDefault(c => c.Groups.Contains(group)) != null)
                 {
-                    wr.FinalPlace = null;
-                    wr.IsSeedFixed = true;
+                    _matchNumbersGenerator.Generate(DataContext.Tournament, _drawTypes);
                 }
 
-                if (group.Bracket != null)
-                {
-                    if (DataContext.Tournament.Carpets.FirstOrDefault(c => c.Groups.Contains(group)) != null)
-                    {
-                        _matchNumbersGenerator.Generate(DataContext.Tournament, _drawTypes);
-                    }
+                group.Bracket.Rounds = new List<GroupRound>(group.Bracket.Rounds);
 
-                    // We need to refresh Rounds collection to redraw it on UI
-                    group.Bracket.Rounds = new List<GroupRound>(group.Bracket.Rounds);
-
-                    OnPropertyChanged("MatchesCount");
-                }
+                OnPropertyChanged("MatchesCount");
             }
         }
         
+        // Delegates to the injected ISeedingStrategy (see App.xaml.cs). The
+        // strategy is responsible for honoring IsSeedFixed locks, rewriting
+        // SeedNumber to a contiguous 1..N range, and sorting group.Wrestlers
+        // by the new SeedNumber.
         private void SeedWrestlers(AgeWeightGroup group)
         {
-            var staticSeeds = new List<Wrestler>();
-
-            var tmpSeeds = new List<Wrestler>();
-            foreach (var wr in group.Wrestlers)
+            // InitData is the first call site — _seedingStrategy may not be
+            // resolved yet when unit tests bypass InitData. Guard defensively.
+            if (_seedingStrategy == null)
             {
-                if (wr.IsSeedFixed && wr.SeedNumber.HasValue)
+                _seedingStrategy = Resolve<ISeedingStrategy>();
+            }
+            _seedingStrategy.Seed(group);
+        }
+
+        // Bulk-PDF export of the draw protocol — one bracket PDF per group
+        // that has a bracket. Same renderer as the «Скачать сетки и итоги»
+        // pipeline; before any matches are played, PrintBracketView shows
+        // the seeded participants without scores, which is exactly what the
+        // draw protocol needs.
+        private async Task ExportDrawProtocolsAsync()
+        {
+            var tournament = DataContext.Tournament;
+            var groupsWithBrackets = tournament?.Groups?
+                .Where(g => g?.Bracket != null).ToList() ?? new List<AgeWeightGroup>();
+            if (groupsWithBrackets.Count == 0)
+            {
+                Dialog.ShowMessageBox(this,
+                    T("Export_NoBrackets_Body", "Нет групп со сгенерированными сетками. Сначала проведите жеребьёвку."),
+                    T("DrawExport_DialogTitle", "Экспорт протоколов жеребьёвки"), MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var tournamentDir = !string.IsNullOrWhiteSpace(tournament.FileName)
+                ? Path.GetDirectoryName(tournament.FileName)
+                : null;
+            var defaultPath = !string.IsNullOrWhiteSpace(tournamentDir) && Directory.Exists(tournamentDir)
+                ? tournamentDir
+                : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            var selectedFolder = FolderPicker.PickFolder(
+                T("DrawExport_FolderPicker_Title", "Выберите папку для сохранения протоколов жеребьёвки"),
+                defaultPath);
+            if (string.IsNullOrEmpty(selectedFolder)) return;
+
+            try
+            {
+                var jobs = new List<BulkPdfExportJob>();
+                foreach (var group in groupsWithBrackets)
                 {
-                    staticSeeds.Add(wr);
+                    var capturedGroup = group;
+                    var mainRounds = capturedGroup.Bracket.Rounds.Count(r => r.RoundType == GroupRoundTypeEnum.Main);
+                    jobs.Add(new BulkPdfExportJob
+                    {
+                        FileName = T("DrawExport_FilePrefix", "Жеребьевка_") + BulkBracketPdfExporter.MakeSafeFileName(capturedGroup.Name) + ".pdf",
+                        Landscape = mainRounds >= 5,
+                        ViewFactory = () =>
+                        {
+                            DataContext.Group = capturedGroup;
+                            var vm = new PrintBracketViewModel(DiContainer) { IsDrawProtocol = true };
+                            vm.InitData();
+                            return new PrintBracketView { DataContext = vm };
+                        }
+                    });
                 }
-                else
+
+                ShowSnackMessage(string.Format(T("DrawExport_Snack_Building", "Идет создание протоколов жеребьёвки: {0} файлов..."), jobs.Count));
+
+                var exporter = new BulkBracketPdfExporter();
+                var result = await exporter.ExportAsync(jobs, selectedFolder);
+
+                var msg = string.Format(T("Export_Snack_Done", "Готово. Сохранено PDF: {0}"), result.Succeeded);
+                if (result.Skipped > 0) msg += string.Format(T("Export_Snack_Skipped", ", пропущено: {0}"), result.Skipped);
+                if (result.Failures.Count > 0) msg += string.Format(T("Export_Snack_Failed", ", ошибок: {0}"), result.Failures.Count);
+                ShowSnackMessage(msg);
+
+                if (result.Failures.Count > 0)
                 {
-                    wr.IsSeedFixed = false;
-                    wr.SeedNumber = new Random().Next();
-                    tmpSeeds.Add(wr);
+                    Dialog.ShowMessageBox(this,
+                        T("Export_PartialFailure", "Не удалось сохранить часть протоколов:") + "\n\n" + string.Join("\n", result.Failures),
+                        T("DrawExport_DialogTitle", "Экспорт протоколов жеребьёвки"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
-
-            tmpSeeds.Shuffle(new Random());
-
-            foreach (var wr in staticSeeds.OrderBy(w => w.SeedNumber))
+            catch (Exception ex)
             {
-                tmpSeeds.Add(wr);
+                Dialog.ShowMessageBox(this,
+                    T("Export_ErrorPrefix", "Ошибка экспорта: ") + ex.Message,
+                    T("DrawExport_DialogTitle", "Экспорт протоколов жеребьёвки"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            tmpSeeds = tmpSeeds.OrderBy(w => w.SeedNumber).ToList();
-
-            for (int i = 0; i < tmpSeeds.Count; i++)
-            {
-                tmpSeeds[i].SeedNumber = i+1;
-            }
-
-            group.Wrestlers = tmpSeeds;
         }
 
         #endregion

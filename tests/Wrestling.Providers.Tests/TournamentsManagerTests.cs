@@ -18,7 +18,7 @@ public class TournamentsManagerTests
         public int SaveCount { get; private set; }
 
         public TournamentInfo LoadFromFile(string fileName) => Stored;
-        public Task<TournamentInfo> LoadFromFileAsync(string fileName) => Task.FromResult(Stored);
+        public Task<TournamentInfo> LoadFromFileAsync(string fileName, System.Threading.CancellationToken cancellationToken = default) => Task.FromResult(Stored);
 
         public bool SaveToFile(TournamentInfo item, string fileName)
         {
@@ -28,7 +28,7 @@ public class TournamentsManagerTests
             return true;
         }
 
-        public Task<bool> SaveToFileAsync(TournamentInfo item, string fileName)
+        public Task<bool> SaveToFileAsync(TournamentInfo item, string fileName, System.Threading.CancellationToken cancellationToken = default)
         {
             SaveToFile(item, fileName);
             return Task.FromResult(true);

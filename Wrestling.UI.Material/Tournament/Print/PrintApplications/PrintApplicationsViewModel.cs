@@ -12,8 +12,10 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintApplications
 
         private List<PrintWrestlerApplicationViewModel> _groupWrestlers = new List<PrintWrestlerApplicationViewModel>();
 
-        public string PageName => "Протокол Взвешивания";
-        public override string PageTitle => "Протокол взвешивания участников соревнований";
+        // T inherited from TournamentViewModelBase — same lazy-resolve pattern
+        // as every other Print*ViewModel.
+        public string PageName => T("PrintApplications_PageName", "Протокол Взвешивания");
+        public override string PageTitle => T("PrintApplications_PageTitle", "Протокол взвешивания участников соревнований");
         
         public PrintApplicationsViewModel(IDiContainer container) : base(container)
         {
@@ -54,7 +56,7 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintApplications
                 SeedNumber = y.SeedNumber,
                 AthleteName = y.LastFirstName,
                 BirthYear = y.BirthDate?.Year,
-                Level = y.Level,
+                Level = y.LevelDisplay,
                 TeamName = y.TeamName,
                 TeamCity = y.TeamCity,
                 Weight = y.Weight

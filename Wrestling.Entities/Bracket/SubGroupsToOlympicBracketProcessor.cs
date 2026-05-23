@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Wrestling.Entities.Localization;
 using Wrestling.Entities.Results;
 
 namespace Wrestling.Entities.Bracket
@@ -16,7 +17,7 @@ namespace Wrestling.Entities.Bracket
         private AgeWeightGroup _fakeGroupA;
         private AgeWeightGroup _fakeGroupB;
 
-        public override string Title => "2 подгруппы в Олимпийскую с 3м местом";
+        public override string Title => EntityLocalization.T("BracketType_SubGroupsToOlympic", "2 подгруппы в Олимпийскую с 3м местом");
         public override string Code => BracketTypeEnum.SubGroupsIntoOlympic.ToString();
 
         private void InitInternalProcessors()
@@ -49,7 +50,7 @@ namespace Wrestling.Entities.Bracket
                     Rounds = new List<GroupRound>()
                 };
 
-                foreach (var round in Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main))
+                foreach (var round in Group.Bracket.MainRounds())
                 {
                     var fakeRoundA = new GroupRound
                     {
@@ -142,8 +143,8 @@ namespace Wrestling.Entities.Bracket
             {
                 BirthYearMax = Group.BirthYearMax,
                 BirthYearMin = Group.BirthYearMin,
-                CarpetID = Group.CarpetID,
-                CarpetLabel = Group.CarpetLabel,
+                MatID = Group.MatID,
+                MatLabel = Group.MatLabel,
                 IsFemale = Group.IsFemale,
                 MaxActionSecond = Group.MaxActionSecond,
                 MaxRoundSecond = Group.MaxRoundSecond,
@@ -183,7 +184,11 @@ namespace Wrestling.Entities.Bracket
         {
             var thirdPlace = new GroupRound
             {
-                RoundName = "3 место",
+                // Hyphenated spelling matches OlympicGroupBracketProcessor —
+                // single source of truth for the "3rd place" round label so
+                // RoundNameLocalizationConverter only has one exact-match key
+                // to resolve (Round_ThirdPlace).
+                RoundName = "3-е место",
                 RoundNumber = Group.Bracket.Rounds.Count + 1,
                 RoundType = GroupRoundTypeEnum.Additional,
                 RoundMatches = new List<WrestlingMatch>()
@@ -220,7 +225,7 @@ namespace Wrestling.Entities.Bracket
         {
             if (Group.Bracket == null) return;
 
-            var notCompletedMainMatches = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).SelectMany(p => p.RoundMatches).Where(x => x.Status != MatchStatusEnum.Completed).ToList();
+            var notCompletedMainMatches = Group.Bracket.MainRounds().SelectMany(p => p.RoundMatches).Where(x => x.Status != MatchStatusEnum.Completed).ToList();
             if (notCompletedMainMatches.Count > 0)
             {
                 return;
@@ -237,67 +242,133 @@ namespace Wrestling.Entities.Bracket
                 wr.FinalPlace = null;
             }
 
-            var addRounds = Group.Bracket.Rounds.Where(p => p.RoundType == GroupRoundTypeEnum.Additional).ToList();
+            var addRounds = Group.Bracket.AdditionalRounds().ToList();
             var final = addRounds[addRounds.Count - 2].RoundMatches[0];
 
             int currentPlace = 1;
 
             var finalists = new List<Wrestler>();
 
-            // 1-2 place
-            if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue)
-            {
-                var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
-                if (winner != null)
-                {
-                    finalists.Add(winner);
-                    winner.FinalPlace = currentPlace;
-                    currentPlace++;
-                }
-
-                var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
-                if (looser != null)
-                {
-                    finalists.Add(looser);
-                    looser.FinalPlace = currentPlace;
-                    currentPlace++;
-                }
-            } 
-            else
-            {
-                // can't calculate yet
-                currentPlace += 2;
-            }
-
-            // 3-4 place
             var thirdPlace = addRounds[addRounds.Count - 1].RoundMatches[0];
 
-            if (thirdPlace.Status == MatchStatusEnum.Completed && thirdPlace.IsRedWon.HasValue)
+            // UWW: mutual DSQ in the final leaves both finalists DSQ'd; the
+            // bronze match then decides 1-2 and everyone else shifts up by 2.
+            // Single DSQ in the final: winner stays gold, bronze winner → 2,
+            // bronze loser → 3, everyone else shifts up by 1.
+            // (Sibling rule of OlympicConsilationFinalists, adapted for the
+            // single-bronze SubGroupsToOlympic format.)
+            var finalMutualDsq = final.Status == MatchStatusEnum.Completed
+                                 && final.WinType == MatchWinTypeEnum.MutualDisqualify;
+            var bronzeHasWinner = thirdPlace.Status == MatchStatusEnum.Completed
+                                  && thirdPlace.IsRedWon.HasValue;
+            Wrestler dsqFinalist = null;
+            if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue
+                && (final.WinType == MatchWinTypeEnum.DisqualifyWin || final.WinType == MatchWinTypeEnum.NoShow))
             {
-                var bronzeWinner = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
-                if (bronzeWinner != null)
+                dsqFinalist = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
+                if (dsqFinalist == null || !dsqFinalist.IsPlaceless) dsqFinalist = null;
+            }
+            var finalSingleDsq = dsqFinalist != null;
+
+            if (finalMutualDsq && bronzeHasWinner)
+            {
+                var promoted1st = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
+                if (promoted1st != null && !promoted1st.IsPlaceless)
                 {
-                    finalists.Add(bronzeWinner);
-                    bronzeWinner.FinalPlace = currentPlace;
+                    finalists.Add(promoted1st);
+                    promoted1st.FinalPlace = currentPlace;
                     currentPlace++;
                 }
 
-                var bronzeLooser = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
-                if (bronzeLooser != null)
+                var promoted2nd = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
+                if (promoted2nd != null && !promoted2nd.IsPlaceless)
                 {
-                    finalists.Add(bronzeLooser);
-                    bronzeLooser.FinalPlace = currentPlace;
+                    finalists.Add(promoted2nd);
+                    promoted2nd.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
+            }
+            else if (finalSingleDsq && bronzeHasWinner)
+            {
+                var gold = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
+                if (gold != null && !gold.IsPlaceless)
+                {
+                    finalists.Add(gold);
+                    gold.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
+
+                var silver = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
+                if (silver != null && !silver.IsPlaceless)
+                {
+                    finalists.Add(silver);
+                    silver.FinalPlace = currentPlace;
+                    currentPlace++;
+                }
+
+                var bronze = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
+                if (bronze != null && !bronze.IsPlaceless)
+                {
+                    finalists.Add(bronze);
+                    bronze.FinalPlace = currentPlace;
                     currentPlace++;
                 }
             }
             else
             {
-                // can't calculate yet
-                currentPlace += 2;
+                // Standard 1-2 from final
+                if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue)
+                {
+                    var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
+                    if (winner != null && !winner.IsPlaceless)
+                    {
+                        finalists.Add(winner);
+                        winner.FinalPlace = currentPlace;
+                        currentPlace++;
+                    }
+
+                    var looser = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
+                    if (looser != null && !looser.IsPlaceless)
+                    {
+                        finalists.Add(looser);
+                        looser.FinalPlace = currentPlace;
+                        currentPlace++;
+                    }
+                }
+                else
+                {
+                    // can't calculate yet
+                    currentPlace += 2;
+                }
+
+                // Standard 3-4 from bronze
+                if (bronzeHasWinner)
+                {
+                    var bronzeWinner = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
+                    if (bronzeWinner != null && !bronzeWinner.IsPlaceless)
+                    {
+                        finalists.Add(bronzeWinner);
+                        bronzeWinner.FinalPlace = currentPlace;
+                        currentPlace++;
+                    }
+
+                    var bronzeLooser = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInBlue : thirdPlace.WrestlerInRed;
+                    if (bronzeLooser != null && !bronzeLooser.IsPlaceless)
+                    {
+                        finalists.Add(bronzeLooser);
+                        bronzeLooser.FinalPlace = currentPlace;
+                        currentPlace++;
+                    }
+                }
+                else
+                {
+                    // can't calculate yet
+                    currentPlace += 2;
+                }
             }
 
             // Other places should be set based on main round robin results
-            var matches = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).SelectMany(p => p.RoundMatches).Where(x => x.Status == MatchStatusEnum.Completed).ToList();
+            var matches = Group.Bracket.MainRounds().SelectMany(p => p.RoundMatches).Where(x => x.Status == MatchStatusEnum.Completed).ToList();
             if (matches.Count == 0)
             {
                 return;
@@ -309,8 +380,8 @@ namespace Wrestling.Entities.Bracket
             }
 
             var comparedResults = new List<TournamentResult>();
-            comparedResults.AddRange(resultsA.Where(r => !finalists.Contains(r.Wrestler)).Distinct());
-            comparedResults.AddRange(resultsB.Where(r => !finalists.Contains(r.Wrestler)).Distinct());
+            comparedResults.AddRange(resultsA.Where(r => !finalists.Contains(r.Wrestler) && !r.Wrestler.IsPlaceless).Distinct());
+            comparedResults.AddRange(resultsB.Where(r => !finalists.Contains(r.Wrestler) && !r.Wrestler.IsPlaceless).Distinct());
 
             var finalOrder = comparedResults
                 .OrderByDescending(x => x.Wins)
@@ -334,13 +405,17 @@ namespace Wrestling.Entities.Bracket
         {
             base.ProceedToNextMatch(wrestlingMatch);
 
-            var matchRound = Group.Bracket.Rounds.First(r => r.RoundType == GroupRoundTypeEnum.Additional);
+            var matchRound = Group.Bracket.AdditionalRounds().First();
             if (matchRound != null && matchRound.RoundNumber == wrestlingMatch.RoundNumber)
             {
-                var thirdfPlaceRound = Group.Bracket.Rounds.Last(r => r.RoundType == GroupRoundTypeEnum.Additional);
+                // Mutual DSQ in semifinal (M2): UWW requires manual rebuild —
+                // don't auto-place anyone in the third-place match.
+                if (!wrestlingMatch.IsRedWon.HasValue) return;
+
+                var thirdfPlaceRound = Group.Bracket.AdditionalRounds().Last();
                 if (thirdfPlaceRound != null)
                 {
-                    var matchLooser = wrestlingMatch.IsRedWon.HasValue && wrestlingMatch.IsRedWon.Value
+                    var matchLooser = wrestlingMatch.IsRedWon.Value
                         ? wrestlingMatch.WrestlerInBlue
                         : wrestlingMatch.WrestlerInRed;
 
@@ -360,7 +435,7 @@ namespace Wrestling.Entities.Bracket
         protected override void ProceedToAdditionalBracket(WrestlingMatch wrestlingMatch)
         {
             // Semi-finals already formed, no need to do anything
-            var semiFinalRound = Group.Bracket.Rounds.First(r => r.RoundType == GroupRoundTypeEnum.Additional);
+            var semiFinalRound = Group.Bracket.AdditionalRounds().First();
             if (semiFinalRound.RoundMatches[0].WrestlerInRed != null &&
                 semiFinalRound.RoundMatches[1].WrestlerInRed != null)
             {
@@ -368,7 +443,7 @@ namespace Wrestling.Entities.Bracket
             }
 
             // If this is the last match in last main round we are ready to calculate results and move athletes to additional bracket
-            var notCompletedMainMatches = Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+            var notCompletedMainMatches = Group.Bracket.MainRounds()
                 .SelectMany(r => r.RoundMatches).Where(rm => !rm.IsMatchCompleted).ToList();
 
             if (notCompletedMainMatches.Count > 0) return;
@@ -376,13 +451,19 @@ namespace Wrestling.Entities.Bracket
             // Promote 2 best athletes to semi-final
             InitInternalProcessors();
 
-            var resultsA = _groupAProcessor.GetResults().ToList();
-            var resultsB = _groupBProcessor.GetResults().ToList();
+            // Filter DSQ wrestlers explicitly. RoundRobin's GetStats() orders
+            // results by nullable FinalPlace ascending, which puts null (=DSQ)
+            // FIRST — so [0]/[1] would be the disqualified pair if a mutual DSQ
+            // happened in a subgroup. Mutual DSQ in any subgroup match cascades
+            // auto-wins to the third wrestler, who legitimately becomes that
+            // subgroup's gold; silver simply doesn't exist.
+            var resultsA = _groupAProcessor.GetResults().Where(r => !r.Wrestler.IsPlaceless).ToList();
+            var resultsB = _groupBProcessor.GetResults().Where(r => !r.Wrestler.IsPlaceless).ToList();
 
-            var groupAGold = resultsA[0].Wrestler;
-            var groupASilver = resultsA[1].Wrestler;
-            var groupBGold = resultsB[0].Wrestler;
-            var groupBSilver = resultsB[1].Wrestler;
+            var groupAGold = resultsA.Count > 0 ? resultsA[0].Wrestler : null;
+            var groupASilver = resultsA.Count > 1 ? resultsA[1].Wrestler : null;
+            var groupBGold = resultsB.Count > 0 ? resultsB[0].Wrestler : null;
+            var groupBSilver = resultsB.Count > 1 ? resultsB[1].Wrestler : null;
 
             var semiFinalMatch1 = semiFinalRound.RoundMatches[0];
             semiFinalMatch1.WrestlerInRed = groupAGold;
@@ -391,6 +472,23 @@ namespace Wrestling.Entities.Bracket
             var semiFinalMatch2 = semiFinalRound.RoundMatches[1];
             semiFinalMatch2.WrestlerInRed = groupBGold;
             semiFinalMatch2.WrestlerInBlue = groupASilver;
+
+            // SFs that ended up with one slot filled and one empty (because a
+            // subgroup had < 2 clean finishers after mutual DSQ) auto-FreeWin
+            // for the lone wrestler so the final still progresses normally.
+            TryAutoFreeWinSemiFinal(semiFinalMatch1);
+            TryAutoFreeWinSemiFinal(semiFinalMatch2);
+        }
+
+        private void TryAutoFreeWinSemiFinal(WrestlingMatch sf)
+        {
+            if (sf.Status != MatchStatusEnum.Pending) return;
+            var hasRed = sf.WrestlerInRed != null;
+            var hasBlue = sf.WrestlerInBlue != null;
+            // Both empty (subgroup degenerate): leave pending, operator must
+            // rebuild the bracket. Both filled: nothing to auto-resolve.
+            if (hasRed == hasBlue) return;
+            CompleteMatch(sf, hasRed, MatchWinTypeEnum.FreeWin);
         }
 
         protected override void RevertAdditionalBracket(WrestlingMatch wrestlingMatch)
@@ -448,10 +546,10 @@ namespace Wrestling.Entities.Bracket
             else
             {
                 // If all main bracket matches were completed we need to clear entire additional bracket
-                if (Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main)
+                if (Group.Bracket.MainRounds()
                         .SelectMany(r => r.RoundMatches).Count(m => m.Status == MatchStatusEnum.Pending) == 0)
                 {
-                    foreach (var match in Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).SelectMany(r => r.RoundMatches))
+                    foreach (var match in Group.Bracket.AdditionalRounds().SelectMany(r => r.RoundMatches))
                     {
                         match.WrestlerInRed = null;
                         match.WrestlerInBlue = null;
@@ -493,62 +591,48 @@ namespace Wrestling.Entities.Bracket
             }
 
             // Main bracket match can be reverted only if no additional bracket matches completed
-            return Group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional)
+            return Group.Bracket.AdditionalRounds()
                        .SelectMany(r => r.RoundMatches).Count(m => m.Status == MatchStatusEnum.Completed) == 0;
         }
 
         public override List<GroupRound> GetMainQualificationRounds(AgeWeightGroup group)
         {
-            if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
+            if (group?.Bracket?.Rounds == null) return null;
 
-            return group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Main).ToList();
+            return group.Bracket.MainRounds().ToList();
         }
 
         public override GroupRound GetSemiFinalRound(AgeWeightGroup group)
         {
-            if (group == null || group.Bracket == null || group.Bracket.Rounds == null || group.Bracket.Rounds.Count == 0)
-            {
-                return null;
-            }
+            if (group?.Bracket?.Rounds == null || group.Bracket.Rounds.Count == 0) return null;
 
-            var additionalRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+            var additionalRounds = group.Bracket.AdditionalRounds().ToList();
 
-            if (additionalRounds.Count == 0)
-            {
-                return null;
-            }
-            
+            if (additionalRounds.Count == 0) return null;
+
             return additionalRounds[0];
         }
 
         public override GroupRound Get3rdPlaceRound(AgeWeightGroup group)
         {
-            if (group == null || group.Bracket == null || group.Bracket.Rounds == null || group.Bracket.Rounds.Count == 0)
-            {
-                return null;
-            }
+            if (group?.Bracket?.Rounds == null || group.Bracket.Rounds.Count == 0) return null;
 
-            var additionalRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+            var additionalRounds = group.Bracket.AdditionalRounds().ToList();
 
-            if (additionalRounds.Count == 0)
-            {
-                return null;
-            }
+            if (additionalRounds.Count == 0) return null;
 
             return additionalRounds[additionalRounds.Count - 1];
         }
 
         public override GroupRound GetFinalRound(AgeWeightGroup group)
         {
-            if (group == null || group.Bracket == null || group.Bracket.Rounds == null) return null;
+            if (group?.Bracket?.Rounds == null) return null;
 
-            var additionalRounds = group.Bracket.Rounds.Where(r => r.RoundType == GroupRoundTypeEnum.Additional).ToList();
+            var additionalRounds = group.Bracket.AdditionalRounds().ToList();
 
             if (additionalRounds.Count < 2) return null;
 
-            var finalRound = additionalRounds[additionalRounds.Count - 2];
-
-            return finalRound;
+            return additionalRounds[additionalRounds.Count - 2];
         }
     }
 }

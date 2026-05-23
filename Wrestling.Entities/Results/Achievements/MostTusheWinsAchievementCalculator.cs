@@ -1,14 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities.Results.Achievements
 {
     public class MostTusheWinsAchievementCalculator : IAchievementCalculator
     {
-        public string AchievementTitle => "Асфальтоукладчик";
+        public string AchievementTitle => EntityLocalization.T("Achievement_MostTushe_Title", "Асфальтоукладчик");
 
         public string AchievementType => "MostTusheWinsCount";
-        public string AchievementDefinition => "Борец, выигравший больше всего схваток по туше";
+        public string AchievementDefinition => EntityLocalization.T("Achievement_MostTushe_Definition", "Борец, выигравший больше всего схваток по туше");
 
         public List<WrestlerAchievement> CalculateAchievement(Tournament tournament, List<TournamentResult> results)
         {

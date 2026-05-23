@@ -6,6 +6,7 @@
              xmlns:system="clr-namespace:System;assembly=mscorlib"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:details="clr-namespace:Wrestling.UI.Material.Tournament.Standing.Details"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance details:GenerateGroupsDialogViewModel}"
              d:DesignHeight="500" d:DesignWidth="400">
@@ -19,19 +20,20 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" HorizontalAlignment="Center" FontSize="18" Margin="10 5 10 15">Генератор Категорий</TextBlock>
-        
-        <TextBlock Grid.Row="1" FontSize="12" TextWrapping="Wrap" Margin="10 5 10 0">
-            Используйте следующий формат для генерации весовых категорий:
+        <TextBlock Grid.Row="0" HorizontalAlignment="Center" FontSize="18" Margin="10 5 10 15" Text="{loc:Loc GenerateGroups_Title}" />
+
+        <TextBlock Grid.Row="1" FontSize="12" TextWrapping="Wrap" Margin="10 5 10 0" Text="{loc:Loc GenerateGroups_FormatHint}" />
+
+        <!-- Format example. The trailing letter is the locale-aware female
+             marker (Ж for Russian, F for English) — GroupGenerator.Generate
+             reads Gender_FemaleShort to decide which letter triggers the
+             IsFemale=true flag, so the example must show the same letter. -->
+        <TextBlock Grid.Row="2" FontSize="12" TextWrapping="Wrap" Margin="10 5 10 0"
+                   ToolTip="{loc:Loc GenerateGroups_ExampleTooltip}">
+            <Run Text="2010-2011:30,35,40,45,50:" /><Run Text="{Binding [Gender_FemaleShort], Source={x:Static loc:LocalizationService.Instance}, Mode=OneWay}" />
         </TextBlock>
-        
-        <TextBlock Grid.Row="2" FontSize="12" TextWrapping="Wrap" Margin="10 5 10 0" ToolTip="Данное выражение сгенерирует 5 весовых категорий для указанных возрастов">
-            2010-2011:30,35,40,45,50:Ж
-        </TextBlock>
-        
-        <TextBlock Grid.Row="3" FontSize="12" TextWrapping="Wrap" Margin="10 5 10 0">
-            Для указания следующей возрастной группы перейдите на следующую строчку.
-        </TextBlock>
+
+        <TextBlock Grid.Row="3" FontSize="12" TextWrapping="Wrap" Margin="10 5 10 0" Text="{loc:Loc GenerateGroups_NewLineHint}" />
 
         <Border Grid.Row="0" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1" Margin="10,0,10,0"></Border>
         <Border Grid.Row="3" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1" Margin="10,0,10,0"></Border>
@@ -48,21 +50,20 @@
                  VerticalScrollBarVisibility="Auto" />
 
         <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0 16 0 0">
-            <Button IsDefault="True" Style="{DynamicResource MaterialDesignFlatButton}">
+            <Button IsDefault="True" Style="{DynamicResource MaterialDesignFlatButton}" Content="{loc:Loc GenerateGroups_GenerateButton}">
                 <Button.Command>
                     <x:Static Member="materialDesign:DialogHost.CloseDialogCommand" />
                 </Button.Command>
                 <Button.CommandParameter>
                     <system:Boolean>True</system:Boolean>
                 </Button.CommandParameter>
-                СГЕНЕРИРОВАТЬ
             </Button>
             <Button IsCancel="True" Margin="8 0 0 0" Style="{DynamicResource MaterialDesignFlatButton}"
-                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}">
+                    Command="{x:Static materialDesign:DialogHost.CloseDialogCommand}"
+                    Content="{loc:Loc Dialog_Cancel}">
                 <Button.CommandParameter>
                     <system:Boolean>False</system:Boolean>
                 </Button.CommandParameter>
-                ОТМЕНИТЬ
             </Button>
         </StackPanel>
     </Grid>

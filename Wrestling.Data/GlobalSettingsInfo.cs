@@ -5,14 +5,25 @@ namespace Wrestling.Data
     [DataContract]
     public class GlobalSettingsInfo
     {
+        public GlobalSettingsInfo()
+        {
+            // Safe defaults so old .wrt files (missing these fields) deserialize
+            // into sensible values. Newtonsoft.Json invokes this constructor
+            // before overlaying JSON properties, so explicit "IsBackupEnabled":
+            // false in a saved file still wins.
+            IsBackupEnabled = true;
+            MaxBackupCount = 20;
+            DiscoveryPort = 24565;
+            IsHttpServerEnabled = true;
+            HttpServerPort = 24566;
+            NodeName = string.Empty;
+            AnnounceIpOverride = string.Empty;
+        }
+
         [DataMember]
         public bool IsTimerBackward { get; set; }
         [DataMember]
         public bool IsSoundEnabled { get; set; }
-        [DataMember]
-        public bool IsAutosaveEnabled { get; set; }
-        [DataMember]
-        public int AutosaveMaxSecond { get; set; }
         [DataMember]
         public int SliderMaxSecond { get; set; }
         [DataMember]
@@ -30,12 +41,24 @@ namespace Wrestling.Data
         [DataMember]
         public int MaxActionSecond { get; set; }
         [DataMember]
-        public bool IsTournamentScoreInternational { get; set; }
-        [DataMember]
         public bool IsOverlayOlympic { get; set; }
         [DataMember]
-        public bool IsVideoRecordingEnabled { get; set; }
+        public bool IsBackupEnabled { get; set; }
         [DataMember]
-        public string VideStoragePath { get; set; }
+        public int MaxBackupCount { get; set; }
+        [DataMember]
+        public string BackupFolderPath { get; set; }
+        [DataMember]
+        public int DiscoveryPort { get; set; }
+        [DataMember]
+        public bool IsHttpServerEnabled { get; set; }
+        [DataMember]
+        public int HttpServerPort { get; set; }
+        [DataMember]
+        public string NodeName { get; set; }
+        [DataMember]
+        public string AnnounceIpOverride { get; set; }
+        [DataMember]
+        public string SignatureFooterImagePath { get; set; }
     }
 }

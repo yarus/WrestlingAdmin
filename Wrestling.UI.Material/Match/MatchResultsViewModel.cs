@@ -7,14 +7,11 @@ using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
-using Wrestling.UI.Material.Home;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.ScoreScreen;
 using Wrestling.UI.Material.Tournament;
-using Wrestling.UI.Material.Tournament.Progress.Brackets;
-using Wrestling.UI.Material.Tournament.Progress.Schedule;
-using Wrestling.UI.Material.Tournament.Results;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Match
 {
@@ -27,6 +24,8 @@ namespace Wrestling.UI.Material.Match
         private readonly List<IGroupBracketProcessor> _drawTypes;
         private IGroupBracketProcessor _processor;
         private ICommand _completeMatch;
+        private IKeyHandler _keyHandler;
+        private ILocalizationService _localization;
 
         #endregion
 
@@ -35,7 +34,8 @@ namespace Wrestling.UI.Material.Match
             _drawTypes = Resolve<List<IGroupBracketProcessor>>();
         }
 
-        public override string PageTitle => "Результаты поединка";
+        // T inherited from TournamentViewModelBase.
+        public override string PageTitle => T("MatchResults_PageTitle", "Результаты поединка");
 
         public override IList<CommandButtonItem> QuickButtons
         {
@@ -47,8 +47,8 @@ namespace Wrestling.UI.Material.Match
 
                     if (WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Completed && CanRejectResult)
                     {
-                        _quickButtons.Add(new CommandButtonItem("Анулировать", PackIconKind.BlockHelper,
-                            new RelayCommand(param => Reject(),
+                        _quickButtons.Add(new CommandButtonItem(T("MatchResults_Cancel", "Анулировать"), PackIconKind.BlockHelper,
+                            new AsyncRelayCommand(async param => await RejectAsync(),
                                 param => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Completed &&
                                          CanRejectResult)));
                     }
@@ -66,7 +66,9 @@ namespace Wrestling.UI.Material.Match
                 {
                     _completeMatch = new AsyncRelayCommand(
                         execute: async _ => await ApproveAsync(),
-                        canExecute: _ => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Pending && Winner.HasValue && WinType.HasValue
+                        // Mutual DSQ has no winner — allow complete when only WinType is set.
+                        canExecute: _ => WrestlingMatch != null && WrestlingMatch.Status == MatchStatusEnum.Pending && WinType.HasValue
+                            && (Winner.HasValue || WinType == MatchWinTypeEnum.MutualDisqualify)
                     );
                 }
                 return _completeMatch;
@@ -78,8 +80,9 @@ namespace Wrestling.UI.Material.Match
             base.InitData();
 
             _scoreScreenVm = Resolve<ScoreScreenViewModel>();
+            if (_localization == null) _localization = Resolve<ILocalizationService>();
 
-            if (WrestlingMatch == null) throw new ApplicationException("Матч не создан!");
+            if (WrestlingMatch == null) throw new InvalidOperationException("Match is not set on the data context — navigation reached MatchResultsView without a current match.");
 
             if (Tournament == null)
             {
@@ -96,7 +99,7 @@ namespace Wrestling.UI.Material.Match
             if (DataContext.Group?.Bracket != null)
             {
                 _processor = GetProcessorForGroup(DataContext.Group.Bracket.BracketTypeCode);
-                if (_processor == null) throw new ApplicationException("Can't find processor!");
+                if (_processor == null) throw new InvalidOperationException($"No processor registered for bracket type '{DataContext.Group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
 
                 _processor.Load(DataContext.Tournament, DataContext.Group);
                 CanRejectResult = _processor.CanMatchBeReverted(WrestlingMatch);
@@ -113,6 +116,99 @@ namespace Wrestling.UI.Material.Match
             }
 
             IsFormEnabled = true;
+
+            // Arrow-key shortcuts: Up/Down cycle WinType, Left/Right pick
+            // winner side. Singleton VM, so guard with -=/+= on revisit.
+            if (_keyHandler == null) _keyHandler = Resolve<IKeyHandler>();
+            if (_keyHandler != null)
+            {
+                _keyHandler.KeyPressed -= KeyHandler_KeyPressed;
+                _keyHandler.KeyPressed += KeyHandler_KeyPressed;
+            }
+
+            OnPropertyChanged("IsWinnerNotSelected");
+        }
+
+        protected override void OnNavigatingOut()
+        {
+            base.OnNavigatingOut();
+            if (_keyHandler != null)
+            {
+                _keyHandler.KeyPressed -= KeyHandler_KeyPressed;
+            }
+        }
+
+        private void KeyHandler_KeyPressed(object sender, KeyEventArgs e)
+        {
+            // Don't steal arrow keys from the notes textbox.
+            if (Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase) return;
+            if (WrestlingMatch == null || WrestlingMatch.Status != MatchStatusEnum.Pending) return;
+
+            switch (e.Key)
+            {
+                case Key.Up:
+                    CycleWinType(-1);
+                    e.Handled = true;
+                    break;
+                case Key.Down:
+                    CycleWinType(+1);
+                    e.Handled = true;
+                    break;
+                case Key.Left:
+                    SelectWinnerSide(true);
+                    e.Handled = true;
+                    break;
+                case Key.Right:
+                    SelectWinnerSide(false);
+                    e.Handled = true;
+                    break;
+                case Key.Enter:
+                    // Mirror the «ЗАВЕРШИТЬ» button: only fire when the
+                    // command's CanExecute is true (WinType set + winner
+                    // selected, or mutual-DSQ outcome).
+                    var cmd = CompleteMatchCommand;
+                    if (cmd != null && cmd.CanExecute(null))
+                    {
+                        cmd.Execute(null);
+                        e.Handled = true;
+                    }
+                    break;
+            }
+        }
+
+        private void CycleWinType(int direction)
+        {
+            var available = BuildAvailableWinTypes();
+            if (available.Count == 0) return;
+            int current = WinType.HasValue ? available.IndexOf(WinType.Value) : -1;
+            int next;
+            if (current < 0)
+            {
+                next = direction > 0 ? 0 : available.Count - 1;
+            }
+            else
+            {
+                next = (current + direction + available.Count) % available.Count;
+            }
+            WinType = available[next];
+        }
+
+        private void SelectWinnerSide(bool isRed)
+        {
+            if (WrestlingMatch == null || WrestlingMatch.IsMatchCompleted) return;
+            // Mutual outcomes don't take a winner. Match the SetWinner guard.
+            if (WinType == MatchWinTypeEnum.MutualDisqualify
+                || WinType == MatchWinTypeEnum.MutualNoShow
+                || WinType == MatchWinTypeEnum.MutualInjury) return;
+
+            if (isRed && WrestlingMatch.WrestlerInRed != null)
+            {
+                Winner = WrestlingMatch.WrestlerInRed.ID;
+            }
+            else if (!isRed && WrestlingMatch.WrestlerInBlue != null)
+            {
+                Winner = WrestlingMatch.WrestlerInBlue.ID;
+            }
         }
 
         public override bool IsBackButtonAvailable => true;
@@ -130,18 +226,7 @@ namespace Wrestling.UI.Material.Match
                 WrestlingMatch = null;
                 Note = string.Empty;
 
-                if (Tournament == null)
-                {
-                    NavigateToView<HomeViewModel>();
-                }
-                else if (DataContext.IsBracketView)
-                {
-                    NavigateToView<BracketsViewModel>();
-                }
-                else
-                {
-                    NavigateToView<CompletedMatchesViewModel>();
-                }
+                NavigateToReturnTarget();
             }
         }
 
@@ -170,7 +255,7 @@ namespace Wrestling.UI.Material.Match
             {
                 if (_setWinTypeCommand == null)
                 {
-                    _setWinTypeCommand = new RelayCommand(param => SetWinType(), param => true);
+                    _setWinTypeCommand = new AsyncRelayCommand(async param => await SetWinTypeAsync(), param => true);
                 }
 
                 return _setWinTypeCommand;
@@ -264,8 +349,21 @@ namespace Wrestling.UI.Material.Match
                 OnPropertyChanged("Winner");
                 OnPropertyChanged("IsWinnerRed");
                 OnPropertyChanged("IsWinnerBlue");
+                OnPropertyChanged("IsWinnerNotSelected");
             }
         }
+
+        // Validation flag for the «Не выбран победитель» message under the
+        // match panel. Mutual outcomes don't need a winner, so they suppress
+        // the warning. Completed matches don't need it either — by then a
+        // winner is locked in.
+        public bool IsWinnerNotSelected =>
+            WrestlingMatch != null
+            && WrestlingMatch.Status == MatchStatusEnum.Pending
+            && !Winner.HasValue
+            && WinType != MatchWinTypeEnum.MutualDisqualify
+            && WinType != MatchWinTypeEnum.MutualNoShow
+            && WinType != MatchWinTypeEnum.MutualInjury;
 
         private bool _isPlayer1WithAdvantage;
         public bool IsPlayer1WithAdvantage
@@ -341,8 +439,20 @@ namespace Wrestling.UI.Material.Match
             {
                 _winType = value;
 
+                // Mutual outcomes have no winner — drop any previously-picked
+                // side so the yellow «ПОБЕДИТЕЛЬ» badge disappears and
+                // ApproveAsync's (!Winner.HasValue && !isMutual) gate sees a
+                // clean state.
+                if ((value == MatchWinTypeEnum.MutualDisqualify
+                     || value == MatchWinTypeEnum.MutualNoShow
+                     || value == MatchWinTypeEnum.MutualInjury) && Winner != null)
+                {
+                    Winner = null;
+                }
+
                 OnPropertyChanged("WinType");
                 OnPropertyChanged("IsWinTypeSet");
+                OnPropertyChanged("IsWinnerNotSelected");
             }
         }
 
@@ -355,30 +465,6 @@ namespace Wrestling.UI.Material.Match
                 _isFormEnabled = value;
 
                 OnPropertyChanged("IsFormEnabled");
-            }
-        }
-
-        private bool _isNoteExpanded;
-        public bool IsNoteExpanded
-        {
-            get { return _isNoteExpanded; }
-            set
-            {
-                _isNoteExpanded = value;
-
-                OnPropertyChanged("IsNoteExpanded");
-            }
-        }
-
-        private bool _isActionsExpanded;
-        public bool IsActionsExpanded
-        {
-            get { return _isActionsExpanded; }
-            set
-            {
-                _isActionsExpanded = value;
-
-                OnPropertyChanged("IsActionsExpanded");
             }
         }
 
@@ -436,28 +522,32 @@ namespace Wrestling.UI.Material.Match
             }
         }
 
-        private async void SetWinType()
+        // Shared between the picker dialog and the Up/Down keyboard cycle.
+        // WarningsLimit (3 предупреждения) is NOT in the list — it's applied
+        // automatically when a wrestler accumulates 3 warnings.
+        private List<MatchWinTypeEnum> BuildAvailableWinTypes()
         {
-            var availableWinTypes = new List<MatchWinTypeEnum>();
-            
-            if (IsTusheWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.Tushe);
-            
-            availableWinTypes.Add(MatchWinTypeEnum.Injury);
-            
-            if (IsWarningsLimitWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.WarningsLimit);
-            
-            if (IsNoShowWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.NoShow);
-            if (IsDisqualifyWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.DisqualifyWin);
+            var result = new List<MatchWinTypeEnum>();
+
+            if (IsTusheWinEnabled) result.Add(MatchWinTypeEnum.Tushe);
+
+            result.Add(MatchWinTypeEnum.Injury);
+            result.Add(MatchWinTypeEnum.MutualInjury);
+
+            if (IsNoShowWinEnabled) result.Add(MatchWinTypeEnum.NoShow);
+            if (IsNoShowWinEnabled) result.Add(MatchWinTypeEnum.MutualNoShow);
+            if (IsDisqualifyWinEnabled) result.Add(MatchWinTypeEnum.DisqualifyWin);
+            if (IsDisqualifyWinEnabled) result.Add(MatchWinTypeEnum.MutualDisqualify);
 
             if (IsDominationWinEnabled)
             {
                 if (WrestlingMatch.PointsBlue > 0 && WrestlingMatch.PointsRed > 0)
                 {
-                    availableWinTypes.Add(MatchWinTypeEnum.DominationWinWithPoints);   
+                    result.Add(MatchWinTypeEnum.DominationWinWithPoints);
                 }
                 else
                 {
-                    availableWinTypes.Add(MatchWinTypeEnum.DominationWin);
+                    result.Add(MatchWinTypeEnum.DominationWin);
                 }
             }
 
@@ -465,16 +555,22 @@ namespace Wrestling.UI.Material.Match
             {
                 if (WrestlingMatch.PointsBlue > 0 && WrestlingMatch.PointsRed > 0)
                 {
-                    availableWinTypes.Add(MatchWinTypeEnum.PointsWinWithPoints);   
+                    result.Add(MatchWinTypeEnum.PointsWinWithPoints);
                 }
                 else
                 {
-                    availableWinTypes.Add(MatchWinTypeEnum.PointsWin);
+                    result.Add(MatchWinTypeEnum.PointsWin);
                 }
             }
-            
-            if (IsActionWinEnabled) availableWinTypes.Add(MatchWinTypeEnum.ActionWin);
 
+            if (IsActionWinEnabled) result.Add(MatchWinTypeEnum.ActionWin);
+
+            return result;
+        }
+
+        private async Task SetWinTypeAsync()
+        {
+            var availableWinTypes = BuildAvailableWinTypes();
             var vm = new SetWinTypeViewModel(DiContainer, WinType, availableWinTypes);
             vm.InitData();
 
@@ -497,6 +593,11 @@ namespace Wrestling.UI.Material.Match
         {
             if (WrestlingMatch.IsMatchCompleted) return;
             if (string.IsNullOrEmpty(winner)) return;
+            // Mutual outcomes: neither side can be marked the winner —
+            // finalize via ApproveAsync only.
+            if (WinType == MatchWinTypeEnum.MutualDisqualify
+                || WinType == MatchWinTypeEnum.MutualNoShow
+                || WinType == MatchWinTypeEnum.MutualInjury) return;
 
             if (winner == "Red")
             {
@@ -529,11 +630,11 @@ namespace Wrestling.UI.Material.Match
             return team != null ? team.EmblemPath : string.Empty;
         }
 
-        private void Reject()
+        private async Task RejectAsync()
         {
             if (Dialog.ShowMessageBox(this,
-                    "Результат матча будет анулирован и сетка перестроена! Вы уверены?",
-                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK) return;
+                    T("MatchResults_RevertConfirm_Body", "Результат матча будет анулирован и сетка перестроена! Вы уверены?"),
+                    T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             if (DataContext.Group?.Bracket != null)
             {
@@ -547,101 +648,171 @@ namespace Wrestling.UI.Material.Match
                 WrestlingMatch.PointsRed = 0;
                 WrestlingMatch.StartDateTime = null;
             }
+            // Bump version — Completed→Pending transition. Same rationale as in
+            // ApproveAsync: peers with the prior Completed copy will see strictly
+            // higher remote.Version and adopt the revert.
+            WrestlingMatch.Version++;
 
             WrestlingMatch = null;
             WinType = null;
             Note = string.Empty;
 
-            if (Tournament == null)
+            // Autosave after revert so peers importing over HTTP/UNC see the
+            // Pending state. Without this, a stale .wrt on disk still reports
+            // the cancelled match as Completed, and the importer's
+            // "local Pending + remote Completed → apply" guard (TournamentImporter.cs:185)
+            // re-applies the old result, masking a newer completion from
+            // another peer.
+            if (DataContext.Tournament != null)
             {
-                NavigateToView<HomeViewModel>();
+                ResultsService.Recalculate(DataContext.Tournament);
+
+                await SaveIfAutosaveEnabledAsync();
             }
-            else
-            {
-                if (DataContext.IsBracketView)
-                {
-                    NavigateToView<BracketsViewModel>();
-                }
-                else
-                {
-                    NavigateToView<ScheduleViewModel>();
-                }
-            }
+
+            NavigateToReturnTarget();
         }
 
         private async Task ApproveAsync()
         {
-            if (WrestlingMatch == null || WrestlingMatch.Status != MatchStatusEnum.Pending || !Winner.HasValue || !WinType.HasValue)
+            // No-winner outcomes — finalize without picking a wrestler.
+            var isMutual = WinType == MatchWinTypeEnum.MutualDisqualify
+                           || WinType == MatchWinTypeEnum.MutualNoShow
+                           || WinType == MatchWinTypeEnum.MutualInjury;
+            if (WrestlingMatch == null || WrestlingMatch.Status != MatchStatusEnum.Pending || !WinType.HasValue
+                || (!Winner.HasValue && !isMutual))
             {
                 Dialog.ShowMessageBox(this,
-                        "Ошибка завершения мачта! Возможно матч уже завершен.",
-                        "Ошибка", MessageBoxButton.OK, MessageBoxImage.Information);
+                        T("MatchResults_CompleteError_Body", "Ошибка завершения мачта! Возможно матч уже завершен."),
+                        T("MatchResults_ErrorTitle", "Ошибка"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
             if (WrestlingMatch.StartDateTime == null)
             {
-                WrestlingMatch.StartDateTime = Tournament?.StartDate ?? DateTime.Now;
+                // Fallback for matches completed without ever starting the
+                // timer (NoShow, manual completion after revert, auto-VCA
+                // before Start was clicked). Use DateTime.Now so the match
+                // appears at the top of «Последние результаты» — falling back
+                // to Tournament.StartDate would stamp it at the morning of
+                // the competition day and push it past the top-10 cutoff.
+                WrestlingMatch.StartDateTime = DateTime.Now;
             }
 
-            WrestlingMatch.IsRedWon = Winner == WrestlingMatch.WrestlerInRed.ID;
+            WrestlingMatch.IsRedWon = isMutual ? (bool?)null : Winner == WrestlingMatch.WrestlerInRed.ID;
             WrestlingMatch.WinType = WinType;
             WrestlingMatch.Note = Note;
+            // Bump version — this is the only state-change point that turns a
+            // Pending match into Completed, so it's the canonical place to mark
+            // "newer than what any peer might still be holding". Importer treats
+            // strict "remote.Version > local.Version" as the trigger to adopt
+            // remote state.
+            WrestlingMatch.Version++;
             WrestlingMatch.MatchActions.Add(new MatchAction
             {
+                Type = MatchActionType.MatchCompleted,
                 DateTime = DateTime.Now,
                 RoundNumber = WrestlingMatch.LastSecondInMatch > WrestlingMatch.MaxRoundSecond ? 2 : 1,
                 SecondInRound = WrestlingMatch.LastSecondInMatch > WrestlingMatch.MaxRoundSecond ? WrestlingMatch.LastSecondInMatch - WrestlingMatch.MaxRoundSecond : WrestlingMatch.LastSecondInMatch,
-                Text = "Матч завершен"
             });
 
             CompleteMatch();
 
-            if (DataContext.Tournament != null && WrestlingMatch.WinType.HasValue)
+            // ResultsService and autosave both need a Tournament — gate them
+            // on that. Always return the operator to their previous screen
+            // (mat/schedule/etc) via NavigateToMatches; there is no
+            // legitimate path where completing a match should drop the user
+            // back to the «open tournament» chooser.
+            if (DataContext.Tournament != null)
             {
-                await SaveDataAsync();
+                ResultsService.Recalculate(DataContext.Tournament);
+                await SaveIfAutosaveEnabledAsync();
+            }
 
-                NavigateToMatches();
-            }
-            else
-            {
-                BackToNavigateToHome();
-            }
+            NavigateToMatches();
         }
 
         private void CompleteMatch()
         {
-            if (!WrestlingMatch.IsRedWon.HasValue || !WrestlingMatch.WinType.HasValue) throw new ApplicationException("Completed match does not have result provided!");
+            // Mutual DSQ / NoShow / Injury: WinType is set, IsRedWon is null —
+            // that's the canonical «no winner» encoding (see GroupBracketProcessorBase).
+            if (!WrestlingMatch.WinType.HasValue) throw new InvalidOperationException("Completed match must have WinType set.");
+            var isMutual = WrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify
+                           || WrestlingMatch.WinType == MatchWinTypeEnum.MutualNoShow
+                           || WrestlingMatch.WinType == MatchWinTypeEnum.MutualInjury;
+            if (!WrestlingMatch.IsRedWon.HasValue && !isMutual)
+                throw new InvalidOperationException("Completed match must have IsRedWon set (or be a Mutual* outcome).");
 
             if (DataContext.Tournament != null)
             {
-                _processor.CompleteMatch(WrestlingMatch, WrestlingMatch.IsRedWon.Value, WrestlingMatch.WinType.Value);
+                _processor.CompleteMatch(WrestlingMatch, WrestlingMatch.IsRedWon, WrestlingMatch.WinType.Value);
 
-                _scoreScreenVm.ShowWinner(WrestlingMatch);
+                if (WrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify)
+                {
+                    var msg = GetMutualDsqAdvisoryMessage(WrestlingMatch);
+                    if (!string.IsNullOrEmpty(msg)) ShowSnackMessage(msg);
+                }
+                else
+                {
+                    _scoreScreenVm.ShowWinner(WrestlingMatch);
+                }
             }
+        }
+
+        // Returns a Russian advisory message for a mutual-DSQ outcome, tailored
+        // to the round and bracket type. Returns null/empty when no message is
+        // needed (e.g. mutual DSQ in an early round of an Olympic bracket — the
+        // cascade in GroupBracketProcessorBase handles it without operator
+        // intervention).
+        private string GetMutualDsqAdvisoryMessage(WrestlingMatch match)
+        {
+            if (DataContext.Group?.Bracket == null || _processor == null) return null;
+            var sf = _processor.GetSemiFinalRound(DataContext.Group);
+            var f = _processor.GetFinalRound(DataContext.Group);
+            var code = DataContext.Group.Bracket.BracketTypeCode;
+            var isElim = code != BracketTypeEnum.RoundRobin.ToString();
+            if (!isElim) return null;
+
+            var isFinal = f != null && f.RoundMatches.Contains(match);
+            var isSemiFinal = sf != null && sf.RoundMatches.Contains(match);
+            if (!isFinal && !isSemiFinal) return null;
+
+            // Final-mutual-DSQ in the consolation bracket type is auto-handled:
+            // bronze winners are promoted into the final once both bronzes have
+            // completed (any order). The alert tells the operator what to expect.
+            if (isFinal && code == BracketTypeEnum.OlympicConsilationFinalists.ToString())
+            {
+                // After CompleteMatch returns, the rebuild has either already
+                // fired (bronzes were done first) or it'll fire when bronzes
+                // complete. Detect by checking whether the final is now Pending —
+                // the rebuild resets it.
+                if (match.Status == MatchStatusEnum.Pending)
+                {
+                    return T("MatchResults_MutualDsq_FinalRebuilt",
+                        "Обоюдная DSQ в финале: в финал переведены победители схваток за 3-е место. Финал сыгран заново.");
+                }
+                return T("MatchResults_MutualDsq_FinalPending",
+                    "Обоюдная DSQ в финале: после завершения схваток за 3-е место их победители будут переведены в финал.");
+            }
+
+            return T("MatchResults_MutualDsq_ManualRebuild",
+                "Обоюдная DSQ в полуфинале/финале — требуется ручная перестройка сетки (правила УВВ).");
         }
 
         private void NavigateToMatches()
         {
-            if (DataContext.IsBracketView)
-            {
-                NavigateToView<BracketsViewModel>();
-            }
-            else
-            {
-                NavigateToView<ScheduleViewModel>();
-            }
+            NavigateToReturnTarget();
         }
 
-        private void BackToNavigateToHome()
+        // Restores the screen the operator was on before MatchControl took
+        // over (Phase 5 wrapper for the mat/schedule path, Phase 6 for the
+        // CompletedMatches path, etc.). Captured by MainWindowViewModel on
+        // the transition into the overlay.
+        private void NavigateToReturnTarget()
         {
-            WrestlingMatch.IsRedWon = Winner == WrestlingMatch.WrestlerInRed.ID;
-            WrestlingMatch.WinType = WinType;
-            WrestlingMatch.Note = Note;
-            WrestlingMatch.Status = MatchStatusEnum.Completed;
-            WrestlingMatch = null;
-
-            NavigateToView<HomeViewModel>();
+            var target = Navigation.ShellVm?.GetReturnVmType();
+            if (target != null) Navigation.NavigateToView(target);
+            else Navigation.NavigateToView<Tournament.Conducting.ConductingViewModel>();
         }
 
         private IGroupBracketProcessor GetProcessorForGroup(string processorType)
@@ -660,44 +831,75 @@ namespace Wrestling.UI.Material.Match
             // Match already completed we just need to init binding properties
             if (WrestlingMatch.Status == MatchStatusEnum.Completed)
             {
-                if (!WrestlingMatch.IsRedWon.HasValue || !WrestlingMatch.WinType.HasValue) throw new ApplicationException("Completed match does not have result provided!");
+                if (!WrestlingMatch.WinType.HasValue) throw new InvalidOperationException("Completed match must have WinType set.");
+                // Mutual DSQ / NoShow / Injury: completed without winner. Other completion types must have IsRedWon.
+                var initIsMutual = WrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify
+                                   || WrestlingMatch.WinType == MatchWinTypeEnum.MutualNoShow
+                                   || WrestlingMatch.WinType == MatchWinTypeEnum.MutualInjury;
+                if (!WrestlingMatch.IsRedWon.HasValue && !initIsMutual)
+                    throw new InvalidOperationException("Completed match must have IsRedWon set (or be a Mutual* outcome).");
 
                 WinType = WrestlingMatch.WinType.Value;
 
-                if (WrestlingMatch.IsRedWon.Value && WrestlingMatch.WrestlerInRed != null)
+                if (WrestlingMatch.IsRedWon.HasValue)
                 {
-                    Winner = WrestlingMatch.WrestlerInRed.ID;
-                }
-                else if (!WrestlingMatch.IsRedWon.Value && WrestlingMatch.WrestlerInBlue != null)
-                {
-                    Winner = WrestlingMatch.WrestlerInBlue.ID;
+                    if (WrestlingMatch.IsRedWon.Value && WrestlingMatch.WrestlerInRed != null)
+                    {
+                        Winner = WrestlingMatch.WrestlerInRed.ID;
+                    }
+                    else if (!WrestlingMatch.IsRedWon.Value && WrestlingMatch.WrestlerInBlue != null)
+                    {
+                        Winner = WrestlingMatch.WrestlerInBlue.ID;
+                    }
                 }
 
                 Note = WrestlingMatch.Note;
-                
+
+                // Completed-view advantage indicator: when scores are tied
+                // (action-win), light the yellow underline on whichever side
+                // won the tiebreaker (better-quality action, or last action).
+                // Without this the operator sees a 5:5 score on a finished
+                // action-win match with no visual cue why one side won.
+                if (WrestlingMatch.PointsRed == WrestlingMatch.PointsBlue && WrestlingMatch.PointsRed > 0)
+                {
+                    if (WrestlingMatch.BestActionRed != WrestlingMatch.BestActionBlue)
+                    {
+                        IsPlayer1WithAdvantage = WrestlingMatch.BestActionRed > WrestlingMatch.BestActionBlue;
+                        IsPlayer2WithAdvantage = !IsPlayer1WithAdvantage;
+                    }
+                    else
+                    {
+                        IsPlayer1WithAdvantage = WrestlingMatch.IsLastActionRed;
+                        IsPlayer2WithAdvantage = !WrestlingMatch.IsLastActionRed;
+                    }
+                }
+
                 return;
             }
-            
-            // If match not started select Tushe by default
-            if (!IsMatchStarted)
-            {
-                WinType = MatchWinTypeEnum.Tushe;
-                return;
-            }
-            
-            // Check if it is 3 warnings win
-            if (WrestlingMatch.WarningsNumberRed == 3)
+
+            // 3 warnings (VCA 5:0) takes precedence over the «match not
+            // started → Tushe» default — the auto-trigger from MatchControl
+            // can fire before the timer was ever started, so checking
+            // IsMatchStarted first would mask it. Use >= so an over-count
+            // (e.g. 4) still resolves correctly.
+            if (WrestlingMatch.WarningsNumberRed >= 3 && WrestlingMatch.WrestlerInBlue != null)
             {
                 Winner = WrestlingMatch.WrestlerInBlue.ID;
                 WinType = MatchWinTypeEnum.WarningsLimit;
                 return;
             }
-            
-            // Check if it is 3 warnings win
-            if (WrestlingMatch.WarningsNumberBlue == 3)
+
+            if (WrestlingMatch.WarningsNumberBlue >= 3 && WrestlingMatch.WrestlerInRed != null)
             {
                 Winner = WrestlingMatch.WrestlerInRed.ID;
                 WinType = MatchWinTypeEnum.WarningsLimit;
+                return;
+            }
+
+            // If match not started select Tushe by default
+            if (!IsMatchStarted)
+            {
+                WinType = MatchWinTypeEnum.Tushe;
                 return;
             }
 
@@ -736,14 +938,14 @@ namespace Wrestling.UI.Material.Match
                         IsPlayer1WithAdvantage = WrestlingMatch.BestActionRed > WrestlingMatch.BestActionBlue;
                         IsPlayer2WithAdvantage = WrestlingMatch.BestActionRed < WrestlingMatch.BestActionBlue;
                         Winner = WrestlingMatch.BestActionRed > WrestlingMatch.BestActionBlue ? WrestlingMatch.WrestlerInRed.ID : WrestlingMatch.WrestlerInBlue.ID;
-                        Note = "Победа присуждена по качеству результативного действия.";
+                        Note = T("MatchResults_AutoNote_ActionQuality", "Победа присуждена по качеству результативного действия.");
                     }
                     else
                     {
                         IsPlayer1WithAdvantage = WrestlingMatch.IsLastActionRed;
                         IsPlayer2WithAdvantage = !WrestlingMatch.IsLastActionRed;
                         Winner = WrestlingMatch.IsLastActionRed ? WrestlingMatch.WrestlerInRed.ID : WrestlingMatch.WrestlerInBlue.ID;
-                        Note = "При равном счете и равном качестве результативных действий победа присуждена по последнему действию.";
+                        Note = T("MatchResults_AutoNote_LastAction", "При равном счете и равном качестве результативных действий победа присуждена по последнему действию.");
                     }
 
                     WinType = MatchWinTypeEnum.ActionWin;

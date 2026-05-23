@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              md:DialogServiceViews.IsRegistered="True"
              mc:Ignorable="d" d:DesignHeight="200" d:DesignWidth="300">
 
@@ -17,9 +18,9 @@
         </Grid.RowDefinitions>
 
         <Grid Row="0" Margin="0 5 0 5">
-            <ComboBox Grid.Row="1" Grid.Column="0" materialDesign:HintAssist.Hint="Ковер" Style="{DynamicResource MaterialDesignFloatingHintComboBox}" 
+            <ComboBox Grid.Row="1" Grid.Column="0" materialDesign:HintAssist.Hint="{loc:Loc Slide_Mat}" Style="{DynamicResource MaterialDesignFloatingHintComboBox}"
                   IsEditable="False" Margin="0 5 0 5" FontSize="18"
-                  ItemsSource="{Binding Carpets}" SelectedItem="{Binding SelectedCarpet}">
+                  ItemsSource="{Binding Mats}" SelectedItem="{Binding SelectedMat}">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Margin="0" Padding="0" Text="{Binding Name}" />
@@ -28,7 +29,7 @@
             </ComboBox>
         </Grid>
 
-        <TextBox Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" materialDesign:HintAssist.Hint="Количество отображаемых схваток" FontSize="18"
+        <TextBox Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" materialDesign:HintAssist.Hint="{loc:Loc Slide_Upcoming_MatchCount}" FontSize="18"
                  Text="{Binding Path=ShowMatchesCount, UpdateSourceTrigger=PropertyChanged}" Style="{DynamicResource MaterialDesignFloatingHintTextBox}"/>
 
         <Grid Row="2" Margin="0 5 0 5">
@@ -37,11 +38,11 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <TextBox Grid.Column="0" VerticalAlignment="Center" materialDesign:HintAssist.Hint="Фоновое изображение слайдера" FontSize="18"
+            <TextBox Grid.Column="0" VerticalAlignment="Center" materialDesign:HintAssist.Hint="{loc:Loc Settings_Slider_BackgroundHint}" FontSize="18"
                      Text="{Binding Path=SliderBackgroundImagePath, UpdateSourceTrigger=PropertyChanged}" MaxWidth="400" Style="{DynamicResource MaterialDesignFloatingHintTextBox}"/>
 
             <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10,0,0,0">
-                <Button ToolTip="Указать путь к файлу" Margin="0" Padding="0" Width="22" Height="22"
+                <Button ToolTip="{loc:Loc Settings_Sound_PickFileTooltip}" Margin="0" Padding="0" Width="22" Height="22"
                         Command="{Binding SetSliderBackgroundCommand}"
                         CommandParameter="{Binding }" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <materialDesign:PackIcon Kind="DotsHorizontal" Width="22" Height="22" Margin="0" Padding="0" />
@@ -61,10 +62,9 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" TextWrapping="NoWrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}" 
-                       VerticalAlignment="Center" HorizontalAlignment="Center">
-                Прозрачность фонового изображения.
-            </TextBlock>
+            <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" TextWrapping="NoWrap" Margin="16 8 16 8" Foreground="{DynamicResource MaterialDesignBodyLight}"
+                       VerticalAlignment="Center" HorizontalAlignment="Center"
+                       Text="{loc:Loc Settings_Slider_OpacityLabel}" />
 
             <StackPanel Grid.Row="1" Grid.Column="0">
                 <Slider Margin="0,10,0,10" Height="120" Value="{Binding Path=SliderOpacityValue}" TickFrequency="5" Orientation="Vertical"

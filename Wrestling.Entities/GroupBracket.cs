@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Wrestling.Entities.Localization;
 
 namespace Wrestling.Entities
 {
@@ -26,6 +27,7 @@ namespace Wrestling.Entities
             {
                 _bracketTypeCode = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(BracketTypeDisplay));
             }
         }
 
@@ -36,6 +38,21 @@ namespace Wrestling.Entities
             {
                 _bracketTypeLabel = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(BracketTypeDisplay));
+            }
+        }
+
+        // Localized display name resolved per active language. Maps the
+        // persisted BracketTypeCode (enum name) to a JSON key like
+        // "BracketType_RoundRobin"; falls back to the persisted Russian
+        // BracketTypeLabel for legacy entities and unknown codes.
+        public string BracketTypeDisplay
+        {
+            get
+            {
+                var fallback = _bracketTypeLabel ?? string.Empty;
+                if (string.IsNullOrEmpty(_bracketTypeCode)) return fallback;
+                return EntityLocalization.T("BracketType_" + _bracketTypeCode, fallback);
             }
         }
 

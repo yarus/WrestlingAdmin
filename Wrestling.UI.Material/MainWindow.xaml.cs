@@ -1,12 +1,11 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Windows;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Threading;
 using MvvmDialogs;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material
 {
@@ -32,7 +31,7 @@ namespace Wrestling.UI.Material
             welcome.Tick += (_, _) =>
             {
                 welcome.Stop();
-                MainSnackbar.MessageQueue.Enqueue("Добро пожаловать в Администратор турниров по вольной борьбе!");
+                MainSnackbar.MessageQueue.Enqueue(T("MainWindow_Welcome", "Добро пожаловать в РОСБОС Сетка 2.0!"));
             };
             welcome.Start();
 
@@ -48,27 +47,14 @@ namespace Wrestling.UI.Material
             Close();
         }
 
-        private void UIElement_OnPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            //until we had a StaysOpen glag to Drawer, this will help with scroll bars
-            var dependencyObject = Mouse.Captured as DependencyObject;
-            while (dependencyObject != null)
-            {
-                if (dependencyObject is ScrollBar) return;
-                dependencyObject = VisualTreeHelper.GetParent(dependencyObject);
-            }
-
-            MenuToggleButton.IsChecked = false;
-        }
-
         protected override void OnClosing(CancelEventArgs e)
         {
             // show the message box here and collect the result
             var dialogService = _di.Resolve<IDialogService>();
 
             if (dialogService.ShowMessageBox(DataContext as MainWindowViewModel,
-                    "Вы уверены что хотите закрыть приложение? Все несохраненные данные будут утеряны!",
-                    "Требуется подтверждение", MessageBoxButton.OKCancel, MessageBoxImage.Information) !=
+                    T("MainWindow_ExitConfirm_Body", "Вы уверены что хотите закрыть приложение? Все несохраненные данные будут утеряны!"),
+                    T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) !=
                 MessageBoxResult.OK)
             {
                 e.Cancel = true;
@@ -81,6 +67,12 @@ namespace Wrestling.UI.Material
 
             var handler = _di.Resolve<IKeyHandler>();
             handler?.RiseKeyDown(e);
+        }
+
+        private static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
         }
     }
 }

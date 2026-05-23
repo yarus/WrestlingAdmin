@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using MvvmDialogs;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
@@ -19,8 +20,27 @@ public sealed class FakeShellViewModel : IShellViewModel
     public List<string> Snackbar { get; } = new();
     public int CloseRequests { get; private set; }
 
+    public IList<INavigationItem> NavigationItems { get; private set; } = new List<INavigationItem>();
+    public IList<INavigationItem> FooterNavigationItems { get; private set; } = new List<INavigationItem>();
+    public INavigationItem ActiveItem { get; set; }
+    public bool IsRailVisible { get; set; }
+    public bool IsSaveCommandVisible { get; set; }
+    public ICommand SaveCommand { get; set; }
+
+    public Dictionary<Type, Type> OverlayParents { get; } = new Dictionary<Type, Type>();
+    public HashSet<Type> MatchOverlays { get; } = new HashSet<Type>();
+    public Type ReturnVmType { get; set; }
+
     public void ShowSnackbarMessage(string message) => Snackbar.Add(message);
     public void RequestClose() => CloseRequests++;
+    public void SetNavigationItems(IList<INavigationItem> mainItems, IList<INavigationItem> footerItems)
+    {
+        NavigationItems = mainItems ?? new List<INavigationItem>();
+        FooterNavigationItems = footerItems ?? new List<INavigationItem>();
+    }
+    public void RegisterOverlayParent(Type overlay, Type parent) { if (overlay != null && parent != null) OverlayParents[overlay] = parent; }
+    public void RegisterMatchOverlay(Type matchOverlay) { if (matchOverlay != null) MatchOverlays.Add(matchOverlay); }
+    public Type GetReturnVmType() => ReturnVmType;
 }
 
 public sealed class FakeNavigationService : INavigationService
@@ -29,9 +49,15 @@ public sealed class FakeNavigationService : INavigationService
     public List<Type> NavigatedTo { get; } = new();
     public int CloseApps { get; private set; }
     public List<ViewModelBase> PrintPreviews { get; } = new();
+    public Dictionary<Type, ViewModelBase> RegisteredViewModels { get; } = new();
 
     public void LoadNavigation() { }
     public void NavigateToView<T>() where T : ViewModelBase => NavigatedTo.Add(typeof(T));
+    public void NavigateToView(Type t) { if (t != null) NavigatedTo.Add(t); }
+    public T GetViewModel<T>() where T : ViewModelBase
+        => RegisteredViewModels.TryGetValue(typeof(T), out var vm) ? vm as T : null;
+    public ViewModelBase GetViewModel(Type t)
+        => t != null && RegisteredViewModels.TryGetValue(t, out var vm) ? vm : null;
     public void ShowPrintPreview(ViewModelBase vm) => PrintPreviews.Add(vm);
     public void CloseApp() => CloseApps++;
 }
@@ -43,7 +69,7 @@ public sealed class FakeTournamentsManager : ITournamentsManager
     public int SaveAsyncCount { get; private set; }
 
     public WTournament LoadFromFile(string fileName) => Store.TryGetValue(fileName, out var t) ? t : null;
-    public Task<WTournament> LoadFromFileAsync(string fileName) => Task.FromResult(LoadFromFile(fileName));
+    public Task<WTournament> LoadFromFileAsync(string fileName, System.Threading.CancellationToken cancellationToken = default) => Task.FromResult(LoadFromFile(fileName));
 
     public bool SaveToFile(WTournament item, string fileName)
     {
@@ -53,7 +79,7 @@ public sealed class FakeTournamentsManager : ITournamentsManager
         return true;
     }
 
-    public Task<bool> SaveToFileAsync(WTournament item, string fileName)
+    public Task<bool> SaveToFileAsync(WTournament item, string fileName, System.Threading.CancellationToken cancellationToken = default)
     {
         Store[fileName] = item;
         item.FileName = fileName;

@@ -7,12 +7,9 @@ namespace Wrestling.Entities
         public static string DefaultSliderImage = AppDomain.CurrentDomain.BaseDirectory + "Images\\SliderLogo.jpg";
         public static string DefaultStartGongSound = AppDomain.CurrentDomain.BaseDirectory + "Sounds\\SingleGongBeep.wav";
         public static string DefaultEndGongSound = AppDomain.CurrentDomain.BaseDirectory + "Sounds\\TripleGongBeep.wav";
-        public static string DefaultVideosPath = AppDomain.CurrentDomain.BaseDirectory + "Videos";
 
         private bool _isTimerBackward;
         private bool _isSoundEnabled;
-        private bool _isAutosaveEnabled;
-        private int _autosaveMaxSecond;
         private int _sliderMaxSecond;
         private int _sliderOpacityValue;
         private string _sliderBackgroundImagePath;
@@ -21,19 +18,27 @@ namespace Wrestling.Entities
         private int _maxRoundSecond;
         private int _maxTimeoutSecond;
         private int _maxActionSecond;
-        private bool _isTournamentScoreInternational;
 
-        private bool _isVideoRecordingEnabled;
-        private string _videoStoragePath;
         private bool _isOverlayOlympic;
 
         private string _integrationUserName;
         private string _integrationPassword;
 
+        private bool _isBackupEnabled;
+        private int _maxBackupCount;
+        private string _backupFolderPath;
+
+        private int _discoveryPort;
+        private bool _isHttpServerEnabled;
+        private int _httpServerPort;
+        private string _nodeName;
+        private string _announceIpOverride;
+
+        private string _signatureFooterImagePath;
+
         public GlobalSettings()
         {
-            AutosaveMaxSecond = 30;
-            SliderMaxSecond = 10;
+            SliderMaxSecond = 15;
             SliderOpacityValue = 25;
             SliderBackgroundImagePath = DefaultSliderImage;
             StartGongSoundPath = DefaultStartGongSound;
@@ -41,9 +46,31 @@ namespace Wrestling.Entities
             MaxRoundSecond = 180;
             MaxTimeoutSecond = 30;
             MaxActionSecond = 30;
-            IsTournamentScoreInternational = true;
             IsOverlayOlympic = true;
-            VideoStoragePath = DefaultVideosPath;
+            IsBackupEnabled = true;
+            MaxBackupCount = 20;
+            BackupFolderPath = string.Empty;
+            DiscoveryPort = 24565;
+            IsHttpServerEnabled = true;
+            HttpServerPort = 24566;
+            // Default NodeName to the machine's host name so a fresh tournament
+            // is immediately discoverable on the LAN without operator setup.
+            // The user can override later from the Settings screen.
+            NodeName = SafeMachineName();
+            AnnounceIpOverride = string.Empty;
+        }
+
+        private static string SafeMachineName()
+        {
+            try
+            {
+                var name = Environment.MachineName;
+                return string.IsNullOrWhiteSpace(name) ? string.Empty : name;
+            }
+            catch
+            {
+                return string.Empty;
+            }
         }
 
         public string IntegrationUserName
@@ -63,37 +90,6 @@ namespace Wrestling.Entities
             {
                 _integrationPassword = value;
                 OnPropertyChanged("IntegrationPassword");
-            }
-        }
-
-        public string VideoStoragePath
-        {
-            get { return _videoStoragePath; }
-            set
-            {
-                _videoStoragePath = value;
-                OnPropertyChanged("VideoStoragePath");
-            }
-        }
-        
-        public bool IsVideoRecordingEnabled
-        {
-            get { return _isVideoRecordingEnabled; }
-            set
-            {
-                _isVideoRecordingEnabled = value;
-                
-                OnPropertyChanged("IsVideoRecordingEnabled");
-            }
-        }
-
-        public bool IsTournamentScoreInternational
-        {
-            get { return _isTournamentScoreInternational; }
-            set
-            {
-                _isTournamentScoreInternational = value;
-                OnPropertyChanged("IsTournamentScoreInternational");
             }
         }
 
@@ -157,16 +153,6 @@ namespace Wrestling.Entities
             }
         }
 
-        public bool IsAutosaveEnabled
-        {
-            get { return _isAutosaveEnabled; }
-            set
-            {
-                _isAutosaveEnabled = value;
-                OnPropertyChanged("IsAutosaveEnabled");
-            }
-        }
-
         public double SliderOpacity => (double)_sliderOpacityValue/100;
 
         public int SliderOpacityValue
@@ -187,16 +173,6 @@ namespace Wrestling.Entities
             {
                 _sliderMaxSecond = value;
                 OnPropertyChanged("SliderMaxSecond");
-            }
-        }
-
-        public int AutosaveMaxSecond
-        {
-            get { return _autosaveMaxSecond; }
-            set
-            {
-                _autosaveMaxSecond = value;
-                OnPropertyChanged("AutosaveMaxSecond");
             }
         }
 
@@ -226,6 +202,104 @@ namespace Wrestling.Entities
             {
                 _isOverlayOlympic = value;
                 OnPropertyChanged("IsOverlayOlympic");
+            }
+        }
+
+        public bool IsBackupEnabled
+        {
+            get { return _isBackupEnabled; }
+            set
+            {
+                _isBackupEnabled = value;
+                OnPropertyChanged("IsBackupEnabled");
+            }
+        }
+
+        public int MaxBackupCount
+        {
+            get { return _maxBackupCount; }
+            set
+            {
+                _maxBackupCount = value;
+                OnPropertyChanged("MaxBackupCount");
+            }
+        }
+
+        public string BackupFolderPath
+        {
+            get { return _backupFolderPath; }
+            set
+            {
+                _backupFolderPath = value;
+                OnPropertyChanged("BackupFolderPath");
+            }
+        }
+
+        public int DiscoveryPort
+        {
+            get { return _discoveryPort; }
+            set
+            {
+                _discoveryPort = value;
+                OnPropertyChanged("DiscoveryPort");
+            }
+        }
+
+        public bool IsHttpServerEnabled
+        {
+            get { return _isHttpServerEnabled; }
+            set
+            {
+                _isHttpServerEnabled = value;
+                OnPropertyChanged("IsHttpServerEnabled");
+            }
+        }
+
+        public int HttpServerPort
+        {
+            get { return _httpServerPort; }
+            set
+            {
+                _httpServerPort = value;
+                OnPropertyChanged("HttpServerPort");
+            }
+        }
+
+        public string NodeName
+        {
+            get { return _nodeName; }
+            set
+            {
+                _nodeName = value;
+                OnPropertyChanged("NodeName");
+            }
+        }
+
+        // Manual override for the IP advertised in the HTTP URL announced to
+        // peers. Empty string means "auto-pick the first private-range IPv4
+        // via LocalIpAddressProbe.PickDefault()" — preserves legacy behavior.
+        // Operators set this when a laptop has multiple NICs and the auto
+        // pick lands on the wrong subnet (e.g. a hotspot interface instead
+        // of the tournament LAN).
+        public string AnnounceIpOverride
+        {
+            get { return _announceIpOverride; }
+            set
+            {
+                _announceIpOverride = value;
+                OnPropertyChanged("AnnounceIpOverride");
+            }
+        }
+
+        // Absolute path to a stamp+signatures image overlaid on the bottom of
+        // every printed/exported protocol. Empty/null = no overlay (default).
+        public string SignatureFooterImagePath
+        {
+            get { return _signatureFooterImagePath; }
+            set
+            {
+                _signatureFooterImagePath = value;
+                OnPropertyChanged("SignatureFooterImagePath");
             }
         }
     }

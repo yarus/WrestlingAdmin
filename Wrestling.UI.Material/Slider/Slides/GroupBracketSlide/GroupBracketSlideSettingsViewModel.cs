@@ -6,21 +6,31 @@ using MvvmDialogs.FrameworkDialogs.OpenFile;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
+using Wrestling.UI.Utils.Localization;
 
 namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
 {
     public class GroupBracketSlideSettingsViewModel : ViewModelBase, ISliderSettingsControl
     {
-        private ObservableCollection<Carpet> _carpets;
+        private ObservableCollection<Mat> _mats;
         private ObservableCollection<AgeWeightGroup> _groups;
         private AgeWeightGroup _selectedGroup;
-        private Carpet _selectedCarpet;
+        private Mat _selectedMat;
         private ScreenSlide _item;
 
         private int _sliderOpacityValue;
         private string _sliderBackgroundImagePath;
 
         private ICommand _setSliderBackgroundCommand;
+
+        // Auto-title state. When the user picks a group we default the slide
+        // Title to the group name, but a manual edit in the dialog's TextBox
+        // must stick across subsequent selections. _lastAutoTitle is the last
+        // value we wrote — the setter only overwrites Title if it still equals
+        // that value (or is empty). _isInitializing suppresses auto-fill while
+        // InitContext is populating selections from saved NamedValues.
+        private bool _isInitializing;
+        private string _lastAutoTitle;
 
         public GroupBracketSlideSettingsViewModel(IDiContainer container) : base(container)
         {
@@ -30,7 +40,7 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
         {
             base.InitData();
 
-            Carpets = DataContext.Tournament.Carpets;
+            Mats = DataContext.Tournament.Mats;
 
             Groups = DataContext.Tournament.Groups;
         }
@@ -87,40 +97,56 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
                 _selectedGroup = value;
 
                 _item.SetNamedValue("GroupID", _selectedGroup?.ID);
-                
+
+                if (!_isInitializing)
+                {
+                    UpdateAutoTitle(_selectedGroup?.Name);
+                }
+
                 OnPropertyChanged("SelectedGroup");
             }
         }
 
-        public Carpet SelectedCarpet
+        private void UpdateAutoTitle(string newAutoTitle)
         {
-            get { return _selectedCarpet; }
+            if (_item == null || string.IsNullOrEmpty(newAutoTitle)) return;
+
+            if (string.IsNullOrWhiteSpace(_item.Title) || _item.Title == _lastAutoTitle)
+            {
+                _item.Title = newAutoTitle;
+                _lastAutoTitle = newAutoTitle;
+            }
+        }
+
+        public Mat SelectedMat
+        {
+            get { return _selectedMat; }
             set
             {
-                _selectedCarpet = value;
+                _selectedMat = value;
 
-                _item.SetNamedValue("CarpetID", _selectedCarpet?.ID);
+                _item.SetNamedValue("MatID", _selectedMat?.ID);
 
-                if (_selectedCarpet == null)
+                if (_selectedMat == null)
                 {
                     Groups = DataContext.Tournament.Groups;
                 }
                 else
                 {
-                    Groups = _selectedCarpet.Groups;
+                    Groups = _selectedMat.Groups;
                 }
 
-                OnPropertyChanged("SelectedCarpet");
+                OnPropertyChanged("SelectedMat");
             }
         }
 
-        public ObservableCollection<Carpet> Carpets
+        public ObservableCollection<Mat> Mats
         {
-            get { return _carpets; }
+            get { return _mats; }
             set
             {
-                _carpets = value;
-                OnPropertyChanged("Carpets");
+                _mats = value;
+                OnPropertyChanged("Mats");
             }
         }
 
@@ -136,21 +162,38 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
 
         public void InitContext(ScreenSlide slide)
         {
+            _isInitializing = true;
+            try
+            {
+                InitContextCore(slide);
+            }
+            finally
+            {
+                // Seed _lastAutoTitle from the loaded selection so re-picking
+                // another group still auto-fills when the user hadn't typed a
+                // custom title on this slide before.
+                _lastAutoTitle = _selectedGroup?.Name;
+                _isInitializing = false;
+            }
+        }
+
+        private void InitContextCore(ScreenSlide slide)
+        {
             InitData();
 
             _item = slide;
 
             if (slide == null) return;
 
-            var carpetID = _item.GetNamedValue("CarpetID");
-            if (carpetID != null)
+            var matID = _item.GetNamedValue("MatID");
+            if (matID != null)
             {
-                var carpetGuid = new Guid(carpetID.ToString());
-                SelectedCarpet = DataContext.Tournament.Carpets.FirstOrDefault(c => c.ID == carpetGuid);
+                var matGuid = new Guid(matID.ToString());
+                SelectedMat = DataContext.Tournament.Mats.FirstOrDefault(c => c.ID == matGuid);
             }
             else
             {
-                SelectedCarpet = null;
+                SelectedMat = null;
             }
 
             var groupID = _item.GetNamedValue("GroupID");
@@ -158,9 +201,9 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
             {
                 var groupGuid = new Guid(groupID.ToString());
 
-                if (SelectedCarpet != null)
+                if (SelectedMat != null)
                 {
-                    SelectedGroup = SelectedCarpet.Groups.FirstOrDefault(g => g.ID == groupGuid);
+                    SelectedGroup = SelectedMat.Groups.FirstOrDefault(g => g.ID == groupGuid);
                 }
                 else
                 {
@@ -193,13 +236,19 @@ namespace Wrestling.UI.Material.Slider.Slides.GroupBracketSlide
             }
         }
 
+        private static string T(string key, string fallback)
+        {
+            var value = LocalizationService.Instance?.T(key);
+            return string.IsNullOrEmpty(value) || value == key ? fallback : value;
+        }
+
         private void SetSliderBackground()
         {
             var settings = new OpenFileDialogSettings
             {
-                Title = "Открыть файл с изображением",
+                Title = T("OpenImage_DialogTitle", "Открыть файл с изображением"),
                 InitialDirectory = string.IsNullOrEmpty(SliderBackgroundImagePath) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : SliderBackgroundImagePath,
-                Filter = "Изображения (*.jpg)|*.jpg|All Files (*.*)|*.*"
+                Filter = T("ImageFilter", "Изображения (*.jpg)|*.jpg|All Files (*.*)|*.*")
             };
 
             bool? success = Dialog.ShowOpenFileDialog(this, settings);
