@@ -68,7 +68,7 @@
                                    VerticalAlignment="Center"
                                    Foreground="{DynamicResource MaterialDesignBodyLight}" />
                         <Button HorizontalAlignment="Right" VerticalAlignment="Center"
-                                Style="{StaticResource MaterialDesignFlatButton}"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
                                 Padding="8,2"
                                 Command="{Binding OpenMatBoardCommand}"
                                 ToolTip="{loc:Loc Conducting_Redistribute_Tooltip}"
