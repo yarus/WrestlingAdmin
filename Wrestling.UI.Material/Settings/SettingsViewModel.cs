@@ -4,8 +4,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Media;
-using System.Security.AccessControl;
-using System.Security.Principal;
 using System.Windows.Input;
 using Wrestling.UI.Material.Utils;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
@@ -28,7 +26,6 @@ namespace Wrestling.UI.Material.Settings
         private ICommand _browseSignatureFooterImageCommand;
         private ICommand _removeSignatureFooterImageCommand;
 
-        private string _validation;
         private GlobalSettings _subscribedItem;
         private ILocalizationService _localization;
         private ILocalUiSettingsStorage _localUiStorage;
@@ -147,74 +144,6 @@ namespace Wrestling.UI.Material.Settings
             : _localization.T("Settings_PageTitle");
 
         public GlobalSettings Item { get; set; }
-
-        public string Validation
-        {
-            get { return _validation; }
-            set
-            {
-                _validation = value;
-
-                OnPropertyChanged("Validation");
-            }
-        }
-
-        public bool IsAuthenticated
-        {
-            get { return DataContext.IsAuthenticated; }
-            set
-            {
-                DataContext.IsAuthenticated = value;
-
-                if (value)
-                {
-                    Validation = string.Empty;
-                }
-
-                OnPropertyChanged("IsAuthenticated");
-            }
-        }
-
-        private void CheckTeamLogo()
-        {
-            foreach (var app in DataContext.TeamsCache)
-            {
-                if (string.IsNullOrEmpty(app.EmblemPath)) continue;
-                
-                // get file name and check if it exists
-                var fileNameItems = app.EmblemPath.Split('\\');
-                var fileName = fileNameItems[fileNameItems.Length - 1];
-
-                var storagePath = Path.GetFullPath("Images");
-
-                EnsureUploadFolder(storagePath);
-
-                var fullPath = $"{storagePath}\\{fileName}";
-
-                if (File.Exists(fullPath))
-                {
-                    app.EmblemPath = fullPath;
-                }
-            }
-        }
-
-        private void EnsureUploadFolder(string folder)
-        {
-            Directory.CreateDirectory(folder);
-
-            DirectoryInfo dInfo = new DirectoryInfo(folder);
-
-            DirectorySecurity dSecurity = dInfo.GetAccessControl();
-
-            dSecurity.AddAccessRule(new FileSystemAccessRule(
-                    new SecurityIdentifier(WellKnownSidType.WorldSid, null),
-                    FileSystemRights.FullControl,
-                    InheritanceFlags.ObjectInherit | InheritanceFlags.ContainerInherit,
-                    PropagationFlags.NoPropagateInherit,
-                    AccessControlType.Allow));
-
-            dInfo.SetAccessControl(dSecurity);
-        }
 
         public ICommand PlayStartGongCommand
         {

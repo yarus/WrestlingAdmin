@@ -34,8 +34,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
         private IList<CommandButtonItem> _quickButtons;
 
-        private bool IsTeamTournament => true;
-
         #endregion
 
         public DrawViewModel(IDiContainer container) : base(container)

@@ -12,14 +12,12 @@ namespace Wrestling.UI.Material.Tournament.Conducting
     // tick — cheap, and avoids leaking PropertyChanged plumbing into Mat.
     public sealed class MatProgressCardViewModel
     {
-        private readonly Entities.Tournament _tournament;
         private readonly Action<Mat, TournamentPart> _advance;
         private ICommand _advanceCommand;
 
         public MatProgressCardViewModel(Mat mat, Entities.Tournament tournament, Action<Mat, TournamentPart> advance)
         {
             Mat = mat;
-            _tournament = tournament;
             _advance = advance;
             ActivePartName = ResolveActivePartName(mat, tournament);
             HasMultipleParts = (tournament?.Parts?.Count ?? 0) > 1;
