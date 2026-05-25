@@ -1,0 +1,232 @@
+<UserControl x:Class="Wrestling.UI.Material.Tournament.Conducting.MatBoardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
+             xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+             mc:Ignorable="d"
+             md:DialogServiceViews.IsRegistered="True"
+             d:DesignHeight="700" d:DesignWidth="1100">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+
+    <Grid x:Name="RootControl" Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Part tabs — pick which part to redistribute. Defaults to the
+             part most mats are currently running. Hidden when the tournament
+             has a single part (then it's just the mat columns below). -->
+        <TabControl Grid.Row="0" Margin="0,0,0,12"
+                    BorderThickness="0" Background="Transparent" Padding="0"
+                    ItemsSource="{Binding AvailableParts}"
+                    SelectedItem="{Binding SelectedPart, Mode=TwoWay}"
+                    Visibility="{Binding HasMultipleParts, Converter={StaticResource BoolToVis}}">
+            <TabControl.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+            <!-- Empty content template: the mat columns are rendered by the
+                 separate ItemsControl below (bound to Columns, which the VM
+                 already filters by SelectedPart). The TabControl is used as
+                 a selector strip only. -->
+            <TabControl.ContentTemplate>
+                <DataTemplate />
+            </TabControl.ContentTemplate>
+        </TabControl>
+
+        <!-- Horizontally-scrolling row of mat columns. ScrollViewer's
+             HorizontalScrollBarVisibility=Auto kicks in only when more than
+             N columns fit; on 3-4 mats the WrapPanel/StackPanel doesn't
+             scroll at all. -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Columns}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <materialDesign:Card Width="260" Margin="0,0,12,0" Padding="0"
+                                             materialDesign:ElevationAssist.Elevation="Dp2"
+                                             VerticalAlignment="Top">
+                            <DockPanel LastChildFill="True">
+
+                                <!-- Column header: mat name + active part chip + X/Y +
+                                     "свободен" hint + per-column advance button. -->
+                                <Border DockPanel.Dock="Top" Padding="12,10,12,10"
+                                        BorderBrush="{DynamicResource MaterialDesignDivider}"
+                                        BorderThickness="0,0,0,1">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16" />
+                                        <Border Margin="0,4,0,0" Padding="6,2,6,2"
+                                                Background="{DynamicResource MaterialDesignChipBackground}"
+                                                CornerRadius="3" HorizontalAlignment="Left"
+                                                Visibility="{Binding HasMultipleParts, Converter={StaticResource BoolToVis}}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding ActivePartName}" FontSize="11" FontWeight="SemiBold" />
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBlock Margin="0,4,0,0"
+                                                   Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                   FontSize="13"
+                                                   Text="{Binding ProgressLabel}" />
+                                        <Border Margin="0,8,0,0" Padding="6,3,6,3"
+                                                Background="{DynamicResource MaterialDesignChipBackground}"
+                                                CornerRadius="3"
+                                                HorizontalAlignment="Left"
+                                                Visibility="{Binding IsFree, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="{Binding FreeHint}" FontSize="11"
+                                                       Foreground="{DynamicResource MaterialDesignBody}" />
+                                        </Border>
+                                        <Button Margin="0,8,0,0" Padding="6,3"
+                                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                                HorizontalAlignment="Left"
+                                                Visibility="{Binding CanAdvance, Converter={StaticResource BoolToVis}}"
+                                                Command="{Binding AdvanceCommand}"
+                                                ToolTip="{loc:Loc Conducting_AdvancePart_Tooltip}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="ArrowRightBold" Width="14" Height="14"
+                                                                         VerticalAlignment="Center" Margin="0,0,4,0" />
+                                                <TextBlock VerticalAlignment="Center" FontSize="12">
+                                                    <Run Text="→ " /><Run Text="{Binding NextPartName, Mode=OneWay}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Sections: Live → Active → Completed (collapsed). -->
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                              MaxHeight="600">
+                                    <StackPanel Margin="8,8,8,8">
+
+                                        <!-- Live -->
+                                        <StackPanel Margin="0,0,0,8" Visibility="{Binding HasLive, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="{loc:Loc MatBoard_Section_Live}" FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       Margin="4,0,0,4"
+                                                       Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                            <ItemsControl ItemsSource="{Binding LiveRows}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Padding="6,6,6,6" Margin="0,0,0,4"
+                                                                Background="{DynamicResource PrimaryHueLightBrush}"
+                                                                CornerRadius="3">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <StackPanel Grid.Column="0">
+                                                                    <TextBlock Text="{Binding Name}" FontSize="13"
+                                                                               FontWeight="SemiBold"
+                                                                               Foreground="{DynamicResource MaterialDesignBody}" />
+                                                                    <TextBlock Text="{Binding ProgressLabel}" FontSize="11"
+                                                                               Foreground="{DynamicResource MaterialDesignBody}" />
+                                                                </StackPanel>
+                                                                <materialDesign:PackIcon Grid.Column="1"
+                                                                                         Kind="PlayCircle" Width="20" Height="20"
+                                                                                         VerticalAlignment="Center"
+                                                                                         ToolTip="{loc:Loc MatBoard_LiveBadge_Tooltip}" />
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+
+                                        <!-- Active -->
+                                        <StackPanel Margin="0,0,0,8" Visibility="{Binding HasActive, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="{loc:Loc MatBoard_Section_Active}" FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       Margin="4,0,0,4"
+                                                       Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                            <ItemsControl ItemsSource="{Binding ActiveRows}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Padding="6,4,4,4" Margin="0,0,0,2">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <StackPanel Grid.Column="0">
+                                                                    <TextBlock Text="{Binding Name}" FontSize="13" />
+                                                                    <TextBlock Text="{Binding ProgressLabel}" FontSize="11"
+                                                                               Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                                                </StackPanel>
+                                                                <materialDesign:PopupBox Grid.Column="1"
+                                                                                         PlacementMode="LeftAndAlignTopEdges"
+                                                                                         StaysOpen="False"
+                                                                                         ToolTipService.ToolTip="{loc:Loc MatBoard_MoveTo_Header}">
+                                                                    <materialDesign:PopupBox.ToggleContent>
+                                                                        <materialDesign:PackIcon Kind="SwapHorizontal" Width="20" Height="20" />
+                                                                    </materialDesign:PopupBox.ToggleContent>
+                                                                    <StackPanel MinWidth="180">
+                                                                        <TextBlock Text="{loc:Loc MatBoard_MoveTo_Header}"
+                                                                                   FontWeight="SemiBold"
+                                                                                   Margin="12,8,12,4"
+                                                                                   Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                                                        <ItemsControl ItemsSource="{Binding OtherMats}">
+                                                                            <ItemsControl.ItemTemplate>
+                                                                                <DataTemplate>
+                                                                                    <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                                                                            HorizontalContentAlignment="Left"
+                                                                                            Padding="12,6"
+                                                                                            Command="{Binding MoveCommand}"
+                                                                                            Content="{Binding Label}" />
+                                                                                </DataTemplate>
+                                                                            </ItemsControl.ItemTemplate>
+                                                                        </ItemsControl>
+                                                                    </StackPanel>
+                                                                </materialDesign:PopupBox>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+
+                                        <!-- Completed (collapsed expander) -->
+                                        <Expander Visibility="{Binding HasCompleted, Converter={StaticResource BoolToVis}}"
+                                                  Background="Transparent" BorderThickness="0" Padding="0">
+                                            <Expander.Header>
+                                                <TextBlock FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource MaterialDesignBodyLight}">
+                                                    <Run Text="{loc:Loc MatBoard_Section_Completed}" />
+                                                    <Run Text=" (" /><Run Text="{Binding CompletedRows.Count, Mode=OneWay}" /><Run Text=")" />
+                                                </TextBlock>
+                                            </Expander.Header>
+                                            <ItemsControl ItemsSource="{Binding CompletedRows}" Margin="4,4,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Margin="0,0,0,2">
+                                                            <TextBlock Text="{Binding Name}" FontSize="12"
+                                                                       Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                                            <TextBlock Text="{Binding ProgressLabel}" FontSize="11"
+                                                                       Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Expander>
+
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </materialDesign:Card>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

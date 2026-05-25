@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. Cross-project working principles live in `../CLAUDE.md`.
 
 ## Active punch-list
 
@@ -8,11 +8,11 @@ Operational issues raised after real tournaments are tracked in **`docs/TodoList
 
 ## What this is
 
-WPF desktop application for administrating and running freestyle wrestling tournaments: team/wrestler registration, automatic bracket generation, match control with live scoring and timers, multi-mat scheduling, result calculation, broadcast/projection slides, and printed reports. UI is **Russian-only** (hardcoded `ru-RU` culture, no resource files) — keep new strings in Russian unless the user asks to introduce localization.
+WPF desktop application for administrating and running freestyle wrestling tournaments: team/wrestler registration, automatic bracket generation, match control with live scoring and timers, multi-mat scheduling, result calculation, broadcast/projection slides, and printed reports. Primary UI language is Russian; English is available via the localization layer (see the Localization subsection under Architecture).
 
 ## Build and run
 
-Solution file: `Wrestling.sln`. Libraries target `netstandard2.0`, UI projects target `net9.0-windows`. Release builds produce x64 binaries via `PlatformTarget` set in the csproj — the `.sln` platform mapping is intentionally kept at `AnyCPU` so a single `dotnet build -c Release` works without `-p:Platform=x64` tweaks. Windows-only (WPF).
+Solution file: `Wrestling.sln`. All projects target `net10.0` (UI/Utils: `net10.0-windows`). Release builds produce x64 binaries via `PlatformTarget` set in the csproj — the `.sln` platform mapping is intentionally kept at `AnyCPU` so a single `dotnet build -c Release` works without `-p:Platform=x64` tweaks. Windows-only (WPF).
 
 ```bash
 dotnet restore Wrestling.sln
@@ -29,24 +29,24 @@ xUnit test projects under `tests/` — one per library under test:
 - `tests/Wrestling.Providers.Tests` — adapter round-trip, cache manager
 - `tests/Wrestling.DataAccess.Tests` — storage layer (JSON), atomic write, error paths
 
-Run: `dotnet test Wrestling.sln`. All three test projects target `net9.0` and use xUnit + FluentAssertions.
+Run: `dotnet test Wrestling.sln`. Test projects target `net10.0` (`Wrestling.UI.Material.Tests` is `net10.0-windows`) and use xUnit + FluentAssertions.
 
 ## Project layout and dependency direction
 
 Strict layering — dependencies go bottom-up, never sideways or reversed:
 
 ```
-Wrestling.Entities     (netstandard2.0) — domain model, bracket logic, result calculators
+Wrestling.Entities     (net10.0)         — domain model, bracket logic, result calculators
         ↑
-Wrestling.Data         (netstandard2.0) — serializable DTOs ("*Info" classes)
+Wrestling.Data         (net10.0)         — serializable DTOs ("*Info" classes)
         ↑
-Wrestling.DataAccess   (netstandard2.0) — file-based repositories (JSON/XML)
+Wrestling.DataAccess   (net10.0)         — file-based repositories (JSON/XML)
         ↑
-Wrestling.Providers    (netstandard2.0) — services (TournamentsManager, CacheManager, EntityToInfoAdapter)
+Wrestling.Providers    (net10.0)         — services (TournamentsManager, CacheManager, EntityToInfoAdapter)
         ↑
-Wrestling.UI.Utils     (net9.0-windows) — hand-rolled MVVM primitives, converters, DI container
+Wrestling.UI.Utils     (net10.0-windows) — hand-rolled MVVM primitives, converters, DI container
         ↑
-Wrestling.UI.Material  (net9.0-windows) — WPF app (EXE): views, view models, navigation, DI wiring
+Wrestling.UI.Material  (net10.0-windows) — WPF app (EXE): views, view models, navigation, DI wiring
 ```
 
 Domain logic lives in `Wrestling.Entities` (computed properties like `IsApplicationValid`, scoring, validation). Keep it out of view models.
@@ -76,7 +76,7 @@ Domain logic lives in `Wrestling.Entities` (computed properties like `IsApplicat
 - Tournaments serialize to `.wrt` files (plain JSON via Newtonsoft.Json 13.x) via `ITournamentsManager` / `TournamentsManager` in `Wrestling.Providers`.
 - Entity ↔ DTO mapping lives in `EntityToInfoAdapter` (`Wrestling.Providers`). When you add a new entity field, update **both** directions of the adapter and its `*Info` counterpart in `Wrestling.Data`, otherwise the field won't round-trip through save/load.
 - Schema migration is implicit — use constructor defaults on the `*Info` DTO (Newtonsoft calls the parameterless ctor before overlaying JSON, so missing fields in old files stay at the ctor value) **and/or** adapter-level normalization (e.g. `if (entity.MaxBackupCount <= 0) entity.MaxBackupCount = 10`). Old `.wrt` files must keep opening.
-- **Removing a persisted field is safe** — Newtonsoft silently drops unknown JSON properties on load. No migration needed. (Example: `IsVideoRecordingEnabled` / `VideStoragePath` were removed in 2026-04-20 cleanup; legacy files still open.)
+- **Removing a persisted field is safe** — Newtonsoft silently drops unknown JSON properties on load. No migration needed.
 - Wrestler / team caches: `Cache_Wrestlers.json`, `Cache_Teams.json` under `%LocalAppData%/WrestlingAdmin/`, managed by `CacheManager`. Crash backups: `%LocalAppData%/WrestlingAdmin/Backups/*.wrt`. Crash log: `%LocalAppData%/WrestlingAdmin/Logs/error_log_<yyyyMMdd>.txt`. Data-access log (load/backup failures, classified): `%LocalAppData%/WrestlingAdmin/Logs/data_log_<yyyyMMdd>.txt` via `FileLogger` in `Wrestling.DataAccess`.
 
 ### Tournament save pipeline — atomic write + backup + verify
@@ -93,7 +93,7 @@ Policy lives on the tournament being saved (`info.Settings.IsBackupEnabled` / `M
 
 ### Load paths never throw for expected I/O or parse errors
 
-`JsonStorageDataAccess.ReadFromFile{,Async}` deliberately returns `default(T)` for file-not-found, `IOException`, `UnauthorizedAccessException`, `JsonException`, `SocketException`, `TimeoutException`, `ArgumentException`, `SecurityException`, `PathTooLongException`, `NotSupportedException`, `FormatException`. The import feature polls network/UNC paths on a timer during live matches; a WiFi drop must not crash the app. Each failure logs a classification tag (`Corrupt` / `AccessDenied` / `Transient` / `InvalidPath` / `NotFound` / `IO` / `Other`) to `data_log_<date>.txt` plus retry count. Network paths (UNC or mapped network drives) get 3–5 retries with exponential backoff; local paths one shot.
+`JsonStorageDataAccess.ReadFromFile{,Async}` deliberately returns `default(T)` for file-not-found, `IOException`, `UnauthorizedAccessException`, `JsonException`, `SocketException`, `TimeoutException`, `ArgumentException`, `SecurityException`, `PathTooLongException`, `NotSupportedException`, `FormatException`. The import feature polls network/UNC paths on a timer during live matches; a WiFi drop must not crash the app. Each failure logs a classification tag (`Corrupt` / `AccessDenied` / `Transient` / `InvalidPath` / `NotFound` / `IO` / `Other`) to `data_log_<date>.txt` plus retry count. Retry counts on transient errors: async path uses 5 (network) / 3 (local), sync path uses 3 (network) / 1 (local), 200 ms initial delay with exponential backoff. Most call sites are on the async path.
 
 `ITournamentImporter` is split into two phases to keep UI responsive during timer-driven imports:
 
@@ -104,26 +104,14 @@ Policy lives on the tournament being saved (`info.Settings.IsBackupEnabled` / `M
 
 ### Autosave is event-driven, not timer-based
 
-There is **no** DispatcherTimer for autosave and **no** user-facing toggle — autosave is unconditional now (the old `IsAutosaveEnabled` flag was removed 2026-05-04 once peer-sync made on-disk freshness load-bearing). Saves fire only after:
+There is **no** DispatcherTimer for autosave and **no** user-facing toggle — autosave is unconditional now (peer-sync makes on-disk freshness load-bearing). Saves fire only after:
 1. **Match completion** — `MatchResultsViewModel.ApproveAsync` calls `SaveIfAutosaveEnabledAsync()` after the processor's `CompleteMatch()` runs.
 2. **Successful import** — `ImportViewModel.ImportDataAsync` calls `SaveIfAutosaveEnabledAsync()` only when the outcome is `Imported` (not for `NoNewData`, `FileUnavailable`, etc.).
 3. **Peer-sync merge** — `PeerSyncService.SaveAfterMergeAsync` writes the local `.wrt` after applying remote changes.
 
-The gate is a public method on `TournamentViewModelBase`:
-
-```csharp
-public async Task SaveIfAutosaveEnabledAsync()
-{
-    if (DataContext.Tournament == null) return;
-    if (string.IsNullOrEmpty(DataContext.Tournament.FileName)) return;
-    var ok = await TournamentManager.SaveToFileAsync(...);
-    ShowSnackMessage(ok ? "Турнир сохранен!" : "При сохранении произошла ошибка!");
-}
-```
+The gate lives on `TournamentViewModelBase.SaveIfAutosaveEnabledAsync` (`Wrestling.UI.Material/Tournament/TournamentViewModelBase.cs:106`). It short-circuits when `Tournament` is null or `FileName` is empty, then awaits `TournamentManager.SaveToFileAsync` and surfaces success/failure via snackbar.
 
 The empty-FileName guard matters: this hook fires from background sync ticks and post-match handlers, so it must never pop a SaveAs dialog. New tournaments get their FileName from the up-front prompt in `HomeViewModel.OpenNewTournamentPage` (and a re-prompt in `DashboardViewModel.SetupAutoSaveAsync` if the operator dismissed the first dialog). The "Сохранить турнир" quick button is **always visible on the dashboard** as the manual escape hatch — autosave only covers match/import/sync events, so other mutations (team/wrestler registration, bracket generation, schedule edits) rely on it.
-
-(Both the old `AutosaveMaxSecond` interval field — removed 2026-04-20 — and `IsAutosaveEnabled` — removed 2026-05-04 — are silently dropped by Newtonsoft when loading legacy `.wrt` files.)
 
 ### Bracket generation is a Strategy pattern
 
@@ -148,6 +136,14 @@ Each mat PC keeps its own local copy of the tournament `.wrt`. Results move betw
 ### Error handling and crash recovery
 
 `App.xaml.cs` installs three handlers (`AppDomain.UnhandledException`, `DispatcherUnhandledException`, `TaskScheduler.UnobservedTaskException`). On crash they log to the Logs folder and save a backup `.wrt` to the Backups folder. Prefer throwing over swallowing **in domain and UI code**, so the handlers can preserve user data. **Exception**: the I/O layer (`JsonStorageDataAccess`, `TournamentDataAccess` backup helpers) deliberately swallows expected FS/parse exceptions — a crash during a live match from a flaky WiFi import tick is worse than a silently-skipped read. See the "Load paths never throw" section above.
+
+### Localization
+
+- Resource files: `Wrestling.UI.Material/i18n/{ru,en}.json`. Add new keys to both. Russian is the original; English is the alternative.
+- Helper: `TournamentViewModelBase.T(key, fallback)` — every snack/dialog string follows the shape `T("Snack_TournamentSaved", "Турнир сохранен!")`. The Russian text **is** the fallback, so a missing key never blanks the UI — it just falls back to Russian.
+- Backing service: `ILocalizationService` in `Wrestling.UI.Utils.Localization`, registered in DI. Static accessor `LocalizationService.Instance` exists because helpers like `T()` need to be callable without DI plumbing (used from row/column VMs that inherit plain `ObservableObject`).
+- Startup resolution order (`App.xaml.cs` `OnStartup`): saved operator preference (`LocalUiSettings.LanguageCode`) → OS UI culture two-letter code → `"en"` → first registered language. The operator's choice is persisted in `LocalUiSettings` (theme storage), not in the tournament `.wrt`.
+- For static XAML strings prefer adding a `T()` call in a VM-exposed property over hardcoding — the codebase is mid-migration from hardcoded Russian to `T()` keys; new strings should land in both JSON files.
 
 ### UI conventions
 

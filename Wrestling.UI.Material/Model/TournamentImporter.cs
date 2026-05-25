@@ -284,16 +284,51 @@ namespace Wrestling.UI.Material.Model
             // bracket WrestlerInRed/WrestlerInBlue references against them.
             result += SyncWrestlers(target, tournament);
 
-            // New mats next — bare add (no version on Mat). A group
-            // arriving in this same Apply pass with MatID pointing at one
-            // of these new mats needs to find it in target.Mats when
-            // ApplyGroupFieldChanges / AddNewGroup wires up membership.
+            // Tournament-level meta (Parts list). Bumped on create / rename
+            // / delete part. Applied wholesale — pre-existing Parts on this
+            // peer are reconciled by ID; missing remote entries are added,
+            // ID-matched entries get their Name refreshed, locally-known
+            // parts not in remote are dropped (the secretary deleted them).
+            // Defensive: never drop a part that any local group references,
+            // protects against arrival of a stale remote.
+            if (tournament.MetaVersion > target.MetaVersion)
+            {
+                ApplyTournamentMeta(target, tournament);
+                target.MetaVersion = tournament.MetaVersion;
+                result++;
+                structuralChange = true;
+            }
+
+            // New mats next — bare add. A group arriving in this same Apply
+            // pass with MatID pointing at one of these new mats needs to
+            // find it in target.Mats when ApplyGroupFieldChanges /
+            // AddNewGroup wires up membership.
             foreach (var mat in tournament.Mats)
             {
                 if (target.Mats.Any(c => c.ID == mat.ID)) continue;
-                target.Mats.Add(new Mat { ID = mat.ID, Name = mat.Name });
+                target.Mats.Add(new Mat
+                {
+                    ID = mat.ID,
+                    Name = mat.Name,
+                    ActivePartID = mat.ActivePartID,
+                    FieldsVersion = mat.FieldsVersion
+                });
                 result++;
                 structuralChange = true;
+            }
+
+            // Per-mat field sync (ActivePartID + any future Mat fields).
+            // Mirrors the per-group FieldsVersion path.
+            foreach (var remoteMat in tournament.Mats)
+            {
+                var localMat = target.Mats.FirstOrDefault(c => c.ID == remoteMat.ID);
+                if (localMat == null) continue; // just added above with the right values
+                if (remoteMat.FieldsVersion > localMat.FieldsVersion)
+                {
+                    ApplyMatFieldChanges(target, localMat, remoteMat);
+                    result++;
+                    structuralChange = true;
+                }
             }
 
             foreach (var group in tournament.Groups)
@@ -491,6 +526,73 @@ namespace Wrestling.UI.Material.Model
             }
         }
 
+        // Tournament-level meta sync: parts list. By-ID reconcile — add
+        // missing, refresh Name on matches, drop entries that the secretary
+        // removed. Local groups whose PartID points at a dropped part get
+        // resnapped to the first remaining part (same defensive style as
+        // VerifyMats for orphan MatIDs). Local mat ActivePartID gets the
+        // same treatment.
+        private static void ApplyTournamentMeta(Entities.Tournament target, Entities.Tournament remote)
+        {
+            if (remote?.Parts == null) return;
+
+            var remoteIds = new HashSet<Guid>();
+            foreach (var rp in remote.Parts)
+            {
+                remoteIds.Add(rp.ID);
+                var lp = target.Parts.FirstOrDefault(p => p.ID == rp.ID);
+                if (lp == null)
+                {
+                    target.Parts.Add(new TournamentPart { ID = rp.ID, Name = rp.Name });
+                }
+                else if (lp.Name != rp.Name)
+                {
+                    lp.Name = rp.Name;
+                }
+            }
+
+            // Drop parts that disappeared on remote — only if no local group
+            // still references them. Otherwise we'd orphan PartID on groups
+            // that the secretary genuinely partitioned into this part; let
+            // VerifyParts on next load handle that defensively instead.
+            for (int i = target.Parts.Count - 1; i >= 0; i--)
+            {
+                var lp = target.Parts[i];
+                if (remoteIds.Contains(lp.ID)) continue;
+                var referenced = target.Groups.Any(g => g.PartID == lp.ID)
+                    || target.Mats.Any(m => m.ActivePartID == lp.ID);
+                if (!referenced) target.Parts.RemoveAt(i);
+            }
+
+            // Ensure we never end up with zero parts (invariant). If remote
+            // somehow shipped an empty list, restore a default part so the
+            // rest of the pipeline keeps its assumptions.
+            if (target.Parts.Count == 0)
+            {
+                target.Parts.Add(new TournamentPart
+                {
+                    ID = Guid.NewGuid(),
+                    Name = "Часть 1"
+                });
+            }
+        }
+
+        // Per-mat field sync. Currently just ActivePartID; mirrors the
+        // FieldsVersion convention used for groups. Validates the incoming
+        // ActivePartID against target.Parts so a remote that hasn't yet
+        // pulled a part-deletion can't leave the local mat pointing at a
+        // ghost part.
+        private static void ApplyMatFieldChanges(Entities.Tournament target, Mat local, Mat remote)
+        {
+            var newActive = remote.ActivePartID;
+            if (newActive.HasValue && target.Parts.All(p => p.ID != newActive.Value))
+            {
+                newActive = target.Parts.Count > 0 ? (Guid?)target.Parts[0].ID : null;
+            }
+            local.ActivePartID = newActive;
+            local.FieldsVersion = remote.FieldsVersion;
+        }
+
         // Copies non-bracket fields from remote group to local. Cascades the
         // (possibly new) timing into local pending matches — same operation
         // DetailsViewModel.EditGroup does locally on the secretary's laptop —
@@ -509,6 +611,17 @@ namespace Wrestling.UI.Material.Model
             local.IsFemale = remote.IsFemale;
             local.MatID = remote.MatID;
             local.MatLabel = remote.MatLabel;
+
+            // PartID is "tell-me-something-new" semantics: copy when remote
+            // has a value, leave local alone otherwise. This protects against
+            // a legacy / test peer that hasn't been through the adapter
+            // migration and lacks Parts entirely — its groups would carry
+            // PartID=null and would otherwise wipe out the local default
+            // Part membership on every Apply.
+            if (remote.PartID.HasValue)
+            {
+                local.PartID = remote.PartID;
+            }
 
             if (local.Bracket?.Rounds != null)
             {

@@ -91,6 +91,10 @@
                 <slider:SliderControlView />
             </DataTemplate>
 
+            <DataTemplate DataType="{x:Type conducting:MatBoardViewModel}">
+                <conducting:MatBoardView />
+            </DataTemplate>
+
             <!-- Section wrappers -->
             <DataTemplate DataType="{x:Type conducting:ConductingViewModel}">
                 <conducting:ConductingView />

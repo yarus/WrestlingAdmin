@@ -20,6 +20,10 @@ namespace Wrestling.Entities.Results.Achievements
 
             var result = results.Max(r => r.WinsByTushe);
 
+            // No real tushe win yet — don't crown the whole field on a 0–0 tie.
+            // FreeWin byes carry no win type, so they never reach this count.
+            if (result <= 0) return null;
+
             var finalResults = results
                 .Where(r => r.WinsByTushe == result)
                 .OrderBy(r => r.MatchesCount)

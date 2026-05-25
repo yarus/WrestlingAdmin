@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Wrestling.Data;
 using Wrestling.Entities;
+using Wrestling.Providers.Localization;
 
 namespace Wrestling.Providers
 {
@@ -122,6 +123,58 @@ namespace Wrestling.Providers
 
             var mats = info.Mats?.Select(c => GetEntityFromInfo(c, groups)).ToList() ?? new List<Mat>();
 
+            var parts = info.Parts?.Select(GetEntityFromInfo).ToList() ?? new List<TournamentPart>();
+
+            // Legacy migration: any .wrt persisted before the parts concept
+            // existed has zero TournamentParts. Create a single default part
+            // and back-fill PartID on every group and ActivePartID on every
+            // mat so the rest of the system can safely assume "always at
+            // least one part" and "every scheduled group has a part".
+            if (parts.Count == 0)
+            {
+                var defaultPart = new TournamentPart
+                {
+                    ID = Guid.NewGuid(),
+                    Name = ProviderLocalization.T("Part_Default_Name", "Часть 1")
+                };
+                parts.Add(defaultPart);
+                foreach (var g in groups)
+                {
+                    if (g.PartID == null) g.PartID = defaultPart.ID;
+                }
+                foreach (var m in mats)
+                {
+                    if (m.ActivePartID == null) m.ActivePartID = defaultPart.ID;
+                }
+            }
+            else
+            {
+                // Defensive: a mat may carry an ActivePartID pointing at a
+                // part that no longer exists (the secretary deleted that
+                // part on another peer). Snap such mats back to the first
+                // part — same defensive style as VerifyMats for orphan
+                // MatIDs on groups.
+                var validPartIds = new HashSet<Guid>(parts.Select(p => p.ID));
+                var firstPartId = parts[0].ID;
+                foreach (var m in mats)
+                {
+                    if (!m.ActivePartID.HasValue || !validPartIds.Contains(m.ActivePartID.Value))
+                    {
+                        m.ActivePartID = firstPartId;
+                    }
+                }
+                // Same defensive snap for groups: orphan PartID -> first part.
+                // PartID can legitimately be null (group didn't make it into
+                // the schedule because of low wrestler count), so null stays.
+                foreach (var g in groups)
+                {
+                    if (g.PartID.HasValue && !validPartIds.Contains(g.PartID.Value))
+                    {
+                        g.PartID = firstPartId;
+                    }
+                }
+            }
+
             var slideChannels = info.SlideChannels?.Select(GetEntityFromInfo).ToList() ?? new List<SlideChannel>();
 
             // Legacy .wrt files serialize a flat `Slides` list instead of channels.
@@ -203,6 +256,8 @@ namespace Wrestling.Providers
                 Wrestlers = new ObservableCollection<Wrestler>(wrestlers),
                 Settings = settings,
                 Mats = new ObservableCollection<Mat>(mats),
+                Parts = new ObservableCollection<TournamentPart>(parts),
+                MetaVersion = info.MetaVersion,
                 SlideChannels = new ObservableCollection<SlideChannel>(slideChannels),
                 HashTag = info.HashTag,
                 MainJudgeEmail = info.MainJudgeEmail,
@@ -257,10 +312,32 @@ namespace Wrestling.Providers
             {
                 ID = info.ID,
                 Name = info.Name,
+                ActivePartID = info.ActivePartID,
+                FieldsVersion = info.FieldsVersion,
                 Groups = new ObservableCollection<AgeWeightGroup>(groups.Where(g => info.Groups.Contains(g.ID)))
             };
 
             return entity;
+        }
+
+        private TournamentPart GetEntityFromInfo(TournamentPartInfo info)
+        {
+            if (info == null) return null;
+            return new TournamentPart
+            {
+                ID = info.ID,
+                Name = info.Name
+            };
+        }
+
+        private TournamentPartInfo GetInfoFromEntity(TournamentPart entity)
+        {
+            if (entity == null) return null;
+            return new TournamentPartInfo
+            {
+                ID = entity.ID,
+                Name = entity.Name
+            };
         }
 
         public TeamApplication GetEntityFromInfo(TeamApplicationInfo info)
@@ -299,6 +376,7 @@ namespace Wrestling.Providers
                 MaxTimeoutSecond = info.MaxTimeoutSecond,
                 MatLabel = info.MatLabel,
                 MatID = info.MatID,
+                PartID = info.PartID,
                 BirthYearMax = info.BirthYearMax,
                 BirthYearMin = info.BirthYearMin,
                 ID = info.ID,
@@ -452,6 +530,8 @@ namespace Wrestling.Providers
                 TeamApplications = item.TeamApplications.Select(GetInfoFromEntity),
                 Wrestlers = item.Wrestlers.Select(GetInfoFromEntity),
                 Mats = item.Mats.Select(GetInfoFromEntity),
+                Parts = item.Parts.Select(GetInfoFromEntity),
+                MetaVersion = item.MetaVersion,
                 SlideChannels = item.SlideChannels.Select(GetInfoFromEntity),
                 HashTag = item.HashTag,
                 MainJudgeEmail = item.MainJudgeEmail,
@@ -504,6 +584,8 @@ namespace Wrestling.Providers
             {
                 ID = entity.ID.Value,
                 Name = entity.Name,
+                ActivePartID = entity.ActivePartID,
+                FieldsVersion = entity.FieldsVersion,
                 Groups = entity.Groups.Select(g => g.ID)
             };
 
@@ -546,6 +628,7 @@ namespace Wrestling.Providers
                 Wrestlers = new List<Guid>(group.Wrestlers.Select(w => w.ID)),
                 MatLabel = group.MatLabel,
                 MatID = group.MatID,
+                PartID = group.PartID,
                 ID = group.ID,
                 BirthYearMax = group.BirthYearMax,
                 BirthYearMin = group.BirthYearMin,

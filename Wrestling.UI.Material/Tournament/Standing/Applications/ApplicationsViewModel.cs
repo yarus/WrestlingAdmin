@@ -603,6 +603,20 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 return;
             }
 
+            var (confirmed, selectedPart) = await Wrestling.UI.Material.Tournament.Print.PartSelectorDialog.PromptAsync(tournament);
+            if (!confirmed) return;
+            if (selectedPart != null)
+            {
+                groupsWithWrestlers = groupsWithWrestlers.Where(g => g.PartID == selectedPart.ID).ToList();
+                if (groupsWithWrestlers.Count == 0)
+                {
+                    Dialog.ShowMessageBox(this,
+                        T("Applications_NoGroupsWithWrestlers", "Нет групп с зарегистрированными участниками."),
+                        T("WeighingExport_DialogTitle", "Экспорт протоколов взвешивания"), MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+            }
+
             var tournamentDir = !string.IsNullOrWhiteSpace(tournament.FileName)
                 ? Path.GetDirectoryName(tournament.FileName)
                 : null;

@@ -10,16 +10,30 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
     {
         private List<AgeWeightGroup> _groups;
         private AgeWeightGroup _selectedGroup;
+        private System.Nullable<System.Guid> _partFilter;
 
         public BindGroupViewModel(IDiContainer container) : base(container)
         {
+        }
+
+        // Optional part filter — when set, the picker shows only groups
+        // that either already belong to this part or are unpartitioned.
+        // Set by the (Part, Mat) bind flow before InitData.
+        public System.Nullable<System.Guid> PartFilter
+        {
+            get => _partFilter;
+            set => _partFilter = value;
         }
 
         public override void InitData()
         {
             base.InitData();
 
-            Groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups.Where(g => !g.MatID.HasValue && g.IsBracketGenerated)).OrderByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax).ToList();
+            Groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups
+                .Where(g => !g.MatID.HasValue
+                            && g.IsBracketGenerated
+                            && (_partFilter == null || !g.PartID.HasValue || g.PartID == _partFilter)))
+                .OrderByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax).ToList();
         }
 
         public AgeWeightGroup SelectedGroup

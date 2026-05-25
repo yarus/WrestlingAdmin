@@ -60,10 +60,27 @@
             <materialDesign:Card Grid.Row="1" Margin="0,0,0,12" Padding="0"
                                  Visibility="{Binding HasPendingMats, Converter={StaticResource BoolToVis}}">
                 <DockPanel LastChildFill="True">
-                    <TextBlock DockPanel.Dock="Top"
-                               Text="{loc:Loc Conducting_Mats_Header}" FontWeight="SemiBold" FontSize="14"
-                               Margin="16,16,16,8"
-                               Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                    <!-- Header strip carries the "Распределить" entry-point to the
+                         Mat Board overlay. Right-aligned so it sits opposite the
+                         "Ковры Турнира" label. Hidden on single-mat tournaments. -->
+                    <Grid DockPanel.Dock="Top" Margin="16,16,16,8">
+                        <TextBlock Text="{loc:Loc Conducting_Mats_Header}" FontWeight="SemiBold" FontSize="14"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource MaterialDesignBodyLight}" />
+                        <Button HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Style="{StaticResource MaterialDesignFlatButton}"
+                                Padding="8,2"
+                                Command="{Binding OpenMatBoardCommand}"
+                                ToolTip="{loc:Loc Conducting_Redistribute_Tooltip}"
+                                Visibility="{Binding HasMultipleMats, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="SwapHorizontal" Width="18" Height="18"
+                                                         VerticalAlignment="Center"
+                                                         Margin="0,0,6,0" />
+                                <TextBlock Text="{loc:Loc Conducting_Redistribute}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
                     <ItemsControl ItemsSource="{Binding PendingMats}" Margin="16,0,16,16">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -105,6 +122,28 @@
                                                            FontSize="15" VerticalAlignment="Center"
                                                            Margin="6,0,0,0" />
                                             </StackPanel>
+
+                                            <!-- Advance-to-next-part banner — shows when this mat's
+                                                 active part has no pending matches and a next part
+                                                 exists. Click flips Mat.ActivePartID + bumps FieldsVersion.
+                                                 Inside an outer Button (the card itself), so we set
+                                                 ClickMode=Press on the inner button to avoid the outer
+                                                 click also firing OpenMatScheduleCommand. -->
+                                            <Button Margin="0,8,0,0" Padding="6,3"
+                                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                                    HorizontalAlignment="Left"
+                                                    Visibility="{Binding CanAdvance, Converter={StaticResource BoolToVis}}"
+                                                    Command="{Binding AdvanceCommand}"
+                                                    ToolTip="{loc:Loc Conducting_AdvancePart_Tooltip}"
+                                                    ClickMode="Press">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="ArrowRightBold" Width="16" Height="16"
+                                                                             VerticalAlignment="Center" Margin="0,0,4,0" />
+                                                    <TextBlock VerticalAlignment="Center" FontSize="12">
+                                                        <Run Text="→ " /><Run Text="{Binding NextPartName, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Button>
                                         </StackPanel>
                                     </materialDesign:Card>
                                 </Button>

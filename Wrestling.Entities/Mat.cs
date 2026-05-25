@@ -9,6 +9,8 @@ namespace Wrestling.Entities
     {
         private Guid? _id;
         private string _name;
+        private Guid? _activePartId;
+        private int _fieldsVersion;
         private ObservableCollection<AgeWeightGroup> _groups;
 
         public Mat()
@@ -73,6 +75,31 @@ namespace Wrestling.Entities
             }
         }
 
+        // Which part of the tournament this mat is currently running.
+        // Per-mat (not global) so one mat can move on to part 2 while
+        // others are still finishing part 1. Defaults to the first part.
+        public Guid? ActivePartID
+        {
+            get { return _activePartId; }
+            set
+            {
+                _activePartId = value;
+                OnPropertyChanged("ActivePartID");
+            }
+        }
+
+        // Bumped on any mat-level field edit (currently just ActivePartID).
+        // Mirrors AgeWeightGroup.FieldsVersion — peers apply remote > local.
+        public int FieldsVersion
+        {
+            get { return _fieldsVersion; }
+            set
+            {
+                _fieldsVersion = value;
+                OnPropertyChanged("FieldsVersion");
+            }
+        }
+
         public void RefreshStats()
         {
             OnPropertyChanged("MatchesCount");
@@ -102,6 +129,8 @@ namespace Wrestling.Entities
             ID = mat.ID;
             Name = mat.Name;
             Groups = mat.Groups;
+            ActivePartID = mat.ActivePartID;
+            FieldsVersion = mat.FieldsVersion;
         }
     }
 }

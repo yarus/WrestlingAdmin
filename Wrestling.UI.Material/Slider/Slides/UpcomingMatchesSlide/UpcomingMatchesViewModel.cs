@@ -142,7 +142,12 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
                 var mat = DataContext.Tournament.Mats.FirstOrDefault(c => c.ID == matGuid);
                 if (mat != null)
                 {
-                    Groups = mat.Groups;
+                    // Per-mat audience screen: filter by the mat's active
+                    // part so the zal sees only the part currently running
+                    // on that mat. Legacy single-part tournaments naturally
+                    // include everything because every group's PartID matches.
+                    Groups = new System.Collections.ObjectModel.ObservableCollection<AgeWeightGroup>(
+                        mat.Groups.Where(g => !mat.ActivePartID.HasValue || g.PartID == mat.ActivePartID.Value));
                     MatName = mat.Name;
                 }
                 else

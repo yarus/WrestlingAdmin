@@ -164,6 +164,20 @@ namespace Wrestling.UI.Material.Tournament.Results
                 return;
             }
 
+            var (confirmed, selectedPart) = await Wrestling.UI.Material.Tournament.Print.PartSelectorDialog.PromptAsync(tournament);
+            if (!confirmed) return;
+            if (selectedPart != null)
+            {
+                groupsWithBrackets = groupsWithBrackets.Where(g => g.PartID == selectedPart.ID).ToList();
+                if (groupsWithBrackets.Count == 0)
+                {
+                    Dialog.ShowMessageBox(this,
+                        T("Export_NoBrackets_Body", "Нет групп со сгенерированными сетками. Сначала проведите жеребьёвку."),
+                        T("Export_DialogTitle", "Экспорт пакета протоколов"), MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+            }
+
             var defaultPath = ResolveDefaultExportFolder(tournament);
 
             var selectedFolder = FolderPicker.PickFolder(

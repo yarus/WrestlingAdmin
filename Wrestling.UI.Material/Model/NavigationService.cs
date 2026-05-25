@@ -46,6 +46,7 @@ namespace Wrestling.UI.Material.Model
                 new BracketsViewModel(_container),
                 new ScheduleViewModel(_container),
                 new SliderControlViewModel(_container),
+                new MatBoardViewModel(_container),
                 // Results hosts these as next/prev sub-pages.
                 new PersonalResultsViewModel(_container),
                 new TeamResultsViewModel(_container),

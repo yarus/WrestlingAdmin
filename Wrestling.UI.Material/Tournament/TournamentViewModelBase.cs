@@ -14,8 +14,10 @@ namespace Wrestling.UI.Material.Tournament
     {
         // Shared lazy-resolve helper for the few snack/dialog strings produced
         // by the autosave path. Static so derived VMs can call without
-        // per-instance state.
-        protected static string T(string key, string fallback)
+        // per-instance state; public so per-row/per-column helper VMs (e.g.
+        // MatBoardGroupRowViewModel, MatBoardColumnViewModel) that inherit
+        // from plain ObservableObject can resolve the same keys.
+        public static string T(string key, string fallback)
         {
             var value = LocalizationService.Instance?.T(key);
             return string.IsNullOrEmpty(value) || value == key ? fallback : value;

@@ -21,6 +21,7 @@ namespace Wrestling.UI.Material.Tournament.Results.Achievements
         private bool _localizationSubscribed;
 
         private IList<AchievementCategoryViewModel> _items;
+        private TournamentPart _selectedPart;
 
         public AchievementsViewModel(IDiContainer container) : base(container)
         {
@@ -37,6 +38,31 @@ namespace Wrestling.UI.Material.Tournament.Results.Achievements
             {
                 _items = value;
                 OnPropertyChanged(nameof(Items));
+                OnPropertyChanged(nameof(HasAchievements));
+            }
+        }
+
+        // Drives the empty-state placeholder: false when no nomination has any
+        // winner yet (early in the tournament, before any decisive result).
+        public bool HasAchievements => _items != null && _items.Count > 0;
+
+        // Mirrors PersonalResultsViewModel: per-part view defaulting to the
+        // first non-empty part. Achievements are part-scoped so award
+        // ceremonies show only the relevant cohort (per agreed design).
+        public IList<TournamentPart> AvailableParts =>
+            Tournament?.Parts?.ToList() ?? new List<TournamentPart>();
+
+        public bool HasMultipleParts => (Tournament?.Parts?.Count ?? 0) > 1;
+
+        public TournamentPart SelectedPart
+        {
+            get => _selectedPart;
+            set
+            {
+                if (_selectedPart == value) return;
+                _selectedPart = value;
+                OnPropertyChanged(nameof(SelectedPart));
+                Refresh();
             }
         }
 
@@ -65,6 +91,20 @@ namespace Wrestling.UI.Material.Tournament.Results.Achievements
                 _localizationSubscribed = true;
             }
 
+            if (Tournament?.Parts != null && Tournament.Parts.Count > 0)
+            {
+                _selectedPart = Tournament.Parts.FirstOrDefault(p =>
+                    Tournament.Groups.Any(g => g.PartID == p.ID && g.Bracket != null))
+                    ?? Tournament.Parts[0];
+            }
+            else
+            {
+                _selectedPart = null;
+            }
+            OnPropertyChanged(nameof(AvailableParts));
+            OnPropertyChanged(nameof(HasMultipleParts));
+            OnPropertyChanged(nameof(SelectedPart));
+
             Refresh();
         }
 
@@ -92,12 +132,19 @@ namespace Wrestling.UI.Material.Tournament.Results.Achievements
                 return;
             }
 
-            // Group by AchievementType so each nomination shows up once with
-            // all its winners (ties produce >1 wrestler per category). Title
-            // and Definition are computed from AchievementType via
-            // AchievementLabels so language switches reflect immediately on
-            // the next Refresh().
+            // Filter by selected part — achievements belong to a part because
+            // each winner is a wrestler whose group has a PartID. Skip rows
+            // whose group is in another part. Then group by AchievementType
+            // so each nomination shows up once with all its winners (ties
+            // produce >1 wrestler per category).
+            var groupPartById = Tournament?.Groups?.ToDictionary(g => g.ID, g => g.PartID)
+                ?? new Dictionary<System.Guid, System.Guid?>();
+
             Items = _resultsService.Achievements
+                .Where(a => _selectedPart == null
+                            || (a.Wrestler?.GroupID is System.Guid gid
+                                && groupPartById.TryGetValue(gid, out var pid)
+                                && pid == _selectedPart.ID))
                 .GroupBy(a => a.AchievementType)
                 .Select(g => new AchievementCategoryViewModel(
                     achievementType: g.Key,

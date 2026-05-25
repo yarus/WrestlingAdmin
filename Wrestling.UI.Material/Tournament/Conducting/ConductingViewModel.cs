@@ -28,6 +28,7 @@ namespace Wrestling.UI.Material.Tournament.Conducting
         private ICommand _openMatScheduleCommand;
         private ICommand _openSliderCommand;
         private ICommand _openRecentMatchCommand;
+        private ICommand _openMatBoardCommand;
 
         public ConductingViewModel(IDiContainer container) : base(container)
         {
@@ -47,6 +48,11 @@ namespace Wrestling.UI.Material.Tournament.Conducting
 
         public bool HasPendingMats =>
             DataContext?.Tournament != null && DataContext.Tournament.Mats.Any(c => c.MatchesCount > 0);
+
+        // Mat Board only makes sense with 2+ mats — moving groups around
+        // when there's only one mat is impossible. Hides the entry button
+        // entirely on solo-mat tournaments to keep the dashboard tidy.
+        public bool HasMultipleMats => (DataContext?.Tournament?.Mats?.Count ?? 0) > 1;
 
         public bool HasRecentResults => RecentResults.Count > 0;
 
@@ -72,8 +78,29 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             }
         }
 
-        public IEnumerable<Mat> PendingMats =>
-            DataContext?.Tournament?.Mats?.Where(c => c.MatchesCount > 0) ?? Enumerable.Empty<Mat>();
+        // Per-mat cards on Z2. Wraps each Mat in a MatProgressCardViewModel
+        // that resolves the active part name from Tournament.Parts. Single-
+        // part tournaments report HasMultipleParts=false on each card so the
+        // XAML hides the part chip and the card layout stays as before.
+        public IEnumerable<MatProgressCardViewModel> PendingMats =>
+            DataContext?.Tournament?.Mats?
+                .Where(c => c.MatchesCount > 0)
+                .Select(c => new MatProgressCardViewModel(c, DataContext.Tournament, AdvanceMatToNextPart))
+            ?? Enumerable.Empty<MatProgressCardViewModel>();
+
+        // Banner callback: flips a single mat to the next part by Order.
+        // Bumps Mat.FieldsVersion so peers pick the change up through the
+        // existing ApplyMatFieldChanges path. Z2 refreshes via RefreshAll.
+        private void AdvanceMatToNextPart(Mat mat, TournamentPart nextPart)
+        {
+            if (mat == null || nextPart == null) return;
+            mat.ActivePartID = nextPart.ID;
+            mat.FieldsVersion++;
+            ShowSnackMessage(string.Format(
+                T("Conducting_AdvancePart_Snack", "Ковёр «{0}» переключён на часть «{1}»"),
+                mat.Name, nextPart.Name));
+            RefreshAll();
+        }
 
         public string TournamentDurationLabel
         {
@@ -107,10 +134,20 @@ namespace Wrestling.UI.Material.Tournament.Conducting
 
         // Mat card click on the dashboard — opens Schedule with the clicked
         // mat pre-selected so the operator lands directly on that queue.
+        // CommandParameter is the wrapping MatProgressCardViewModel after
+        // the parts feature; legacy code passing a raw Mat still works via
+        // the unwrap below.
         public ICommand OpenMatScheduleCommand =>
             _openMatScheduleCommand ?? (_openMatScheduleCommand = new RelayCommand(
-                param => OpenMatSchedule(param as Mat),
-                param => param is Mat));
+                param => OpenMatSchedule(UnwrapMat(param)),
+                param => UnwrapMat(param) != null));
+
+        private static Mat UnwrapMat(object param)
+        {
+            if (param is Mat m) return m;
+            if (param is MatProgressCardViewModel card) return card.Mat;
+            return null;
+        }
 
         private void OpenMatSchedule(Mat mat)
         {
@@ -129,6 +166,13 @@ namespace Wrestling.UI.Material.Tournament.Conducting
         public ICommand OpenSliderCommand =>
             _openSliderCommand ?? (_openSliderCommand = new RelayCommand(
                 _ => NavigateToView<SliderControlViewModel>(),
+                _ => true));
+
+        // Opens the Mat Board overlay. Reached from the [⇄ Распределить]
+        // button in the Z2 header on Conducting.
+        public ICommand OpenMatBoardCommand =>
+            _openMatBoardCommand ?? (_openMatBoardCommand = new RelayCommand(
+                _ => NavigateToView<MatBoardViewModel>(),
                 _ => true));
 
         // Recent-results panel click — opens the match in MatchResultsViewModel.
@@ -265,6 +309,7 @@ namespace Wrestling.UI.Material.Tournament.Conducting
 
             OnPropertyChanged(nameof(HasBrackets));
             OnPropertyChanged(nameof(HasPendingMats));
+            OnPropertyChanged(nameof(HasMultipleMats));
             OnPropertyChanged(nameof(HasRecentResults));
             OnPropertyChanged(nameof(PendingMats));
             OnPropertyChanged(nameof(TournamentDurationLabel));

@@ -22,6 +22,7 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
         private IList<WeightCategoryResultsViewModel> _items;
         private string _filterString;
         private bool _isOnlyMedalsVisible;
+        private TournamentPart _selectedPart;
 
         public PersonalResultsViewModel(IDiContainer container) : base(container)
         {
@@ -80,6 +81,27 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
         public bool IsFilterEnabled =>
             (!string.IsNullOrEmpty(FilterString) && FilterString.Length > 2) || IsOnlyMedalsVisible;
 
+        // Local part filter — independent of any mat's active part. Defaults
+        // in InitData to the first part with pending matches (the part the
+        // operator is most likely planning awards for); the user can switch
+        // freely without affecting any other screen.
+        public IList<TournamentPart> AvailableParts =>
+            Tournament?.Parts?.ToList() ?? new List<TournamentPart>();
+
+        public bool HasMultipleParts => (Tournament?.Parts?.Count ?? 0) > 1;
+
+        public TournamentPart SelectedPart
+        {
+            get => _selectedPart;
+            set
+            {
+                if (_selectedPart == value) return;
+                _selectedPart = value;
+                OnPropertyChanged(nameof(SelectedPart));
+                Rebuild();
+            }
+        }
+
         // Auto-expand when filter is on and the result set is small enough to
         // browse at a glance — same logic as ApplicationsView.
         public bool ShouldAutoExpand
@@ -107,6 +129,24 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
                 _resultsSubscribed = true;
             }
 
+            // Default to the first non-empty part so the operator sees a
+            // useful screen on entry instead of an empty list when picking
+            // an arbitrary part. Falls back to Parts[0] if every part is
+            // empty (unusual mid-setup state).
+            if (Tournament?.Parts != null && Tournament.Parts.Count > 0)
+            {
+                _selectedPart = Tournament.Parts.FirstOrDefault(p =>
+                    Tournament.Groups.Any(g => g.PartID == p.ID && g.Bracket != null))
+                    ?? Tournament.Parts[0];
+            }
+            else
+            {
+                _selectedPart = null;
+            }
+            OnPropertyChanged(nameof(AvailableParts));
+            OnPropertyChanged(nameof(HasMultipleParts));
+            OnPropertyChanged(nameof(SelectedPart));
+
             Rebuild();
         }
 
@@ -129,6 +169,7 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
             }
 
             var groups = Tournament.Groups?
+                .Where(g => _selectedPart == null || g.PartID == _selectedPart.ID)
                 .OrderBy(g => g.BirthYearMin ?? int.MaxValue)
                 .ThenBy(g => g.BirthYearMax ?? int.MaxValue)
                 .ThenBy(g => g.WeightMax ?? double.MaxValue)

@@ -47,6 +47,20 @@ namespace Wrestling.UI.Material
         private readonly object _persistenceLock = new object();
         private readonly object _logLock = new object();
 
+        // Crash-surface throttle. A broken visual tree rethrows the same
+        // exception on every layout/render pass; without this guard each pass
+        // would log, write a backup, and pop its own MessageBox — the "window
+        // avalanche". We surface a given fault (log + backup + dialog) at most
+        // once, suppress identical repeats for a short cooldown, and never
+        // stack a second dialog while one is already open. One dialog then
+        // stands in for the whole storm; closing it lets the operator navigate
+        // away from the broken screen, which stops the underlying loop.
+        private readonly object _crashGate = new object();
+        private string _lastCrashSignature;
+        private DateTime _lastCrashSurfacedUtc;
+        private bool _crashDialogOpen;
+        private static readonly TimeSpan CrashSurfaceCooldown = TimeSpan.FromSeconds(5);
+
         protected override void OnExit(ExitEventArgs e)
         {
             // Tear down network services so their sockets release cleanly on
@@ -154,6 +168,7 @@ namespace Wrestling.UI.Material
                 shell.RegisterOverlayParent(typeof(Wrestling.UI.Material.Tournament.Progress.Schedule.ScheduleViewModel), typeof(ConductingViewModel));
                 shell.RegisterOverlayParent(typeof(Wrestling.UI.Material.Tournament.Progress.Brackets.BracketsViewModel), typeof(ConductingViewModel));
                 shell.RegisterOverlayParent(typeof(Wrestling.UI.Material.Slider.SliderControlViewModel), typeof(ConductingViewModel));
+                shell.RegisterOverlayParent(typeof(Wrestling.UI.Material.Tournament.Conducting.MatBoardViewModel), typeof(ConductingViewModel));
             }
 
             app.Show();
@@ -241,17 +256,35 @@ namespace Wrestling.UI.Material
                     return;
                 }
 
-                LogException("Application.DispatcherUnhandledException", args.Exception);
-
-                // Always write a dated backup instead of overwriting the active
-                // save — a UI-thread exception can leave the in-memory tournament
-                // in a half-mutated state, and persisting it onto FileName would
-                // destroy a previously-good save.
-                CreateBackup(di);
-
+                // Always handle so a single UI-thread fault doesn't tear the
+                // app down — the operator can then navigate off the broken
+                // screen instead of losing the session.
                 args.Handled = true;
 
-                ShowCriticalError(args.Exception);
+                // Throttle the log + backup + dialog so a layout-loop fault
+                // surfaces once, not once per render tick. Repeats (and any
+                // re-entrant throw while the dialog is open) are dropped here.
+                if (!TryBeginCrashSurface(args.Exception))
+                {
+                    return;
+                }
+
+                try
+                {
+                    LogException("Application.DispatcherUnhandledException", args.Exception);
+
+                    // Write a dated backup instead of overwriting the active save
+                    // — a UI-thread exception can leave the in-memory tournament
+                    // half-mutated, and persisting it onto FileName would destroy
+                    // a previously-good save.
+                    CreateBackup(di);
+
+                    ShowCriticalError(args.Exception);
+                }
+                finally
+                {
+                    EndCrashSurface();
+                }
             };
 
             TaskScheduler.UnobservedTaskException += (sender, args) =>
@@ -260,6 +293,37 @@ namespace Wrestling.UI.Material
                 args.SetObserved();
                 CreateBackup(di);
             };
+        }
+
+        // Gate for the crash-surface ceremony (log + backup + dialog). Returns
+        // true at most once per (signature, cooldown), and false while a crash
+        // dialog is already open — so a layout-loop storm produces a single
+        // dialog rather than one per render tick. The signature is type + stack
+        // so distinct faults each still surface. Must be paired with
+        // EndCrashSurface() in a finally.
+        private bool TryBeginCrashSurface(Exception ex)
+        {
+            var signature = (ex?.GetType().FullName ?? "?") + "|" + (ex?.StackTrace ?? string.Empty);
+            lock (_crashGate)
+            {
+                if (_crashDialogOpen) return false;
+
+                if (signature == _lastCrashSignature
+                    && DateTime.UtcNow - _lastCrashSurfacedUtc < CrashSurfaceCooldown)
+                {
+                    return false;
+                }
+
+                _lastCrashSignature = signature;
+                _lastCrashSurfacedUtc = DateTime.UtcNow;
+                _crashDialogOpen = true;
+                return true;
+            }
+        }
+
+        private void EndCrashSurface()
+        {
+            lock (_crashGate) { _crashDialogOpen = false; }
         }
 
         // Crash-time MessageBox helper. LocalizationService falls back to the
@@ -441,6 +505,14 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             });
 
             di.Add<IMatchNumbersGenerator>(new MatMatchNumbersGenerator());
+
+            // Shared mat-redistribution path: both the legacy «Расписание»
+            // screen and the new «Доска ковров» on Conducting go through this
+            // service so the FieldsVersion bump + MatchNumbers regeneration
+            // happens in exactly one place.
+            di.Add<IMatRedistributionService>(new MatRedistributionService(
+                di.Resolve<IMatchNumbersGenerator>(),
+                di.Resolve<List<IGroupBracketProcessor>>()));
 
             di.Add<ITournamentImporter>(new TournamentImporter(
                 di.Resolve<ITournamentsManager>(),

@@ -201,6 +201,7 @@ public sealed class PersonalResultsViewModelTests
         }
 
         public IReadOnlyList<TournamentTeamResult> GetOrderedTeamResults(ITeamResultsOrderer orderer) => TeamResults;
+        public IReadOnlyList<TournamentTeamResult> GetOrderedTeamResults(ITeamResultsOrderer orderer, System.Guid? partId) => TeamResults;
 
         public void Replace(IList<TournamentResult> next)
         {

@@ -17,7 +17,22 @@
     </UserControl.Resources>
 
     <Grid x:Name="RootControl">
-        <ItemsControl ItemsSource="{Binding Items}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Per-part selector — visible only when 2+ parts exist. Local to
+             this screen; doesn't affect any mat's ActivePartID. Anchored to
+             the right edge, no label. -->
+        <ComboBox Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Center"
+                  Margin="20,10,20,10" MinWidth="160"
+                  ItemsSource="{Binding AvailableParts}"
+                  SelectedItem="{Binding SelectedPart, Mode=TwoWay}"
+                  DisplayMemberPath="Name"
+                  Visibility="{Binding HasMultipleParts, Converter={StaticResource BoolToVis}}" />
+
+        <ItemsControl Grid.Row="1" ItemsSource="{Binding Items}">
             <ItemsControl.Template>
                 <ControlTemplate TargetType="ItemsControl">
                     <Border BorderThickness="{TemplateBinding BorderThickness}"
@@ -111,5 +126,14 @@
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
+
+        <!-- Empty-state placeholder — shown when no nomination has a winner yet
+             (e.g. before any decisive match). Overlaps the list area; hidden as
+             soon as achievements appear. -->
+        <TextBlock Grid.Row="1" Text="{loc:Loc Achievements_NoData}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   FontSize="16" FontStyle="Italic"
+                   Foreground="{DynamicResource MaterialDesignBodyLight}"
+                   Visibility="{Binding HasAchievements, Converter={StaticResource InvBoolToVis}}" />
     </Grid>
 </UserControl>

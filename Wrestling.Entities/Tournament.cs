@@ -34,6 +34,10 @@ namespace Wrestling.Entities
 
         private ObservableCollection<Mat> _mats;
 
+        private ObservableCollection<TournamentPart> _parts;
+
+        private int _metaVersion;
+
         public Tournament(GlobalSettings settings)
         {
             _groups = new ObservableCollection<AgeWeightGroup>();
@@ -41,6 +45,7 @@ namespace Wrestling.Entities
             _wrestlers = new ObservableCollection<Wrestler>();
             _mats = new ObservableCollection<Mat>();
             _slideChannels = new ObservableCollection<SlideChannel>();
+            _parts = new ObservableCollection<TournamentPart>();
 
             Settings = settings ?? new GlobalSettings();
         }
@@ -288,6 +293,32 @@ namespace Wrestling.Entities
             set
             {
                 _mats = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // Operational sequence: groups belong to one part each; mats run
+        // parts independently via Mat.ActivePartID. Always contains at least
+        // one part — the adapter creates a default one on legacy load.
+        public ObservableCollection<TournamentPart> Parts
+        {
+            get { return _parts; }
+            set
+            {
+                _parts = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // Bumped on any tournament-level meta change: parts list edits
+        // (create / rename / delete). Peers apply via the existing
+        // remote > local rule, mirroring AgeWeightGroup.FieldsVersion.
+        public int MetaVersion
+        {
+            get { return _metaVersion; }
+            set
+            {
+                _metaVersion = value;
                 OnPropertyChanged();
             }
         }

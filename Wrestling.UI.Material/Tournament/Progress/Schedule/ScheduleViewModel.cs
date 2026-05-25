@@ -287,7 +287,12 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
             foreach (var mat in source)
             {
-                var matches = new ObservableCollection<WrestlingMatch>(mat.Groups.Where(g => g.Bracket != null)
+                // Per-mat active part filter: only show groups belonging to
+                // the mat's currently-active part. Legacy single-part
+                // tournaments have one part and every group matches.
+                var matches = new ObservableCollection<WrestlingMatch>(mat.Groups
+                    .Where(g => g.Bracket != null
+                                && (!mat.ActivePartID.HasValue || g.PartID == mat.ActivePartID.Value))
                     .SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches).OrderBy(m => m.MatchNumber));
 
                 var stat = new MatStats
@@ -321,7 +326,10 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
 
                 if (mat == null) continue;
 
-                stat.Matches = new ObservableCollection<WrestlingMatch>(mat.Groups.Where(x => x.Bracket != null).SelectMany(g => g.Bracket.Rounds)
+                stat.Matches = new ObservableCollection<WrestlingMatch>(mat.Groups
+                    .Where(x => x.Bracket != null
+                                && (!mat.ActivePartID.HasValue || x.PartID == mat.ActivePartID.Value))
+                    .SelectMany(g => g.Bracket.Rounds)
                     .SelectMany(r => r.RoundMatches)
                     .Where(m => !hasTextFilter || MatchPassesFilter(m, filter))
                     .OrderBy(m => m.MatchNumber));

@@ -21,5 +21,11 @@ namespace Wrestling.Providers
         // re-sort on every refresh. Passing a null orderer returns the
         // unordered base list.
         IReadOnlyList<TournamentTeamResult> GetOrderedTeamResults(ITeamResultsOrderer orderer);
+
+        // Same as above but scoped to a single tournament part: only personal
+        // results whose group belongs to that part feed the team aggregation.
+        // Passing a null partId aggregates across every part (identical to the
+        // single-arg overload). Cached per (orderer, partId).
+        IReadOnlyList<TournamentTeamResult> GetOrderedTeamResults(ITeamResultsOrderer orderer, Guid? partId);
     }
 }

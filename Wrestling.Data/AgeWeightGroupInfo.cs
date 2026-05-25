@@ -24,6 +24,8 @@ namespace Wrestling.Data
         [DataMember]
         public Guid? MatID { get; set; }
         [DataMember]
+        public Guid? PartID { get; set; }
+        [DataMember]
         public bool IsFemale { get; set; }
         [DataMember]
         public int? BirthYearMin { get; set; }
