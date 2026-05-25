@@ -274,6 +274,25 @@ public sealed class TournamentBackupTests : IDisposable
         restored.Name.Should().Be("good", "destination was restored from the latest backup");
     }
 
+    [Fact]
+    public async Task Async_verification_failure_restores_latest_backup_and_returns_false()
+    {
+        var path = TournamentPath();
+        await _da.SaveToFileAsync(NewInfo("good"), path);
+
+        // Same corrupt-write simulation as the sync test, but exercising the
+        // async save path (SaveToFileAsync → VerifySavedFileAsync → restore) —
+        // the path autosave / import / peer-sync actually use end-to-end.
+        var corruptingDa = new TournamentDataAccess(new CorruptingStorage());
+
+        var result = await corruptingDa.SaveToFileAsync(NewInfo("corrupt"), path);
+
+        result.Should().BeFalse("async verification detected the corrupt write");
+        var restored = await _da.LoadFromFileAsync(path);
+        restored.Should().NotBeNull();
+        restored.Name.Should().Be("good", "destination was restored from the latest backup on the async path");
+    }
+
     // Storage that deliberately writes invalid JSON to simulate a serializer
     // bug producing a file that atomic-write preserves but that can't be
     // deserialized back. Only SaveToFile is exercised by the test.

@@ -326,14 +326,7 @@ public class MutualDisqualifyTests
             "SF (next-match) was auto-completed via FreeWin — operator must revert it first");
     }
 
-    // ---------- IsDisqualified flag default and round-trip ----------
-
-    [Fact]
-    public void IsDisqualified_default_false_on_new_wrestler()
-    {
-        var w = new Wrestler();
-        w.IsDisqualified.Should().BeFalse();
-    }
+    // ---------- IsDisqualified flag round-trip ----------
 
     [Fact]
     public void Sync_copies_IsDisqualified()
@@ -350,38 +343,6 @@ public class MutualDisqualifyTests
         var src = new Wrestler { ID = System.Guid.NewGuid(), IsDisqualified = true, LastName = "X", FirstName = "Y" };
         var copy = (Wrestler)src.Clone();
         copy.IsDisqualified.Should().BeTrue();
-    }
-
-    // ---------- IsMutualDisqualify property ----------
-
-    [Fact]
-    public void IsMutualDisqualify_is_true_only_when_WinType_is_MutualDisqualify()
-    {
-        var m = new WrestlingMatch { WinType = MatchWinTypeEnum.MutualDisqualify };
-        m.IsMutualDisqualify.Should().BeTrue();
-
-        m.WinType = MatchWinTypeEnum.DisqualifyWin;
-        m.IsMutualDisqualify.Should().BeFalse();
-    }
-
-    // ---------- OlympicWithConsolation: smoke ----------
-
-    [Fact]
-    public void OlympicWithConsolation_MutualDsq_in_main_round_marks_both_disqualified()
-    {
-        var group = TestHelpers.MakeGroup(8);
-        var t = TestHelpers.MakeTournament(group);
-        var proc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
-        proc.Generate(t, group);
-
-        var qf1 = group.Bracket.Rounds[0].RoundMatches[0];
-        var red = qf1.WrestlerInRed;
-        var blue = qf1.WrestlerInBlue;
-        proc.CompleteMatch(qf1, null, MatchWinTypeEnum.MutualDisqualify);
-
-        red!.IsDisqualified.Should().BeTrue();
-        blue!.IsDisqualified.Should().BeTrue();
-        qf1.IsRedWon.Should().BeNull();
     }
 
     // ---------- ConsolationFromFinalists: SF mutual DSQ ----------

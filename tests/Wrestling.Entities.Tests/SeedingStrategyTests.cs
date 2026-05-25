@@ -90,7 +90,9 @@ public class SeedingStrategyTests
         };
         var g = MakeGroupWithWrestlers(wrestlers, BracketTypeEnum.OlympicConsilationFinalists.ToString());
 
-        new ClubCityLevelSeedingStrategy().Seed(g);
+        // Fixed seed → reproducible. A failure here is a real regression in the
+        // spread optimizer, not an unlucky shuffle (the default ctor is unseeded).
+        new ClubCityLevelSeedingStrategy(seed: 12345).Seed(g);
 
         // Round-1 pairs for N=8: (1,2)(3,4)(5,6)(7,8). Each pair should have
         // one wrestler from clubA and one from clubB.
@@ -114,7 +116,8 @@ public class SeedingStrategyTests
         };
         var g = MakeGroupWithWrestlers(wrestlers, BracketTypeEnum.SubGroupsIntoOlympic.ToString());
 
-        new ClubCityLevelSeedingStrategy().Seed(g);
+        // Fixed seed → reproducible spread (see note in the Olympic test).
+        new ClubCityLevelSeedingStrategy(seed: 12345).Seed(g);
 
         var bySeed = g.Wrestlers.ToDictionary(w => w.SeedNumber!.Value);
         // Subgroup A = seeds 1..3, Subgroup B = seeds 4..6
