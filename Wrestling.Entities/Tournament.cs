@@ -325,6 +325,27 @@ namespace Wrestling.Entities
 
         public Guid? ID { get; set; }
 
+        public bool AddWrestlerRegistration(Wrestler wrestler)
+        {
+            Wrestlers.Add(wrestler);
+            var group = Groups.FirstOrDefault(g => g.ID == wrestler.GroupID);
+            wrestler.GroupName = group?.Name ?? string.Empty;
+            if (group == null) return false;
+
+            if (wrestler.IsRegistrationApproved)
+                group.Wrestlers.Add(wrestler);
+
+            // A new registration invalidates the draw even before approval.
+            group.Bracket = null;
+            group.BracketVersion++;
+            wrestler.FinalPlace = null;
+            foreach (var member in group.Wrestlers) member.FinalPlace = null;
+            group.RefreshState();
+            Mats.FirstOrDefault(m => m.ID == group.MatID)?.RefreshStats();
+            RefreshAggregates();
+            return true;
+        }
+
         public bool UpdateWrestlerRegistration(Wrestler wrestler, Wrestler edited)
         {
             var groupChanged = wrestler.GroupID != edited.GroupID;

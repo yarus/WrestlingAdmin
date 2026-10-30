@@ -450,9 +450,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 tmpWresler.TeamCity = app.Team.City;
                 tmpWresler.Timestamp = DateTime.Now;
 
-                DataContext.Tournament.Wrestlers.Add(tmpWresler);
-
-                AddWrestlerToHisGroup(tmpWresler);
+                if (DataContext.Tournament.AddWrestlerRegistration(tmpWresler))
+                {
+                    ResultsService?.Recalculate(DataContext.Tournament);
+                }
 
                 var team = Items.First(x => x.Team.ID == tmpWresler.TeamID);
                 team.SetFilter(FilterString, IsOnlyUnapprovedVisible);
@@ -497,27 +498,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             {
                 wrestler.GroupID = null;
                 wrestler.GroupName = string.Empty;
-            }
-        }
-
-        private void AddWrestlerToHisGroup(Wrestler wrestler)
-        {
-            if (wrestler.GroupID.HasValue && wrestler.IsRegistrationApproved)
-            {
-                var group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == wrestler.GroupID.Value);
-                if (group != null)
-                {
-                    var groupWrestler = group.Wrestlers.FirstOrDefault(wr => wr.ID == wrestler.ID);
-                    if (groupWrestler == null)
-                    {
-                        group.Wrestlers.Add(wrestler);
-                    }
-                    
-                    group.Bracket = null;
-                    group.RefreshState();
-                        
-                    wrestler.GroupName = group.Name;
-                }
             }
         }
 

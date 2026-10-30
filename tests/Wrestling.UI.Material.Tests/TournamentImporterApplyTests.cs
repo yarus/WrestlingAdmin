@@ -24,6 +24,32 @@ public sealed class TournamentImporterApplyTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
+    public void New_registration_clears_the_target_draw_on_a_peer(bool approved)
+    {
+        var (secretary, group, _) = BuildPair();
+        var peer = CloneViaAdapter(secretary);
+        var previousVersion = group.BracketVersion;
+        var entrant = new Wrestler
+        {
+            ID = Guid.NewGuid(), GroupID = group.ID,
+            LastName = "New", FirstName = "Entrant", BirthDate = new DateTime(2005, 4, 5),
+            Weight = 60, IsEntryFeePaid = true, IsWeightApproved = approved, Timestamp = DateTime.UtcNow
+        };
+
+        secretary.AddWrestlerRegistration(entrant);
+        MakeImporter().Apply(peer, ImportPlan.Proceed(CloneViaAdapter(secretary)));
+
+        var peerGroup = peer.Groups.Single(g => g.ID == group.ID);
+        var peerEntrant = peer.Wrestlers.Single(w => w.ID == entrant.ID);
+        peerGroup.Bracket.Should().BeNull();
+        peerGroup.BracketVersion.Should().Be(previousVersion + 1);
+        peerEntrant.GroupID.Should().Be(group.ID);
+        peerGroup.Wrestlers.Contains(peerEntrant).Should().Be(approved);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     public void Registration_transfer_clears_both_peer_draws_and_the_old_fixed_seed(bool approved)
     {
         var (secretary, source, _) = BuildPair();
