@@ -21,8 +21,13 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="20,10,20,10">
-            <ItemsControl ItemsSource="{Binding Systems}">
+        <Grid Grid.Row="0" Margin="20,10,20,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <ItemsControl Grid.Column="0" VerticalAlignment="Center" ItemsSource="{Binding Systems}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel Orientation="Horizontal" />
@@ -46,7 +51,18 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-        </StackPanel>
+
+            <!-- Part filter — dropdown anchored to the right of the system row.
+                 ComboBox, not an MD TabControl: TabControlHeaderScrollBehavior
+                 NRE-floods in this layout during the measure pass. Hidden on
+                 single-part events. -->
+            <ComboBox Grid.Column="1" VerticalAlignment="Center"
+                      MinWidth="220"
+                      ItemsSource="{Binding PartFilters}"
+                      SelectedItem="{Binding SelectedPartFilter, Mode=TwoWay}"
+                      DisplayMemberPath="Name"
+                      Visibility="{Binding HasMultipleParts, Converter={StaticResource BoolToVis}}" />
+        </Grid>
 
         <Border Grid.Row="0" BorderThickness="0,0,0,1"
                 BorderBrush="{DynamicResource MaterialDesignDivider}" />

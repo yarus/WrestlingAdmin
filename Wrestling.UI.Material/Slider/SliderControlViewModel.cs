@@ -549,6 +549,10 @@ namespace Wrestling.UI.Material.Slider
 
             foreach (var group in mat.Groups)
             {
+                // Per-mat active-part filter: only expand groups in the mat's
+                // currently-active part. Single-part tournaments naturally
+                // include everything because every group's PartID matches.
+                if (mat.ActivePartID.HasValue && group.PartID != mat.ActivePartID.Value) continue;
                 if (!existingGroupIds.Add(group.ID)) continue;
 
                 var slide = new ScreenSlide

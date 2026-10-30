@@ -110,30 +110,48 @@ public class RoundRobinBracketTests
         goryachev.FinalPlace.Should().Be(3, "Goryachev has 3 CP — lowest");
     }
 
+    // Genuine 2-way head-to-head: a 4-wrestler round-robin where {a,b} tie at
+    // 2 wins / 6 CP and {c,d} tie at 1 win / 3 CP. Every other UWW criterion is
+    // equal (all plain PointsWin, no points recorded → Tushe/Domination/points
+    // for+against all zero), so ONLY the direct result can separate each pair.
+    // Seeds are arranged to CONTRADICT the head-to-head outcome (b and d hold
+    // the lower seeds), so a pass proves head-to-head overrides the SeedNumber
+    // fallback — which the previous 3-wrestler version never actually reached.
     [Fact]
-    public void Two_way_tie_on_everything_breaks_by_head_to_head()
+    public void Two_way_tie_on_all_measurable_criteria_breaks_by_head_to_head_not_seed()
     {
-        var (g, proc) = Setup(3);
+        var (g, proc) = Setup(4);
 
         var w = g.Wrestlers.OrderBy(x => x.SeedNumber).ToList();
-        var champ = w[0];
-        var a = w[1];
-        var b = w[2];
+        var a = w[0];
+        var b = w[1];
+        var c = w[2];
+        var d = w[3];
+
+        // Seed order would put b ahead of a and d ahead of c — the opposite of
+        // the head-to-head results below.
+        a.SeedNumber = 2; b.SeedNumber = 1;
+        c.SeedNumber = 4; d.SeedNumber = 3;
 
         var matches = g.Bracket.Rounds.SelectMany(r => r.RoundMatches).ToList();
 
-        // Champ wins both by Tushe → 2 wins, 10 CP.
-        // a vs b: a wins by Tushe → a 1 win 5 CP, b 0 wins 0 CP.
-        // (Different wins counts, no tie among a and b — but verify champ takes 1st by CP/wins)
-        CompleteByPair(matches, proc, champ, a, MatchWinTypeEnum.Tushe);
-        CompleteByPair(matches, proc, champ, b, MatchWinTypeEnum.Tushe);
-        CompleteByPair(matches, proc, a, b, MatchWinTypeEnum.Tushe);
+        // a: beats b, beats c, loses to d  → 2 wins, 6 CP
+        // b: beats c, beats d, loses to a  → 2 wins, 6 CP
+        // c: beats d, loses to a, loses to b → 1 win, 3 CP
+        // d: beats a, loses to b, loses to c → 1 win, 3 CP
+        CompleteByPair(matches, proc, a, b, MatchWinTypeEnum.PointsWin);
+        CompleteByPair(matches, proc, a, c, MatchWinTypeEnum.PointsWin);
+        CompleteByPair(matches, proc, d, a, MatchWinTypeEnum.PointsWin);
+        CompleteByPair(matches, proc, b, c, MatchWinTypeEnum.PointsWin);
+        CompleteByPair(matches, proc, b, d, MatchWinTypeEnum.PointsWin);
+        CompleteByPair(matches, proc, c, d, MatchWinTypeEnum.PointsWin);
 
         proc.GetResults();
 
-        champ.FinalPlace.Should().Be(1);
-        a.FinalPlace.Should().Be(2);
-        b.FinalPlace.Should().Be(3);
+        a.FinalPlace.Should().Be(1, "a beat b head-to-head; the pair ties on wins and CP, so head-to-head decides despite b's lower seed");
+        b.FinalPlace.Should().Be(2);
+        c.FinalPlace.Should().Be(3, "c beat d head-to-head; the pair ties on wins and CP");
+        d.FinalPlace.Should().Be(4);
     }
 
     private static void CompleteByPair(

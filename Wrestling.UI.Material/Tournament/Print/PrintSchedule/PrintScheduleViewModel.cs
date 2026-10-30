@@ -41,8 +41,14 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
         {
             base.InitData();
 
-            // mat groups
-            _groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups.Where(g => g.Bracket != null && g.MatID == _mat.ID));
+            // Per-mat active-part filter: a single printout is one schedule
+            // for one mat at one point in time. The mat's ActivePartID picks
+            // which part's matches are listed; legacy single-part tournaments
+            // include all groups because every group's PartID matches.
+            _groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups
+                .Where(g => g.Bracket != null
+                            && g.MatID == _mat.ID
+                            && (!_mat.ActivePartID.HasValue || g.PartID == _mat.ActivePartID.Value)));
 
             if (_groups.Count == 0) return;
 

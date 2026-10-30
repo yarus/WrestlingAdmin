@@ -13,5 +13,9 @@ namespace Wrestling.Data
         public string Name { get; set; }
         [DataMember]
         public IEnumerable<Guid> Groups { get; set; }
+        [DataMember]
+        public Guid? ActivePartID { get; set; }
+        [DataMember]
+        public int FieldsVersion { get; set; }
     }
 }

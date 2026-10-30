@@ -47,39 +47,41 @@
                 <materialDesign:PackIcon Kind="Magnify" Opacity=".56" />
             </Button>
 
-            <ComboBox Grid.Column="1" 
-              FontSize="18"
-              ItemsSource="{Binding CachedAthletes}"
-              SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
-              IsEditable="True"
-              IsTextSearchEnabled="True"
-              IsTextSearchCaseSensitive="False"
-              StaysOpenOnEdit="True"
-              TextSearch.TextPath="LastName"
-              TabIndex="0"
-              materialDesign:HintAssist.Hint="{loc:Loc AddWrestler_Search}">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding BirthDate, StringFormat={}{0:dd.MM.yyyy}}"
-                        Width="100" 
-                        VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding FullName}"
-                        FontStyle="Italic"
-                        Foreground="DarkGray"
-                        VerticalAlignment="Center"
-                        Margin="10,0,0,0"/>
-                            <TextBlock Text="{Binding TeamName}"
-                        FontStyle="Italic"
-                        Foreground="DarkGray"
-                        VerticalAlignment="Center"
-                        Margin="10,0,0,0"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
+            <TextBox Grid.Column="1" x:Name="AthleteSearch" FontSize="18" TabIndex="0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     PreviewKeyDown="AthleteSearch_OnPreviewKeyDown"
+                     materialDesign:HintAssist.Hint="{loc:Loc AddWrestler_Search}" />
+            <Popup PlacementTarget="{Binding ElementName=AthleteSearch}" Placement="Bottom"
+                   IsOpen="{Binding IsAthleteSearchOpen, Mode=TwoWay}" StaysOpen="False"
+                   AllowsTransparency="True">
+                <Border Background="{DynamicResource MaterialDesignPaper}"
+                        BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1"
+                        MinWidth="{Binding ActualWidth, ElementName=AthleteSearch}" MaxWidth="650">
+                    <ListBox x:Name="AthleteSuggestions" MaxHeight="220"
+                             ItemsSource="{Binding FilteredAthletes}"
+                             SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                             IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False"
+                             PreviewMouseLeftButtonUp="AthleteSuggestions_OnPreviewMouseLeftButtonUp"
+                             PreviewKeyDown="AthleteSearch_OnPreviewKeyDown"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding BirthDate, StringFormat={}{0:dd.MM.yyyy}}"
+                                               Width="100" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding FullName}" FontStyle="Italic"
+                                               VerticalAlignment="Center" Margin="10,0,0,0" />
+                                    <TextBlock Text="{Binding TeamName}" FontStyle="Italic" Opacity="0.65"
+                                               VerticalAlignment="Center" Margin="10,0,0,0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </Popup>
 
-            <Button Grid.Column="2" Style="{DynamicResource MaterialDesignToolForegroundButton}" Margin="8 0 0 0" Panel.ZIndex="0" IsTabStop="False">
+            <Button Grid.Column="2" Style="{DynamicResource MaterialDesignToolForegroundButton}" Margin="8 0 0 0" Panel.ZIndex="0" IsTabStop="False"
+                    Command="{Binding SelectAthleteCommand}">
                 <materialDesign:PackIcon Kind="Send" />
             </Button>
         </Grid>

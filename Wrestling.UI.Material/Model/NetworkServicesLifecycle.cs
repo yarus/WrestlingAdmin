@@ -18,28 +18,35 @@ namespace Wrestling.UI.Material.Model
     // route them to the snackbar without the UI subscribing to each service.
     public sealed class NetworkServicesLifecycle : IDisposable
     {
-        // If a tournament has been open for this long with discovery enabled
-        // and we've heard nothing back, the most likely cause is a firewall
-        // or VPN interfering with the UDP broadcast. Surface a hint so
-        // operators don't waste minutes debugging silence.
+        // Empty discovery is normal on a single computer. Check firewall
+        // permissions separately before choosing the diagnostic message.
         private static readonly TimeSpan FirewallHintDelay = TimeSpan.FromSeconds(30);
 
         private readonly IDataContext _dataContext;
         private readonly IPeerDiscoveryService _discovery;
         private readonly ITournamentHttpServer _httpServer;
         private readonly Dispatcher _uiDispatcher;
+        private readonly Func<int, int?, FirewallAccess> _firewallAccess;
 
         private GlobalSettings _subscribedSettings;
         private Timer _firewallHintTimer;
+        private int _networkGeneration;
 
         public event EventHandler<string> DiagnosticMessage;
 
         public NetworkServicesLifecycle(IDataContext dataContext, IPeerDiscoveryService discovery, ITournamentHttpServer httpServer, Dispatcher uiDispatcher = null)
+            : this(dataContext, discovery, httpServer, uiDispatcher, WindowsFirewallAccessProbe.Check)
+        {
+        }
+
+        internal NetworkServicesLifecycle(IDataContext dataContext, IPeerDiscoveryService discovery,
+            ITournamentHttpServer httpServer, Dispatcher uiDispatcher, Func<int, int?, FirewallAccess> firewallAccess)
         {
             _dataContext = dataContext;
             _discovery = discovery;
             _httpServer = httpServer;
             _uiDispatcher = uiDispatcher;
+            _firewallAccess = firewallAccess;
             _dataContext.TournamentChanged += OnTournamentChanged;
             _discovery.DiagnosticMessage += Bubble;
             _httpServer.DiagnosticMessage += Bubble;
@@ -118,7 +125,7 @@ namespace Wrestling.UI.Material.Model
                     httpUrl: httpUrl ?? string.Empty,
                     stateHashProvider: ComputeStateHashOnUiThread);
 
-                ArmFirewallHint();
+                ArmFirewallHint(settings.DiscoveryPort, _httpServer.ActualPort);
             }
         }
 
@@ -146,26 +153,38 @@ namespace Wrestling.UI.Material.Model
             }
         }
 
-        private void ArmFirewallHint()
+        private void ArmFirewallHint(int discoveryPort, int? httpPort)
         {
             _firewallHintTimer?.Dispose();
-            _firewallHintTimer = new Timer(_ => CheckFirewallHint(), null, FirewallHintDelay, Timeout.InfiniteTimeSpan);
+            int generation = _networkGeneration;
+            _firewallHintTimer = new Timer(_ => CheckNetworkStatus(discoveryPort, httpPort, generation), null, FirewallHintDelay, Timeout.InfiniteTimeSpan);
         }
 
-        private void CheckFirewallHint()
+        internal void CheckNetworkStatus(int discoveryPort, int? httpPort, int? generation = null)
         {
-            if (_discovery.SnapshotPeers().Count == 0)
+            if (_subscribedSettings == null || (generation.HasValue && generation != _networkGeneration)) return;
+            var access = _firewallAccess(discoveryPort, httpPort);
+            if (_subscribedSettings == null || (generation.HasValue && generation != _networkGeneration)) return;
+            if (access == FirewallAccess.Allowed) return;
+            string key, fallback;
+            if (access == FirewallAccess.NotAllowed)
             {
-                var v = LocalizationService.Instance?.T("Network_FirewallHint");
-                var msg = string.IsNullOrEmpty(v) || v == "Network_FirewallHint"
-                    ? "Сеть не видит соседей — проверьте, что на первом запуске разрешили приложение в фаерволе Windows."
-                    : v;
-                DiagnosticMessage?.Invoke(this, msg);
+                key = "Network_FirewallNotAllowed";
+                fallback = "В брандмауэре Windows нет разрешения на входящие подключения для приложения или действует запрет. Разрешите приложение для текущей сети, чтобы компьютеры могли обмениваться данными турнира.";
             }
+            else
+            {
+                if (_discovery.SnapshotPeers().Count > 0) return;
+                key = "Network_FirewallUnknown";
+                fallback = "Не удалось проверить разрешения брандмауэра Windows. Если ожидаете соседей, проверьте сеть и разрешения приложения.";
+            }
+            var localized = LocalizationService.Instance?.T(key);
+            DiagnosticMessage?.Invoke(this, string.IsNullOrEmpty(localized) || localized == key ? fallback : localized);
         }
 
         private void StopAll()
         {
+            Interlocked.Increment(ref _networkGeneration);
             _firewallHintTimer?.Dispose();
             _firewallHintTimer = null;
             _discovery.Stop();

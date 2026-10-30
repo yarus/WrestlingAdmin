@@ -34,8 +34,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
 
         private IList<CommandButtonItem> _quickButtons;
 
-        private bool IsTeamTournament => true;
-
         #endregion
 
         public DrawViewModel(IDiContainer container) : base(container)
@@ -322,6 +320,23 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                     T("Export_NoBrackets_Body", "Нет групп со сгенерированными сетками. Сначала проведите жеребьёвку."),
                     T("DrawExport_DialogTitle", "Экспорт протоколов жеребьёвки"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
+            }
+
+            // Part selector — only prompts when 2+ parts exist. Selected
+            // null = "Все части"; selected part = export only that part's
+            // groups. Cancel aborts the entire export.
+            var (confirmed, selectedPart) = await Wrestling.UI.Material.Tournament.Print.PartSelectorDialog.PromptAsync(tournament);
+            if (!confirmed) return;
+            if (selectedPart != null)
+            {
+                groupsWithBrackets = groupsWithBrackets.Where(g => g.PartID == selectedPart.ID).ToList();
+                if (groupsWithBrackets.Count == 0)
+                {
+                    Dialog.ShowMessageBox(this,
+                        T("Export_NoBrackets_Body", "Нет групп со сгенерированными сетками. Сначала проведите жеребьёвку."),
+                        T("DrawExport_DialogTitle", "Экспорт протоколов жеребьёвки"), MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
             }
 
             var tournamentDir = !string.IsNullOrWhiteSpace(tournament.FileName)

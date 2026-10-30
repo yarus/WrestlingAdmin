@@ -20,6 +20,10 @@ namespace Wrestling.Entities.Results.Achievements
 
             var result = results.Max(r => r.WinsByDomination);
 
+            // No real domination win yet — don't crown the whole field on a
+            // 0–0 tie. FreeWin byes carry no win type, so never reach this count.
+            if (result <= 0) return null;
+
             var finalResults = results
                 .Where(r => r.WinsByDomination == result)
                 .OrderBy(r => r.MatchesCount)

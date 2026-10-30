@@ -123,6 +123,7 @@ public sealed class PeerSyncServiceTests
 #pragma warning restore CS0067
         public void Recalculate(Entities.Tournament tournament) => RecalculateCalls.Add(tournament);
         public IReadOnlyList<Entities.Results.TournamentTeamResult> GetOrderedTeamResults(Entities.Results.ITeamResultsOrderer orderer) => TeamResults;
+        public IReadOnlyList<Entities.Results.TournamentTeamResult> GetOrderedTeamResults(Entities.Results.ITeamResultsOrderer orderer, System.Guid? partId) => TeamResults;
     }
 
     private sealed class FuncClock { public DateTime Now { get; set; } = DateTime.UtcNow; }

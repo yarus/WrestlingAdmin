@@ -17,10 +17,20 @@ namespace Wrestling.Entities.Results.Achievements
                 return null;
             }
 
-            var smallestResult = results.Min(r => r.FastestWinSecond);
-            
-            var finalResults = 
-                results
+            // Only wrestlers with an actual decisive win qualify. Without a real
+            // win, FastestWinSecond returns the per-group sentinel
+            // (MaxRoundSecond * 2); FreeWin byes never produce a real win. If
+            // nobody has won decisively yet, there's no laureate — otherwise the
+            // whole field would tie on the sentinel and all get crowned.
+            var contenders = results
+                .Where(r => r.Group != null && r.FastestWinSecond < r.Group.MaxRoundSecond * 2)
+                .ToList();
+            if (contenders.Count == 0) return null;
+
+            var smallestResult = contenders.Min(r => r.FastestWinSecond);
+
+            var finalResults =
+                contenders
                 .Where(r => r.FastestWinSecond == smallestResult)
                 .OrderByDescending(r => r.Wins)
                 .ThenByDescending(r => r.Wrestler.BirthDate)

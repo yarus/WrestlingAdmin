@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
@@ -31,6 +32,8 @@ namespace Wrestling.UI.Material.Tournament.Results.TeamResults
 
         private TeamResultsSystemItem _selectedSystem;
         private IList<TournamentTeamResult> _items;
+        private IList<TeamResultsPartItem> _partFilters;
+        private TeamResultsPartItem _selectedPartFilter;
         private ICommand _changeSystemCommand;
 
         public TeamResultsViewModel(IDiContainer container) : base(container)
@@ -66,6 +69,33 @@ namespace Wrestling.UI.Material.Tournament.Results.TeamResults
             }
         }
 
+        // Part filter tabs: "Сумма всех частей" (PartId == null) followed by one
+        // item per tournament part. The selector is hidden on single-part
+        // tournaments — the sum then equals the lone part anyway.
+        public IList<TeamResultsPartItem> PartFilters
+        {
+            get => _partFilters;
+            private set
+            {
+                _partFilters = value;
+                OnPropertyChanged(nameof(PartFilters));
+            }
+        }
+
+        public bool HasMultipleParts => (DataContext?.Tournament?.Parts?.Count ?? 0) > 1;
+
+        public TeamResultsPartItem SelectedPartFilter
+        {
+            get => _selectedPartFilter;
+            set
+            {
+                if (ReferenceEquals(_selectedPartFilter, value)) return;
+                _selectedPartFilter = value;
+                OnPropertyChanged(nameof(SelectedPartFilter));
+                Reorder();
+            }
+        }
+
         public ICommand ChangeSystemCommand => _changeSystemCommand ??
             (_changeSystemCommand = new RelayCommand(param =>
             {
@@ -90,7 +120,32 @@ namespace Wrestling.UI.Material.Tournament.Results.TeamResults
                 _resultsSubscribed = true;
             }
 
+            BuildPartFilters();
             Reorder();
+        }
+
+        // Rebuilt on every page entry: parts may have been added / renamed /
+        // removed since last visit. Resets the selection to the sum (index 0).
+        private void BuildPartFilters()
+        {
+            var list = new List<TeamResultsPartItem>
+            {
+                new TeamResultsPartItem(null, T("TeamResults_AllParts", "Сумма всех частей"))
+            };
+
+            var parts = DataContext?.Tournament?.Parts;
+            if (parts != null)
+            {
+                foreach (var part in parts)
+                {
+                    list.Add(new TeamResultsPartItem(part.ID, part.Name));
+                }
+            }
+
+            PartFilters = list;
+            _selectedPartFilter = list[0];
+            OnPropertyChanged(nameof(SelectedPartFilter));
+            OnPropertyChanged(nameof(HasMultipleParts));
         }
 
         protected override void OnBackCommand()
@@ -112,8 +167,22 @@ namespace Wrestling.UI.Material.Tournament.Results.TeamResults
             }
 
             var orderer = Resolve<ITeamResultsOrderer>(_selectedSystem.OrdererKey);
-            Items = _resultsService.GetOrderedTeamResults(orderer).ToList();
+            Items = _resultsService.GetOrderedTeamResults(orderer, _selectedPartFilter?.PartId).ToList();
         }
+    }
+
+    // One entry in the part-filter strip on «Командные итоги».
+    // PartId == null is the "sum of all parts" tab.
+    public class TeamResultsPartItem
+    {
+        public TeamResultsPartItem(Guid? partId, string name)
+        {
+            PartId = partId;
+            Name = name;
+        }
+
+        public Guid? PartId { get; }
+        public string Name { get; }
     }
 
     public class TeamResultsSystemItem

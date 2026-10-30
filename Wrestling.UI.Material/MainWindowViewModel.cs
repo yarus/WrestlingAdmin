@@ -25,7 +25,6 @@ namespace Wrestling.UI.Material
         private IList<INavigationItem> _navigationItems = EmptyItems.ToList();
         private IList<INavigationItem> _footerNavigationItems = EmptyItems.ToList();
         private INavigationItem _activeItem;
-        private bool _isDrawerOpen;
         private ICommand _saveCommand;
         private ICommand _closeTournamentCommand;
 
@@ -113,20 +112,6 @@ namespace Wrestling.UI.Material
         private bool IsOverlayType(System.Type t) => t != null && _overlayParents.ContainsKey(t);
 
         private bool IsMatchOverlay(System.Type t) => t != null && _matchOverlays.Contains(t);
-
-        // Legacy property — bound by the current MainWindow.xaml DrawerHost
-        // and hamburger ToggleButton. Removed entirely in Step 6 when the
-        // hideable drawer is replaced by the persistent NavigationRail.
-        public bool IsDrawerOpen
-        {
-            get => _isDrawerOpen;
-            set
-            {
-                if (_isDrawerOpen == value) return;
-                _isDrawerOpen = value;
-                OnPropertyChanged(nameof(IsDrawerOpen));
-            }
-        }
 
         public IList<INavigationItem> NavigationItems => _navigationItems;
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Register Wrestlers"
+  short_description: "Import registrations into a .wrt tournament"
+  default_prompt: "Use $register-wrestlers to reconcile these registrations with my tournament."

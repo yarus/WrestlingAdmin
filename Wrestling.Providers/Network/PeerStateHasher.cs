@@ -25,6 +25,22 @@ namespace Wrestling.Providers.Network
             using (var ms = new MemoryStream())
             using (var w = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
             {
+                // Tournament-level meta version: bumped on Parts list edits
+                // (create / rename / delete). Peers diverge on these so the
+                // hash must reflect them.
+                w.Write(tournament.MetaVersion);
+
+                // Per-mat fields version: ActivePartID and any future mat-level
+                // fields. Order by ID for cross-peer determinism.
+                if (tournament.Mats != null)
+                {
+                    foreach (var mat in tournament.Mats.Where(m => m.ID.HasValue).OrderBy(m => m.ID.Value))
+                    {
+                        w.Write(mat.ID.Value.GetHashCode());
+                        w.Write(mat.FieldsVersion);
+                    }
+                }
+
                 if (tournament.Groups != null)
                 {
                     foreach (var g in tournament.Groups.OrderBy(x => x.ID))

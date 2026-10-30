@@ -157,6 +157,95 @@ public sealed class ResultsServiceTests
         svc.AllResults.Should().NotBeSameAs(first);
     }
 
+    [Fact]
+    public void GetOrderedTeamResults_with_partId_scopes_team_results_to_that_part()
+    {
+        // Two groups in two different parts. Each group has 4 wrestlers split
+        // across the same two teams (Red/Blue). Whole-tournament aggregation
+        // sees all 8 wrestlers; a per-part view sees only that part's 4.
+        var svc = MakeService();
+        var tournament = new Tournament(new GlobalSettings()) { ID = Guid.NewGuid(), Name = "T" };
+
+        var part1 = new TournamentPart { ID = Guid.NewGuid(), Name = "Часть 1" };
+        var part2 = new TournamentPart { ID = Guid.NewGuid(), Name = "Часть 2" };
+        tournament.Parts.Clear();
+        tournament.Parts.Add(part1);
+        tournament.Parts.Add(part2);
+
+        AppendOlympicGroup(tournament, "до 50 кг", weightMax: 50, redTeam: "Red", blueTeam: "Blue");
+        AppendOlympicGroup(tournament, "до 60 кг", weightMax: 60, redTeam: "Red", blueTeam: "Blue");
+        tournament.Groups[0].PartID = part1.ID;
+        tournament.Groups[1].PartID = part2.ID;
+
+        svc.Recalculate(tournament);
+
+        // Sum across all parts: both teams, 8 wrestlers, 2 golds total.
+        var all = svc.GetOrderedTeamResults(null, null);
+        all.Sum(t => t.Wrestlers.Count).Should().Be(8);
+        all.Sum(t => t.GoldMedals).Should().Be(2);
+
+        // Part 1 only: 4 wrestlers, 1 gold.
+        var p1 = svc.GetOrderedTeamResults(null, part1.ID);
+        p1.Sum(t => t.Wrestlers.Count).Should().Be(4);
+        p1.Sum(t => t.GoldMedals).Should().Be(1);
+
+        // Part 2 only: the other 4 wrestlers, 1 gold.
+        var p2 = svc.GetOrderedTeamResults(null, part2.ID);
+        p2.Sum(t => t.Wrestlers.Count).Should().Be(4);
+        p2.Sum(t => t.GoldMedals).Should().Be(1);
+    }
+
+    [Fact]
+    public void Achievements_are_empty_until_a_decisive_result_exists()
+    {
+        // Bracket drawn but no match decided — the same zero-metric state a
+        // FreeWin bye produces (byes carry no win type / points / actions). No
+        // laureate should be crowned; otherwise the whole field ties at 0 and
+        // every wrestler shows up as a nominee (the reported bug).
+        var svc = new ResultsService(
+            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() },
+            new TeamResultsCalculator(),
+            RealAchievementCalculators());
+
+        var tournament = new Tournament(new GlobalSettings()) { ID = Guid.NewGuid(), Name = "T" };
+        var group = MakeGroup("до 60 кг", birthYearMin: 2010, birthYearMax: 2011, weightMax: 60);
+        for (int i = 0; i < 4; i++)
+        {
+            var w = MakeWrestler($"W{i + 1:D2}", "Test");
+            w.GroupID = group.ID;
+            w.SeedNumber = i + 1;
+            group.Wrestlers.Add(w);
+            tournament.Wrestlers.Add(w);
+        }
+        tournament.Groups.Add(group);
+        new OlympicGroupBracketProcessor().Generate(tournament, group);
+
+        svc.Recalculate(tournament);
+
+        svc.Achievements.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Achievement_crowns_only_real_winners_not_the_whole_field()
+    {
+        // Four wrestlers, all matches won by tushe. Only the champion racks up
+        // 2 tushe wins, so the «most tushe» nomination must list exactly one
+        // wrestler — not everyone tied below them.
+        var svc = new ResultsService(
+            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() },
+            new TeamResultsCalculator(),
+            RealAchievementCalculators());
+
+        var tournament = new Tournament(new GlobalSettings()) { ID = Guid.NewGuid(), Name = "T" };
+        AppendOlympicGroup(tournament, "до 60 кг", weightMax: 60, winType: MatchWinTypeEnum.Tushe);
+
+        svc.Recalculate(tournament);
+
+        var tushe = svc.Achievements.Where(a => a.AchievementType == "MostTusheWinsCount").ToList();
+        tushe.Should().ContainSingle();
+        tushe[0].AchievementValue.Should().Be("2");
+    }
+
     // --- Helpers -----------------------------------------------------------
 
     private static ResultsService MakeService()
@@ -204,7 +293,8 @@ public sealed class ResultsServiceTests
         string name,
         double weightMax,
         string redTeam = null,
-        string blueTeam = null)
+        string blueTeam = null,
+        MatchWinTypeEnum winType = MatchWinTypeEnum.PointsWin)
     {
         var group = MakeGroup(name, birthYearMin: 2010, birthYearMax: 2011, weightMax: weightMax);
 
@@ -239,15 +329,26 @@ public sealed class ResultsServiceTests
 
         // Complete every match so GetResults assigns places 1..4.
         var r1 = group.Bracket.Rounds[0];
-        processor.CompleteMatch(r1.RoundMatches[0], isRedWon: true, MatchWinTypeEnum.PointsWin);
-        processor.CompleteMatch(r1.RoundMatches[1], isRedWon: true, MatchWinTypeEnum.PointsWin);
+        processor.CompleteMatch(r1.RoundMatches[0], isRedWon: true, winType);
+        processor.CompleteMatch(r1.RoundMatches[1], isRedWon: true, winType);
 
         var final = group.Bracket.Rounds[1].RoundMatches[0];
-        processor.CompleteMatch(final, isRedWon: true, MatchWinTypeEnum.PointsWin);
+        processor.CompleteMatch(final, isRedWon: true, winType);
 
         var third = group.Bracket.Rounds.Single(r => r.RoundType == GroupRoundTypeEnum.Additional).RoundMatches[0];
-        processor.CompleteMatch(third, isRedWon: true, MatchWinTypeEnum.PointsWin);
+        processor.CompleteMatch(third, isRedWon: true, winType);
     }
+
+    private static List<IAchievementCalculator> RealAchievementCalculators() => new List<IAchievementCalculator>
+    {
+        new FastestWinAchievementCalculator(),
+        new FastestActionAchievementCalculator(),
+        new MostAmplitudeActionsAchievementCalculator(),
+        new MostPointsCountAchievementCalculator(),
+        new MostTusheWinsAchievementCalculator(),
+        new MostDominationWinsAchievementCalculator(),
+        new WinInLast10SecondsAchievementCalculator()
+    };
 
     private static AgeWeightGroup MakeGroup(string name, int? birthYearMin, int? birthYearMax, double? weightMax)
     {

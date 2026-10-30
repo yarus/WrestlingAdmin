@@ -141,6 +141,12 @@ public sealed class TeamResultsViewModelTests
         public IReadOnlyList<TournamentTeamResult> GetOrderedTeamResults(ITeamResultsOrderer orderer)
             => orderer == null ? TeamResults : orderer.GetOrderedResults(TeamResults);
 
+        // Part filtering is exercised against the real ResultsService in
+        // Providers.Tests; this double ignores partId and returns the single
+        // pre-built team list so the existing VM behaviour tests still hold.
+        public IReadOnlyList<TournamentTeamResult> GetOrderedTeamResults(ITeamResultsOrderer orderer, Guid? partId)
+            => GetOrderedTeamResults(orderer);
+
         public void ReplaceTeams(IList<TournamentTeamResult> next)
         {
             TeamResults = next.ToList();

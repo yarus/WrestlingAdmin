@@ -1,0 +1,4 @@
+interface:
+  display_name: "Draw Seeding"
+  short_description: "Seed tournament groups using external ratings"
+  default_prompt: "Use $draw-seeding to prepare a draw using this rating CSV."

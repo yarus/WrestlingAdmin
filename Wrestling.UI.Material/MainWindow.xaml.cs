@@ -65,6 +65,9 @@ namespace Wrestling.UI.Material
         {
             base.OnPreviewKeyDown(e);
 
+            // Modal forms own keyboard input; page shortcuts must not intercept it.
+            if (RootDialogHost.IsOpen || e.Handled) return;
+
             var handler = _di.Resolve<IKeyHandler>();
             handler?.RiseKeyDown(e);
         }

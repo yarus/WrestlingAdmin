@@ -324,15 +324,26 @@ namespace Wrestling.UI.Material.Home
             }
         }
 
-        private void OpenNewTournamentPage()
+        internal static Entities.Tournament CreateNewTournament(GlobalSettings settings)
         {
-            DataContext.Tournament = new Entities.Tournament(GetSettingsObject())
+            var tournament = new Entities.Tournament(settings)
             {
                 ID = Guid.NewGuid(),
                 Name = T("Home_NewTournamentName", "Новый турнир"),
                 Status = TournamentStatus.Pending,
                 StartDate = DateTime.Now.AddDays(1)
             };
+            tournament.Parts.Add(new TournamentPart
+            {
+                ID = Guid.NewGuid(),
+                Name = T("Part_Default_Name", "Часть 1")
+            });
+            return tournament;
+        }
+
+        private void OpenNewTournamentPage()
+        {
+            DataContext.Tournament = CreateNewTournament(GetSettingsObject());
 
             _resultsService.Recalculate(DataContext.Tournament);
 

@@ -34,6 +34,10 @@ namespace Wrestling.Data
         [DataMember]
         public IEnumerable<MatInfo> Mats { get; set; }
         [DataMember]
+        public IEnumerable<TournamentPartInfo> Parts { get; set; }
+        [DataMember]
+        public int MetaVersion { get; set; }
+        [DataMember]
         public IEnumerable<SlideChannelInfo> SlideChannels { get; set; }
         // Legacy flat-slide list kept on the DTO for backward-compat load only.
         // Pre-channel .wrt files serialized this; the adapter migrates it into

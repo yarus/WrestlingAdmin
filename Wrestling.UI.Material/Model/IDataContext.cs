@@ -10,14 +10,11 @@ namespace Wrestling.UI.Material.Model
         WrestlingMatch WrestlingMatch { get; set; }
         Entities.Tournament Tournament { get; set; }
         TeamApplicationViewModel Team { get; set; }
-        bool IsAuthenticated { get; set; }
         // IsBracketView (legacy match-return hint) was removed in the shell
         // refactor; overlay return now goes through IShellViewModel.GetReturnVmType().
 
         List<Wrestler> WrestlersCache { get; set; }
         List<TeamApplication> TeamsCache { get; set; }
-        string UserName { get; set; }
-        string Password { get; set; }
 
         // Fires after the Tournament property changes (set to new instance,
         // swapped, or cleared to null). Sent with the new value so subscribers

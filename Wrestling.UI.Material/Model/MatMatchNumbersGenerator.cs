@@ -6,55 +6,94 @@ using Wrestling.Entities.Bracket;
 
 namespace Wrestling.UI.Material.Model
 {
-    // The Idea of this mat generator is to have match numbers started from #1 for each Mat.
-    // So match numbers won't be unique during thru tournament but they will be unique for the Mat.
-    // This allows to easily predict match schedule for participants.
+    // Per-mat, per-part numbering: each (Mat × Part) slice of the schedule
+    // restarts MatchNumber from 1. Operators announce "схватка №3 на ковре 2"
+    // and the audience can resolve that to a wrestler — the slice scopes the
+    // numbering so each mat has at most one #1 per part. Tournament-wide
+    // uniqueness is intentionally NOT a goal: BracketFullNumber carries the
+    // stable identity needed for peer-sync.
+    //
+    // Legacy single-part tournaments behave exactly as before because the
+    // adapter assigns the default Part's ID to every group; the outer loop
+    // collapses to one iteration and numbering is identical to the pre-Parts
+    // implementation.
     public class MatMatchNumbersGenerator : IMatchNumbersGenerator
     {
         public void Generate(Entities.Tournament tournament, List<IGroupBracketProcessor> processors)
         {
+            // Defensive fallback for tournaments without explicit Parts:
+            // treat the whole mat as a single virtual slice (the legacy
+            // per-mat behavior). Real tournaments always have at least one
+            // Part after the adapter migration; this guard exists for tests
+            // and any transitional construction path that hasn't been
+            // migrated.
+            var hasParts = tournament.Parts != null && tournament.Parts.Count > 0;
+
             foreach (var mat in tournament.Mats)
             {
-                int currentMatchNumber = 1;
-
-                var groups = mat.Groups.Where(g => g.Bracket != null).ToList();
-                if (groups.Count == 0) continue;
-
-                // Reset every match number first so stale values from previous runs cannot leak through
-                // if a Bind* method fails to cover a particular match (the catch-all at the end will then
-                // pick it up).
-                foreach (var match in groups.SelectMany(g => g.Bracket.Rounds.SelectMany(r => r.RoundMatches)))
+                if (hasParts)
                 {
-                    match.MatchNumber = 0;
-                }
-
-                // Each WrestlingMatch instance can only be numbered once per Generate pass — protects against
-                // shared references between rounds (e.g., a match accidentally referenced from both semi-final
-                // and final rounds), which would otherwise yield two mat matches sharing a MatchNumber.
-                var assigned = new HashSet<WrestlingMatch>();
-
-                BindMainBracketQualification(groups, processors, ref currentMatchNumber, assigned);
-
-                BindSemiFinals(groups, processors, ref currentMatchNumber, assigned);
-
-                BindAdditionalQualificationMatches(groups, processors, ref currentMatchNumber, assigned);
-
-                BindThirdPlaceMatches(groups, processors, ref currentMatchNumber, assigned);
-
-                BindFinalMatches(groups, processors, ref currentMatchNumber, assigned);
-
-                // Catch-all: number any matches that were missed by Bind* (kept defensively in case a bracket
-                // type adds a new round shape that the existing partition methods don't cover).
-                foreach (var group in groups)
-                {
-                    foreach (var round in group.Bracket.Rounds)
+                    // Per-(Part, Mat) numbering: each slice restarts from 1.
+                    foreach (var part in tournament.Parts)
                     {
-                        foreach (var match in round.RoundMatches)
-                        {
-                            if (!assigned.Add(match)) continue;
-                            match.MatchNumber = currentMatchNumber;
-                            currentMatchNumber++;
-                        }
+                        var groups = mat.Groups
+                            .Where(g => g.Bracket != null && g.PartID == part.ID)
+                            .ToList();
+                        NumberSlice(groups, processors);
+                    }
+                }
+                else
+                {
+                    // Legacy: one slice per mat, ignore PartID entirely.
+                    var groups = mat.Groups.Where(g => g.Bracket != null).ToList();
+                    NumberSlice(groups, processors);
+                }
+            }
+        }
+
+        // Runs the existing per-slice numbering pipeline: reset → Bind* by
+        // round-shape (qualification → semis → consolation → 3rd place →
+        // finals) → catch-all. Shared between per-Part and legacy paths.
+        private void NumberSlice(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors)
+        {
+            if (groups.Count == 0) return;
+
+            int currentMatchNumber = 1;
+
+            // Reset every match number first so stale values from previous runs cannot leak through
+            // if a Bind* method fails to cover a particular match (the catch-all at the end will then
+            // pick it up).
+            foreach (var match in groups.SelectMany(g => g.Bracket.Rounds.SelectMany(r => r.RoundMatches)))
+            {
+                match.MatchNumber = 0;
+            }
+
+            // Each WrestlingMatch instance can only be numbered once per Generate pass — protects against
+            // shared references between rounds (e.g., a match accidentally referenced from both semi-final
+            // and final rounds), which would otherwise yield two mat matches sharing a MatchNumber.
+            var assigned = new HashSet<WrestlingMatch>();
+
+            BindMainBracketQualification(groups, processors, ref currentMatchNumber, assigned);
+
+            BindSemiFinals(groups, processors, ref currentMatchNumber, assigned);
+
+            BindAdditionalQualificationMatches(groups, processors, ref currentMatchNumber, assigned);
+
+            BindThirdPlaceMatches(groups, processors, ref currentMatchNumber, assigned);
+
+            BindFinalMatches(groups, processors, ref currentMatchNumber, assigned);
+
+            // Catch-all: number any matches that were missed by Bind* (kept defensively in case a bracket
+            // type adds a new round shape that the existing partition methods don't cover).
+            foreach (var group in groups)
+            {
+                foreach (var round in group.Bracket.Rounds)
+                {
+                    foreach (var match in round.RoundMatches)
+                    {
+                        if (!assigned.Add(match)) continue;
+                        match.MatchNumber = currentMatchNumber;
+                        currentMatchNumber++;
                     }
                 }
             }

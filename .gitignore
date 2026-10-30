@@ -260,3 +260,4 @@ __pycache__/
 
 # Claude Code scratch / temporary artifacts
 .tmp/
+.playwright-mcp/

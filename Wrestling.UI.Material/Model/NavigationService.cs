@@ -46,6 +46,7 @@ namespace Wrestling.UI.Material.Model
                 new BracketsViewModel(_container),
                 new ScheduleViewModel(_container),
                 new SliderControlViewModel(_container),
+                new MatBoardViewModel(_container),
                 // Results hosts these as next/prev sub-pages.
                 new PersonalResultsViewModel(_container),
                 new TeamResultsViewModel(_container),
@@ -68,13 +69,7 @@ namespace Wrestling.UI.Material.Model
 
         public void NavigateToView<T>() where T : ViewModelBase
         {
-            var vm = GetViewModel<T>();
-            if (vm != null)
-            {
-                vm.InitData();
-                ShellVm.CurrentViewModel = vm;
-                vm.OnNavigationCompleted();
-            }
+            NavigateToView(typeof(T));
         }
 
         public void NavigateToView(System.Type viewModelType)
@@ -83,6 +78,8 @@ namespace Wrestling.UI.Material.Model
             var vm = GetViewModel(viewModelType);
             if (vm != null)
             {
+                // All navigation paths must release the outgoing page's keyboard handlers.
+                ShellVm.CurrentViewModel?.NotifyNavigatingOut();
                 vm.InitData();
                 ShellVm.CurrentViewModel = vm;
                 vm.OnNavigationCompleted();

@@ -117,7 +117,50 @@ public class MatchNumbersGeneratorTests
         var g1Matches = g1.Bracket.Rounds.SelectMany(r => r.RoundMatches).Select(m => m.MatchNumber).ToList();
         var g2Matches = group2.Bracket.Rounds.SelectMany(r => r.RoundMatches).Select(m => m.MatchNumber).ToList();
 
-        g1Matches.Should().Contain(1, "mat A numbering starts at 1");
-        g2Matches.Should().Contain(1, "mat B numbering also starts at 1 (per mat)");
+        g1Matches.Should().BeEquivalentTo(Enumerable.Range(1, g1Matches.Count),
+            "every match on mat A gets a unique, contiguous number starting at 1");
+        g2Matches.Should().BeEquivalentTo(Enumerable.Range(1, g2Matches.Count),
+            "mat B numbers independently — also a unique contiguous run from 1");
+    }
+
+    [Fact]
+    public void MatMatchNumbers_assign_unique_contiguous_numbers_across_a_full_olympic_8_mat()
+    {
+        // Olympic-8 exercises every Bind* partition (qualification → semis →
+        // 3rd place → final). The mat must end up with a clean 1..N run — no
+        // duplicates, no gaps — which is the core guarantee behind bug #11.
+        var (t, group, _) = BuildOneGroup(8);
+
+        new MatMatchNumbersGenerator().Generate(t, BuiltInProcessors());
+
+        var numbers = group.Bracket.Rounds.SelectMany(r => r.RoundMatches).Select(m => m.MatchNumber).ToList();
+        numbers.Should().BeEquivalentTo(Enumerable.Range(1, numbers.Count),
+            "each match on the mat is numbered exactly once, contiguously from 1");
+    }
+
+    [Fact]
+    public void MatMatchNumbers_number_each_match_instance_once_when_shared_between_rounds()
+    {
+        // Direct regression guard for bug #11: a single WrestlingMatch instance
+        // referenced from two rounds (historically the round accessors could
+        // return the same object) was renumbered by each Bind* pass, leaving the
+        // mat with non-contiguous / duplicated numbers. The dedup HashSet in
+        // MatMatchNumbersGenerator must number each distinct instance exactly once.
+        var (t, group, _) = BuildOneGroup(4); // SF(2) + Final(1) + 3rd place(1)
+
+        // Deliberately share a semifinal match instance into the 3rd-place round.
+        var sharedSemiFinal = group.Bracket.Rounds[0].RoundMatches[0];
+        var thirdPlaceRound = group.Bracket.Rounds.Single(r => r.RoundType == GroupRoundTypeEnum.Additional);
+        thirdPlaceRound.RoundMatches.Add(sharedSemiFinal);
+
+        new MatMatchNumbersGenerator().Generate(t, BuiltInProcessors());
+
+        var distinctNumbers = group.Bracket.Rounds
+            .SelectMany(r => r.RoundMatches)
+            .Distinct() // collapse the shared instance to a single match
+            .Select(m => m.MatchNumber)
+            .ToList();
+        distinctNumbers.Should().BeEquivalentTo(Enumerable.Range(1, distinctNumbers.Count),
+            "the shared instance is numbered once; without the dedup guard it would be renumbered, breaking the contiguous 1..N run");
     }
 }

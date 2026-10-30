@@ -91,10 +91,10 @@ namespace Wrestling.UI.Material.Model
 
         }
 
+        internal void NotifyNavigatingOut() => OnNavigatingOut();
+
         protected void NavigateToView<T>() where T : ViewModelBase
         {
-            OnNavigatingOut();
-
             _navService.NavigateToView<T>();
         }
 

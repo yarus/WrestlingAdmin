@@ -21,12 +21,13 @@ public sealed class NetworkServicesLifecycleTests
         public string LastNodeName { get; private set; }
         public Guid LastTournamentId { get; private set; }
         public string LastHttpUrl { get; private set; }
+        public IReadOnlyCollection<DiscoveredPeer> Peers { get; set; } = Array.Empty<DiscoveredPeer>();
 
         public event EventHandler<DiscoveredPeer> PeerUpserted { add { } remove { } }
         public event EventHandler<DiscoveredPeer> PeerExpired { add { } remove { } }
         public event EventHandler<string> DiagnosticMessage { add { } remove { } }
 
-        public IReadOnlyCollection<DiscoveredPeer> SnapshotPeers() => Array.Empty<DiscoveredPeer>();
+        public IReadOnlyCollection<DiscoveredPeer> SnapshotPeers() => Peers;
 
         public void StartForTournament(int port, Guid tournamentId, string tournamentTitle, string nodeName, string httpUrl, Func<string> stateHashProvider = null)
         {
@@ -71,6 +72,16 @@ public sealed class NetworkServicesLifecycleTests
             FileName = "tournament.wrt"
         };
         return t;
+    }
+
+    private static IReadOnlyCollection<DiscoveredPeer> MakePeers()
+    {
+        var registry = new PeerRegistry();
+        var tournamentId = Guid.NewGuid();
+        registry.SetContext(Guid.NewGuid(), tournamentId);
+        registry.Ingest(new PeerAdvertisement { Proto = PeerAdvertisement.CurrentProto,
+            InstanceId = Guid.NewGuid(), TournamentId = tournamentId }, System.Net.IPAddress.Loopback, DateTime.UtcNow);
+        return registry.Snapshot();
     }
 
     [Fact]
@@ -136,4 +147,67 @@ public sealed class NetworkServicesLifecycleTests
         h.StartCalls.Should().Be(1);
     }
 
+    [Theory]
+    [InlineData(0, null)]
+    [InlineData(1, "нет разрешения")]
+    [InlineData(2, "Не удалось проверить")]
+    public void Empty_discovery_does_not_determine_firewall_permissions(int access, string expected)
+    {
+        var dc = new DataContext();
+        int checkedUdp = 0;
+        int? checkedHttp = null;
+        using var lifecycle = new NetworkServicesLifecycle(dc, new FakeDiscovery(), new FakeHttpServer(), null,
+            (udp, http) => { checkedUdp = udp; checkedHttp = http; return (FirewallAccess)access; });
+        dc.Tournament = MakeTournament();
+        string message = null;
+        lifecycle.DiagnosticMessage += (_, text) => message = text;
+
+        lifecycle.CheckNetworkStatus(30001, 30002);
+
+        if (expected == null) message.Should().BeNull();
+        else message.Should().Contain(expected);
+        checkedUdp.Should().Be(30001);
+        checkedHttp.Should().Be(30002);
+    }
+
+    [Fact]
+    public void Existing_peers_do_not_hide_missing_http_permission()
+    {
+        var dc = new DataContext();
+        var discovery = new FakeDiscovery { Peers = MakePeers() };
+        using var lifecycle = new NetworkServicesLifecycle(dc, discovery, new FakeHttpServer(), null,
+            (_, _) => FirewallAccess.NotAllowed);
+        dc.Tournament = MakeTournament();
+        string message = null;
+        lifecycle.DiagnosticMessage += (_, text) => message = text;
+        lifecycle.CheckNetworkStatus(30001, 30002);
+        message.Should().Contain("нет разрешения");
+    }
+
+    [Fact]
+    public void Existing_peers_and_allowed_firewall_need_no_message()
+    {
+        var dc = new DataContext();
+        var discovery = new FakeDiscovery { Peers = MakePeers() };
+        using var lifecycle = new NetworkServicesLifecycle(dc, discovery, new FakeHttpServer(), null,
+            (_, _) => FirewallAccess.Allowed);
+        dc.Tournament = MakeTournament();
+        string message = null;
+        lifecycle.DiagnosticMessage += (_, text) => message = text;
+        lifecycle.CheckNetworkStatus(30001, 30002);
+        message.Should().BeNull();
+    }
+
+    [Fact]
+    public void Closing_tournament_discards_pending_diagnostic()
+    {
+        var dc = new DataContext();
+        using var lifecycle = new NetworkServicesLifecycle(dc, new FakeDiscovery(), new FakeHttpServer(), null,
+            (_, _) => { dc.Tournament = null; return FirewallAccess.NotAllowed; });
+        dc.Tournament = MakeTournament();
+        string message = null;
+        lifecycle.DiagnosticMessage += (_, text) => message = text;
+        lifecycle.CheckNetworkStatus(30001, 30002);
+        message.Should().BeNull();
+    }
 }

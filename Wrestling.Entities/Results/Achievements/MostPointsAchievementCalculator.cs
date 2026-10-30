@@ -19,6 +19,10 @@ namespace Wrestling.Entities.Results.Achievements
 
             var result = results.Max(r => r.AllGainedPoints);
 
+            // Nobody has scored a point yet — don't crown the whole field on a
+            // 0–0 tie. FreeWin byes score nothing, so never inflate this total.
+            if (result <= 0) return null;
+
             var finalResults = results
                 .Where(r => r.AllGainedPoints == result)
                 .OrderBy(r => r.MatchesCount)

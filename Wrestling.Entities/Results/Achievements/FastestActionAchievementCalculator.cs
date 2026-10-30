@@ -18,10 +18,20 @@ namespace Wrestling.Entities.Results.Achievements
                 return null;
             }
 
-            var smallestResult = results.Min(r => r.FastestActionSecond);
+            // Only wrestlers who actually scored an action qualify. Without one,
+            // FastestActionSecond returns the per-group sentinel
+            // (MaxRoundSecond * 2); FreeWin byes contain no actions. If nobody
+            // has scored yet, there's no laureate — otherwise the whole field
+            // would tie on the sentinel and all get crowned.
+            var contenders = results
+                .Where(r => r.Group != null && r.FastestActionSecond < r.Group.MaxRoundSecond * 2)
+                .ToList();
+            if (contenders.Count == 0) return null;
+
+            var smallestResult = contenders.Min(r => r.FastestActionSecond);
 
             var finalResults =
-                results
+                contenders
                 .Where(r => r.FastestActionSecond == smallestResult)
                 .OrderByDescending(r => r.Wins)
                 .ThenByDescending(r => r.Wrestler.BirthDate)

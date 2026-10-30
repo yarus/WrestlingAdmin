@@ -149,7 +149,9 @@ public class SubGroupsProcessorTests
         silverExpected!.FinalPlace.Should().Be(2);
         bronzeExpected!.FinalPlace.Should().Be(3);
         fourthExpected!.FinalPlace.Should().Be(4);
-        // Other 2 wrestlers fall through to classification-points ordering.
+        // Other 2 wrestlers take 5-6 via the UWW order-by chain; with identical
+        // test wrestlers they tie on every measurable criterion, so the 5-vs-6
+        // split falls to SeedNumber. This asserts the count only, not the order.
         g.Wrestlers.Where(w => w.FinalPlace > 4).Should().HaveCount(2);
     }
 

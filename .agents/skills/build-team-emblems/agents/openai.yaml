@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build Team Emblems"
+  short_description: "Find and assign tournament team emblems"
+  default_prompt: "Use $build-team-emblems to prepare team emblems for my tournament."

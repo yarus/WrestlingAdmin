@@ -18,11 +18,17 @@ namespace Wrestling.Providers
         private readonly ITeamResultsCalculator _teamCalculator;
         private readonly List<IAchievementCalculator> _achievementCalculators;
 
-        // Per-orderer cache. Keyed by orderer instance — orderers are DI
-        // singletons, so reference equality is sufficient. Cleared on every
-        // Recalculate so stale orderings never escape past a match approve.
-        private readonly Dictionary<ITeamResultsOrderer, IReadOnlyList<TournamentTeamResult>> _orderedTeamCache
-            = new Dictionary<ITeamResultsOrderer, IReadOnlyList<TournamentTeamResult>>();
+        // Per-(orderer, part) cache. Orderers are DI singletons so reference
+        // equality on the orderer component is sufficient; partId is value-
+        // compared. Cleared on every Recalculate so stale orderings never
+        // escape past a match approve.
+        private readonly Dictionary<(ITeamResultsOrderer, Guid?), IReadOnlyList<TournamentTeamResult>> _orderedTeamCache
+            = new Dictionary<(ITeamResultsOrderer, Guid?), IReadOnlyList<TournamentTeamResult>>();
+
+        // Unordered per-part team standings, built lazily from AllResults on
+        // first request for a part and cleared alongside the ordered cache.
+        private readonly Dictionary<Guid, IReadOnlyList<TournamentTeamResult>> _partTeamCache
+            = new Dictionary<Guid, IReadOnlyList<TournamentTeamResult>>();
 
         public ResultsService(
             List<IGroupBracketProcessor> bracketProcessors,
@@ -47,6 +53,7 @@ namespace Wrestling.Providers
         public void Recalculate(Tournament tournament)
         {
             _orderedTeamCache.Clear();
+            _partTeamCache.Clear();
 
             if (tournament == null)
             {
@@ -67,15 +74,37 @@ namespace Wrestling.Providers
         }
 
         public IReadOnlyList<TournamentTeamResult> GetOrderedTeamResults(ITeamResultsOrderer orderer)
+            => GetOrderedTeamResults(orderer, null);
+
+        public IReadOnlyList<TournamentTeamResult> GetOrderedTeamResults(ITeamResultsOrderer orderer, Guid? partId)
         {
-            if (orderer == null) return TeamResults;
-            if (TeamResults.Count == 0) return TeamResults;
+            var baseResults = partId.HasValue ? GetTeamResultsForPart(partId.Value) : TeamResults;
+            if (baseResults.Count == 0) return baseResults;
+            if (orderer == null) return baseResults;
 
-            if (_orderedTeamCache.TryGetValue(orderer, out var cached)) return cached;
+            var key = (orderer, partId);
+            if (_orderedTeamCache.TryGetValue(key, out var cached)) return cached;
 
-            var ordered = orderer.GetOrderedResults(TeamResults.ToList()) ?? new List<TournamentTeamResult>();
-            _orderedTeamCache[orderer] = ordered;
+            var ordered = orderer.GetOrderedResults(baseResults.ToList()) ?? new List<TournamentTeamResult>();
+            _orderedTeamCache[key] = ordered;
             return ordered;
+        }
+
+        // Team standings scoped to one part: only personal results whose group
+        // belongs to that part feed the aggregation, so a team with no wrestler
+        // in the part simply doesn't appear (the calculator builds rows from
+        // the supplied inputs).
+        private IReadOnlyList<TournamentTeamResult> GetTeamResultsForPart(Guid partId)
+        {
+            if (_teamCalculator == null) return EmptyTeamResults;
+            if (_partTeamCache.TryGetValue(partId, out var cached)) return cached;
+
+            var partResults = AllResults
+                .Where(r => r.Group != null && r.Group.PartID == partId)
+                .ToList();
+            var teams = _teamCalculator.GetTeamResults(partResults, null) ?? new List<TournamentTeamResult>();
+            _partTeamCache[partId] = teams;
+            return teams;
         }
 
         private List<TournamentResult> CalculateAllResults(Tournament tournament)

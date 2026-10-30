@@ -29,7 +29,7 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" Orientation="Horizontal"
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center"
                         materialDesign:RippleAssist.IsCentered="True">
                 <Grid Margin="20,10,0,10">
                     <Grid.ColumnDefinitions>
@@ -49,11 +49,22 @@
                              MinWidth="240" VerticalAlignment="Center"
                              Text="{Binding FilterString, UpdateSourceTrigger=PropertyChanged, Delay=400}" />
                 </Grid>
+
+                <!-- "Только призёры" sits immediately after the search box. -->
+                <CheckBox VerticalAlignment="Center" Margin="20,0,0,0"
+                          IsChecked="{Binding IsOnlyMedalsVisible}"
+                          Content="{loc:Loc Personal_OnlyMedals}" />
             </StackPanel>
 
-            <CheckBox Grid.Column="2" Margin="20,10,20,10" VerticalAlignment="Center"
-                      IsChecked="{Binding IsOnlyMedalsVisible}"
-                      Content="{loc:Loc Personal_OnlyMedals}" />
+            <!-- Per-part selector — anchored to the right edge, no label.
+                 Visible only when 2+ parts exist; local to this screen,
+                 doesn't affect any mat's ActivePartID. -->
+            <ComboBox Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center"
+                      Margin="20,10,20,10" MinWidth="160"
+                      ItemsSource="{Binding AvailableParts}"
+                      SelectedItem="{Binding SelectedPart, Mode=TwoWay}"
+                      DisplayMemberPath="Name"
+                      Visibility="{Binding HasMultipleParts, Converter={StaticResource BoolToVis}}" />
         </Grid>
 
         <Border Grid.Row="0" BorderThickness="0,0,0,1"

@@ -203,7 +203,9 @@ public class ConsolationProcessorTests
     {
         // 8-wrestler consolation distribution: 1, 2, 3, 3, 5, 5, 7, 8.
         // Two QF losers (those who lost to the SF loser) skip consolation
-        // entirely and are ranked 7-8 by classification points.
+        // entirely and take 7-8. With identical test wrestlers their UWW
+        // tiebreakers are all equal, so the 7-vs-8 order falls to SeedNumber;
+        // this test asserts the place multiset only, not which wrestler is 7th.
         var (_, g, proc) = Setup(8);
 
         foreach (var qf in g.Bracket.Rounds[0].RoundMatches.ToList())

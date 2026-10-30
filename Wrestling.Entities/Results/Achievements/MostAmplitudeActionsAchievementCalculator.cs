@@ -19,6 +19,10 @@ namespace Wrestling.Entities.Results.Achievements
 
             var result = results.Max(r => r.NumberOfAmplitudeActions);
 
+            // No 4-point throw landed yet — don't crown the whole field on a
+            // 0–0 tie. FreeWin byes contain no actions, so never reach this count.
+            if (result <= 0) return null;
+
             var finalResults = results
                 .Where(r => r.NumberOfAmplitudeActions == result)
                 .OrderBy(r => r.MatchesCount)

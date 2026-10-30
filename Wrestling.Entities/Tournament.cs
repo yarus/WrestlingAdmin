@@ -34,6 +34,10 @@ namespace Wrestling.Entities
 
         private ObservableCollection<Mat> _mats;
 
+        private ObservableCollection<TournamentPart> _parts;
+
+        private int _metaVersion;
+
         public Tournament(GlobalSettings settings)
         {
             _groups = new ObservableCollection<AgeWeightGroup>();
@@ -41,6 +45,7 @@ namespace Wrestling.Entities
             _wrestlers = new ObservableCollection<Wrestler>();
             _mats = new ObservableCollection<Mat>();
             _slideChannels = new ObservableCollection<SlideChannel>();
+            _parts = new ObservableCollection<TournamentPart>();
 
             Settings = settings ?? new GlobalSettings();
         }
@@ -292,7 +297,96 @@ namespace Wrestling.Entities
             }
         }
 
+        // Operational sequence: groups belong to one part each; mats run
+        // parts independently via Mat.ActivePartID. Always contains at least
+        // one part — the adapter creates a default one on legacy load.
+        public ObservableCollection<TournamentPart> Parts
+        {
+            get { return _parts; }
+            set
+            {
+                _parts = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // Bumped on any tournament-level meta change: parts list edits
+        // (create / rename / delete). Peers apply via the existing
+        // remote > local rule, mirroring AgeWeightGroup.FieldsVersion.
+        public int MetaVersion
+        {
+            get { return _metaVersion; }
+            set
+            {
+                _metaVersion = value;
+                OnPropertyChanged();
+            }
+        }
+
         public Guid? ID { get; set; }
+
+        public bool AddWrestlerRegistration(Wrestler wrestler)
+        {
+            Wrestlers.Add(wrestler);
+            var group = Groups.FirstOrDefault(g => g.ID == wrestler.GroupID);
+            wrestler.GroupName = group?.Name ?? string.Empty;
+            if (group == null) return false;
+
+            if (wrestler.IsRegistrationApproved)
+                group.Wrestlers.Add(wrestler);
+
+            // A new registration invalidates the draw even before approval.
+            group.Bracket = null;
+            group.BracketVersion++;
+            wrestler.FinalPlace = null;
+            foreach (var member in group.Wrestlers) member.FinalPlace = null;
+            group.RefreshState();
+            Mats.FirstOrDefault(m => m.ID == group.MatID)?.RefreshStats();
+            RefreshAggregates();
+            return true;
+        }
+
+        public bool UpdateWrestlerRegistration(Wrestler wrestler, Wrestler edited)
+        {
+            var groupChanged = wrestler.GroupID != edited.GroupID;
+            if (!groupChanged)
+            {
+                wrestler.Sync(edited);
+                return false;
+            }
+
+            var source = Groups.FirstOrDefault(g => g.ID == wrestler.GroupID);
+            var destination = Groups.FirstOrDefault(g => g.ID == edited.GroupID);
+            source?.Wrestlers.RemoveAll(w => w.ID == wrestler.ID);
+            destination?.Wrestlers.RemoveAll(w => w.ID == wrestler.ID);
+
+            wrestler.Sync(edited);
+            wrestler.SeedNumber = null;
+            wrestler.IsSeedFixed = false;
+            wrestler.FinalPlace = null;
+            wrestler.GroupName = destination?.Name ?? string.Empty;
+
+            if (destination != null && wrestler.IsRegistrationApproved)
+            {
+                // Groups and tournament registrations must share the live object,
+                // not the temporary copy used by the edit dialog.
+                destination.Wrestlers.Add(wrestler);
+            }
+
+            foreach (var group in new[] { source, destination }.Where(g => g != null))
+            {
+                // Invalidate even when the entrant is still awaiting approval.
+                // The newer version also clears the old bracket on sync peers.
+                group.Bracket = null;
+                group.BracketVersion++;
+                foreach (var member in group.Wrestlers) member.FinalPlace = null;
+                group.RefreshState();
+                Mats.FirstOrDefault(m => m.ID == group.MatID)?.RefreshStats();
+            }
+
+            RefreshAggregates();
+            return true;
+        }
 
         public void RefreshAggregates()
         {

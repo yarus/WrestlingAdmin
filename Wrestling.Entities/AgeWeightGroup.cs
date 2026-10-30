@@ -20,6 +20,7 @@ namespace Wrestling.Entities
         private int _maxActionSecond;
         private string _matLabel;
         private Guid? _matId;
+        private Guid? _partId;
         private GroupBracket _bracket;
         private List<Wrestler> _wrestlers;
         private bool _isExpanded;
@@ -60,6 +61,20 @@ namespace Wrestling.Entities
             {
                 _matId = value;
                 OnPropertyChanged("MatID");
+            }
+        }
+
+        // Which part of the tournament this group belongs to. Nullable for
+        // groups that didn't make it onto the schedule (insufficient
+        // wrestlers); such groups never get a PartID. Once assigned, this
+        // travels with the group across peers via FieldsVersion.
+        public Guid? PartID
+        {
+            get { return _partId; }
+            set
+            {
+                _partId = value;
+                OnPropertyChanged("PartID");
             }
         }
 
@@ -185,8 +200,8 @@ namespace Wrestling.Entities
             }
         }
 
-        // Bumped only by IGroupBracketProcessor.Generate() — i.e. the bracket
-        // was rebuilt from scratch. Apply replaces the bracket and Wrestlers
+        // Bumped when a bracket is generated or invalidated by a registration
+        // transfer. Apply replaces the bracket (including null) and Wrestlers
         // list wholesale, then re-applies any locally-newer match completions
         // so other mats do not lose their work.
         public int BracketVersion

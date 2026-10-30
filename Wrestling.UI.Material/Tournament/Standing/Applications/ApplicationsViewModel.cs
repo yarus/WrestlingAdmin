@@ -450,9 +450,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 tmpWresler.TeamCity = app.Team.City;
                 tmpWresler.Timestamp = DateTime.Now;
 
-                DataContext.Tournament.Wrestlers.Add(tmpWresler);
-
-                AddWrestlerToHisGroup(tmpWresler);
+                if (DataContext.Tournament.AddWrestlerRegistration(tmpWresler))
+                {
+                    ResultsService?.Recalculate(DataContext.Tournament);
+                }
 
                 var team = Items.First(x => x.Team.ID == tmpWresler.TeamID);
                 team.SetFilter(FilterString, IsOnlyUnapprovedVisible);
@@ -500,27 +501,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             }
         }
 
-        private void AddWrestlerToHisGroup(Wrestler wrestler)
-        {
-            if (wrestler.GroupID.HasValue && wrestler.IsRegistrationApproved)
-            {
-                var group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == wrestler.GroupID.Value);
-                if (group != null)
-                {
-                    var groupWrestler = group.Wrestlers.FirstOrDefault(wr => wr.ID == wrestler.ID);
-                    if (groupWrestler == null)
-                    {
-                        group.Wrestlers.Add(wrestler);
-                    }
-                    
-                    group.Bracket = null;
-                    group.RefreshState();
-                        
-                    wrestler.GroupName = group.Name;
-                }
-            }
-        }
-
         private async Task EditWrestler(Wrestler wrestler)
         {
             if (_editWrestlerDialogOpened) return;
@@ -544,23 +524,9 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 var teamApp = Items.FirstOrDefault(a => a.Team.ID == wrestler.TeamID);
                 if (teamApp != null && tmpWrestler != null)
                 {
-                    var isGroupChanged = tmpWrestler.GroupID != wrestler.GroupID || (!tmpWrestler.GroupID.HasValue && wrestler.GroupID.HasValue);
-                    
-                    if (isGroupChanged)
+                    if (DataContext.Tournament.UpdateWrestlerRegistration(wrestler, tmpWrestler))
                     {
-                        // Remove wrestler from old group
-                        RemoveWrestlerFromGroup(wrestler);
-
-                        // Remove wrestler from new group if it was already added
-                        RemoveWrestlerFromGroup(tmpWrestler);
-                    }
-                    
-                    wrestler.Sync(tmpWrestler);
-
-                    if (isGroupChanged)
-                    {
-                        // Add wrestler to Group if all data is valid
-                        AddWrestlerToHisGroup(tmpWrestler);
+                        ResultsService?.Recalculate(DataContext.Tournament);
                     }
                     
                     var cache = DiContainer.Resolve<ICacheManager>();
@@ -601,6 +567,20 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                     T("Applications_NoGroupsWithWrestlers", "Нет групп с зарегистрированными участниками."),
                     T("WeighingExport_DialogTitle", "Экспорт протоколов взвешивания"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
+            }
+
+            var (confirmed, selectedPart) = await Wrestling.UI.Material.Tournament.Print.PartSelectorDialog.PromptAsync(tournament);
+            if (!confirmed) return;
+            if (selectedPart != null)
+            {
+                groupsWithWrestlers = groupsWithWrestlers.Where(g => g.PartID == selectedPart.ID).ToList();
+                if (groupsWithWrestlers.Count == 0)
+                {
+                    Dialog.ShowMessageBox(this,
+                        T("Applications_NoGroupsWithWrestlers", "Нет групп с зарегистрированными участниками."),
+                        T("WeighingExport_DialogTitle", "Экспорт протоколов взвешивания"), MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
             }
 
             var tournamentDir = !string.IsNullOrWhiteSpace(tournament.FileName)
