@@ -213,7 +213,6 @@
 
   "AddWrestler_Title": "Участник",
   "AddWrestler_Search": "Поиск спортсмена ...",
-  "AddWrestler_SearchHelp": "Поиск в базе — от 3 символов. Выберите спортсмена кликом или стрелкой ↓ и Enter. Для нового спортсмена заполните поля ниже.",
   "AddWrestler_LastName": "Фамилия",
   "AddWrestler_FirstName": "Имя",
   "AddWrestler_MiddleName": "Отчество",

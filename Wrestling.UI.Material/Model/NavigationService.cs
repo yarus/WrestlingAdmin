@@ -69,13 +69,7 @@ namespace Wrestling.UI.Material.Model
 
         public void NavigateToView<T>() where T : ViewModelBase
         {
-            var vm = GetViewModel<T>();
-            if (vm != null)
-            {
-                vm.InitData();
-                ShellVm.CurrentViewModel = vm;
-                vm.OnNavigationCompleted();
-            }
+            NavigateToView(typeof(T));
         }
 
         public void NavigateToView(System.Type viewModelType)
@@ -84,6 +78,8 @@ namespace Wrestling.UI.Material.Model
             var vm = GetViewModel(viewModelType);
             if (vm != null)
             {
+                // All navigation paths must release the outgoing page's keyboard handlers.
+                ShellVm.CurrentViewModel?.NotifyNavigatingOut();
                 vm.InitData();
                 ShellVm.CurrentViewModel = vm;
                 vm.OnNavigationCompleted();

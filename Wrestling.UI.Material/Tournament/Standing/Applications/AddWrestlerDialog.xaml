@@ -47,14 +47,10 @@
                 <materialDesign:PackIcon Kind="Magnify" Opacity=".56" />
             </Button>
 
-            <StackPanel Grid.Column="1">
-                <TextBox x:Name="AthleteSearch" FontSize="18" TabIndex="0"
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         PreviewKeyDown="AthleteSearch_OnPreviewKeyDown"
-                         materialDesign:HintAssist.Hint="{loc:Loc AddWrestler_Search}" />
-                <TextBlock Text="{loc:Loc AddWrestler_SearchHelp}" TextWrapping="Wrap"
-                           Margin="0,6,0,6" Opacity="0.65" />
-            </StackPanel>
+            <TextBox Grid.Column="1" x:Name="AthleteSearch" FontSize="18" TabIndex="0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     PreviewKeyDown="AthleteSearch_OnPreviewKeyDown"
+                     materialDesign:HintAssist.Hint="{loc:Loc AddWrestler_Search}" />
             <Popup PlacementTarget="{Binding ElementName=AthleteSearch}" Placement="Bottom"
                    IsOpen="{Binding IsAthleteSearchOpen, Mode=TwoWay}" StaysOpen="False"
                    AllowsTransparency="True">
