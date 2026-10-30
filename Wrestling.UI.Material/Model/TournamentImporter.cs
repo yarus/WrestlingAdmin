@@ -348,7 +348,7 @@ namespace Wrestling.UI.Material.Model
                 // Per-group structural merge — independent of match-completion
                 // merge below. FieldsVersion covers timing/MatID/name/age/
                 // weight changes that don't touch bracket shape; BracketVersion
-                // fires only on Generate() and replaces bracket+wrestlers
+                // covers generation/invalidation and replaces bracket+wrestlers
                 // wholesale. They're separate so a peer that completed matches
                 // doesn't lose its work just because secretary tweaked timing.
                 if (group.FieldsVersion > localGroup.FieldsVersion)

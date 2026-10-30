@@ -213,6 +213,7 @@
 
   "AddWrestler_Title": "Участник",
   "AddWrestler_Search": "Поиск спортсмена ...",
+  "AddWrestler_SearchHelp": "Поиск в базе — от 3 символов. Выберите спортсмена кликом или стрелкой ↓ и Enter. Для нового спортсмена заполните поля ниже.",
   "AddWrestler_LastName": "Фамилия",
   "AddWrestler_FirstName": "Имя",
   "AddWrestler_MiddleName": "Отчество",
@@ -521,7 +522,8 @@
   "DrawExport_FilePrefix": "Жеребьевка_",
   "DrawExport_Snack_Building": "Идет создание протоколов жеребьёвки: {0} файлов...",
 
-  "Network_FirewallHint": "Сеть не видит соседей — проверьте, что на первом запуске разрешили приложение в фаерволе Windows.",
+  "Network_FirewallNotAllowed": "В брандмауэре Windows нет разрешения на входящие подключения для приложения или действует запрет. Разрешите приложение для текущей сети, чтобы компьютеры могли обмениваться данными турнира.",
+  "Network_FirewallUnknown": "Не удалось проверить разрешения брандмауэра Windows. Если ожидаете соседей, проверьте сеть и разрешения приложения.",
   "Network_UdpPortOpenFailed": "Не удалось открыть UDP порт {0}: {1}",
   "Network_UdpReceiveError": "Ошибка приёма UDP: ",
   "Network_AnnounceSerializeError": "Ошибка сериализации анонса: ",

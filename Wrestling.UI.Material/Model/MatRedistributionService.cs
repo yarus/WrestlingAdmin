@@ -34,6 +34,10 @@ namespace Wrestling.UI.Material.Model
             return false;
         }
 
+        public bool CanMoveGroupToPart(AgeWeightGroup group, System.Guid targetPartId)
+            => group != null && !HasLiveMatch(group)
+                && (group.PartID == targetPartId || CountCompleted(group) == 0);
+
         public MoveResult MoveGroupToMat(
             Entities.Tournament tournament,
             AgeWeightGroup group,

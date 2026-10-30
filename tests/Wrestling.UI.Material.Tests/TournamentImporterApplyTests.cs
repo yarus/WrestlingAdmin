@@ -21,6 +21,41 @@ namespace Wrestling.UI.Material.Tests;
 // reach this peer.
 public sealed class TournamentImporterApplyTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Registration_transfer_clears_both_peer_draws_and_the_old_fixed_seed(bool approved)
+    {
+        var (secretary, source, _) = BuildPair();
+        var (other, destination, _) = BuildPair();
+        secretary.Groups.Add(destination);
+        foreach (var w in other.Wrestlers) secretary.Wrestlers.Add(w);
+        var moving = source.Wrestlers[0];
+        moving.IsSeedFixed = true;
+        var peer = CloneViaAdapter(secretary);
+        var edited = (Wrestler)moving.Clone();
+        edited.GroupID = destination.ID;
+        edited.Weight = 61;
+        edited.IsWeightApproved = approved;
+        edited.Timestamp = DateTime.UtcNow;
+
+        secretary.UpdateWrestlerRegistration(moving, edited);
+        var remote = CloneViaAdapter(secretary);
+        MakeImporter().Apply(peer, ImportPlan.Proceed(remote));
+
+        var peerMoving = peer.Wrestlers.Single(w => w.ID == moving.ID);
+        peerMoving.GroupID.Should().Be(destination.ID);
+        peerMoving.SeedNumber.Should().BeNull();
+        peerMoving.IsSeedFixed.Should().BeFalse();
+        peer.Groups.Single(g => g.ID == source.ID).Bracket.Should().BeNull();
+        peer.Groups.Single(g => g.ID == destination.ID).Bracket.Should().BeNull();
+        peer.Groups.Single(g => g.ID == source.ID).Wrestlers.Should().NotContain(w => w.ID == moving.ID);
+        var targetMembers = peer.Groups.Single(g => g.ID == destination.ID).Wrestlers;
+        targetMembers.Contains(peerMoving).Should().Be(approved);
+        peer.Groups.Single(g => g.ID == source.ID).BracketVersion.Should().Be(source.BracketVersion);
+        peer.Groups.Single(g => g.ID == destination.ID).BracketVersion.Should().Be(destination.BracketVersion);
+    }
+
     // 4-wrestler Olympic bracket: two semifinals → final + 3rd place. Enough
     // structure to exercise CompleteMatch / RevertMatch propagation without
     // edge cases of FreeWin in odd brackets.

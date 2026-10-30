@@ -308,13 +308,15 @@ namespace Wrestling.Providers
         {
             if (info == null) return null;
 
+            var groupsById = groups.ToLookup(g => g.ID);
             var entity = new Mat
             {
                 ID = info.ID,
                 Name = info.Name,
                 ActivePartID = info.ActivePartID,
                 FieldsVersion = info.FieldsVersion,
-                Groups = new ObservableCollection<AgeWeightGroup>(groups.Where(g => info.Groups.Contains(g.ID)))
+                Groups = new ObservableCollection<AgeWeightGroup>((info.Groups ?? Enumerable.Empty<Guid>())
+                    .Distinct().SelectMany(id => groupsById[id]))
             };
 
             return entity;

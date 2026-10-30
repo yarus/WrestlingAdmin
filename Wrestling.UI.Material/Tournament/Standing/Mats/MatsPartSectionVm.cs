@@ -7,13 +7,27 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
 {
     // Per-(Part, Mat) panel used by the distribution section of MatsView —
     // wraps a Mat together with the slice of its groups belonging to the
-    // currently-selected Part. Recomputed by MatsViewModel.CurrentPartMatPanels
-    // on each SelectedPart change.
-    public sealed class MatsPartMatPanelVm
+    // currently-selected Part. Retained while the schedule page is open.
+    public sealed class MatsPartMatPanelVm : ObservableObject
     {
+        private IList<AgeWeightGroup> _groups;
+
         public Mat Mat { get; set; }
         public TournamentPart Part { get; set; }
-        public IList<AgeWeightGroup> Groups { get; set; }
+        public bool IsExpanded { get; set; } = true;
+        public IList<AgeWeightGroup> Groups
+        {
+            get => _groups;
+            set
+            {
+                _groups = value;
+                OnPropertyChanged(nameof(Groups));
+                OnPropertyChanged(nameof(WrestlersCount));
+                OnPropertyChanged(nameof(MatchesCount));
+                OnPropertyChanged(nameof(ExpectedDurationSeconds));
+                OnPropertyChanged(nameof(ExpectedDurationLabel));
+            }
+        }
 
         // Per-(Part, Mat) stats — same formulas as Mat.WrestlersCount /
         // .MatchesCount / .ExpectedDurationSeconds, but scoped to this

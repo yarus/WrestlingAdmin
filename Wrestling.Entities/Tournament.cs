@@ -325,6 +325,48 @@ namespace Wrestling.Entities
 
         public Guid? ID { get; set; }
 
+        public bool UpdateWrestlerRegistration(Wrestler wrestler, Wrestler edited)
+        {
+            var groupChanged = wrestler.GroupID != edited.GroupID;
+            if (!groupChanged)
+            {
+                wrestler.Sync(edited);
+                return false;
+            }
+
+            var source = Groups.FirstOrDefault(g => g.ID == wrestler.GroupID);
+            var destination = Groups.FirstOrDefault(g => g.ID == edited.GroupID);
+            source?.Wrestlers.RemoveAll(w => w.ID == wrestler.ID);
+            destination?.Wrestlers.RemoveAll(w => w.ID == wrestler.ID);
+
+            wrestler.Sync(edited);
+            wrestler.SeedNumber = null;
+            wrestler.IsSeedFixed = false;
+            wrestler.FinalPlace = null;
+            wrestler.GroupName = destination?.Name ?? string.Empty;
+
+            if (destination != null && wrestler.IsRegistrationApproved)
+            {
+                // Groups and tournament registrations must share the live object,
+                // not the temporary copy used by the edit dialog.
+                destination.Wrestlers.Add(wrestler);
+            }
+
+            foreach (var group in new[] { source, destination }.Where(g => g != null))
+            {
+                // Invalidate even when the entrant is still awaiting approval.
+                // The newer version also clears the old bracket on sync peers.
+                group.Bracket = null;
+                group.BracketVersion++;
+                foreach (var member in group.Wrestlers) member.FinalPlace = null;
+                group.RefreshState();
+                Mats.FirstOrDefault(m => m.ID == group.MatID)?.RefreshStats();
+            }
+
+            RefreshAggregates();
+            return true;
+        }
+
         public void RefreshAggregates()
         {
             OnPropertyChanged(nameof(MatchesCount));

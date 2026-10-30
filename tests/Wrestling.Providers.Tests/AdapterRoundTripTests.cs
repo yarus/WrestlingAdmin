@@ -15,6 +15,23 @@ public class AdapterRoundTripTests
     private readonly EntityToInfoAdapter _adapter = new();
 
     [Fact]
+    public void Round_trip_preserves_mat_group_order_independent_of_tournament_group_order()
+    {
+        var tournament = new Tournament(new GlobalSettings()) { ID = Guid.NewGuid() };
+        var first = new AgeWeightGroup { ID = Guid.NewGuid() };
+        var second = new AgeWeightGroup { ID = Guid.NewGuid() };
+        tournament.Groups.Add(first);
+        tournament.Groups.Add(second);
+        var mat = new Mat { ID = Guid.NewGuid(), Groups = new ObservableCollection<AgeWeightGroup> { second, first } };
+        tournament.Mats.Add(mat);
+
+        var restored = _adapter.GetEntityFromInfo(_adapter.GetInfoFromEntity(tournament));
+
+        restored.Mats[0].Groups.Select(g => g.ID).Should().Equal(second.ID, first.ID);
+        restored.Mats[0].Groups[0].Should().BeSameAs(restored.Groups[1]);
+    }
+
+    [Fact]
     public void Round_trip_of_simple_tournament_preserves_scalar_fields()
     {
         var t = new Tournament(new GlobalSettings())

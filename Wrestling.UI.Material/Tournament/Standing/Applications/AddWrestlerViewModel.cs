@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Windows.Controls;
+using System.Windows.Input;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
@@ -18,6 +18,9 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         private ObservableCollection<AgeWeightGroup> _groups;
         private ObservableCollection<Wrestler> _cachedAthletes;
         private ObservableCollection<WrestlerLevelEnum> _levels;
+        private string _searchText = string.Empty;
+        private bool _isAthleteSearchOpen;
+        private ICommand _selectAthleteCommand;
 
         public AddWrestlerViewModel(IDiContainer container, Wrestler item) : base(container)
         {
@@ -55,25 +58,46 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             _selectedGroup = _item.GroupID.HasValue ? _groups.FirstOrDefault(g => g.ID == _item.GroupID) : null;
 
             CachedAthletes = new ObservableCollection<Wrestler>(DataContext.WrestlersCache);
+            SearchText = string.Empty;
+            SelectedItem = null;
+            IsAthleteSearchOpen = false;
         }
 
         public ObservableCollection<WrestlerLevelEnum> Levels => _levels;
 
-        public Func<string, object, bool> AthleteFilter
+        public string SearchText
+        {
+            get { return _searchText; }
+            set
+            {
+                _searchText = value ?? string.Empty;
+                SelectedItem = null;
+                OnPropertyChanged(nameof(SearchText));
+                OnPropertyChanged(nameof(FilteredAthletes));
+                IsAthleteSearchOpen = FilteredAthletes.Count > 0;
+            }
+        }
+
+        public List<Wrestler> FilteredAthletes
         {
             get
             {
-                return (searchText, obj) =>
-                {
-                    var item = obj as Wrestler;
+                var text = SearchText.Trim();
+                if (text.Length < 3 || CachedAthletes == null) return new List<Wrestler>();
+                return CachedAthletes.Where(w =>
+                    w.FullName.Contains(text, StringComparison.OrdinalIgnoreCase)
+                    || (!string.IsNullOrEmpty(w.HashTag) && w.HashTag.Contains(text, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+        }
 
-                    if (item == null || string.IsNullOrEmpty(searchText) || searchText.Length < 3) return false;
-
-                    return (!string.IsNullOrEmpty(item.HashTag) && item.HashTag.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-                           || (!string.IsNullOrEmpty(item.LastName) && item.LastName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-                           || (!string.IsNullOrEmpty(item.FirstName) && item.FirstName.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-                           || (!string.IsNullOrEmpty(item.MiddleName) && item.MiddleName.Contains(searchText, StringComparison.OrdinalIgnoreCase));
-                };
+        public bool IsAthleteSearchOpen
+        {
+            get { return _isAthleteSearchOpen; }
+            set
+            {
+                _isAthleteSearchOpen = value;
+                OnPropertyChanged(nameof(IsAthleteSearchOpen));
             }
         }
 
@@ -83,37 +107,42 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             set
             {
                 _selectedItem = value;
-
-                if (_selectedItem != null)
-                {
-                    _item.Sync(_selectedItem);
-
-                    if (!DataContext.Tournament.EntryFee.HasValue)
-                    {
-                        _item.IsEntryFeePaid = true;
-                        _item.PaidAmount = 0;
-                    }
-                    else
-                    {
-                        _item.PaidAmount = DataContext.Tournament.EntryFee;
-                        _item.IsEntryFeePaid = false;
-                    }
-
-                    _item.IsWeightApproved = false;
-
-                    OnPropertyChanged("Item");
-
-                    OnPropertyChanged("IsFemaleT");
-                    OnPropertyChanged("IsFemaleF");
-                    OnPropertyChanged("WeightF");
-                    OnPropertyChanged("BirthDateF");
-                    OnPropertyChanged("Groups");
-
-                    _selectedItem = null;
-                }
-
-                OnPropertyChanged("SelectedItem");
+                OnPropertyChanged(nameof(SelectedItem));
             }
+        }
+
+        public ICommand SelectAthleteCommand => _selectAthleteCommand ??= new RelayCommand(
+            param => SelectAthlete(param as Wrestler ?? SelectedItem),
+            param => (param as Wrestler ?? SelectedItem) != null);
+
+        private void SelectAthlete(Wrestler athlete)
+        {
+            if (athlete == null) return;
+
+            _item.Sync(athlete);
+
+            if (!DataContext.Tournament.EntryFee.HasValue)
+            {
+                _item.IsEntryFeePaid = true;
+                _item.PaidAmount = 0;
+            }
+            else
+            {
+                _item.PaidAmount = DataContext.Tournament.EntryFee;
+                _item.IsEntryFeePaid = false;
+            }
+
+            _item.IsWeightApproved = false;
+
+            OnPropertyChanged("Item");
+            OnPropertyChanged("IsFemaleT");
+            OnPropertyChanged("IsFemaleF");
+            OnPropertyChanged("WeightF");
+            OnPropertyChanged("BirthDateF");
+            OnPropertyChanged("Groups");
+
+            SearchText = string.Empty;
+            IsAthleteSearchOpen = false;
         }
 
         public ObservableCollection<Wrestler> CachedAthletes

@@ -189,6 +189,7 @@
 
   "AddWrestler_Title": "Wrestler",
   "AddWrestler_Search": "Search wrestler ...",
+  "AddWrestler_SearchHelp": "Search the cache with 3 or more characters. Choose a wrestler by clicking or pressing ↓ then Enter. For a new wrestler, fill in the fields below.",
   "AddWrestler_LastName": "Last name",
   "AddWrestler_FirstName": "First name",
   "AddWrestler_MiddleName": "Middle name",
@@ -519,7 +520,8 @@
   "DrawExport_FilePrefix": "Draw_",
   "DrawExport_Snack_Building": "Building draw protocols: {0} files...",
 
-  "Network_FirewallHint": "Network can't see neighbors — make sure you allowed the app through the Windows firewall on first launch.",
+  "Network_FirewallNotAllowed": "Windows Firewall has no inbound permission for this app or a blocking rule applies. Allow the app on the current network so computers can exchange tournament data.",
+  "Network_FirewallUnknown": "Could not check Windows Firewall permissions. If you expect peers, check the network and app permissions.",
   "Network_UdpPortOpenFailed": "Could not open UDP port {0}: {1}",
   "Network_UdpReceiveError": "UDP receive error: ",
   "Network_AnnounceSerializeError": "Announce serialization error: ",

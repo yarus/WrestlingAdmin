@@ -200,8 +200,8 @@ namespace Wrestling.Entities
             }
         }
 
-        // Bumped only by IGroupBracketProcessor.Generate() — i.e. the bracket
-        // was rebuilt from scratch. Apply replaces the bracket and Wrestlers
+        // Bumped when a bracket is generated or invalidated by a registration
+        // transfer. Apply replaces the bracket (including null) and Wrestlers
         // list wholesale, then re-applies any locally-newer match completions
         // so other mats do not lose their work.
         public int BracketVersion

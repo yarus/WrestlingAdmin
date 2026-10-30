@@ -23,6 +23,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
 
         private ObservableCollection<AgeWeightGroup> _groups;
         private ObservableCollection<Mat> _items;
+        private readonly Dictionary<(Mat, TournamentPart), MatsPartMatPanelVm> _matPanels = new();
 
         private ICommand _addMatCommand;
         private ICommand _deleteMatCommand;
@@ -102,6 +103,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
             base.InitData();
 
             _quickButtons = null;
+            _matPanels.Clear();
             _redistribution = Resolve<IMatRedistributionService>();
 
             Items = DataContext.Tournament.Mats;
@@ -110,6 +112,12 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
 
             VerifyMats();
             EnsureSelectedPart();
+            // This VM is reused across tournaments, including an already-bound
+            // view. Refresh computed properties even when selection is unchanged.
+            OnPropertyChanged(nameof(Parts));
+            OnPropertyChanged(nameof(HasMultipleParts));
+            OnPropertyChanged(nameof(CurrentPartMatPanels));
+            OnPropertyChanged(nameof(UnbindedGroups));
         }
 
         // Pick a sensible default for SelectedPart on entry, and re-validate
@@ -378,39 +386,32 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
             }
         }
 
-        private void UpGroup(AgeWeightGroup group)
-        {
-            var mat = Items.FirstOrDefault(c => c.ID == group.MatID);
-            if (mat != null)
-            {
-                var i = mat.Groups.IndexOf(group);
-                var j = i - 1;
-                if (j >= 0)
-                {
-                    mat.Groups.Swap(i, j);
-                }
-            }
-        }
+        private void UpGroup(AgeWeightGroup group) => MoveGroup(group, -1);
 
-        private void DownGroup(AgeWeightGroup group)
+        private void DownGroup(AgeWeightGroup group) => MoveGroup(group, 1);
+
+        private void MoveGroup(AgeWeightGroup group, int offset)
         {
+            if (group == null || Items == null) return;
             var mat = Items.FirstOrDefault(c => c.ID == group.MatID);
-            if (mat != null)
-            {
-                var i = mat.Groups.IndexOf(group);
-                var j = i + 1;
-                if (j < mat.Groups.Count)
-                {
-                    mat.Groups.Swap(i, j);
-                }
-            }
+            if (mat == null) return;
+
+            // The screen shows one part: skip hidden groups in other parts.
+            var visibleGroups = mat.Groups.Where(g => g.PartID == group.PartID).ToList();
+            int index = visibleGroups.IndexOf(group);
+            int target = index + offset;
+            if (index < 0 || target < 0 || target >= visibleGroups.Count) return;
+
+            mat.Groups.Swap(mat.Groups.IndexOf(group), mat.Groups.IndexOf(visibleGroups[target]));
+            OnPropertyChanged(nameof(CurrentPartMatPanels));
         }
 
         private async Task AddMatAsync()
         {
             var tmpMat = new Mat
             {
-                ID = Guid.NewGuid()
+                ID = Guid.NewGuid(),
+                ActivePartID = SelectedPart?.ID
             };
 
             var view = new MatDialog
@@ -466,21 +467,10 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
             await BindGroupAsyncCore(mat, partFilter: null);
         }
 
-        // (Part, Mat) variant called from the nested multi-part layout. Pre-
-        // filters the picker to groups in this part (or unpartitioned) so the
-        // operator doesn't see groups belonging to another part. After the
-        // mat assignment, stamps PartID so a freshly orphan group lands in
-        // the right part automatically.
+        // Choose any eligible unassigned group and place it in this part.
         private async Task BindGroupForPartAsync(Mat mat, TournamentPart part)
         {
             await BindGroupAsyncCore(mat, partFilter: part?.ID);
-            if (part != null && _redistribution != null)
-            {
-                // Pick the last-bound group on this mat — the dialog's
-                // SelectedGroup isn't stored on the VM after dialog close,
-                // so the redistribution-service path's structural change is
-                // already done. The PartID stamp happens inside core.
-            }
         }
 
         private async Task BindGroupAsyncCore(Mat mat, System.Nullable<System.Guid> partFilter)
@@ -500,19 +490,42 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
             {
                 if (vm.SelectedGroup != null)
                 {
-                    _redistribution.MoveGroupToMat(DataContext.Tournament, vm.SelectedGroup, mat.ID);
-                    // Stamp PartID for newly-bound groups picked from the
-                    // unpartitioned pool. Existing PartID is preserved if
-                    // already set (a partitioned group was picked).
-                    if (partFilter.HasValue && !vm.SelectedGroup.PartID.HasValue)
+                    var outcome = BindSelectedGroup(mat, vm.SelectedGroup, partFilter);
+                    if (outcome.Outcome == MoveOutcome.BlockedByLiveMatch)
                     {
-                        vm.SelectedGroup.PartID = partFilter.Value;
-                        vm.SelectedGroup.FieldsVersion++;
+                        Dialog.ShowMessageBox(this,
+                            T("MatBoard_LiveMatchBlock_Body", "На Ковре сейчас идёт схватка. Дождитесь Approve или нажмите Revert."),
+                            T("MatBoard_LiveMatchBlock_Title", "Группа в работе"), MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    else if (outcome.Outcome == MoveOutcome.BlockedByCompletedMatches)
+                    {
+                        Dialog.ShowMessageBox(this,
+                            T("Mats_MoveToPart_BlockedByCompleted_Notice", "В группе уже есть завершённые схватки. Перенос в другую часть недоступен."),
+                            T("MatBoard_LiveMatchBlock_Title", "Группа в работе"), MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                     OnPropertyChanged("UnbindedGroups");
                     OnPropertyChanged(nameof(CurrentPartMatPanels));
                 }
             }
+        }
+
+        internal MoveResult BindSelectedGroup(Mat mat, AgeWeightGroup group, Guid? targetPartId)
+        {
+            var tournament = DataContext.Tournament;
+            // The dialog can outlive a peer update: re-check before mutating.
+            if (tournament == null || mat?.ID == null || group == null || group.MatID.HasValue
+                || !tournament.Mats.Contains(mat) || !tournament.Groups.Contains(group))
+                return new MoveResult { Outcome = MoveOutcome.NoChange };
+            if (targetPartId.HasValue && !tournament.Parts.Any(p => p.ID == targetPartId.Value))
+                return new MoveResult { Outcome = MoveOutcome.NoChange };
+
+            if (targetPartId.HasValue && group.PartID != targetPartId)
+            {
+                var partMove = _redistribution.MoveGroupToPart(tournament, group, targetPartId.Value);
+                if (partMove.Outcome != MoveOutcome.Moved) return partMove;
+                tournament.MetaVersion++;
+            }
+            return _redistribution.MoveGroupToMat(tournament, group, mat.ID);
         }
 
         public System.Windows.Input.ICommand BindGroupForPartCommand =>
@@ -529,9 +542,8 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
 
         private System.Windows.Input.ICommand _bindGroupForPartCommand;
 
-        // Mat panels for the currently selected part. Recomputed on access;
-        // cheap (3-5 mats × small group lists). The bottom section of the
-        // view binds here and refreshes whenever SelectedPart changes.
+        // Reuse each (mat, part) panel so refreshing groups preserves the
+        // operator's expanded/collapsed state, including across part switches.
         public System.Collections.Generic.IList<MatsPartMatPanelVm> CurrentPartMatPanels
         {
             get
@@ -545,7 +557,14 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
                 foreach (var mat in _items)
                 {
                     var groups = mat.Groups.Where(g => g.PartID == _selectedPart.ID).ToList();
-                    panels.Add(new MatsPartMatPanelVm { Mat = mat, Part = _selectedPart, Groups = groups });
+                    var key = (mat, _selectedPart);
+                    if (!_matPanels.TryGetValue(key, out var panel))
+                    {
+                        panel = new MatsPartMatPanelVm { Mat = mat, Part = _selectedPart };
+                        _matPanels.Add(key, panel);
+                    }
+                    panel.Groups = groups;
+                    panels.Add(panel);
                 }
                 return panels;
             }
@@ -556,7 +575,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
             if (Dialog.ShowMessageBox(this, T("Mats_UnbindGroup_Body", "Вы уверены, что убрать группу с ковра?"), T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
 
             _redistribution.MoveGroupToMat(DataContext.Tournament, group, null);
-            Items = new ObservableCollection<Mat>(DataContext.Tournament.Mats);
             OnPropertyChanged("UnbindedGroups");
             OnPropertyChanged(nameof(CurrentPartMatPanels));
         }

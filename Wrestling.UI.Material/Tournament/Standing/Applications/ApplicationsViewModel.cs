@@ -544,23 +544,9 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 var teamApp = Items.FirstOrDefault(a => a.Team.ID == wrestler.TeamID);
                 if (teamApp != null && tmpWrestler != null)
                 {
-                    var isGroupChanged = tmpWrestler.GroupID != wrestler.GroupID || (!tmpWrestler.GroupID.HasValue && wrestler.GroupID.HasValue);
-                    
-                    if (isGroupChanged)
+                    if (DataContext.Tournament.UpdateWrestlerRegistration(wrestler, tmpWrestler))
                     {
-                        // Remove wrestler from old group
-                        RemoveWrestlerFromGroup(wrestler);
-
-                        // Remove wrestler from new group if it was already added
-                        RemoveWrestlerFromGroup(tmpWrestler);
-                    }
-                    
-                    wrestler.Sync(tmpWrestler);
-
-                    if (isGroupChanged)
-                    {
-                        // Add wrestler to Group if all data is valid
-                        AddWrestlerToHisGroup(tmpWrestler);
+                        ResultsService?.Recalculate(DataContext.Tournament);
                     }
                     
                     var cache = DiContainer.Resolve<ICacheManager>();

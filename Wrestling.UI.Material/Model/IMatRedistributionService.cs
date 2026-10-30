@@ -34,6 +34,9 @@ namespace Wrestling.UI.Material.Model
         // scorer's feet, so the UI uses this to block the action.
         bool HasLiveMatch(AgeWeightGroup group);
 
+        // Read-only eligibility check used by the picker before a part move.
+        bool CanMoveGroupToPart(AgeWeightGroup group, System.Guid targetPartId);
+
         // Reassigns group to the target mat (null = unbind). Returns the outcome:
         //   Moved  — state changed; FieldsVersion was bumped and numbers regenerated.
         //   NoChange — group is already on the target mat; nothing was touched.
