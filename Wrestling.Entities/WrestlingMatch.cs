@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 
 namespace Wrestling.Entities
 {
@@ -47,6 +48,61 @@ namespace Wrestling.Entities
         }
         
         public string FileName { get; set; }
+
+        // Completed bouts superseded by replacement semifinal pairings. These
+        // remain results in their own right; they are not replayed as new wins.
+        private List<WrestlingMatch> _previousResults = new List<WrestlingMatch>();
+        public List<WrestlingMatch> PreviousResults
+        {
+            get => _previousResults;
+            set
+            {
+                _previousResults = value;
+                OnPropertyChanged(nameof(PreviousResults));
+                OnPropertyChanged(nameof(HasPreviousResults));
+            }
+        }
+        public bool HasPreviousResults => PreviousResults.Count > 0;
+
+        public WrestlingMatch CaptureResult()
+        {
+            var snapshot = (WrestlingMatch)MemberwiseClone();
+            snapshot.PropertyChanged = null;
+            snapshot.PreviousResults = new List<WrestlingMatch>();
+            snapshot._matchActions = _matchActions.Select(a => new MatchAction
+            {
+                Type = a.Type,
+                DateTime = a.DateTime,
+                RoundNumber = a.RoundNumber,
+                SecondInRound = a.SecondInRound,
+                IsForRed = a.IsForRed,
+                Points = a.Points
+            }).ToList();
+            return snapshot;
+        }
+
+        public void RestoreResult(WrestlingMatch snapshot)
+        {
+            WrestlerInRed = snapshot.WrestlerInRed;
+            WrestlerInBlue = snapshot.WrestlerInBlue;
+            Status = snapshot.Status;
+            WinType = snapshot.WinType;
+            IsRedWon = snapshot.IsRedWon;
+            PointsRed = snapshot.PointsRed;
+            PointsBlue = snapshot.PointsBlue;
+            WarningsNumberRed = snapshot.WarningsNumberRed;
+            WarningsNumberBlue = snapshot.WarningsNumberBlue;
+            BestActionRed = snapshot.BestActionRed;
+            BestActionBlue = snapshot.BestActionBlue;
+            BestActionRedCount = snapshot.BestActionRedCount;
+            BestActionBlueCount = snapshot.BestActionBlueCount;
+            IsLastActionRed = snapshot.IsLastActionRed;
+            LastSecondInMatch = snapshot.LastSecondInMatch;
+            StartDateTime = snapshot.StartDateTime;
+            Note = snapshot.Note;
+            MatchActions = snapshot.CaptureResult().MatchActions;
+            // The live identity, schedule number and version survive an undo.
+        }
 
         public string BracketFullNumber => $"{RoundNumber}.{BracketNumber}";
 

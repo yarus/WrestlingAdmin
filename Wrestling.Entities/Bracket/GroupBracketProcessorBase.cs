@@ -65,6 +65,14 @@ namespace Wrestling.Entities.Bracket
             }
         }
 
+        protected static bool AssignSharedInjuryPlace(WrestlingMatch match, int place)
+        {
+            if (match?.IsMatchCompleted != true || match.WinType != MatchWinTypeEnum.MutualInjury) return false;
+            foreach (var wrestler in new[] { match.WrestlerInRed, match.WrestlerInBlue })
+                if (wrestler != null && !wrestler.IsPlaceless) wrestler.FinalPlace = place;
+            return true;
+        }
+
         public virtual IEnumerable<TournamentResult> GetResults()
         {
             var groupWrestlers = GetGroupWrestlers();

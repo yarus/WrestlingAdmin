@@ -51,5 +51,7 @@ namespace Wrestling.Data
         public int WarningsNumberRed { get; set; }
         [DataMember]
         public int Version { get; set; }
+        [DataMember]
+        public IEnumerable<TournamentMatchInfo> PreviousResults { get; set; }
     }
 }

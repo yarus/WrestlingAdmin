@@ -656,6 +656,7 @@ namespace Wrestling.Entities.Bracket
         private void DefineWinnerAndLoserPlace(WrestlingMatch match, int winnerPlance, int looserPlace)
         {
             if (match == null || !match.IsMatchCompleted) return;
+            if (AssignSharedInjuryPlace(match, winnerPlance)) return;
             // Mutual DSQ: neither wrestler gets a rank — IsDisqualified flag drives UI.
             if (!match.IsRedWon.HasValue) return;
 
@@ -813,6 +814,9 @@ namespace Wrestling.Entities.Bracket
             // mutual-DSQ casualties from earlier rounds) stay placeless.
             // Final-single-DSQ case: 5th was filled (only one), so next is 6.
             var startPlace = isFinalSingleDsq ? 6 : (isRebuilt ? 5 : 7);
+            // Empty medal slots must not push the remaining athletes beyond
+            // the category size. Shared medal places still consume both slots.
+            startPlace = Math.Min(startPlace, GetGroupWrestlers().Count(w => w.FinalPlace.HasValue) + 1);
 
             var statistics = GetStats().Where(x => !x.Wrestler.FinalPlace.HasValue && !x.Wrestler.IsPlaceless)
                 .OrderByDescending(x => x.OverallTournamentClassificationPoints)

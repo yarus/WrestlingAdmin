@@ -745,9 +745,16 @@ namespace Wrestling.UI.Material.Match
 
             if (DataContext.Tournament != null)
             {
-                _processor.CompleteMatch(WrestlingMatch, WrestlingMatch.IsRedWon, WrestlingMatch.WinType.Value);
+                var completedType = WrestlingMatch.WinType.Value;
+                _processor.CompleteMatch(WrestlingMatch, WrestlingMatch.IsRedWon, completedType);
 
-                if (WrestlingMatch.WinType == MatchWinTypeEnum.MutualDisqualify)
+                if (_processor is SubGroupsToOlympicBracketProcessor && WrestlingMatch.HasPreviousResults
+                    && (completedType == MatchWinTypeEnum.MutualDisqualify || completedType == MatchWinTypeEnum.MutualNoShow))
+                {
+                    ShowSnackMessage(T("MatchResults_SubgroupSemifinalReplaced",
+                        "Полуфинал: выбывшие заменены следующими спортсменами своих подгрупп. Если замены нет — проход без борьбы."));
+                }
+                else if (completedType == MatchWinTypeEnum.MutualDisqualify)
                 {
                     var msg = GetMutualDsqAdvisoryMessage(WrestlingMatch);
                     if (!string.IsNullOrEmpty(msg)) ShowSnackMessage(msg);
