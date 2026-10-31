@@ -144,6 +144,7 @@ namespace Wrestling.Entities.Bracket
 
             var mainRounds = Group.Bracket.MainRounds().ToList();
             var final = mainRounds[mainRounds.Count - 1].RoundMatches[0];
+            AssignSharedInjuryPlace(final, 1);
 
             if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue)
             {
@@ -164,6 +165,7 @@ namespace Wrestling.Entities.Bracket
             if (addRounds.Count > 0)
             {
                 var addFinal = addRounds[0].RoundMatches[0];
+                AssignSharedInjuryPlace(addFinal, 3);
 
                 if (addFinal.Status == MatchStatusEnum.Completed && addFinal.IsRedWon.HasValue)
                 {
@@ -181,7 +183,7 @@ namespace Wrestling.Entities.Bracket
                 }
             }
 
-            int currentPlace = 5;
+            int currentPlace = Math.Min(5, GetGroupWrestlers().Count(w => w.FinalPlace.HasValue) + 1);
 
             foreach (var match in mainRounds.OrderByDescending(p => p.RoundNumber).SelectMany(x => x.RoundMatches))
             {

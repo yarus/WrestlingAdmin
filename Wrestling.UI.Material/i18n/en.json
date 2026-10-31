@@ -141,6 +141,10 @@
   "MatchResults_MutualDsq_FinalRebuilt": "Mutual DSQ in the final: bronze-match winners have been promoted to the final. The final has been replayed.",
   "MatchResults_MutualDsq_FinalPending": "Mutual DSQ in the final: bronze-match winners will be promoted to the final once those matches are completed.",
   "MatchResults_MutualDsq_ManualRebuild": "Mutual DSQ in a semifinal/final — a manual bracket rebuild is required (UWW rules).",
+  "MatchResults_SubgroupSemifinalReplaced": "Semifinal: eliminated wrestlers were replaced by the next eligible wrestlers from their pools. An empty slot gives a bye.",
+  "Brackets_UndoReplacement": "Undo semifinal replacements",
+  "Brackets_UndoReplacement_Body": "Undo the latest semifinal replacements and restore the previous pair? Dependent automatic byes will be undone.",
+  "Brackets_RevertMedalsFirst": "First undo the dependent final and bronze-match results.",
   "MatchResults_AutoNote_ActionQuality": "Win awarded on action quality.",
   "MatchResults_AutoNote_LastAction": "Equal score and equal action quality — win awarded on last action.",
 

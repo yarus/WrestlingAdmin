@@ -16,6 +16,199 @@ namespace Wrestling.Entities.Bracket
 
         private AgeWeightGroup _fakeGroupA;
         private AgeWeightGroup _fakeGroupB;
+        private bool _resolvingPlayoffs;
+
+        public override void Load(Tournament tournament, AgeWeightGroup group)
+        {
+            base.Load(tournament, group);
+            ResolvePlayoffMatches();
+        }
+
+        public override void CompleteMatch(WrestlingMatch wrestlingMatch, bool? isRedWon, MatchWinTypeEnum winType)
+        {
+            base.CompleteMatch(wrestlingMatch, isRedWon, winType);
+            ResolvePlayoffMatches();
+        }
+
+        private void ResolvePlayoffMatches()
+        {
+            // Automatic passes are derived from the source results, just like other
+            // FreeWin propagation. Loading must not create new result versions.
+            if (_resolvingPlayoffs || Group?.Bracket == null) return;
+            var rounds = Group.Bracket.AdditionalRounds().ToList();
+            if (rounds.Count != 3 || Group.Bracket.MainRounds().SelectMany(r => r.RoundMatches).Any(m => !m.IsMatchCompleted)) return;
+
+            _resolvingPlayoffs = true;
+            try
+            {
+                var semis = rounds[0].RoundMatches;
+                if (semis.All(m => !m.IsMatchCompleted && m.WrestlerInRed == null && m.WrestlerInBlue == null))
+                    ProceedToAdditionalBracket(Group.Bracket.MainRounds().Last().RoundMatches.Last());
+
+                RestoreHistoricalExclusions(semis);
+                foreach (var semi in semis) ReplaceExcludedSemifinalists(semi, semis);
+
+                // Pool results are final: no new wrestler can fill an empty SF slot.
+                foreach (var semi in semis) ResolveEmptyMatch(semi);
+
+                // Medal slots must wait for BOTH semifinals, including automatic passes.
+                if (semis.Any(m => !m.IsMatchCompleted)) return;
+                SetMedalParticipants(rounds[1].RoundMatches[0], Winner(semis[0]), Winner(semis[1]));
+                SetMedalParticipants(rounds[2].RoundMatches[0], Loser(semis[0]), Loser(semis[1]));
+                ResolveEmptyMatch(rounds[1].RoundMatches[0]);
+                ResolveEmptyMatch(rounds[2].RoundMatches[0]);
+            }
+            finally
+            {
+                _resolvingPlayoffs = false;
+                // Keep counters consistent even when the last match has no winner.
+                base.Load(Tournament, Group);
+            }
+        }
+
+        private static Wrestler Winner(WrestlingMatch match) => !match.IsRedWon.HasValue ? null
+            : match.IsRedWon.Value ? match.WrestlerInRed : match.WrestlerInBlue;
+
+        private static Wrestler Loser(WrestlingMatch match)
+        {
+            var wrestler = !match.IsRedWon.HasValue ? null
+                : match.IsRedWon.Value ? match.WrestlerInBlue : match.WrestlerInRed;
+            return wrestler?.IsPlaceless == true ? null : wrestler;
+        }
+
+        private static void SetMedalParticipants(WrestlingMatch match, Wrestler red, Wrestler blue)
+        {
+            // A contested medal match remains authoritative. Its own sanctions must
+            // not rewrite its participants when results are recalculated or loaded.
+            if (match.IsMatchCompleted && match.WinType != MatchWinTypeEnum.FreeWin) return;
+            if (match.WrestlerInRed?.ID == red?.ID && match.WrestlerInBlue?.ID == blue?.ID) return;
+            if (match.IsMatchCompleted) ResetMatch(match);
+            match.WrestlerInRed = red;
+            match.WrestlerInBlue = blue;
+        }
+
+        private void ResolveEmptyMatch(WrestlingMatch match)
+        {
+            if (match.IsMatchCompleted || match.WrestlerInRed != null && match.WrestlerInBlue != null) return;
+            if (match.WrestlerInRed == null && match.WrestlerInBlue == null)
+            {
+                // There is no winner to propagate; Completed/FreeWin/null is also
+                // used by the consolation processor for a wholly empty branch.
+                match.Status = MatchStatusEnum.Completed;
+                match.WinType = MatchWinTypeEnum.FreeWin;
+                match.IsRedWon = null;
+            }
+            else
+            {
+                base.CompleteMatch(match, match.WrestlerInRed != null, MatchWinTypeEnum.FreeWin);
+            }
+        }
+
+        private static void ResetMatch(WrestlingMatch match)
+        {
+            match.Status = MatchStatusEnum.Pending;
+            match.WinType = null;
+            match.IsRedWon = null;
+            match.PointsRed = match.PointsBlue = 0;
+            match.WarningsNumberRed = match.WarningsNumberBlue = 0;
+            match.LastSecondInMatch = 0;
+            match.StartDateTime = null;
+            match.BestActionRed = match.BestActionBlue = 0;
+            match.BestActionRedCount = match.BestActionBlueCount = 0;
+            match.IsLastActionRed = false;
+            match.Note = null;
+            match.MatchActions.Clear();
+        }
+
+        private static bool IsMutualExclusion(WrestlingMatch match) => match.IsMatchCompleted
+            && (match.WinType == MatchWinTypeEnum.MutualDisqualify || match.WinType == MatchWinTypeEnum.MutualNoShow);
+
+        private static void RestoreHistoricalExclusions(IEnumerable<WrestlingMatch> semis)
+        {
+            foreach (var result in semis.SelectMany(m => m.PreviousResults).Where(IsMutualExclusion))
+                foreach (var wrestler in new[] { result.WrestlerInRed, result.WrestlerInBlue }.Where(w => w != null))
+                {
+                    if (result.WinType == MatchWinTypeEnum.MutualDisqualify) wrestler.IsDisqualified = true;
+                    else if (!wrestler.IsDisqualified) wrestler.IsNoShow = true;
+                }
+        }
+
+        private void ReplaceExcludedSemifinalists(WrestlingMatch semi, List<WrestlingMatch> semis)
+        {
+            if (!IsMutualExclusion(semi)) return;
+            if (Group.Bracket.AdditionalRounds().Skip(1).SelectMany(r => r.RoundMatches)
+                .Any(m => m.IsMatchCompleted && m.WinType != MatchWinTypeEnum.FreeWin)) return;
+            InitInternalProcessors();
+            var other = semis.First(m => m != semi);
+            var reserved = new HashSet<Guid>(new[] { other.WrestlerInRed, other.WrestlerInBlue }
+                .Where(w => w != null).Select(w => w.ID));
+            var resultsA = _groupAProcessor.GetResults().Where(r => !r.Wrestler.IsPlaceless && !reserved.Contains(r.Wrestler.ID)).ToList();
+            var resultsB = _groupBProcessor.GetResults().Where(r => !r.Wrestler.IsPlaceless && !reserved.Contains(r.Wrestler.ID)).ToList();
+            var nextA = resultsA.FirstOrDefault()?.Wrestler;
+            var nextB = resultsB.FirstOrDefault()?.Wrestler;
+
+            RevertAdditionalBracket(semi);
+            semi.PreviousResults = semi.PreviousResults.Concat(new[] { semi.CaptureResult() }).ToList();
+            ResetMatch(semi);
+            var upper = semis.IndexOf(semi) == 0;
+            semi.WrestlerInRed = upper ? nextA : nextB;
+            semi.WrestlerInBlue = upper ? nextB : nextA;
+
+            // A different pairing is a structural update. Send the whole bracket
+            // atomically, including the preserved exclusion and its wrestler flags.
+            Group.BracketVersion++;
+        }
+
+        private bool IsWaitingReplacement(WrestlingMatch match) => GetSemiFinalRound(Group)?.RoundMatches.Contains(match) == true
+            && match.PreviousResults.Count > 0
+            && (!match.IsMatchCompleted || match.WinType == MatchWinTypeEnum.FreeWin);
+
+        public override void RevertMatch(WrestlingMatch wrestlingMatch)
+        {
+            if (!IsWaitingReplacement(wrestlingMatch))
+            {
+                base.RevertMatch(wrestlingMatch);
+                return;
+            }
+            if (!CanMatchBeReverted(wrestlingMatch)) throw new InvalidOperationException("Revert the dependent medal matches first.");
+            RevertAdditionalBracket(wrestlingMatch);
+            var previous = wrestlingMatch.PreviousResults.Last();
+            wrestlingMatch.PreviousResults = wrestlingMatch.PreviousResults.Take(wrestlingMatch.PreviousResults.Count - 1).ToList();
+            wrestlingMatch.RestoreResult(previous);
+            base.RevertMatch(wrestlingMatch);
+            wrestlingMatch.Version++;
+            Group.BracketVersion++;
+        }
+
+        public bool CanClearReplacementDisqualification(Wrestler wrestler)
+        {
+            var match = Group?.Bracket?.Rounds.SelectMany(r => r.RoundMatches).FirstOrDefault(m =>
+                m.WinType == MatchWinTypeEnum.MutualDisqualify && (m.WrestlerInRed.SameAs(wrestler) || m.WrestlerInBlue.SameAs(wrestler))
+                || m.PreviousResults.Any(r => r.WinType == MatchWinTypeEnum.MutualDisqualify
+                    && (r.WrestlerInRed.SameAs(wrestler) || r.WrestlerInBlue.SameAs(wrestler))));
+            return match == null || CanMatchBeReverted(match);
+        }
+
+        public override void ClearWrestlerDisqualify(Wrestler wrestler)
+        {
+            var match = GetSemiFinalRound(Group)?.RoundMatches.FirstOrDefault(m => m.PreviousResults.Any(r =>
+                r.WinType == MatchWinTypeEnum.MutualDisqualify && (r.WrestlerInRed.SameAs(wrestler) || r.WrestlerInBlue.SameAs(wrestler))));
+            if (match == null)
+            {
+                base.ClearWrestlerDisqualify(wrestler);
+                return;
+            }
+            while (match.PreviousResults.Any(r => r.WrestlerInRed.SameAs(wrestler) || r.WrestlerInBlue.SameAs(wrestler)))
+            {
+                if (!CanMatchBeReverted(match)) throw new InvalidOperationException("Revert the dependent medal matches first.");
+                if (!IsWaitingReplacement(match))
+                {
+                    base.RevertMatch(match);
+                    match.Version++;
+                }
+                else RevertMatch(match);
+            }
+        }
 
         public override string Title => EntityLocalization.T("BracketType_SubGroupsToOlympic", "2 подгруппы в Олимпийскую с 3м местом");
         public override string Code => BracketTypeEnum.SubGroupsIntoOlympic.ToString();
@@ -257,20 +450,21 @@ namespace Wrestling.Entities.Bracket
             // bronze loser → 3, everyone else shifts up by 1.
             // (Sibling rule of OlympicConsilationFinalists, adapted for the
             // single-bronze SubGroupsToOlympic format.)
-            var finalMutualDsq = final.Status == MatchStatusEnum.Completed
-                                 && final.WinType == MatchWinTypeEnum.MutualDisqualify;
+            var finalMutualExclusion = final.Status == MatchStatusEnum.Completed
+                && (final.WinType == MatchWinTypeEnum.MutualDisqualify || final.WinType == MatchWinTypeEnum.MutualNoShow);
             var bronzeHasWinner = thirdPlace.Status == MatchStatusEnum.Completed
                                   && thirdPlace.IsRedWon.HasValue;
             Wrestler dsqFinalist = null;
             if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue
-                && (final.WinType == MatchWinTypeEnum.DisqualifyWin || final.WinType == MatchWinTypeEnum.NoShow))
+                && (final.WinType == MatchWinTypeEnum.DisqualifyWin || final.WinType == MatchWinTypeEnum.NoShow
+                    || final.WinType == MatchWinTypeEnum.WarningsLimit))
             {
                 dsqFinalist = final.IsRedWon.Value ? final.WrestlerInBlue : final.WrestlerInRed;
                 if (dsqFinalist == null || !dsqFinalist.IsPlaceless) dsqFinalist = null;
             }
             var finalSingleDsq = dsqFinalist != null;
 
-            if (finalMutualDsq && bronzeHasWinner)
+            if (finalMutualExclusion && bronzeHasWinner)
             {
                 var promoted1st = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
                 if (promoted1st != null && !promoted1st.IsPlaceless)
@@ -317,7 +511,13 @@ namespace Wrestling.Entities.Bracket
             else
             {
                 // Standard 1-2 from final
-                if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue)
+                if (AssignSharedInjuryPlace(final, currentPlace))
+                {
+                    finalists.AddRange(new[] { final.WrestlerInRed, final.WrestlerInBlue }
+                        .Where(w => w != null && !w.IsPlaceless));
+                    currentPlace += 2;
+                }
+                else if (final.Status == MatchStatusEnum.Completed && final.IsRedWon.HasValue)
                 {
                     var winner = final.IsRedWon.Value ? final.WrestlerInRed : final.WrestlerInBlue;
                     if (winner != null && !winner.IsPlaceless)
@@ -342,7 +542,13 @@ namespace Wrestling.Entities.Bracket
                 }
 
                 // Standard 3-4 from bronze
-                if (bronzeHasWinner)
+                if (AssignSharedInjuryPlace(thirdPlace, currentPlace))
+                {
+                    finalists.AddRange(new[] { thirdPlace.WrestlerInRed, thirdPlace.WrestlerInBlue }
+                        .Where(w => w != null && !w.IsPlaceless));
+                    currentPlace += 2;
+                }
+                else if (bronzeHasWinner)
                 {
                     var bronzeWinner = thirdPlace.IsRedWon.Value ? thirdPlace.WrestlerInRed : thirdPlace.WrestlerInBlue;
                     if (bronzeWinner != null && !bronzeWinner.IsPlaceless)
@@ -366,6 +572,11 @@ namespace Wrestling.Entities.Bracket
                     currentPlace += 2;
                 }
             }
+
+            // Pool standings are not final category places while medal matches
+            // are pending (including a replacement semifinal still to be played).
+            if (!Group.IsBracketCompleted) return;
+            currentPlace = Math.Min(currentPlace, finalists.Count + 1);
 
             // Other places should be set based on main round robin results
             var matches = Group.Bracket.MainRounds().SelectMany(p => p.RoundMatches).Where(x => x.Status == MatchStatusEnum.Completed).ToList();
@@ -403,32 +614,27 @@ namespace Wrestling.Entities.Bracket
 
         protected override void ProceedToNextMatch(WrestlingMatch wrestlingMatch)
         {
-            base.ProceedToNextMatch(wrestlingMatch);
-
-            var matchRound = Group.Bracket.AdditionalRounds().First();
-            if (matchRound != null && matchRound.RoundNumber == wrestlingMatch.RoundNumber)
+            var semis = GetSemiFinalRound(Group);
+            if (semis?.RoundMatches.Contains(wrestlingMatch) != true)
             {
-                // Mutual DSQ in semifinal (M2): UWW requires manual rebuild —
-                // don't auto-place anyone in the third-place match.
-                if (!wrestlingMatch.IsRedWon.HasValue) return;
+                base.ProceedToNextMatch(wrestlingMatch);
+                return;
+            }
 
-                var thirdfPlaceRound = Group.Bracket.AdditionalRounds().Last();
-                if (thirdfPlaceRound != null)
-                {
-                    var matchLooser = wrestlingMatch.IsRedWon.Value
-                        ? wrestlingMatch.WrestlerInBlue
-                        : wrestlingMatch.WrestlerInRed;
-
-                    var match = thirdfPlaceRound.RoundMatches[0];
-                    if (match.WrestlerInRed == null)
-                    {
-                        match.WrestlerInRed = matchLooser;
-                    }
-                    else if (match.WrestlerInBlue == null)
-                    {
-                        match.WrestlerInBlue = matchLooser;
-                    }
-                }
+            // Stable source slots avoid moving a late semifinal winner to a slot
+            // vacated by a mutual outcome in the other semifinal.
+            int index = semis.RoundMatches.IndexOf(wrestlingMatch);
+            var final = GetFinalRound(Group).RoundMatches[0];
+            var bronze = Get3rdPlaceRound(Group).RoundMatches[0];
+            if (index == 0)
+            {
+                if (!final.IsMatchCompleted) final.WrestlerInRed = Winner(wrestlingMatch);
+                if (!bronze.IsMatchCompleted) bronze.WrestlerInRed = Loser(wrestlingMatch);
+            }
+            else
+            {
+                if (!final.IsMatchCompleted) final.WrestlerInBlue = Winner(wrestlingMatch);
+                if (!bronze.IsMatchCompleted) bronze.WrestlerInBlue = Loser(wrestlingMatch);
             }
         }
 
@@ -436,8 +642,7 @@ namespace Wrestling.Entities.Bracket
         {
             // Semi-finals already formed, no need to do anything
             var semiFinalRound = Group.Bracket.AdditionalRounds().First();
-            if (semiFinalRound.RoundMatches[0].WrestlerInRed != null &&
-                semiFinalRound.RoundMatches[1].WrestlerInRed != null)
+            if (semiFinalRound.RoundMatches.Any(m => m.IsMatchCompleted || m.WrestlerInRed != null || m.WrestlerInBlue != null))
             {
                 return;
             }
@@ -473,22 +678,7 @@ namespace Wrestling.Entities.Bracket
             semiFinalMatch2.WrestlerInRed = groupBGold;
             semiFinalMatch2.WrestlerInBlue = groupASilver;
 
-            // SFs that ended up with one slot filled and one empty (because a
-            // subgroup had < 2 clean finishers after mutual DSQ) auto-FreeWin
-            // for the lone wrestler so the final still progresses normally.
-            TryAutoFreeWinSemiFinal(semiFinalMatch1);
-            TryAutoFreeWinSemiFinal(semiFinalMatch2);
-        }
-
-        private void TryAutoFreeWinSemiFinal(WrestlingMatch sf)
-        {
-            if (sf.Status != MatchStatusEnum.Pending) return;
-            var hasRed = sf.WrestlerInRed != null;
-            var hasBlue = sf.WrestlerInBlue != null;
-            // Both empty (subgroup degenerate): leave pending, operator must
-            // rebuild the bracket. Both filled: nothing to auto-resolve.
-            if (hasRed == hasBlue) return;
-            CompleteMatch(sf, hasRed, MatchWinTypeEnum.FreeWin);
+            ResolvePlayoffMatches();
         }
 
         protected override void RevertAdditionalBracket(WrestlingMatch wrestlingMatch)
@@ -503,12 +693,22 @@ namespace Wrestling.Entities.Bracket
                     var finalRound = Group.Bracket.Rounds.First(r => r.RoundNumber == (wrestlingMatch.RoundNumber + 1));
                     var thirdPlaceRound = Group.Bracket.Rounds.First(r => r.RoundNumber == (wrestlingMatch.RoundNumber + 2));
 
+                    foreach (var match in finalRound.RoundMatches.Concat(thirdPlaceRound.RoundMatches))
+                        if (match.IsMatchCompleted && match.WinType == MatchWinTypeEnum.FreeWin) ResetMatch(match);
+
+                    if (!wrestlingMatch.IsRedWon.HasValue)
+                    {
+                        // Mutual outcomes populated neither target slot.
+                        return;
+                    }
+
                     if (wrestlingMatch.IsRedWon.HasValue && wrestlingMatch.IsRedWon.Value)
                     {
                         if (finalRound.RoundMatches[0].WrestlerInRed.SameAs(wrestlingMatch.WrestlerInRed))
                         {
                             finalRound.RoundMatches[0].WrestlerInRed = null;
-                        } else if (finalRound.RoundMatches[0].WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInRed))
+                        }
+                        else if (finalRound.RoundMatches[0].WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInRed))
                         {
                             finalRound.RoundMatches[0].WrestlerInBlue = null;
                         }
@@ -516,7 +716,8 @@ namespace Wrestling.Entities.Bracket
                         if (thirdPlaceRound.RoundMatches[0].WrestlerInRed.SameAs(wrestlingMatch.WrestlerInBlue))
                         {
                             thirdPlaceRound.RoundMatches[0].WrestlerInRed = null;
-                        } else if (thirdPlaceRound.RoundMatches[0].WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInBlue))
+                        }
+                        else if (thirdPlaceRound.RoundMatches[0].WrestlerInBlue.SameAs(wrestlingMatch.WrestlerInBlue))
                         {
                             thirdPlaceRound.RoundMatches[0].WrestlerInBlue = null;
                         }
@@ -551,17 +752,9 @@ namespace Wrestling.Entities.Bracket
                 {
                     foreach (var match in Group.Bracket.AdditionalRounds().SelectMany(r => r.RoundMatches))
                     {
+                        ResetMatch(match);
                         match.WrestlerInRed = null;
                         match.WrestlerInBlue = null;
-                        match.Status = MatchStatusEnum.Pending;
-                        match.LastSecondInMatch = 0;
-                        match.PointsBlue = 0;
-                        match.PointsRed = 0;
-                        match.WarningsNumberBlue = 0;
-                        match.WarningsNumberRed = 0;
-                        match.StartDateTime = null;
-                        match.IsRedWon = null;
-                        match.WinType = null;
                     }
                 }
             }
@@ -569,9 +762,8 @@ namespace Wrestling.Entities.Bracket
 
         public override bool CanMatchBeReverted(WrestlingMatch wrestlingMatch)
         {
-            var baseCheck = base.CanMatchBeReverted(wrestlingMatch);
-
-            if (!baseCheck) return false;
+            if (!IsWaitingReplacement(wrestlingMatch) && (wrestlingMatch.Status == MatchStatusEnum.Pending || !wrestlingMatch.WinType.HasValue
+                || wrestlingMatch.RoundNumber == 1 && wrestlingMatch.WinType == MatchWinTypeEnum.FreeWin)) return false;
 
             var round = Group.Bracket.Rounds.First(r => r.RoundNumber == wrestlingMatch.RoundNumber);
 
@@ -587,12 +779,13 @@ namespace Wrestling.Entities.Bracket
                 var finalRound = Group.Bracket.Rounds.First(r => r.RoundNumber == (wrestlingMatch.RoundNumber + 1));
                 var thirdPlaceRound = Group.Bracket.Rounds.First(r => r.RoundNumber == (wrestlingMatch.RoundNumber + 2));
 
-                return finalRound.RoundMatches[0].Status == MatchStatusEnum.Pending && thirdPlaceRound.RoundMatches[0].Status == MatchStatusEnum.Pending;
+                return finalRound.RoundMatches.Concat(thirdPlaceRound.RoundMatches)
+                    .All(m => !m.IsMatchCompleted || m.WinType == MatchWinTypeEnum.FreeWin);
             }
 
             // Main bracket match can be reverted only if no additional bracket matches completed
-            return Group.Bracket.AdditionalRounds()
-                       .SelectMany(r => r.RoundMatches).Count(m => m.Status == MatchStatusEnum.Completed) == 0;
+            return Group.Bracket.AdditionalRounds().SelectMany(r => r.RoundMatches)
+                .All(m => m.PreviousResults.Count == 0 && (!m.IsMatchCompleted || m.WinType == MatchWinTypeEnum.FreeWin));
         }
 
         public override List<GroupRound> GetMainQualificationRounds(AgeWeightGroup group)

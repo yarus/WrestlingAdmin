@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using MaterialDesignThemes.Wpf;
@@ -26,6 +27,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
         private ICommand _openMatchCommand;
         private ICommand _changeMatCommand;
         private ICommand _clearDisqualifyCommand;
+        private ICommand _undoReplacementCommand;
         private List<IGroupBracketProcessor> _processors;
 
         private IList<CommandButtonItem> _quickButtons;
@@ -167,9 +169,41 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             }
         }
 
+        public ICommand UndoReplacementCommand => _undoReplacementCommand ??= new AsyncRelayCommand(
+            param => UndoReplacementAsync(param as WrestlingMatch),
+            param => param is WrestlingMatch match && match.HasPreviousResults);
+
         #endregion
 
         #region Private Methods
+
+        private async Task UndoReplacementAsync(WrestlingMatch match)
+        {
+            if (match == null || !match.HasPreviousResults) return;
+            var group = Tournament.Groups.FirstOrDefault(g => g.ID == match.GroupID);
+            var processor = _processors?.FirstOrDefault(p => p.Code == group?.Bracket?.BracketTypeCode) as SubGroupsToOlympicBracketProcessor;
+            if (processor == null) return;
+            processor.LoadTournamentGroup(Tournament, group);
+            if (!processor.CanMatchBeReverted(match))
+            {
+                ShowSnackMessage(T("Brackets_RevertMedalsFirst", "Сначала отмените зависимые результаты финала и схватки за 3-е место."));
+                return;
+            }
+            if (Dialog.ShowMessageBox(this,
+                T("Brackets_UndoReplacement_Body", "Отменить последнюю замену полуфиналистов и вернуть предыдущую пару? Связанные автоматические проходы будут отменены."),
+                T("MatchResults_ConfirmTitle", "Требуется подтверждение"), MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK) return;
+
+            if (match.IsMatchCompleted && match.WinType != MatchWinTypeEnum.FreeWin)
+            {
+                processor.RevertMatch(match);
+                match.Version++;
+            }
+            processor.RevertMatch(match);
+            ResultsService?.Recalculate(Tournament);
+            group.RefreshState();
+            SelectedMat?.RefreshStats();
+            await SaveIfAutosaveEnabledAsync();
+        }
 
         private void ChangeMat(Mat mat)
         {
@@ -188,6 +222,17 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
                 .FirstOrDefault(g => g.Wrestlers.Any(w => w.SameAs(wrestler)));
             if (hostGroup?.Bracket == null) return;
 
+            var processor = _processors?.FirstOrDefault(p => p.Code == hostGroup.Bracket.BracketTypeCode);
+            if (processor is SubGroupsToOlympicBracketProcessor subgroup)
+            {
+                subgroup.LoadTournamentGroup(Tournament, hostGroup);
+                if (!subgroup.CanClearReplacementDisqualification(wrestler))
+                {
+                    ShowSnackMessage(T("Brackets_RevertMedalsFirst", "Сначала отмените зависимые результаты финала и схватки за 3-е место."));
+                    return;
+                }
+            }
+
             var msg = string.Format(T("Brackets_RemoveDsq_Body", "Снять дисквалификацию со спортсмена «{0}»?\nМатч с обоюдной дисквалификацией будет освобождён для повторной игры."), wrestler.FullName);
             if (Dialog.ShowMessageBox(this, msg, T("Brackets_RemoveDsq_Title", "Подтверждение"),
                     MessageBoxButton.OKCancel, MessageBoxImage.None) != MessageBoxResult.OK)
@@ -195,11 +240,13 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
                 return;
             }
 
-            var processor = _processors?.FirstOrDefault(p => p.Code == hostGroup.Bracket.BracketTypeCode);
             if (processor is GroupBracketProcessorBase concrete)
             {
                 concrete.LoadTournamentGroup(DataContext.Tournament, hostGroup);
                 concrete.ClearWrestlerDisqualify(wrestler);
+                ResultsService?.Recalculate(Tournament);
+                hostGroup.RefreshState();
+                SelectedMat?.RefreshStats();
                 ShowSnackMessage(T("Brackets_DsqRemoved_Snack", "Дисквалификация снята."));
             }
             else

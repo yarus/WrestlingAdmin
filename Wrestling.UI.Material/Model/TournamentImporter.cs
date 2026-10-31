@@ -514,16 +514,18 @@ namespace Wrestling.UI.Material.Model
             {
                 foreach (var m in round.RoundMatches)
                 {
-                    if (m.WrestlerInRed != null)
-                    {
-                        m.WrestlerInRed = target.Wrestlers.FirstOrDefault(w => w.ID == m.WrestlerInRed.ID) ?? m.WrestlerInRed;
-                    }
-                    if (m.WrestlerInBlue != null)
-                    {
-                        m.WrestlerInBlue = target.Wrestlers.FirstOrDefault(w => w.ID == m.WrestlerInBlue.ID) ?? m.WrestlerInBlue;
-                    }
+                    ResolveMatchWrestlerRefs(m, target);
                 }
             }
+        }
+
+        private static void ResolveMatchWrestlerRefs(WrestlingMatch match, Entities.Tournament target)
+        {
+            if (match.WrestlerInRed != null)
+                match.WrestlerInRed = target.Wrestlers.FirstOrDefault(w => w.ID == match.WrestlerInRed.ID) ?? match.WrestlerInRed;
+            if (match.WrestlerInBlue != null)
+                match.WrestlerInBlue = target.Wrestlers.FirstOrDefault(w => w.ID == match.WrestlerInBlue.ID) ?? match.WrestlerInBlue;
+            foreach (var previous in match.PreviousResults) ResolveMatchWrestlerRefs(previous, target);
         }
 
         // Tournament-level meta sync: parts list. By-ID reconcile — add
@@ -668,6 +670,20 @@ namespace Wrestling.UI.Material.Model
         // dangle as remote-only instances.
         private void ReplaceGroupBracket(Entities.Tournament target, AgeWeightGroup local, AgeWeightGroup remote)
         {
+            // Replacement history and the exclusions it records form one structural
+            // update, including when undo removes the last historical result.
+            bool hadReplacements = local.Bracket?.Rounds.SelectMany(r => r.RoundMatches).Any(m => m.PreviousResults.Count > 0) == true;
+            bool hasReplacements = remote.Bracket?.Rounds.SelectMany(r => r.RoundMatches).Any(m => m.PreviousResults.Count > 0) == true;
+            if (hadReplacements || hasReplacements)
+            {
+                foreach (var remoteWrestler in remote.Wrestlers)
+                {
+                    var localWrestler = target.Wrestlers.FirstOrDefault(w => w.ID == remoteWrestler.ID);
+                    if (localWrestler == null) continue;
+                    localWrestler.IsDisqualified = remoteWrestler.IsDisqualified;
+                    localWrestler.IsNoShow = remoteWrestler.IsNoShow;
+                }
+            }
             // Snapshot local match state by stable identity before we drop
             // the bracket. MatchNumber is per-mat (renumbered on group move),
             // BracketFullNumber is stable as long as the bracket shape itself
