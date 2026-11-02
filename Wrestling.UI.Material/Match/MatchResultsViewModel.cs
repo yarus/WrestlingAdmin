@@ -21,8 +21,7 @@ namespace Wrestling.UI.Material.Match
 
         private IList<CommandButtonItem> _quickButtons;
         private ScoreScreenViewModel _scoreScreenVm;
-        private readonly List<IGroupBracketProcessor> _drawTypes;
-        private IGroupBracketProcessor _processor;
+        private readonly IGroupBracketProcessorFactory _processorFactory;
         private ICommand _completeMatch;
         private IKeyHandler _keyHandler;
         private ILocalizationService _localization;
@@ -31,7 +30,7 @@ namespace Wrestling.UI.Material.Match
 
         public MatchResultsViewModel(IDiContainer container) : base(container)
         {
-            _drawTypes = Resolve<List<IGroupBracketProcessor>>();
+            _processorFactory = Resolve<IGroupBracketProcessorFactory>();
         }
 
         // T inherited from TournamentViewModelBase.
@@ -98,11 +97,7 @@ namespace Wrestling.UI.Material.Match
 
             if (DataContext.Group?.Bracket != null)
             {
-                _processor = GetProcessorForGroup(DataContext.Group.Bracket.BracketTypeCode);
-                if (_processor == null) throw new InvalidOperationException($"No processor registered for bracket type '{DataContext.Group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
-
-                _processor.Load(DataContext.Tournament, DataContext.Group);
-                CanRejectResult = _processor.CanMatchBeReverted(WrestlingMatch);
+                CanRejectResult = CreateProcessor().CanMatchBeReverted(WrestlingMatch);
             }
 
             if (DataContext.WrestlingMatch.WrestlerInRed?.TeamID != null && DataContext.Tournament != null)
@@ -630,7 +625,7 @@ namespace Wrestling.UI.Material.Match
             return team != null ? team.EmblemPath : string.Empty;
         }
 
-        private async Task RejectAsync()
+        internal async Task RejectAsync()
         {
             if (Dialog.ShowMessageBox(this,
                     T("MatchResults_RevertConfirm_Body", "Результат матча будет анулирован и сетка перестроена! Вы уверены?"),
@@ -638,7 +633,9 @@ namespace Wrestling.UI.Material.Match
 
             if (DataContext.Group?.Bracket != null)
             {
-                _processor.RevertMatch(WrestlingMatch);
+                var processor = CreateProcessor();
+                if (!processor.CanMatchBeReverted(WrestlingMatch)) return;
+                processor.RevertMatch(WrestlingMatch);
             }
             else
             {
@@ -673,7 +670,7 @@ namespace Wrestling.UI.Material.Match
             NavigateToReturnTarget();
         }
 
-        private async Task ApproveAsync()
+        internal async Task ApproveAsync()
         {
             // No-winner outcomes — finalize without picking a wrestler.
             var isMutual = WinType == MatchWinTypeEnum.MutualDisqualify
@@ -687,6 +684,8 @@ namespace Wrestling.UI.Material.Match
                         T("MatchResults_ErrorTitle", "Ошибка"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
+
+            var processor = DataContext.Tournament != null ? CreateProcessor() : null;
 
             if (WrestlingMatch.StartDateTime == null)
             {
@@ -716,7 +715,7 @@ namespace Wrestling.UI.Material.Match
                 SecondInRound = WrestlingMatch.LastSecondInMatch > WrestlingMatch.MaxRoundSecond ? WrestlingMatch.LastSecondInMatch - WrestlingMatch.MaxRoundSecond : WrestlingMatch.LastSecondInMatch,
             });
 
-            CompleteMatch();
+            CompleteMatch(processor);
 
             // ResultsService and autosave both need a Tournament — gate them
             // on that. Always return the operator to their previous screen
@@ -732,7 +731,7 @@ namespace Wrestling.UI.Material.Match
             NavigateToMatches();
         }
 
-        private void CompleteMatch()
+        private void CompleteMatch(IGroupBracketProcessor processor)
         {
             // Mutual DSQ / NoShow / Injury: WinType is set, IsRedWon is null —
             // that's the canonical «no winner» encoding (see GroupBracketProcessorBase).
@@ -746,9 +745,9 @@ namespace Wrestling.UI.Material.Match
             if (DataContext.Tournament != null)
             {
                 var completedType = WrestlingMatch.WinType.Value;
-                _processor.CompleteMatch(WrestlingMatch, WrestlingMatch.IsRedWon, completedType);
+                processor.CompleteMatch(WrestlingMatch, WrestlingMatch.IsRedWon, completedType);
 
-                if (_processor is SubGroupsToOlympicBracketProcessor && WrestlingMatch.HasPreviousResults
+                if (processor is SubGroupsToOlympicBracketProcessor && WrestlingMatch.HasPreviousResults
                     && (completedType == MatchWinTypeEnum.MutualDisqualify || completedType == MatchWinTypeEnum.MutualNoShow))
                 {
                     ShowSnackMessage(T("MatchResults_SubgroupSemifinalReplaced",
@@ -756,7 +755,7 @@ namespace Wrestling.UI.Material.Match
                 }
                 else if (completedType == MatchWinTypeEnum.MutualDisqualify)
                 {
-                    var msg = GetMutualDsqAdvisoryMessage(WrestlingMatch);
+                    var msg = GetMutualDsqAdvisoryMessage(WrestlingMatch, processor);
                     if (!string.IsNullOrEmpty(msg)) ShowSnackMessage(msg);
                 }
                 else
@@ -771,11 +770,11 @@ namespace Wrestling.UI.Material.Match
         // needed (e.g. mutual DSQ in an early round of an Olympic bracket — the
         // cascade in GroupBracketProcessorBase handles it without operator
         // intervention).
-        private string GetMutualDsqAdvisoryMessage(WrestlingMatch match)
+        private string GetMutualDsqAdvisoryMessage(WrestlingMatch match, IGroupBracketProcessor processor)
         {
-            if (DataContext.Group?.Bracket == null || _processor == null) return null;
-            var sf = _processor.GetSemiFinalRound(DataContext.Group);
-            var f = _processor.GetFinalRound(DataContext.Group);
+            if (DataContext.Group?.Bracket == null || processor == null) return null;
+            var sf = processor.GetSemiFinalRound(DataContext.Group);
+            var f = processor.GetFinalRound(DataContext.Group);
             var code = DataContext.Group.Bracket.BracketTypeCode;
             var isElim = code != BracketTypeEnum.RoundRobin.ToString();
             if (!isElim) return null;
@@ -822,9 +821,16 @@ namespace Wrestling.UI.Material.Match
             else Navigation.NavigateToView<Tournament.Conducting.ConductingViewModel>();
         }
 
-        private IGroupBracketProcessor GetProcessorForGroup(string processorType)
+        private IGroupBracketProcessor CreateProcessor()
         {
-            return _drawTypes.FirstOrDefault(p => p.Code == processorType);
+            var group = DataContext.Group;
+            if (group?.Bracket == null || !DataContext.Tournament.Groups.Contains(group)
+                || !group.Bracket.Rounds.SelectMany(r => r.RoundMatches).Contains(WrestlingMatch))
+                throw new BracketStateException("The selected match no longer belongs to the current tournament bracket.");
+            var processor = _processorFactory.Create(group.Bracket.BracketTypeCode);
+            if (processor == null) throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'.");
+            processor.Load(DataContext.Tournament, group);
+            return processor;
         }
 
         private void SetWinnerAndWinType()

@@ -16,7 +16,7 @@ namespace Wrestling.Data
         // Free-form Russian description. Kept in the schema so a .wrt written
         // by the new app stays readable by an older client that didn't know
         // about Type. New code populates this from MatchActionDescriber based
-        // on Type+IsForRed+Points; legacy files predating Type rely on this
+        // on Type+IsForRed+Points+WarningDelta; legacy files predating Type rely on this
         // field for type inference on load (LegacyMatchActionTypeInferrer).
         [DataMember]
         public string Text { get; set; }
@@ -25,6 +25,8 @@ namespace Wrestling.Data
         public bool? IsForRed { get; set; }
         [DataMember]
         public int Points { get; set; }
+        [DataMember]
+        public int? WarningDelta { get; set; }
 
         // Discriminator added 2026-05-10. Stored as string for forward
         // compatibility (new variants can be inserted without renumbering an

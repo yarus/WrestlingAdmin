@@ -22,6 +22,126 @@ namespace Wrestling.UI.Material.Tests;
 public sealed class TournamentImporterApplyTests
 {
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Old_free_win_does_not_return_after_bracket_regeneration(bool oldPeerReceivesNewBracket)
+    {
+        var (author, group, processor) = BuildPair();
+        var match = FirstPendingMatch(group);
+        var identity = match.BracketFullNumber;
+        processor.CompleteMatch(match, true, MatchWinTypeEnum.FreeWin);
+        match.Version = 1;
+        var oldPeer = CloneViaAdapter(author);
+        processor.Generate(author, group);
+        var regenerated = CloneViaAdapter(author);
+        var target = oldPeerReceivesNewBracket ? oldPeer : author;
+        var source = oldPeerReceivesNewBracket ? regenerated : oldPeer;
+
+        MakeImporter().Apply(target, ImportPlan.Proceed(source));
+
+        var targetGroup = target.Groups.Single();
+        var restoredMatch = targetGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches).Single(m => m.BracketFullNumber == identity);
+        restoredMatch.Status.Should().Be(MatchStatusEnum.Pending);
+        restoredMatch.WinType.Should().BeNull();
+        targetGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches).Count(m => m.WinType != MatchWinTypeEnum.FreeWin).Should().Be(4);
+        targetGroup.BracketVersion.Should().Be(group.BracketVersion);
+    }
+
+    [Fact]
+    public void Newer_level_edit_is_imported_persisted_and_does_not_change_the_draw()
+    {
+        var (author, group, _) = BuildPair();
+        var athlete = author.Wrestlers[0];
+        athlete.Timestamp = new DateTime(2026, 11, 1, 8, 0, 0, DateTimeKind.Utc);
+        athlete.Level = WrestlerLevelEnum.Adult1;
+        var peer = CloneViaAdapter(author);
+        var bracket = peer.Groups.Single().Bracket;
+        var previousBracketVersion = group.BracketVersion;
+        var edited = (Wrestler)athlete.Clone();
+        edited.Level = WrestlerLevelEnum.KMS;
+        edited.Timestamp = athlete.Timestamp.Value.AddSeconds(1);
+        author.UpdateWrestlerRegistration(athlete, edited).Should().BeFalse();
+        var importer = MakeImporter();
+        var result = importer.Apply(peer, ImportPlan.Proceed(CloneViaAdapter(author)));
+        result.Outcome.Should().Be(ImportOutcome.Imported);
+        result.ImportedCount.Should().Be(1);
+        peer.Wrestlers.Single(w => w.ID == athlete.ID).Level.Should().Be(WrestlerLevelEnum.KMS);
+        CloneViaAdapter(peer).Wrestlers.Single(w => w.ID == athlete.ID).Level.Should().Be(WrestlerLevelEnum.KMS);
+        peer.Groups.Single().Bracket.Should().BeSameAs(bracket);
+        peer.Groups.Single().BracketVersion.Should().Be(previousBracketVersion);
+        importer.Apply(peer, ImportPlan.Proceed(CloneViaAdapter(author))).Outcome.Should().Be(ImportOutcome.NoNewData);
+    }
+
+    [Fact]
+    public void Missing_remote_registration_timestamp_does_not_overwrite_a_newer_level()
+    {
+        var (local, _, _) = BuildPair();
+        var remote = CloneViaAdapter(local);
+        local.Wrestlers[0].Timestamp = DateTime.UtcNow;
+        local.Wrestlers[0].Level = WrestlerLevelEnum.KMS;
+        MakeImporter().Apply(local, ImportPlan.Proceed(remote)).Outcome.Should().Be(ImportOutcome.NoNewData);
+        local.Wrestlers[0].Level.Should().Be(WrestlerLevelEnum.KMS);
+    }
+
+    [Theory]
+    [InlineData(MatchWinTypeEnum.DisqualifyWin)]
+    [InlineData(MatchWinTypeEnum.NoShow)]
+    public void Level_edit_does_not_clear_a_newer_local_match_exclusion(MatchWinTypeEnum outcome)
+    {
+        var (local, group, processor) = BuildPair();
+        var match = FirstPendingMatch(group);
+        var athlete = match.WrestlerInBlue;
+        athlete.Timestamp = new DateTime(2026, 11, 1, 8, 0, 0, DateTimeKind.Utc);
+        var remote = CloneViaAdapter(local);
+        processor.CompleteMatch(match, true, outcome);
+        match.Version++;
+        var remoteAthlete = remote.Wrestlers.Single(w => w.ID == athlete.ID);
+        remoteAthlete.Level = WrestlerLevelEnum.KMS;
+        remoteAthlete.Timestamp = athlete.Timestamp.Value.AddSeconds(1);
+        MakeImporter().Apply(local, ImportPlan.Proceed(remote));
+        athlete.Level.Should().Be(WrestlerLevelEnum.KMS);
+        athlete.IsPlaceless.Should().BeTrue();
+        athlete.IsDisqualified.Should().Be(outcome == MatchWinTypeEnum.DisqualifyWin);
+        athlete.IsNoShow.Should().Be(outcome == MatchWinTypeEnum.NoShow);
+        match.Version.Should().Be(1);
+        match.WinType.Should().Be(outcome);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Generated_byes_do_not_block_sync_with_a_loaded_copy(bool withPlayedMatch)
+    {
+        var (local, group, processor) = BuildPair();
+        var extra = new Wrestler
+        {
+            ID = Guid.NewGuid(), GroupID = group.ID, SeedNumber = 5,
+            BirthDate = new DateTime(2005, 1, 1), Weight = 60,
+            IsEntryFeePaid = true, IsWeightApproved = true
+        };
+        local.Wrestlers.Add(extra);
+        group.Wrestlers.Add(extra);
+        processor.Generate(local, group);
+        var byes = group.Bracket.Rounds.SelectMany(r => r.RoundMatches).Where(m => m.WinType == MatchWinTypeEnum.FreeWin).ToList();
+        byes.Should().NotBeEmpty();
+        byes.Should().OnlyContain(m => m.Version == 0);
+        var remote = CloneViaAdapter(local);
+        if (withPlayedMatch)
+        {
+            var remoteGroup = remote.Groups.Single();
+            var remoteProcessor = new OlympicGroupBracketProcessor();
+            remoteProcessor.Load(remote, remoteGroup);
+            var match = remoteGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches).First(m => m.IsMatchCanStart);
+            remoteProcessor.CompleteMatch(match, true, MatchWinTypeEnum.PointsWin);
+            match.Version++;
+        }
+        var result = MakeImporter().Apply(local, ImportPlan.Proceed(remote));
+        result.Outcome.Should().Be(withPlayedMatch ? ImportOutcome.Imported : ImportOutcome.NoNewData);
+        Wrestling.Providers.Network.PeerStateHasher.Compute(local).Should().Be(Wrestling.Providers.Network.PeerStateHasher.Compute(remote));
+        byes.Should().OnlyContain(m => m.IsMatchCompleted && m.WinType == MatchWinTypeEnum.FreeWin);
+    }
+
+    [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public void New_registration_clears_the_target_draw_on_a_peer(bool approved)
@@ -174,7 +294,7 @@ public sealed class TournamentImporterApplyTests
     private static TournamentImporter MakeImporter() =>
         new TournamentImporter(
             new NullTournamentsManager(),
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() },
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()),
             new MatMatchNumbersGenerator());
 
     // Round-trip a tournament through the production adapter. Models the
@@ -240,7 +360,7 @@ public sealed class TournamentImporterApplyTests
         processor.Generate(t, g1);
         processor.Generate(t, g2);
         new MatMatchNumbersGenerator().Generate(t,
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()));
 
         return (t, g1, g2, mat);
     }
@@ -437,13 +557,12 @@ public sealed class TournamentImporterApplyTests
         var importer = MakeImporter();
         var result = importer.Apply(target, ImportPlan.Proceed(remote));
 
-        // No bracket transition fired, so the importer reports NoNewData. The
-        // version still bumps so the peer is now caught up.
+        // The new revision must be saved even without a bracket transition.
         var local = tgtGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
                             .First(m => m.MatchNumber == remMatch.MatchNumber);
         local.Status.Should().Be(MatchStatusEnum.Pending);
         local.Version.Should().Be(4);
-        result.Outcome.Should().Be(ImportOutcome.NoNewData);
+        result.Outcome.Should().Be(ImportOutcome.Imported);
     }
 
     // Equal versions with diverging state: this is the rare "two operators
@@ -805,7 +924,7 @@ public sealed class TournamentImporterApplyTests
 
         // Renumber locally to baseline so we can detect a shift.
         new MatMatchNumbersGenerator().Generate(target,
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()));
         var firstQualMatchKey = tgtGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
                                          .First(m => m.RoundNumber == 1).BracketFullNumber;
 
@@ -841,7 +960,7 @@ public sealed class TournamentImporterApplyTests
         remMat.Groups.Add(newGroup);
         new OlympicGroupBracketProcessor().Generate(remote, newGroup);
         new MatMatchNumbersGenerator().Generate(remote,
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()));
 
         var remoteFirstQualNumber = remGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
                                             .First(m => m.BracketFullNumber == firstQualMatchKey)
@@ -891,7 +1010,7 @@ public sealed class TournamentImporterApplyTests
         new OlympicGroupBracketProcessor().Generate(admin, g1);
         new OlympicGroupBracketProcessor().Generate(admin, g2);
         new MatMatchNumbersGenerator().Generate(admin,
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()));
 
         var result = MakeImporter().Apply(peer, ImportPlan.Proceed(admin));
 
@@ -970,7 +1089,7 @@ public sealed class TournamentImporterApplyTests
         // Regenerate G2 bracket with the new participant + renumber mat.
         processor.Generate(admin, g2);
         new MatMatchNumbersGenerator().Generate(admin,
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()));
 
         var result = MakeImporter().Apply(peer, ImportPlan.Proceed(admin));
 
@@ -1024,7 +1143,7 @@ public sealed class TournamentImporterApplyTests
         g1.FieldsVersion++;
         mat2.Groups.Add(g1);
         new MatMatchNumbersGenerator().Generate(admin,
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()));
 
         var result = MakeImporter().Apply(peer, ImportPlan.Proceed(admin));
 
@@ -1149,7 +1268,7 @@ public sealed class TournamentImporterApplyTests
         new OlympicGroupBracketProcessor().Generate(admin, g1);
         new OlympicGroupBracketProcessor().Generate(admin, g3);
         new MatMatchNumbersGenerator().Generate(admin,
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()));
 
         MakeImporter().Apply(peer, ImportPlan.Proceed(admin));
 
@@ -1207,7 +1326,7 @@ public sealed class TournamentImporterApplyTests
         g1.FieldsVersion++;
 
         new MatMatchNumbersGenerator().Generate(admin,
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() });
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()));
 
         var result = MakeImporter().Apply(peer, ImportPlan.Proceed(admin));
 
@@ -1466,11 +1585,11 @@ public sealed class TournamentImporterApplyTests
         var importer = MakeImporter();
         var result = importer.Apply(target, ImportPlan.Proceed(remote));
 
-        // Skipped silently — local stays Pending, no exception.
+        // Structural conflicts leave the category untouched and are visible.
         var local = tgtGroup.Bracket.Rounds.SelectMany(r => r.RoundMatches)
                             .First(m => m.MatchNumber == remMatch.MatchNumber);
         local.Status.Should().Be(MatchStatusEnum.Pending);
-        result.Outcome.Should().Be(ImportOutcome.NoNewData);
+        result.Outcome.Should().Be(ImportOutcome.Conflict);
     }
 
     [Fact]

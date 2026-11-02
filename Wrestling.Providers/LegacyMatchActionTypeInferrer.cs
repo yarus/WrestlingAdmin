@@ -53,7 +53,8 @@ namespace Wrestling.Providers
             if (string.IsNullOrEmpty(text)) return MatchActionType.Unknown;
 
             // Order matters: specific cancellation/correction phrasings first.
-            if (text.IndexOf("Отмена предупреждения", StringComparison.Ordinal) >= 0)
+            if (text.IndexOf("Отмена предупреждения", StringComparison.Ordinal) >= 0
+                || text.StartsWith("Отмена снятия предупреждения", StringComparison.Ordinal))
                 return MatchActionType.RevertWarning;
 
             // Both "...получил предупреждение" (legacy) and "Предупреждение

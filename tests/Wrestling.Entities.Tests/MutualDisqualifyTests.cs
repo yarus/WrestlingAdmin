@@ -599,7 +599,7 @@ public class MutualDisqualifyTests
     // are physically impossible to play. Applies to ANY additional round
     // (Утешение Круг 1, 2, ..., 3-е место).
     [Fact]
-    public void ConsolationFinalists_LoadResolves_single_wrestler_AdditionalMatches_via_FreeWin()
+    public void ConsolationFinalists_normalization_waits_for_the_branch_before_resolving_a_single_wrestler()
     {
         // Simulate a saved bracket where an additional-round match got stuck
         // in Pending with only one wrestler (e.g. legacy state from before
@@ -620,6 +620,14 @@ public class MutualDisqualifyTests
         // and auto-FreeWin the stuck match.
         var loadedProc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
         loadedProc.Load(t, group);
+        loadedProc.NormalizeBracket();
+        stuckBronze.Status.Should().Be(MatchStatusEnum.Pending, "the semifinal can still supply an opponent");
+        foreach (var main in group.Bracket.MainRounds().SelectMany(r => r.RoundMatches))
+        {
+            main.Status = MatchStatusEnum.Completed;
+            main.WinType = MatchWinTypeEnum.MutualNoShow;
+        }
+        loadedProc.NormalizeBracket();
 
         stuckBronze.Status.Should().Be(MatchStatusEnum.Completed);
         stuckBronze.WinType.Should().Be(MatchWinTypeEnum.FreeWin);
@@ -631,7 +639,7 @@ public class MutualDisqualifyTests
     // be filled — sweep marks it Completed with no winner so IsBracketCompleted
     // flips true. No propagation: there's nothing to advance.
     [Fact]
-    public void ConsolationFinalists_LoadResolves_empty_AdditionalMatches_via_NoWinner_FreeWin()
+    public void ConsolationFinalists_explicit_normalization_resolves_empty_completed_branches()
     {
         var group = TestHelpers.MakeGroup(8);
         var t = TestHelpers.MakeTournament(group);
@@ -660,6 +668,8 @@ public class MutualDisqualifyTests
         var loadedProc = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
         loadedProc.Load(t, group);
 
+        emptyBronze.Status.Should().Be(MatchStatusEnum.Pending, "binding alone does not finalize results");
+        loadedProc.NormalizeBracket();
         emptyBronze.Status.Should().Be(MatchStatusEnum.Completed);
         emptyBronze.WinType.Should().Be(MatchWinTypeEnum.FreeWin);
         emptyBronze.IsRedWon.Should().BeNull(because: "no wrestlers, no winner");

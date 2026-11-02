@@ -8,14 +8,14 @@ namespace Wrestling.UI.Material.Model
     public sealed class MatRedistributionService : IMatRedistributionService
     {
         private readonly IMatchNumbersGenerator _matchNumbersGenerator;
-        private readonly List<IGroupBracketProcessor> _processors;
+        private readonly IGroupBracketProcessorFactory _processorFactory;
 
         public MatRedistributionService(
             IMatchNumbersGenerator matchNumbersGenerator,
-            List<IGroupBracketProcessor> processors)
+            IGroupBracketProcessorFactory processors)
         {
             _matchNumbersGenerator = matchNumbersGenerator;
-            _processors = processors;
+            _processorFactory = processors;
         }
 
         public bool HasLiveMatch(AgeWeightGroup group)
@@ -80,7 +80,7 @@ namespace Wrestling.UI.Material.Model
             oldMat?.RefreshStats();
             newMat?.RefreshStats();
 
-            _matchNumbersGenerator.Generate(tournament, _processors);
+            _matchNumbersGenerator.Generate(tournament, _processorFactory);
 
             return new MoveResult { Outcome = MoveOutcome.Moved };
         }
@@ -139,7 +139,7 @@ namespace Wrestling.UI.Material.Model
 
             // Per-(Part, Mat) numbering needs regenerating: the group's
             // matches migrate from one part's number space to another.
-            _matchNumbersGenerator.Generate(tournament, _processors);
+            _matchNumbersGenerator.Generate(tournament, _processorFactory);
 
             return new MoveResult { Outcome = MoveOutcome.Moved };
         }

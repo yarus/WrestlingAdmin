@@ -15,6 +15,43 @@ public class AdapterRoundTripTests
     private readonly EntityToInfoAdapter _adapter = new();
 
     [Fact]
+    public void Legacy_resolved_branch_is_normalized_on_load_without_version_changes()
+    {
+        var group = new AgeWeightGroup { ID = Guid.NewGuid() };
+        var tournament = new Tournament(new GlobalSettings()) { ID = Guid.NewGuid() };
+        tournament.Groups.Add(group);
+        for (var i = 0; i < 8; i++)
+        {
+            var wrestler = new Wrestler { ID = Guid.NewGuid(), GroupID = group.ID, SeedNumber = i + 1 };
+            group.Wrestlers.Add(wrestler); tournament.Wrestlers.Add(wrestler);
+        }
+        var processor = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        processor.Generate(tournament, group);
+        processor.CompleteMatch(group.Bracket.MainRounds().First().RoundMatches.First(), null, MatchWinTypeEnum.MutualNoShow);
+        for (var step = 0; step < 30; step++)
+        {
+            var next = group.Bracket.Rounds.SelectMany(r => r.RoundMatches).FirstOrDefault(m => m.IsMatchCanStart);
+            if (next == null) break;
+            processor.CompleteMatch(next, true, MatchWinTypeEnum.PointsWin);
+        }
+        var bronze = processor.Get3rdPlaceRound(group).RoundMatches.First(m => m.WinType == MatchWinTypeEnum.FreeWin);
+        bronze.Status = MatchStatusEnum.Pending; bronze.WinType = null; bronze.IsRedWon = null;
+        bronze.Version = 3;
+        var bracketVersion = group.BracketVersion;
+        processor.Load(tournament, group);
+        processor.GetResults().ToList();
+        bronze.Status.Should().Be(MatchStatusEnum.Pending, "queries do not perform legacy recovery");
+
+        var restored = _adapter.GetEntityFromInfo(_adapter.GetInfoFromEntity(tournament));
+        var normalized = restored.Groups[0].Bracket.Rounds.SelectMany(r => r.RoundMatches).Single(m => m.BracketFullNumber == bronze.BracketFullNumber);
+        normalized.Status.Should().Be(MatchStatusEnum.Completed);
+        normalized.WinType.Should().Be(MatchWinTypeEnum.FreeWin);
+        normalized.Version.Should().Be(3);
+        restored.Groups[0].BracketVersion.Should().Be(bracketVersion);
+        restored.Groups[0].Bracket.CompletedMatchesCount.Should().Be(restored.Groups[0].Bracket.MatchesCount);
+    }
+
+    [Fact]
     public void Round_trip_preserves_mat_group_order_independent_of_tournament_group_order()
     {
         var tournament = new Tournament(new GlobalSettings()) { ID = Guid.NewGuid() };

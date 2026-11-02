@@ -235,7 +235,7 @@ namespace Wrestling.DataAccess
             {
                 try
                 {
-                    using (var reader = new StreamReader(path))
+                    using (var reader = new StreamReader(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)))
                     {
                         var jsonReader = new JsonTextReader(reader);
                         var ser = CreateLoadSerializer();
@@ -290,7 +290,7 @@ namespace Wrestling.DataAccess
                         path,
                         FileMode.Open,
                         FileAccess.Read,
-                        FileShare.Read,
+                        FileShare.ReadWrite | FileShare.Delete,
                         bufferSize: 4096,
                         useAsync: true))
                     using (var reader = new StreamReader(stream))

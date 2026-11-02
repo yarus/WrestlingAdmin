@@ -58,9 +58,25 @@ namespace Wrestling.Providers.Network
                             foreach (var m in matches)
                             {
                                 w.Write(m.BracketFullNumber ?? string.Empty);
-                                w.Write(m.Version);
+                                w.Write(m.SyncVersion);
+                                WriteResult(w, m);
                             }
                         }
+                    }
+                }
+
+                // Registration edits (including Level) are versioned by Timestamp.
+                // They must trigger a pull even when the bracket did not change.
+                if (tournament.Wrestlers != null)
+                {
+                    foreach (var wrestler in tournament.Wrestlers.OrderBy(x => x.ID))
+                    {
+                        w.Write(wrestler.ID.ToByteArray());
+                        w.Write(wrestler.Timestamp?.ToUniversalTime().Ticks ?? 0L);
+                        w.Write(wrestler.IsNoShow);
+                        w.Write(wrestler.IsDisqualified);
+                        // Places are a calculated cache, not an authored revision.
+                        // Hash the exclusions on which that calculation depends.
                     }
                 }
 
@@ -75,6 +91,45 @@ namespace Wrestling.Providers.Network
                     return sb.ToString();
                 }
             }
+        }
+
+        private static void WriteResult(BinaryWriter writer, WrestlingMatch match)
+        {
+            // Live scores/timers are local until approval. Hashing pending
+            // match control would publish a new revision on every clock tick.
+            writer.Write(match.IsMatchCompleted);
+            if (!match.IsMatchCompleted)
+            {
+                writer.Write(match.PreviousResults.Count);
+                foreach (var previous in match.PreviousResults) WriteResult(writer, previous);
+                return;
+            }
+            writer.Write(match.WrestlerInRed?.ID.ToString() ?? "");
+            writer.Write(match.WrestlerInBlue?.ID.ToString() ?? "");
+            writer.Write((int?)match.WinType ?? -1);
+            writer.Write(match.IsRedWon.HasValue);
+            writer.Write(match.IsRedWon ?? false);
+            writer.Write(match.PointsRed);
+            writer.Write(match.PointsBlue);
+            writer.Write(match.WarningsNumberRed);
+            writer.Write(match.WarningsNumberBlue);
+            writer.Write(match.LastSecondInMatch);
+            writer.Write(match.Note ?? "");
+            writer.Write(match.MatchActions.Count);
+            foreach (var action in match.MatchActions)
+            {
+                writer.Write((int)action.Type);
+                writer.Write(action.Points);
+                writer.Write(action.WarningDelta.HasValue);
+                if (action.WarningDelta.HasValue) writer.Write(action.WarningDelta.Value);
+                writer.Write(action.IsForRed.HasValue);
+                writer.Write(action.IsForRed ?? false);
+                writer.Write(action.RoundNumber);
+                writer.Write(action.SecondInRound);
+                writer.Write(action.DateTime.ToUniversalTime().Ticks);
+            }
+            writer.Write(match.PreviousResults.Count);
+            foreach (var previous in match.PreviousResults) WriteResult(writer, previous);
         }
     }
 }

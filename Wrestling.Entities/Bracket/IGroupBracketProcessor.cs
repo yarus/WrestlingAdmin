@@ -13,6 +13,7 @@ namespace Wrestling.Entities.Bracket
         void Generate(Tournament tournament, AgeWeightGroup group);
         IEnumerable<TournamentResult> GetResults();
         void Load(Tournament tournament, AgeWeightGroup group);
+        void NormalizeBracket();
         void CompleteMatch(WrestlingMatch wrestlingMatch, bool? isRedWon, MatchWinTypeEnum winType);
         void RevertMatch(WrestlingMatch wrestlingMatch);
         bool CanMatchBeReverted(WrestlingMatch wrestlingMatch);

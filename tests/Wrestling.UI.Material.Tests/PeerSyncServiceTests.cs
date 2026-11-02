@@ -33,6 +33,7 @@ public sealed class PeerSyncServiceTests
         public int NextImportedCount { get; set; } = 1;
         public int PrepareCalls { get; private set; }
         public int ApplyCalls { get; private set; }
+        public Entities.Tournament Remote { get; set; } = new Entities.Tournament(new GlobalSettings()) { MetaVersion = 1 };
 
         // For the tournament-changed-mid-prepare test we let the test code
         // mutate state between Prepare and Apply.
@@ -48,8 +49,7 @@ public sealed class PeerSyncServiceTests
                 case ImportOutcome.TournamentMismatch: return Task.FromResult(ImportPlan.Skip(ImportOutcome.TournamentMismatch));
                 case ImportOutcome.Error: return Task.FromResult(ImportPlan.Skip(ImportOutcome.Error));
                 default:
-                    var remote = new Entities.Tournament(new GlobalSettings()) { Name = target.Name };
-                    return Task.FromResult(ImportPlan.Proceed(remote));
+                    return Task.FromResult(ImportPlan.Proceed(Remote));
             }
         }
 
@@ -57,7 +57,7 @@ public sealed class PeerSyncServiceTests
         {
             ApplyCalls++;
             BeforeApply?.Invoke().GetAwaiter().GetResult();
-            return new ImportResult(NextOutcome, NextOutcome == ImportOutcome.Imported ? NextImportedCount : 0);
+            return new ImportResult(NextOutcome, NextOutcome is ImportOutcome.Imported or ImportOutcome.Conflict ? NextImportedCount : 0);
         }
     }
 
@@ -99,7 +99,7 @@ public sealed class PeerSyncServiceTests
     }
 
     private static (PeerSyncService svc, StubImporter imp, FakeTournamentsManager mgr, DataContext dc, TestDiscovery disc, FuncClock clock)
-        Build(Entities.Tournament tournament = null, ImportOutcome outcome = ImportOutcome.Imported, IResultsService resultsService = null)
+        Build(Entities.Tournament tournament = null, ImportOutcome outcome = ImportOutcome.Imported, IResultsService resultsService = null, PeerSyncDiagnostics diagnostics = null)
     {
         var dc = new DataContext { Tournament = tournament ?? new Entities.Tournament(new GlobalSettings()) { Name = "T", FileName = "tournament.wrt" } };
         var imp = new StubImporter { NextOutcome = outcome };
@@ -108,7 +108,7 @@ public sealed class PeerSyncServiceTests
         var clock = new FuncClock();
         // Pass null dispatcher — we call HandlePeerAsync directly to bypass the
         // marshal-to-UI step.
-        var svc = new PeerSyncService(disc, dc, imp, mgr, resultsService: resultsService, uiDispatcher: null, clock: () => clock.Now);
+        var svc = new PeerSyncService(disc, dc, imp, mgr, resultsService: resultsService, uiDispatcher: null, clock: () => clock.Now, diagnostics: diagnostics);
         return (svc, imp, mgr, dc, disc, clock);
     }
 
@@ -127,6 +127,103 @@ public sealed class PeerSyncServiceTests
     }
 
     private sealed class FuncClock { public DateTime Now { get; set; } = DateTime.UtcNow; }
+
+    [Fact]
+    public async Task False_save_is_visible_and_retried_even_when_announced_hash_now_matches()
+    {
+        var diagnostics = new PeerSyncDiagnostics();
+        var (svc, imp, manager, dc, _, _) = Build(diagnostics: diagnostics);
+        var peerId = Guid.NewGuid();
+        manager.SaveAsyncResult = false;
+
+        await svc.HandlePeerAsync(MakePeer(peerId, PeerStateHasher.Compute(imp.Remote)));
+
+        diagnostics.Get(peerId).Phase.Should().Be(PeerSyncPhase.SaveFailed);
+        manager.SaveAsyncResult = true;
+        await svc.HandlePeerAsync(MakePeer(peerId, PeerStateHasher.Compute(dc.Tournament)));
+
+        manager.SaveAsyncCount.Should().Be(2);
+        imp.PrepareCalls.Should().Be(1);
+        diagnostics.Get(peerId).Phase.Should().Be(PeerSyncPhase.Synchronized);
+    }
+
+    [Fact]
+    public async Task Failed_download_has_address_and_retry_time_in_diagnostics()
+    {
+        var diagnostics = new PeerSyncDiagnostics();
+        var (svc, _, _, _, _, clock) = Build(outcome: ImportOutcome.FileUnavailable, diagnostics: diagnostics);
+        var peer = MakePeer(Guid.NewGuid(), "unavailable");
+        for (int i = 0; i < 3; i++) await svc.HandlePeerAsync(peer);
+
+        diagnostics.Get(peer.InstanceId).Phase.Should().Be(PeerSyncPhase.FileUnavailable);
+        diagnostics.Get(peer.InstanceId).Address.Should().Be(peer.HttpUrl);
+        diagnostics.Get(peer.InstanceId).RetryAtUtc.Should().Be(clock.Now.AddSeconds(30));
+        diagnostics.Get(peer.InstanceId).LastSuccessUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Network_recovery_imports_the_same_advertised_revision_after_cooldown_without_restart()
+    {
+        var diagnostics = new PeerSyncDiagnostics();
+        var (svc, imp, manager, dc, _, clock) = Build(outcome: ImportOutcome.FileUnavailable, diagnostics: diagnostics);
+        var peer = MakePeer(Guid.NewGuid(), PeerStateHasher.Compute(imp.Remote));
+        for (int i = 0; i < 3; i++) await svc.HandlePeerAsync(peer);
+        imp.PrepareCalls.Should().Be(3);
+        manager.SaveAsyncCount.Should().Be(0);
+        dc.Tournament.MetaVersion.Should().Be(0);
+
+        clock.Now = clock.Now.AddSeconds(31);
+        imp.NextOutcome = ImportOutcome.Imported;
+        imp.BeforeApply = () => { dc.Tournament.MetaVersion = imp.Remote.MetaVersion; return Task.CompletedTask; };
+        await svc.HandlePeerAsync(peer);
+        await svc.HandlePeerAsync(peer);
+
+        imp.PrepareCalls.Should().Be(4);
+        manager.SaveAsyncCount.Should().Be(1);
+        diagnostics.Get(peer.InstanceId).Phase.Should().Be(PeerSyncPhase.Synchronized);
+        diagnostics.Get(peer.InstanceId).RetryAtUtc.Should().BeNull();
+        diagnostics.Get(peer.InstanceId).LastSuccessUtc.Should().Be(clock.Now);
+    }
+
+    [Fact]
+    public async Task No_new_data_with_different_versions_is_not_reported_as_synced_or_downloading()
+    {
+        var diagnostics = new PeerSyncDiagnostics();
+        var (svc, imp, _, _, _, _) = Build(outcome: ImportOutcome.NoNewData, diagnostics: diagnostics);
+        var peer = MakePeer(Guid.NewGuid(), PeerStateHasher.Compute(imp.Remote));
+
+        await svc.HandlePeerAsync(peer);
+
+        diagnostics.Get(peer.InstanceId).Phase.Should().Be(PeerSyncPhase.NoNewData);
+    }
+
+    [Fact]
+    public async Task Safe_categories_are_saved_even_when_another_category_conflicts()
+    {
+        var diagnostics = new PeerSyncDiagnostics();
+        var (svc, imp, manager, _, _, _) = Build(outcome: ImportOutcome.Conflict, diagnostics: diagnostics);
+        imp.NextImportedCount = 2;
+        var peer = MakePeer(Guid.NewGuid(), PeerStateHasher.Compute(imp.Remote));
+
+        await svc.HandlePeerAsync(peer);
+
+        manager.SaveAsyncCount.Should().Be(1);
+        diagnostics.Get(peer.InstanceId).Phase.Should().Be(PeerSyncPhase.Conflict);
+        diagnostics.Get(peer.InstanceId).ImportedCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Newer_local_versions_are_reported_without_claiming_a_download_is_pending()
+    {
+        var diagnostics = new PeerSyncDiagnostics();
+        var (svc, imp, _, dc, _, _) = Build(outcome: ImportOutcome.NoNewData, diagnostics: diagnostics);
+        dc.Tournament.MetaVersion = imp.Remote.MetaVersion + 1;
+        var peer = MakePeer(Guid.NewGuid(), PeerStateHasher.Compute(imp.Remote));
+
+        await svc.HandlePeerAsync(peer);
+
+        diagnostics.Get(peer.InstanceId).Phase.Should().Be(PeerSyncPhase.LocalAhead);
+    }
 
     [Fact]
     public async Task Skips_pull_when_peer_hash_matches_local_hash()
@@ -171,8 +268,8 @@ public sealed class PeerSyncServiceTests
         var (svc, imp, _, _, _, _) = Build();
         var peerId = Guid.NewGuid();
 
-        await svc.HandlePeerAsync(MakePeer(peerId, "remotehashA"));
-        await svc.HandlePeerAsync(MakePeer(peerId, "remotehashA"));
+        await svc.HandlePeerAsync(MakePeer(peerId, PeerStateHasher.Compute(imp.Remote)));
+        await svc.HandlePeerAsync(MakePeer(peerId, PeerStateHasher.Compute(imp.Remote)));
 
         imp.PrepareCalls.Should().Be(1, "second announce with the same hash must be deduped");
     }
@@ -197,7 +294,7 @@ public sealed class PeerSyncServiceTests
     public async Task Successful_pull_caches_hash_and_skips_repeat_announce()
     {
         var (svc, imp, _, _, _, _) = Build(outcome: ImportOutcome.Imported);
-        var peer = MakePeer(Guid.NewGuid(), hash: "remotehashY");
+        var peer = MakePeer(Guid.NewGuid(), hash: PeerStateHasher.Compute(imp.Remote));
 
         await svc.HandlePeerAsync(peer);
         await svc.HandlePeerAsync(peer);
@@ -211,7 +308,7 @@ public sealed class PeerSyncServiceTests
         // Common when our local state is already ahead of theirs (e.g. they
         // restored an old .wrt). Treat as a successful round-trip.
         var (svc, imp, _, _, _, _) = Build(outcome: ImportOutcome.NoNewData);
-        var peer = MakePeer(Guid.NewGuid(), hash: "remotehashZ");
+        var peer = MakePeer(Guid.NewGuid(), hash: PeerStateHasher.Compute(imp.Remote));
 
         await svc.HandlePeerAsync(peer);
         await svc.HandlePeerAsync(peer);
@@ -238,6 +335,24 @@ public sealed class PeerSyncServiceTests
         await svc.HandlePeerAsync(MakePeer(peerId, "h4"));
 
         imp.PrepareCalls.Should().Be(3, "cooldown active, skip the pull");
+    }
+
+    [Theory]
+    [InlineData(ImportOutcome.NoNewData)]
+    [InlineData(ImportOutcome.Imported)]
+    public async Task Downloading_an_older_saved_snapshot_does_not_cache_the_advertised_hash(ImportOutcome initialOutcome)
+    {
+        var (svc, imp, _, _, _, _) = Build(outcome: initialOutcome);
+        var advertised = new Entities.Tournament(new GlobalSettings()) { MetaVersion = 2 };
+        var peer = MakePeer(Guid.NewGuid(), PeerStateHasher.Compute(advertised));
+        await svc.HandlePeerAsync(peer);
+        await svc.HandlePeerAsync(peer);
+        imp.PrepareCalls.Should().Be(2);
+        imp.Remote = advertised;
+        imp.NextOutcome = ImportOutcome.Imported;
+        await svc.HandlePeerAsync(peer);
+        await svc.HandlePeerAsync(peer);
+        imp.PrepareCalls.Should().Be(3, "only the saved snapshot matching the advertisement can be cached");
     }
 
     [Fact]
@@ -285,7 +400,7 @@ public sealed class PeerSyncServiceTests
         // dictionaries unboundedly.
         var (svc, imp, _, _, disc, _) = Build(outcome: ImportOutcome.Imported);
         var peerId = Guid.NewGuid();
-        var peer = MakePeer(peerId, "h1");
+        var peer = MakePeer(peerId, PeerStateHasher.Compute(imp.Remote));
 
         await svc.HandlePeerAsync(peer);
         imp.PrepareCalls.Should().Be(1);

@@ -108,6 +108,7 @@ namespace Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide
         private void LoadMatches()
         {
             UpcomingMatches = new ObservableCollection<WrestlingMatch>(Groups
+                .Where(g => g.Bracket != null)
                 .SelectMany(g => g.Bracket.Rounds)
                 .SelectMany(r => r.RoundMatches)
                 .Where(m => m.IsMatchCanStart)

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -49,6 +50,8 @@ namespace Wrestling.UI.Material.Model
         private readonly IResultsService _resultsService;
         private readonly Dispatcher _uiDispatcher;
         private readonly Func<DateTime> _clock;
+        private readonly PeerSyncDiagnostics _diagnostics;
+        private bool _savePending;
 
         private readonly object _lock = new object();
         private readonly HashSet<Guid> _pendingPulls = new HashSet<Guid>();
@@ -68,7 +71,8 @@ namespace Wrestling.UI.Material.Model
             ITournamentsManager tournService,
             IResultsService resultsService,
             Dispatcher uiDispatcher,
-            Func<DateTime> clock = null)
+            Func<DateTime> clock = null,
+            PeerSyncDiagnostics diagnostics = null)
         {
             _discovery = discovery;
             _dataContext = dataContext;
@@ -77,6 +81,7 @@ namespace Wrestling.UI.Material.Model
             _resultsService = resultsService;
             _uiDispatcher = uiDispatcher;
             _clock = clock ?? (() => DateTime.UtcNow);
+            _diagnostics = diagnostics;
 
             if (_discovery != null)
             {
@@ -96,6 +101,8 @@ namespace Wrestling.UI.Material.Model
                 _pendingPulls.Clear();
                 _lastPulledHashByPeer.Clear();
                 _failures.Clear();
+                _savePending = false;
+                _diagnostics?.Clear();
 
                 oldCts = _tournamentCts;
                 _tournamentCts = new CancellationTokenSource();
@@ -119,6 +126,7 @@ namespace Wrestling.UI.Material.Model
                 _pendingPulls.Remove(peer.InstanceId);
                 _lastPulledHashByPeer.Remove(peer.InstanceId);
                 _failures.Remove(peer.InstanceId);
+                _diagnostics?.Remove(peer.InstanceId);
             }
         }
 
@@ -144,7 +152,22 @@ namespace Wrestling.UI.Material.Model
             if (string.IsNullOrEmpty(peerHash)) return;
 
             var localHash = PeerStateHasher.Compute(local);
-            if (peerHash == localHash) return;
+            if (_savePending)
+            {
+                var saved = await SaveAfterMergeAsync(local, _tournamentCts.Token);
+                if (!ReferenceEquals(_dataContext?.Tournament, local)) return;
+                if (!saved)
+                {
+                    _diagnostics?.Report(peer.InstanceId, peer.HttpUrl, PeerSyncPhase.SaveFailed, _clock());
+                    return;
+                }
+                localHash = PeerStateHasher.Compute(local);
+            }
+            if (peerHash == localHash)
+            {
+                _diagnostics?.Report(peer.InstanceId, peer.HttpUrl, PeerSyncPhase.Synchronized, _clock());
+                return;
+            }
 
             lock (_lock)
             {
@@ -163,7 +186,10 @@ namespace Wrestling.UI.Material.Model
             try
             {
                 FileLogger.Log("Sync.divergence", peer.NodeName ?? peer.HttpUrl ?? "<peer>", "remote=" + peerHash + " local=" + localHash);
-                var outcome = await PullAndApplyAsync(peer, local);
+                var pull = await PullAndApplyAsync(peer, local);
+                var outcome = pull.Outcome;
+
+                if (!ReferenceEquals(_dataContext?.Tournament, local)) return;
 
                 lock (_lock)
                 {
@@ -173,7 +199,10 @@ namespace Wrestling.UI.Material.Model
                         // actually managed to pull and apply (or saw nothing
                         // new). On failure outcomes we deliberately leave the
                         // cache alone so the next identical announce retries.
-                        _lastPulledHashByPeer[peer.InstanceId] = peerHash;
+                        // The announcement describes live state; HTTP serves the
+                        // last saved file. Do not cache an unseen live revision.
+                        if (pull.StateHash == peerHash) _lastPulledHashByPeer[peer.InstanceId] = peerHash;
+                        else _lastPulledHashByPeer.Remove(peer.InstanceId);
                         _failures.Remove(peer.InstanceId);
                     }
                     else
@@ -190,13 +219,15 @@ namespace Wrestling.UI.Material.Model
                             failure.CooldownUntilUtc = _clock() + FailureCooldown;
                             FileLogger.Log("Sync.cooldown", peer.NodeName ?? "<peer>",
                                 "fails=" + failure.ConsecutiveFailures + " until=" + failure.CooldownUntilUtc.Value.ToString("o"));
+                            _diagnostics?.SetRetry(peer.InstanceId, failure.CooldownUntilUtc.Value);
                         }
                     }
                 }
             }
             finally
             {
-                lock (_lock) _pendingPulls.Remove(peer.InstanceId);
+                lock (_lock)
+                    if (ReferenceEquals(_dataContext?.Tournament, local)) _pendingPulls.Remove(peer.InstanceId);
             }
         }
 
@@ -208,16 +239,21 @@ namespace Wrestling.UI.Material.Model
             return outcome == ImportOutcome.Imported || outcome == ImportOutcome.NoNewData;
         }
 
-        private async Task<ImportOutcome> PullAndApplyAsync(DiscoveredPeer peer, Entities.Tournament target)
+        private async Task<(ImportOutcome Outcome, string StateHash)> PullAndApplyAsync(DiscoveredPeer peer, Entities.Tournament target)
         {
             var source = peer.HttpUrl;
-            if (string.IsNullOrEmpty(source)) return ImportOutcome.Error;
-            if (target == null) return ImportOutcome.Error;
+            if (string.IsNullOrEmpty(source))
+            {
+                _diagnostics?.Report(peer.InstanceId, source, PeerSyncPhase.FileUnavailable, _clock());
+                return (ImportOutcome.FileUnavailable, null);
+            }
+            if (target == null) return (ImportOutcome.Error, null);
 
             CancellationToken ct;
             lock (_lock) ct = _tournamentCts.Token;
 
             ImportPlan plan;
+            _diagnostics?.Report(peer.InstanceId, source, PeerSyncPhase.Downloading, _clock());
             try
             {
                 plan = await Task.Run(() => _importer.PrepareAsync(target, source, ct), ct).ConfigureAwait(true);
@@ -225,14 +261,20 @@ namespace Wrestling.UI.Material.Model
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
                 // Tournament closed/swapped during fetch — silent skip, no log spam.
-                return ImportOutcome.Error;
+                return (ImportOutcome.Error, null);
             }
             catch (Exception ex)
             {
                 FileLogger.Log("Sync.error", source, ex);
-                return ImportOutcome.Error;
+                if (ReferenceEquals(_dataContext?.Tournament, target))
+                    _diagnostics?.Report(peer.InstanceId, source, PeerSyncPhase.Error, _clock(), detail: ex.Message);
+                return (ImportOutcome.Error, null);
             }
-            if (plan == null) return ImportOutcome.Error;
+            if (plan == null)
+            {
+                _diagnostics?.Report(peer.InstanceId, source, PeerSyncPhase.Error, _clock());
+                return (ImportOutcome.Error, null);
+            }
 
             // W2.4: between Task.Run completion and the synchronous Apply call
             // the user could have closed the tournament. Reject Apply against
@@ -240,10 +282,12 @@ namespace Wrestling.UI.Material.Model
             if (_dataContext?.Tournament == null || !ReferenceEquals(_dataContext.Tournament, target))
             {
                 FileLogger.Log("Sync.skip", source, "tournament changed during prepare");
-                return ImportOutcome.Error;
+                return (ImportOutcome.Error, null);
             }
 
+            var downloadedHash = plan.Remote == null ? null : PeerStateHasher.Compute(plan.Remote);
             ImportResult result;
+            _diagnostics?.Report(peer.InstanceId, source, PeerSyncPhase.Applying, _clock());
             try
             {
                 result = plan.NeedsApply
@@ -253,41 +297,103 @@ namespace Wrestling.UI.Material.Model
             catch (Exception ex)
             {
                 FileLogger.Log("Sync.error", source, ex);
-                return ImportOutcome.Error;
+                _diagnostics?.Report(peer.InstanceId, source, PeerSyncPhase.Error, _clock(), detail: ex.Message);
+                return (ImportOutcome.Error, null);
             }
 
             FileLogger.Log("Sync.apply", peer.NodeName ?? source, result.Outcome + ":" + result.ImportedCount);
 
-            if (result.Outcome == ImportOutcome.Imported)
+            if (result.ImportedCount > 0 || result.Outcome == ImportOutcome.Imported)
             {
                 _resultsService?.Recalculate(target);
 
-                await SaveAfterMergeAsync(target, ct);
+                if (!await SaveAfterMergeAsync(target, ct))
+                {
+                    if (ReferenceEquals(_dataContext?.Tournament, target))
+                        _diagnostics?.Report(peer.InstanceId, source, PeerSyncPhase.SaveFailed, _clock(), result.ImportedCount);
+                    return (ImportOutcome.Error, downloadedHash);
+                }
             }
 
-            return result.Outcome;
+            if (!ReferenceEquals(_dataContext?.Tournament, target)) return (ImportOutcome.Error, null);
+            var phase = result.Outcome switch
+            {
+                ImportOutcome.Conflict => PeerSyncPhase.Conflict,
+                ImportOutcome.FileUnavailable => PeerSyncPhase.FileUnavailable,
+                ImportOutcome.TournamentMismatch => PeerSyncPhase.TournamentMismatch,
+                ImportOutcome.Error => PeerSyncPhase.Error,
+                _ when downloadedHash != peer.StateHash => PeerSyncPhase.AwaitingSavedFile,
+                _ when PeerStateHasher.Compute(target) == downloadedHash => PeerSyncPhase.Synchronized,
+                _ when plan.Remote != null && LocalVersionsAreNewer(target, plan.Remote) => PeerSyncPhase.LocalAhead,
+                _ => PeerSyncPhase.NoNewData
+            };
+            _diagnostics?.Report(peer.InstanceId, source, phase, _clock(), result.ImportedCount, conflicts: result.Conflicts);
+
+            return (result.Outcome, downloadedHash);
+        }
+
+        private static bool LocalVersionsAreNewer(Entities.Tournament local, Entities.Tournament remote)
+        {
+            bool newer = local.MetaVersion > remote.MetaVersion;
+            if (local.MetaVersion < remote.MetaVersion) return false;
+            foreach (var group in remote.Groups)
+            {
+                var own = local.Groups.FirstOrDefault(g => g.ID == group.ID);
+                if (own == null || own.FieldsVersion < group.FieldsVersion || own.BracketVersion < group.BracketVersion) return false;
+                newer |= own.FieldsVersion > group.FieldsVersion || own.BracketVersion > group.BracketVersion;
+                if (own.BracketVersion != group.BracketVersion || own.Bracket == null || group.Bracket == null) continue;
+                var matches = own.Bracket.Rounds.SelectMany(r => r.RoundMatches).ToDictionary(m => m.BracketFullNumber);
+                foreach (var m in group.Bracket.Rounds.SelectMany(r => r.RoundMatches))
+                {
+                    if (!matches.TryGetValue(m.BracketFullNumber, out var ownMatch) || ownMatch.SyncVersion < m.SyncVersion) return false;
+                    newer |= ownMatch.SyncVersion > m.SyncVersion;
+                }
+            }
+            foreach (var mat in remote.Mats)
+            {
+                var own = local.Mats.FirstOrDefault(m => m.ID == mat.ID);
+                if (own == null || own.FieldsVersion < mat.FieldsVersion) return false;
+                newer |= own.FieldsVersion > mat.FieldsVersion;
+            }
+            foreach (var wrestler in remote.Wrestlers)
+            {
+                var own = local.Wrestlers.FirstOrDefault(w => w.ID == wrestler.ID);
+                if (own == null) return false;
+                var localTime = own.Timestamp?.ToUniversalTime() ?? DateTime.MinValue;
+                var remoteTime = wrestler.Timestamp?.ToUniversalTime() ?? DateTime.MinValue;
+                if (localTime < remoteTime) return false;
+                newer |= localTime > remoteTime;
+            }
+            return newer;
         }
 
         // Persist after a peer-sync merge. Same gate as the UI-side
         // SaveIfAutosaveEnabledAsync hook: no FileName means the operator
         // never picked a save path, so we skip silently rather than pop a
         // dialog from a background sync tick.
-        private async Task SaveAfterMergeAsync(Entities.Tournament target, CancellationToken cancellationToken)
+        private async Task<bool> SaveAfterMergeAsync(Entities.Tournament target, CancellationToken cancellationToken)
         {
-            if (target == null) return;
-            if (string.IsNullOrEmpty(target.FileName)) return;
+            if (target == null) return false;
+            if (ReferenceEquals(_dataContext?.Tournament, target)) _savePending = true;
+            if (string.IsNullOrEmpty(target.FileName)) return false;
 
             try
             {
-                await _tournService.SaveToFileAsync(target, target.FileName, cancellationToken);
+                var saved = await _tournService.SaveToFileAsync(target, target.FileName, cancellationToken);
+                if (ReferenceEquals(_dataContext?.Tournament, target)) _savePending = !saved;
+                if (!saved) FileLogger.Log("Sync.save", target.FileName, "save returned false; retry required");
+                return saved;
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 // Tournament closed while autosave was in flight — silent skip.
+                return false;
             }
             catch (Exception ex)
             {
                 FileLogger.Log("Sync.error", target.FileName, ex);
+                if (ReferenceEquals(_dataContext?.Tournament, target)) _savePending = true;
+                return false;
             }
         }
 

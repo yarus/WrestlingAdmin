@@ -18,10 +18,10 @@ namespace Wrestling.Entities.Bracket
         private AgeWeightGroup _fakeGroupB;
         private bool _resolvingPlayoffs;
 
-        public override void Load(Tournament tournament, AgeWeightGroup group)
+        public override void NormalizeBracket()
         {
-            base.Load(tournament, group);
             ResolvePlayoffMatches();
+            base.NormalizeBracket();
         }
 
         public override void CompleteMatch(WrestlingMatch wrestlingMatch, bool? isRedWon, MatchWinTypeEnum winType)
@@ -33,7 +33,7 @@ namespace Wrestling.Entities.Bracket
         private void ResolvePlayoffMatches()
         {
             // Automatic passes are derived from the source results, just like other
-            // FreeWin propagation. Loading must not create new result versions.
+            // FreeWin propagation. Normalization must not create new result versions.
             if (_resolvingPlayoffs || Group?.Bracket == null) return;
             var rounds = Group.Bracket.AdditionalRounds().ToList();
             if (rounds.Count != 3 || Group.Bracket.MainRounds().SelectMany(r => r.RoundMatches).Any(m => !m.IsMatchCompleted)) return;
@@ -165,6 +165,7 @@ namespace Wrestling.Entities.Bracket
 
         public override void RevertMatch(WrestlingMatch wrestlingMatch)
         {
+            EnsureMatchBelongsToGroup(wrestlingMatch);
             if (!IsWaitingReplacement(wrestlingMatch))
             {
                 base.RevertMatch(wrestlingMatch);
@@ -762,6 +763,7 @@ namespace Wrestling.Entities.Bracket
 
         public override bool CanMatchBeReverted(WrestlingMatch wrestlingMatch)
         {
+            EnsureMatchBelongsToGroup(wrestlingMatch);
             if (!IsWaitingReplacement(wrestlingMatch) && (wrestlingMatch.Status == MatchStatusEnum.Pending || !wrestlingMatch.WinType.HasValue
                 || wrestlingMatch.RoundNumber == 1 && wrestlingMatch.WinType == MatchWinTypeEnum.FreeWin)) return false;
 

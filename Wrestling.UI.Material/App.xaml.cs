@@ -1,4 +1,4 @@
-﻿using MvvmDialogs;
+using MvvmDialogs;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -471,13 +471,7 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
 
             di.Add<IGroupGenerator>(new GroupGenerator());
 
-            di.Add<List<IGroupBracketProcessor>>(new List<IGroupBracketProcessor>
-            {
-                new OlympicWithConsolationFromFinalistsGroupBracketProcessor(),
-                new OlympicGroupBracketProcessor(),
-                new RoundRobinGroupBracketProcessor(),
-                new SubGroupsToOlympicBracketProcessor()
-            });
+            di.Add<IGroupBracketProcessorFactory>(new GroupBracketProcessorFactory());
 
             // Seeding strategy drives DrawViewModel.SeedWrestlers. Default is
             // ClubCityLevelSeedingStrategy which keeps same-club / same-city /
@@ -512,11 +506,11 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             // happens in exactly one place.
             di.Add<IMatRedistributionService>(new MatRedistributionService(
                 di.Resolve<IMatchNumbersGenerator>(),
-                di.Resolve<List<IGroupBracketProcessor>>()));
+                di.Resolve<IGroupBracketProcessorFactory>()));
 
             di.Add<ITournamentImporter>(new TournamentImporter(
                 di.Resolve<ITournamentsManager>(),
-                di.Resolve<List<IGroupBracketProcessor>>(),
+                di.Resolve<IGroupBracketProcessorFactory>(),
                 di.Resolve<IMatchNumbersGenerator>()));
 
             di.Add<ITeamResultsCalculator>(new TeamResultsCalculator());
@@ -540,7 +534,7 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             // on tournament open/close, match approve/revert and peer-sync
             // merge. Consumer VMs subscribe to ResultsChanged.
             di.Add<IResultsService>(new ResultsService(
-                di.Resolve<List<IGroupBracketProcessor>>(),
+                di.Resolve<IGroupBracketProcessorFactory>(),
                 di.Resolve<ITeamResultsCalculator>(),
                 di.Resolve<List<IAchievementCalculator>>()));
 
@@ -559,18 +553,20 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             // Replaces the old DispatcherTimer-based pull import. Constructed
             // here (after discovery/importer/manager are registered) on the UI
             // dispatcher so Apply marshals correctly.
+            var syncDiagnostics = new PeerSyncDiagnostics();
+            di.Add<PeerSyncDiagnostics>(syncDiagnostics);
             di.Add<PeerSyncService>(new PeerSyncService(
                 discovery,
                 dc,
                 di.Resolve<ITournamentImporter>(),
                 di.Resolve<ITournamentsManager>(),
                 di.Resolve<IResultsService>(),
-                Current.Dispatcher));
+                Current.Dispatcher, diagnostics: syncDiagnostics));
 
             // Read-model for the Dashboard "Синхронизация" Card. Holds an
             // ObservableCollection<PeerStatusViewModel> with live status and
             // a 5-minute session-cache for recently disconnected peers.
-            di.Add<PeerSyncStatusTracker>(new PeerSyncStatusTracker(discovery, dc, Current.Dispatcher));
+            di.Add<PeerSyncStatusTracker>(new PeerSyncStatusTracker(discovery, dc, Current.Dispatcher, diagnostics: syncDiagnostics));
 
             di.Add(new WwfScoreScreenView(), "ScoreScreen");
 

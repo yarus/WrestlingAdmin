@@ -12,7 +12,7 @@ using Wrestling.Providers;
 
 namespace Wrestling.UI.Material.Model
 {
-    public class TournamentImporter : ITournamentImporter
+    public partial class TournamentImporter : ITournamentImporter
     {
         // Matches the 5 s timeout used for UNC paths in JsonStorageDataAccess —
         // a tournament file is ~50-200 KB so network fetch should be well
@@ -27,7 +27,7 @@ namespace Wrestling.UI.Material.Model
         // first that loads.
         public const char SourceAlternativesSeparator = '|';
 
-        private readonly List<IGroupBracketProcessor> _drawTypes;
+        private readonly IGroupBracketProcessorFactory _processorFactory;
 
         private readonly ITournamentsManager _tournService;
 
@@ -37,10 +37,10 @@ namespace Wrestling.UI.Material.Model
         // and would exhaust sockets if re-created per import tick.
         private readonly HttpClient _httpClient = new HttpClient { Timeout = HttpTimeout };
 
-        public TournamentImporter(ITournamentsManager tournService, List<IGroupBracketProcessor> processors, IMatchNumbersGenerator matchNumbersGenerator)
+        public TournamentImporter(ITournamentsManager tournService, IGroupBracketProcessorFactory processors, IMatchNumbersGenerator matchNumbersGenerator)
         {
             _tournService = tournService;
-            _drawTypes = processors;
+            _processorFactory = processors;
             _matchNumbersGenerator = matchNumbersGenerator;
         }
 
@@ -331,104 +331,76 @@ namespace Wrestling.UI.Material.Model
                 }
             }
 
+            var conflicts = new List<ImportConflict>();
             foreach (var group in tournament.Groups)
             {
                 var localGroup = target.Groups.FirstOrDefault(g => g.ID == group.ID);
                 if (localGroup == null)
                 {
-                    // New group from remote (secretary added a weight category
-                    // mid-tournament, or this peer joined late and is hearing
-                    // about a group it didn't know existed).
-                    AddNewGroup(target, group);
-                    result++;
-                    structuralChange = true;
+                    try
+                    {
+                        var newCategory = CloneCategory(tournament, group);
+                        var detached = newCategory.Groups.Single();
+                        ValidateCompletedMatches(detached);
+                        GroupResultState.RebuildExclusions(detached);
+                        if (detached.Bracket != null)
+                        {
+                            var calculator = GetProcessorForGroup(detached.Bracket.BracketTypeCode);
+                            if (calculator == null) Conflict(detached, null, ImportConflictReason.DifferentStructure);
+                            calculator.Load(newCategory, detached);
+                            calculator.GetResults().ToList();
+                        }
+                        AddNewGroup(target, detached);
+                        foreach (var w in detached.Wrestlers)
+                        {
+                            var computed = newCategory.Wrestlers.Single(s => s.ID == w.ID);
+                            w.IsNoShow = computed.IsNoShow;
+                            w.IsDisqualified = computed.IsDisqualified;
+                            w.FinalPlace = computed.FinalPlace;
+                        }
+                        result++;
+                        structuralChange = true;
+                    }
+                    catch (CategoryConflictException ex) { conflicts.Add(ex.Conflict); }
+                    catch (BracketStateException ex)
+                    {
+                        conflicts.Add(new ImportConflict(group.ID, group.Name, null, null, ImportConflictReason.DifferentStructure));
+                        FileLogger.Log("Import.conflict", group.Name, ex);
+                    }
                     continue;
                 }
 
-                // Per-group structural merge — independent of match-completion
-                // merge below. FieldsVersion covers timing/MatID/name/age/
-                // weight changes that don't touch bracket shape; BracketVersion
-                // covers generation/invalidation and replaces bracket+wrestlers
-                // wholesale. They're separate so a peer that completed matches
-                // doesn't lose its work just because secretary tweaked timing.
-                if (group.FieldsVersion > localGroup.FieldsVersion)
+                // Stage a category on detached entities. A domain conflict never
+                // leaks an earlier field/result edit into the live category.
+                var staged = CloneCategory(target, localGroup);
+                var stagedGroup = staged.Groups.Single();
+                var stagedRemote = CloneCategory(tournament, group).Groups.Single();
+                try
                 {
-                    ApplyGroupFieldChanges(target, localGroup, group);
-                    result++;
-                    structuralChange = true;
+                    var changes = MergeCategory(staged, stagedGroup, stagedRemote);
+                    var flagsChanged = GroupResultState.RebuildExclusions(stagedGroup);
+                    if (stagedGroup.Bracket != null && (changes.Count > 0 || flagsChanged))
+                    {
+                        var calculator = GetProcessorForGroup(stagedGroup.Bracket.BracketTypeCode);
+                        calculator.Load(staged, stagedGroup);
+                        calculator.GetResults().ToList();
+                    }
+                    if (changes.Count == 0 && !flagsChanged) continue;
+                    CommitCategory(target, localGroup, stagedGroup);
+                    result += changes.Count + (flagsChanged ? 1 : 0);
+                    structuralChange |= changes.Structural;
                 }
-
-                if (group.BracketVersion > localGroup.BracketVersion)
+                catch (CategoryConflictException ex)
                 {
-                    ReplaceGroupBracket(target, localGroup, group);
-                    result++;
-                    structuralChange = true;
+                    conflicts.Add(ex.Conflict);
+                    FileLogger.Log("Import.conflict", group.Name, ex.Conflict.Reason + " match=" + ex.Conflict.MatchIdentity);
                 }
-
-                // Existing per-match merge — handles ordinary match completions
-                // and reverts. Skips silently if structure inconsistent (a
-                // first-tick from a peer with a wholly different bracket).
-                if (localGroup.Bracket == null || group.Bracket == null) continue;
-                if (localGroup.Bracket.BracketTypeCode != group.Bracket.BracketTypeCode) continue;
-
-                var matches = localGroup.Bracket.Rounds.SelectMany(p => p.RoundMatches).ToList();
-                var importedMatches = group.Bracket.Rounds.SelectMany(p => p.RoundMatches).ToList();
-
-                if (matches.Count != importedMatches.Count) continue;
-
-                foreach (var importedMatch in importedMatches)
+                catch (BracketStateException ex)
                 {
-                    // Match identity by BracketFullNumber (stable per-group
-                    // RoundNumber.BracketNumber pair). MatchNumber is per-
-                    // mat and gets renumbered when a group moves between
-                    // mats or a new group is added — using it as the merge
-                    // key would silently match wrong matches across peers.
-                    var baseMatch = matches.FirstOrDefault(p => p.BracketFullNumber == importedMatch.BracketFullNumber);
-                    if (baseMatch == null) continue;
-
-                    // Strict ">" — equal versions keep the local copy. This is
-                    // the cheap escape hatch when two peers concurrently approve
-                    // the same match: each keeps its own state, operators notice
-                    // the divergence on the dashboard rather than one peer
-                    // silently winning by import-tick race.
-                    if (importedMatch.Version <= baseMatch.Version) continue;
-
-                    var processor = GetProcessorForGroup(localGroup.Bracket.BracketTypeCode);
-                    if (processor == null) throw new InvalidOperationException($"No processor registered for bracket type '{localGroup.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
-                    processor.Load(target, localGroup);
-
-                    // Three observable transitions when remote is strictly newer.
-                    // The fourth (both Pending) bumps version only — bracket is
-                    // already in the right state. See docs/TodoList.md #14.
-                    if (baseMatch.Status == MatchStatusEnum.Pending && importedMatch.Status == MatchStatusEnum.Completed)
-                    {
-                        // Case 1: applied completion (Pending → Completed).
-                        ApplyResultFields(baseMatch, importedMatch);
-                        processor.CompleteMatch(baseMatch, baseMatch.IsRedWon, baseMatch.WinType.Value);
-                        result++;
-                    }
-                    else if (baseMatch.Status == MatchStatusEnum.Completed && importedMatch.Status == MatchStatusEnum.Pending)
-                    {
-                        // Case 2: applied revert (Completed → Pending).
-                        processor.RevertMatch(baseMatch);
-                        result++;
-                    }
-                    else if (baseMatch.Status == MatchStatusEnum.Completed && importedMatch.Status == MatchStatusEnum.Completed)
-                    {
-                        // Case 3: applied edit on the author side (revert + re-
-                        // approve between our ticks). Roll the local bracket
-                        // back to clean Pending, then apply the new completion.
-                        processor.RevertMatch(baseMatch);
-                        ApplyResultFields(baseMatch, importedMatch);
-                        processor.CompleteMatch(baseMatch, baseMatch.IsRedWon, baseMatch.WinType.Value);
-                        result++;
-                    }
-                    // else: both Pending — bracket already correct, no-op.
-
-                    baseMatch.Version = importedMatch.Version;
+                    conflicts.Add(new ImportConflict(group.ID, group.Name, null, null, ImportConflictReason.DifferentStructure));
+                    FileLogger.Log("Import.conflict", group.Name, ex);
                 }
             }
-
             // Renumber per-mat match numbers locally so peer's UI shows the
             // same MatchNumber sequence as secretary's after any structural
             // change (new group, mat membership shift, bracket regen). The
@@ -437,36 +409,43 @@ namespace Wrestling.UI.Material.Model
             // MatchNumber across the wire.
             if (structuralChange && _matchNumbersGenerator != null)
             {
-                _matchNumbersGenerator.Generate(target, _drawTypes);
+                _matchNumbersGenerator.Generate(target, _processorFactory);
             }
 
-            return result > 0 ? ImportResult.Imported(result) : ImportResult.NoNewData();
+            return conflicts.Count > 0 ? new ImportResult(ImportOutcome.Conflict, result, conflicts) : result > 0 ? ImportResult.Imported(result) : ImportResult.NoNewData();
         }
 
         // Adds wrestlers from remote that aren't yet in target (late
         // registrations, duplicates created during cross-group transfers) and
-        // syncs name/team edits on existing ones via Timestamp. Only NEW
-        // wrestler additions count toward the returned change count — name
-        // edits via Sync are best-effort and don't trigger autosave on their
-        // own (they piggyback on the next autosave-eligible event). This keeps
-        // the no-op tick (peer re-announces an unchanged tournament) from
-        // looping forever via Imported→autosave→re-import.
+        // syncs registration edits via Timestamp. Count newer edits as well as
+        // additions so peer-sync persists them. Equal or absent timestamps do
+        // not cause another save when the same snapshot is announced again.
         private static int SyncWrestlers(Entities.Tournament target, Entities.Tournament remote)
         {
-            int added = 0;
+            int changed = 0;
             foreach (var wrestler in remote.Wrestlers)
             {
                 var local = target.Wrestlers.FirstOrDefault(x => x.ID == wrestler.ID);
                 if (local == null)
                 {
-                    target.Wrestlers.Add(wrestler);
-                    added++;
+                    target.Wrestlers.Add((Wrestler)wrestler.Clone());
+                    changed++;
                     continue;
                 }
-                if (local.Timestamp >= wrestler.Timestamp) continue;
+                if ((local.Timestamp?.ToUniversalTime() ?? DateTime.MinValue)
+                    >= (wrestler.Timestamp?.ToUniversalTime() ?? DateTime.MinValue)) continue;
+                // Registration timestamps do not version match results. Keep
+                // derived places and exclusions until the match merge below.
+                var finalPlace = local.FinalPlace;
+                var isDisqualified = local.IsDisqualified;
+                var isNoShow = local.IsNoShow;
                 local.Sync(wrestler);
+                local.FinalPlace = finalPlace;
+                local.IsDisqualified = isDisqualified;
+                local.IsNoShow = isNoShow;
+                changed++;
             }
-            return added;
+            return changed;
         }
 
         // Adds a brand-new group from remote into target. Wrestler refs inside
@@ -475,6 +454,7 @@ namespace Wrestling.UI.Material.Model
         // graph instead of dangling on remote-only Wrestler instances.
         private static void AddNewGroup(Entities.Tournament target, AgeWeightGroup remoteGroup)
         {
+            if (!remoteGroup.PartID.HasValue && target.Parts.Count > 0) remoteGroup.PartID = target.Parts[0].ID;
             remoteGroup.Wrestlers = ResolveAgainstTargetWrestlers(remoteGroup.Wrestlers, target);
             ResolveBracketWrestlerRefs(remoteGroup.Bracket, target);
 
@@ -719,7 +699,10 @@ namespace Wrestling.UI.Material.Model
                     foreach (var match in round.RoundMatches)
                     {
                         if (!snapshot.TryGetValue(match.BracketFullNumber, out var localOld)) continue;
-                        if (localOld.Version <= match.Version) continue;
+                        if (localOld.SyncVersion <= match.SyncVersion) continue;
+                        // Automatic passes belong to their original bracket
+                        // shape; regeneration derives its own passes afresh.
+                        if (localOld.WinType == MatchWinTypeEnum.FreeWin) continue;
 
                         // Wrestler-pair safety: same BracketFullNumber after a
                         // bracket regen does NOT mean the position holds the
@@ -737,22 +720,7 @@ namespace Wrestling.UI.Material.Model
                             processorLoaded = true;
                         }
 
-                        if (match.Status == MatchStatusEnum.Pending && localOld.Status == MatchStatusEnum.Completed)
-                        {
-                            ApplyResultFields(match, localOld);
-                            processor.CompleteMatch(match, match.IsRedWon, match.WinType.Value);
-                        }
-                        else if (match.Status == MatchStatusEnum.Completed && localOld.Status == MatchStatusEnum.Pending)
-                        {
-                            processor.RevertMatch(match);
-                        }
-                        else if (match.Status == MatchStatusEnum.Completed && localOld.Status == MatchStatusEnum.Completed)
-                        {
-                            processor.RevertMatch(match);
-                            ApplyResultFields(match, localOld);
-                            processor.CompleteMatch(match, match.IsRedWon, match.WinType.Value);
-                        }
-
+                        ApplyMatchUpdate(local, processor, match, localOld);
                         match.Version = localOld.Version;
                     }
                 }
@@ -763,7 +731,7 @@ namespace Wrestling.UI.Material.Model
 
         private IGroupBracketProcessor GetProcessorForGroup(string processorType)
         {
-            return _drawTypes.FirstOrDefault(p => p.Code == processorType);
+            return _processorFactory.Create(processorType);
         }
 
         // True iff both matches have the same WrestlerInRed/WrestlerInBlue
@@ -789,6 +757,12 @@ namespace Wrestling.UI.Material.Model
         private static void ApplyResultFields(WrestlingMatch dest, WrestlingMatch source)
         {
             dest.WinType = source.WinType;
+            dest.StartDateTime = source.StartDateTime;
+            dest.BestActionRed = source.BestActionRed;
+            dest.BestActionBlue = source.BestActionBlue;
+            dest.BestActionRedCount = source.BestActionRedCount;
+            dest.BestActionBlueCount = source.BestActionBlueCount;
+            dest.IsLastActionRed = source.IsLastActionRed;
             dest.LastSecondInMatch = source.LastSecondInMatch;
             dest.PointsBlue = source.PointsBlue;
             dest.PointsRed = source.PointsRed;

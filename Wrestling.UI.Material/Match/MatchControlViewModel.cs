@@ -475,10 +475,11 @@ namespace Wrestling.UI.Material.Match
         // by MatchActionDescriber (called inside the adapter / UI converter)
         // so callers only specify the discriminator + the relevant payload:
         //   SetPoints / RevertPoints  → isForRed + points
-        //   SetWarning / RevertWarning / Show/Hide/Expired → isForRed
+        //   SetWarning / RevertWarning → isForRed + signed warningDelta
+        //   Show/Hide/Expired → isForRed
         //   RoundFinished / TimerAdjusted → points only
         //   timer-start/stop, timeout-start/stop, MatchCompleted → no payload
-        private void AddAction(MatchActionType type, bool? isForRed = null, int points = 0)
+        private void AddAction(MatchActionType type, bool? isForRed = null, int points = 0, int? warningDelta = null)
         {
             _matchActions.Add(new MatchAction
             {
@@ -488,6 +489,7 @@ namespace Wrestling.UI.Material.Match
                 SecondInRound = ScoreScreenVm.MainSeconds,
                 IsForRed = isForRed,
                 Points = points,
+                WarningDelta = warningDelta,
             });
         }
 
@@ -574,6 +576,7 @@ namespace Wrestling.UI.Material.Match
             var value = Convert.ToInt32(items[0]);
             bool isRed = items[1] == "Red";
 
+            int before = isRed ? ScoreScreenVm.Wrestler1WarningsNumber : ScoreScreenVm.Wrestler2WarningsNumber;
             if (isRed)
             {
                 ScoreScreenVm.Wrestler1WarningsNumber += value;
@@ -582,7 +585,9 @@ namespace Wrestling.UI.Material.Match
             {
                 ScoreScreenVm.Wrestler2WarningsNumber += value;
             }
-            AddAction(MatchActionType.SetWarning, isForRed: isRed);
+            int after = isRed ? ScoreScreenVm.Wrestler1WarningsNumber : ScoreScreenVm.Wrestler2WarningsNumber;
+            if (after == before) return;
+            AddAction(MatchActionType.SetWarning, isForRed: isRed, warningDelta: after - before);
 
             // UWW: 3 warnings = automatic disqualification (VCA 5:0). Stop
             // the timer and jump to results immediately — operator cannot
@@ -877,15 +882,18 @@ namespace Wrestling.UI.Material.Match
         private void UndoSetWarning(MatchAction a)
         {
             bool isForRed = a.IsForRed == true;
+            // Legacy entries did not distinguish +1 and -1. Retain their
+            // previous undo behaviour; new records have an exact inverse.
+            int inverse = -(a.WarningDelta ?? 1);
             if (isForRed)
             {
-                ScoreScreenVm.Wrestler1WarningsNumber = Math.Max(0, ScoreScreenVm.Wrestler1WarningsNumber - 1);
+                ScoreScreenVm.Wrestler1WarningsNumber += inverse;
             }
             else
             {
-                ScoreScreenVm.Wrestler2WarningsNumber = Math.Max(0, ScoreScreenVm.Wrestler2WarningsNumber - 1);
+                ScoreScreenVm.Wrestler2WarningsNumber += inverse;
             }
-            AddAction(MatchActionType.RevertWarning, isForRed: isForRed);
+            AddAction(MatchActionType.RevertWarning, isForRed: isForRed, warningDelta: inverse);
         }
 
         private void UndoShowActionTimer(MatchAction a)

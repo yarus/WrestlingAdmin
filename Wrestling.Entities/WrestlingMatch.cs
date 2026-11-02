@@ -76,7 +76,8 @@ namespace Wrestling.Entities
                 RoundNumber = a.RoundNumber,
                 SecondInRound = a.SecondInRound,
                 IsForRed = a.IsForRed,
-                Points = a.Points
+                Points = a.Points,
+                WarningDelta = a.WarningDelta
             }).ToList();
             return snapshot;
         }
@@ -417,6 +418,11 @@ namespace Wrestling.Entities
                 OnPropertyChanged("Version");
             }
         }
+
+        // Loading a legacy completed match promotes V0 to V1 in the adapter.
+        // Generated automatic passes can still be V0 in the live tournament;
+        // synchronization must treat them exactly like the reloaded copy.
+        public int SyncVersion => Version == 0 && IsMatchCompleted ? 1 : Version;
 
         public int BestActionRed
         {

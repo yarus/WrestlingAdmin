@@ -94,7 +94,7 @@ public sealed class ResultsServiceTests
         // Build the service WITHOUT the OlympicGroupBracketProcessor registered.
         var calc = new TeamResultsCalculator();
         var svc = new ResultsService(
-            new List<IGroupBracketProcessor>(),  // empty — nothing matches
+            new GroupBracketProcessorFactory(new System.Func<IGroupBracketProcessor>[0]),  // empty — nothing matches
             calc,
             new List<IAchievementCalculator>());
 
@@ -128,7 +128,7 @@ public sealed class ResultsServiceTests
         var stub = new StubAchievementCalculator();
         var calc = new TeamResultsCalculator();
         var svc = new ResultsService(
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() },
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()),
             calc,
             new List<IAchievementCalculator> { stub });
 
@@ -203,7 +203,7 @@ public sealed class ResultsServiceTests
         // laureate should be crowned; otherwise the whole field ties at 0 and
         // every wrestler shows up as a nominee (the reported bug).
         var svc = new ResultsService(
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() },
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()),
             new TeamResultsCalculator(),
             RealAchievementCalculators());
 
@@ -232,7 +232,7 @@ public sealed class ResultsServiceTests
         // 2 tushe wins, so the «most tushe» nomination must list exactly one
         // wrestler — not everyone tied below them.
         var svc = new ResultsService(
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() },
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()),
             new TeamResultsCalculator(),
             RealAchievementCalculators());
 
@@ -251,7 +251,7 @@ public sealed class ResultsServiceTests
     private static ResultsService MakeService()
     {
         return new ResultsService(
-            new List<IGroupBracketProcessor> { new OlympicGroupBracketProcessor() },
+            new GroupBracketProcessorFactory(() => new OlympicGroupBracketProcessor()),
             new TeamResultsCalculator(),
             new List<IAchievementCalculator>());
     }

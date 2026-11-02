@@ -17,6 +17,75 @@ namespace Wrestling.Providers.Tests;
 //      the result (peer A's groups order can differ from peer B's).
 public class PeerStateHasherTests
 {
+    [Fact]
+    public void Warning_direction_changes_completed_result_hash()
+    {
+        var t = MakeTournament((Guid.NewGuid(), 1, 1, new[] { ("1.1", 1) }));
+        var match = t.Groups[0].Bracket.Rounds[0].RoundMatches[0];
+        match.Status = MatchStatusEnum.Completed;
+        var warning = new MatchAction { Type = MatchActionType.SetWarning, IsForRed = true, WarningDelta = 1 };
+        match.MatchActions.Add(warning);
+        var before = PeerStateHasher.Compute(t);
+        warning.WarningDelta = -1;
+        PeerStateHasher.Compute(t).Should().NotBe(before);
+    }
+    [Fact]
+    public void Equal_versions_with_different_completed_results_or_exclusions_have_different_hashes()
+    {
+        var t = MakeTournament((Guid.NewGuid(), 1, 1, new[] { ("1.1", 1) }));
+        var match = t.Groups[0].Bracket.Rounds[0].RoundMatches[0];
+        match.Status = MatchStatusEnum.Completed;
+        match.WinType = MatchWinTypeEnum.Tushe;
+        match.IsRedWon = true;
+        var before = PeerStateHasher.Compute(t);
+        match.IsRedWon = false;
+        PeerStateHasher.Compute(t).Should().NotBe(before);
+        var athlete = new Wrestler { ID = Guid.NewGuid() };
+        t.Wrestlers.Add(athlete);
+        before = PeerStateHasher.Compute(t);
+        athlete.IsNoShow = true;
+        PeerStateHasher.Compute(t).Should().NotBe(before);
+    }
+
+    [Fact]
+    public void Pending_live_scores_do_not_publish_approved_result_changes()
+    {
+        var t = MakeTournament((Guid.NewGuid(), 1, 1, new[] { ("1.1", 0) }));
+        var before = PeerStateHasher.Compute(t);
+        t.Groups[0].Bracket.Rounds[0].RoundMatches[0].PointsRed = 3;
+        PeerStateHasher.Compute(t).Should().Be(before);
+    }
+    [Fact]
+    public void Registration_edit_changes_hash_and_registration_order_does_not()
+    {
+        var t = MakeTournament();
+        var athlete = new Wrestler { ID = Guid.NewGuid(), Level = WrestlerLevelEnum.Adult1, Timestamp = new DateTime(2026, 11, 1, 8, 0, 0, DateTimeKind.Utc) };
+        t.Wrestlers.Add(athlete);
+        t.Wrestlers.Add(new Wrestler { ID = Guid.NewGuid() });
+        var before = PeerStateHasher.Compute(t);
+        athlete.Level = WrestlerLevelEnum.KMS;
+        athlete.Timestamp = athlete.Timestamp.Value.AddSeconds(1);
+        var edited = PeerStateHasher.Compute(t);
+        edited.Should().NotBe(before);
+        t.Wrestlers.Move(0, 1);
+        PeerStateHasher.Compute(t).Should().Be(edited);
+        athlete.Timestamp = athlete.Timestamp.Value.ToLocalTime();
+        PeerStateHasher.Compute(t).Should().Be(edited);
+    }
+
+    [Fact]
+    public void Completed_version_zero_matches_the_loaded_version_one_but_not_pending_zero()
+    {
+        var t = MakeTournament((Guid.NewGuid(), 0, 0, new[] { ("1.1", 0) }));
+        var match = t.Groups[0].Bracket.Rounds[0].RoundMatches[0];
+        var pendingHash = PeerStateHasher.Compute(t);
+        match.Status = MatchStatusEnum.Completed;
+        var generatedHash = PeerStateHasher.Compute(t);
+        match.Version = 1;
+        PeerStateHasher.Compute(t).Should().Be(generatedHash);
+        generatedHash.Should().NotBe(pendingHash);
+    }
+
     private static Tournament MakeTournament(params (Guid id, int fv, int bv, (string fullNum, int v)[] matches)[] groups)
     {
         var t = new Tournament(new GlobalSettings());

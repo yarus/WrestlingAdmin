@@ -12,13 +12,7 @@ namespace Wrestling.UI.Material.Tests;
 
 public class MatRedistributionServiceTests
 {
-    private static List<IGroupBracketProcessor> BuiltInProcessors() => new()
-    {
-        new OlympicWithConsolationFromFinalistsGroupBracketProcessor(),
-        new OlympicGroupBracketProcessor(),
-        new RoundRobinGroupBracketProcessor(),
-        new SubGroupsToOlympicBracketProcessor()
-    };
+    private static IGroupBracketProcessorFactory BuiltInProcessors() => new GroupBracketProcessorFactory();
 
     // Builds a tournament with two mats and one already-bound group on Mat A.
     // Optional second group can be added unbound for the "move into empty mat"

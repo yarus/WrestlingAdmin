@@ -78,6 +78,24 @@ public sealed class PeerSyncStatusTrackerTests
     }
 
     [Fact]
+    public void Transfer_error_and_conflict_details_are_visible_instead_of_catching_up()
+    {
+        var dc = new DataContext { Tournament = new Entities.Tournament(new GlobalSettings()) };
+        var discovery = new TestDiscovery();
+        var diagnostics = new PeerSyncDiagnostics();
+        using var tracker = new PeerSyncStatusTracker(discovery, dc, null, diagnostics: diagnostics);
+        var peer = MakePeer(Guid.NewGuid(), "Ковер C", "different", DateTime.UtcNow);
+        discovery.RaiseUpserted(peer);
+        diagnostics.Report(peer.InstanceId, "http://10.1.30.49:24566", PeerSyncPhase.Conflict, DateTime.UtcNow,
+            conflicts: new[] { new ImportConflict(Guid.NewGuid(), "2016–2017 / 32 кг", 31, "2.3", ImportConflictReason.CompletedDependentMatch) });
+
+        tracker.Peers[0].StatusText.Should().Be("конфликт результатов");
+        tracker.Peers[0].Details.Should().Contain("№31").And.Contain("Следующая встреча уже завершена");
+        diagnostics.Report(peer.InstanceId, peer.HttpUrl, PeerSyncPhase.SaveFailed, DateTime.UtcNow);
+        tracker.Peers[0].StatusText.Should().Be("изменения не сохранены");
+    }
+
+    [Fact]
     public void New_peer_with_different_hash_is_lagging()
     {
         var (tr, disc, _, clock) = Build();

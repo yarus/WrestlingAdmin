@@ -21,7 +21,7 @@ namespace Wrestling.Entities
     // word like "red" / "blue".
     public static class MatchActionDescriber
     {
-        public static string Describe(MatchActionType type, bool? isForRed, int points)
+        public static string Describe(MatchActionType type, bool? isForRed, int points, int? warningDelta = null)
         {
             switch (type)
             {
@@ -31,6 +31,8 @@ namespace Wrestling.Entities
                         ColorLabel(isForRed), points, PluralizePoints(points));
 
                 case MatchActionType.SetWarning:
+                    if (warningDelta < 0)
+                        return string.Format(EntityLocalization.T("Action_RemoveWarning", "Снято предупреждение {0}"), SideNameDative(isForRed));
                     return string.Format(
                         EntityLocalization.T("Action_SetWarning", "Предупреждение {0}"),
                         SideNameDative(isForRed));
@@ -41,6 +43,8 @@ namespace Wrestling.Entities
                         points, SideNameDative(isForRed));
 
                 case MatchActionType.RevertWarning:
+                    if (warningDelta > 0)
+                        return string.Format(EntityLocalization.T("Action_UndoWarningRemoval", "Отмена снятия предупреждения {0}"), SideNameDative(isForRed));
                     return string.Format(
                         EntityLocalization.T("Action_RevertWarning", "Отмена предупреждения {0}"),
                         SideNameDative(isForRed));

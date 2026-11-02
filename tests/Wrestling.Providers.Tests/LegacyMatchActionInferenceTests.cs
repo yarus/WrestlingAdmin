@@ -12,6 +12,8 @@ public class LegacyMatchActionInferenceTests
 {
     [Theory]
     [InlineData("Отмена предупреждения борцу в красном трико", MatchActionType.RevertWarning)]
+    [InlineData("Отмена снятия предупреждения красному", MatchActionType.RevertWarning)]
+    [InlineData("Снято предупреждение синему", MatchActionType.SetWarning)]
     [InlineData("Отмена предупреждения борцу в синем трико", MatchActionType.RevertWarning)]
     [InlineData("Борец в красном трико получил 1 предупреждение", MatchActionType.SetWarning)]
     [InlineData("Борец в синем трико получил 2 предупреждение", MatchActionType.SetWarning)]
