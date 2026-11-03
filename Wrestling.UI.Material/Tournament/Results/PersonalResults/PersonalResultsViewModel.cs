@@ -81,6 +81,18 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
         public bool IsFilterEnabled =>
             (!string.IsNullOrEmpty(FilterString) && FilterString.Length > 2) || IsOnlyMedalsVisible;
 
+        public bool IsRoundRobinTwoThirdPlaces
+        {
+            get => Tournament?.Settings?.IsRoundRobinTwoThirdPlaces ?? false;
+            set
+            {
+                if (Tournament?.Settings == null || IsRoundRobinTwoThirdPlaces == value) return;
+                Tournament.Settings.IsRoundRobinTwoThirdPlaces = value;
+                OnPropertyChanged(nameof(IsRoundRobinTwoThirdPlaces));
+                _resultsService?.Recalculate(Tournament);
+            }
+        }
+
         // Local part filter — independent of any mat's active part. Defaults
         // in InitData to the first part with pending matches (the part the
         // operator is most likely planning awards for); the user can switch
@@ -146,6 +158,7 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
             OnPropertyChanged(nameof(AvailableParts));
             OnPropertyChanged(nameof(HasMultipleParts));
             OnPropertyChanged(nameof(SelectedPart));
+            OnPropertyChanged(nameof(IsRoundRobinTwoThirdPlaces));
 
             Rebuild();
         }
@@ -182,6 +195,7 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
             var rows = new List<WeightCategoryResultsViewModel>();
             foreach (var group in groups)
             {
+                if (IsOnlyMedalsVisible && !group.IsBracketCompleted) continue;
                 if (!resultsByGroup.TryGetValue(group, out var groupResults)) continue;
 
                 var visible = groupResults

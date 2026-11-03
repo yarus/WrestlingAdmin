@@ -14,6 +14,21 @@ public class AdapterRoundTripTests
 {
     private readonly EntityToInfoAdapter _adapter = new();
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Round_robin_bronze_policy_round_trips_without_changing_legacy_default(bool enabled)
+    {
+        var tournament = new Tournament(new GlobalSettings { IsRoundRobinTwoThirdPlaces = enabled });
+        var info = _adapter.GetInfoFromEntity(tournament);
+        info.Settings.IsRoundRobinTwoThirdPlaces.Should().Be(enabled);
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(info);
+        var loaded = Newtonsoft.Json.JsonConvert.DeserializeObject<TournamentInfo>(json);
+        _adapter.GetEntityFromInfo(loaded).Settings.IsRoundRobinTwoThirdPlaces.Should().Be(enabled);
+        var legacySettings = Newtonsoft.Json.JsonConvert.DeserializeObject<GlobalSettingsInfo>("{}");
+        _adapter.GetEntityFromInfo(legacySettings).IsRoundRobinTwoThirdPlaces.Should().BeFalse();
+    }
+
     [Fact]
     public void Legacy_resolved_branch_is_normalized_on_load_without_version_changes()
     {

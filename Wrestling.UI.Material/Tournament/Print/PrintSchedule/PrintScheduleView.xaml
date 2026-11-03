@@ -54,7 +54,7 @@
             <TextBlock Grid.Column="1" Text="{loc:Loc Completed_Column_GroupStage}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
             <TextBlock Grid.Column="2" Text="{loc:Loc Completed_Column_Wrestlers}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
             <TextBlock Grid.Column="3" Text="{loc:Loc Completed_Column_Teams}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" />
-            <TextBlock Grid.Column="4" Text="{loc:Loc PrintSchedule_Column_Points}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" Width="240" />
+            <TextBlock Grid.Column="4" Text="{loc:Loc PrintSchedule_Column_Points}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" Width="180" />
             <TextBlock Grid.Column="5" Text="{loc:Loc PrintSchedule_Column_Result}" FontSize="11" TextAlignment="Center" Padding="2,0,2,0" TextWrapping="NoWrap" />
         </Grid>
 
@@ -84,8 +84,8 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding WrestlerInRed.LastFirstNameShort}" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
-                            <TextBlock Text="{Binding WrestlerInBlue.LastFirstNameShort}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
+                            <TextBlock Text="{Binding WrestlerInRed.FullName}" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
+                            <TextBlock Text="{Binding WrestlerInBlue.FullName}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="14" HorizontalAlignment="Left" />
                         </StackPanel>
 
                         <StackPanel Grid.Column="3" VerticalAlignment="Center">
@@ -105,20 +105,16 @@
                                 <ColumnDefinition Width="30" />
                                 <ColumnDefinition Width="30" />
                                 <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="30" />
-                                <ColumnDefinition Width="30" />
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="8" BorderThickness="1,1,1,0" BorderBrush="Black" />
-                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="8" BorderThickness="1,1,1,1" BorderBrush="Black" />
+                            <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="6" BorderThickness="1,1,1,0" BorderBrush="Black" />
+                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="6" BorderThickness="1,1,1,1" BorderBrush="Black" />
 
                             <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
                             <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
                             <Border Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
                             <Border Grid.Row="0" Grid.Column="3" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
                             <Border Grid.Row="0" Grid.Column="4" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
-                            <Border Grid.Row="0" Grid.Column="5" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
-                            <Border Grid.Row="0" Grid.Column="6" Grid.RowSpan="2" BorderThickness="0,0,1,0" BorderBrush="Black" />
                         </Grid>
 
                         <StackPanel Grid.Column="5" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">

@@ -58,4 +58,4 @@ Crash-журналы общие для установки, а не отдель�
 
 Артефакты: `artifacts/audit/crashes-20261103/crash-records.json`, `crash-signatures.json`, `recent-crash-backups.json`, `historical-backups.json`, `tournament-inventory.json`, `wpf-smoke.json`. Журналы проверки: `.tmp/crash-audit-before.txt`, `.tmp/crash-audit-after.txt`, `.tmp/crash-audit-full-tests.txt`, `.tmp/crash-audit-wpf-final.txt`.
 
-**Три новых исправления ещё не установлены.** Текущая установленная версия — пакет `WAdminNew-20261103-winner-round`.
+**Обновление после аудита:** три исправления установлены 2026-11-03 вместе с настройкой двух третьих мест (#43), пакет `WAdminNew-20261103-round-robin-medals`. Резервная копия предыдущей установки — `Desktop/WAdminNew.backup-20261103-121517`. Проверка запуска успешна, новых crash-записей нет.

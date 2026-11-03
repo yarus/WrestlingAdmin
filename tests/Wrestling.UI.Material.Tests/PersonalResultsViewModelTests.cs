@@ -28,6 +28,70 @@ namespace Wrestling.UI.Material.Tests;
 public sealed class PersonalResultsViewModelTests
 {
     [Fact]
+    public void Medalists_filter_hides_unfinished_group_even_when_bronze_is_already_known()
+    {
+        var results = MakeResults(2010, 2010, 60, places: new int?[] { 1, 2, 3, 3 });
+        var (di, tournament) = BuildContainer(results);
+        var group = tournament.Groups.Single();
+        var pending = new WrestlingMatch { Status = MatchStatusEnum.Pending };
+        group.Bracket.Rounds.Add(new GroupRound { RoundMatches = new List<WrestlingMatch> { pending } });
+        var vm = new PersonalResultsViewModel(di);
+        vm.InitData();
+        vm.Items.Should().HaveCount(1);
+        vm.IsOnlyMedalsVisible = true;
+        vm.Items.Should().BeEmpty();
+        pending.Status = MatchStatusEnum.Completed;
+        ((ConfigurableResultsService)di.Resolve<IResultsService>()).Replace(results);
+        vm.Items.Should().HaveCount(1);
+        pending.Status = MatchStatusEnum.Pending;
+        ((ConfigurableResultsService)di.Resolve<IResultsService>()).Replace(results);
+        vm.Items.Should().BeEmpty();
+        vm.IsOnlyMedalsVisible = false;
+        vm.Items.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void Bronze_checkbox_recalculates_real_results_and_resets_to_next_tournaments_setting()
+    {
+        var di = TestContainerBuilder.MakeDefault();
+        var tournament = new Entities.Tournament(new GlobalSettings());
+        var group = MakeGroup(2010, 2010, 60);
+        var teamId = Guid.NewGuid();
+        tournament.Groups.Add(group);
+        for (var i = 1; i <= 5; i++)
+        {
+            var wrestler = new Wrestler { ID = Guid.NewGuid(), GroupID = group.ID, TeamID = teamId, SeedNumber = i, LastName = "W" + i };
+            group.Wrestlers.Add(wrestler); tournament.Wrestlers.Add(wrestler);
+        }
+        var processor = new RoundRobinGroupBracketProcessor();
+        processor.Generate(tournament, group);
+        foreach (var match in group.Bracket.Rounds.SelectMany(r => r.RoundMatches))
+            processor.CompleteMatch(match, match.WrestlerInRed.SeedNumber < match.WrestlerInBlue.SeedNumber, MatchWinTypeEnum.PointsWin);
+        di.Resolve<IDataContext>().Tournament = tournament;
+        var service = new ResultsService(new GroupBracketProcessorFactory(), new TeamResultsCalculator(), null);
+        di.Add<IResultsService>(service);
+        service.Recalculate(tournament);
+        var vm = new PersonalResultsViewModel(di);
+        vm.InitData();
+        vm.IsOnlyMedalsVisible = true;
+        vm.Items.Single().Wrestlers.Should().HaveCount(3);
+        service.TeamResults.Single().BronzeMedals.Should().Be(1);
+        vm.IsRoundRobinTwoThirdPlaces = true;
+        tournament.Settings.IsRoundRobinTwoThirdPlaces.Should().BeTrue();
+        vm.Items.Single().Wrestlers.Should().HaveCount(4);
+        vm.Items.Single().MedalsCount.Should().Be(4);
+        service.TeamResults.Single().BronzeMedals.Should().Be(2);
+        vm.IsRoundRobinTwoThirdPlaces = false;
+        vm.Items.Single().Wrestlers.Should().HaveCount(3);
+        group.Wrestlers.Single(w => w.SeedNumber == 4).FinalPlace.Should().Be(4);
+        service.TeamResults.Single().BronzeMedals.Should().Be(1);
+        vm.IsRoundRobinTwoThirdPlaces = true;
+        di.Resolve<IDataContext>().Tournament = new Entities.Tournament(new GlobalSettings());
+        vm.InitData();
+        vm.IsRoundRobinTwoThirdPlaces.Should().BeFalse();
+    }
+
+    [Fact]
     public void InitData_sorts_groups_by_birthYear_then_weight()
     {
         // Mixed input order, identifiable by (minYear, weightMax) tuple.

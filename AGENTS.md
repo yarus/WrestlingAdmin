@@ -157,6 +157,8 @@ Each mat PC keeps a local copy of the same tournament `.wrt`. `NetworkServicesLi
 
 `IResultsService` caches calculated results and notifies consumers through `ResultsChanged`. Recalculation is wired to tournament open/close, match approval/revert and peer merge. Keep these consumers consistent when adding a mutation that affects results.
 
+Personal Results exposes `GlobalSettings.IsRoundRobinTwoThirdPlaces` beside the medalists filter. It defaults to false (including legacy files), round-trips through the settings DTO/adapter and triggers `IResultsService.Recalculate` when toggled. `RoundRobinGroupBracketProcessor.GetResults` maps fourth to shared third only for standalone `RoundRobin` brackets; internal pools of `SubGroupsIntoOlympic` retain distinct places. With “medalists only”, Personal Results hides unfinished categories even when some medal places are already known.
+
 `Tournament.SlideChannels` stores named channels, each with its own slide list and interval. Legacy flat `Slides` are migrated into a default channel. `ISliderWindowManager` manages playback windows; `ISlideType.CreateViewControl()` creates separate view controls per host, rather than sharing a singleton rendering VM across windows. `MatBracketsSlide` expands into group-bracket slides and is not persisted as a playable slide.
 
 Bulk PDF actions now live on their phases: `ApplicationsViewModel` (weighing), `DrawViewModel` (draw), `MatsViewModel` (schedule), `ResultsViewModel` (brackets/results). They reuse `BulkBracketPdfExporter` with view factories. Read `docs/PrintingNotes.md` before changing rendering or adding print views. Match control uses `MatchControlView2`; the score window uses `WwfScoreScreenView`.
