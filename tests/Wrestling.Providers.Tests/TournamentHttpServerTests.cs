@@ -192,13 +192,15 @@ public class TournamentHttpServerTests
     }
 
     [Fact]
-    public void Port_conflict_raises_diagnostic_and_keeps_ActualPort_null()
+    public async Task Port_conflict_uses_free_port_and_serves_the_requested_tournament()
     {
         var port = FindFreePort();
         var blockerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         blockerSocket.ExclusiveAddressUse = true;
         blockerSocket.Bind(new IPEndPoint(IPAddress.Any, port));
         blockerSocket.Listen(1);
+        var id = Guid.NewGuid();
+        var path = WriteTempWrt("fallback port payload");
 
         try
         {
@@ -206,14 +208,19 @@ public class TournamentHttpServerTests
             string diagnostic = null;
             server.DiagnosticMessage += (s, m) => diagnostic = m;
 
+            server.SetServedTournament(id, path);
             server.Start(port);
 
-            server.ActualPort.Should().BeNull();
-            diagnostic.Should().NotBeNull().And.Contain(port.ToString());
+            server.ActualPort.Should().NotBeNull().And.NotBe(port);
+            diagnostic.Should().BeNull();
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            (await http.GetStringAsync("http://127.0.0.1:" + server.ActualPort + "/tournament/" + id + ".wrt"))
+                .Should().Be("fallback port payload");
         }
         finally
         {
             blockerSocket.Close();
+            File.Delete(path);
         }
     }
 }

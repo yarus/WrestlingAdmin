@@ -49,11 +49,18 @@ namespace Wrestling.Providers.Network
             try
             {
                 listener = new TcpListener(IPAddress.Any, port);
-                listener.Start();
+                try { listener.Start(); }
+                catch (SocketException ex) when (port != 0 &&
+                    (ex.SocketErrorCode == SocketError.AddressAlreadyInUse || ex.SocketErrorCode == SocketError.AccessDenied))
+                {
+                    listener.Stop();
+                    listener = new TcpListener(IPAddress.Any, 0);
+                    listener.Start();
+                }
             }
             catch (Exception ex)
             {
-                DiagnosticMessage?.Invoke(this, string.Format(ProviderLocalization.T("Network_HttpPortOpenFailed", "Не удалось открыть HTTP порт {0}: {1}"), port, ex.Message));
+                DiagnosticMessage?.Invoke(this, string.Format(ProviderLocalization.T("Network_HttpStartFailed", "Не удалось запустить передачу данных через HTTP: {0}"), ex.Message));
                 return;
             }
 
@@ -62,7 +69,7 @@ namespace Wrestling.Providers.Network
                 _listener = listener;
                 ActualPort = ((IPEndPoint)listener.LocalEndpoint).Port;
                 _running = true;
-                _acceptThread = new Thread(AcceptLoop) { IsBackground = true, Name = "TournamentHttp.Accept" };
+                _acceptThread = new Thread(() => AcceptLoop(listener)) { IsBackground = true, Name = "TournamentHttp.Accept" };
                 _acceptThread.Start();
             }
         }
@@ -83,9 +90,8 @@ namespace Wrestling.Providers.Network
             Stop();
         }
 
-        private void AcceptLoop()
+        private void AcceptLoop(TcpListener listener)
         {
-            var listener = _listener;
             while (_running && listener != null)
             {
                 TcpClient client;

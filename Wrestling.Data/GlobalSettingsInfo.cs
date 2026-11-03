@@ -1,4 +1,4 @@
-﻿using System.Runtime.Serialization;
+using System.Runtime.Serialization;
 
 namespace Wrestling.Data
 {
@@ -13,11 +13,6 @@ namespace Wrestling.Data
             // false in a saved file still wins.
             IsBackupEnabled = true;
             MaxBackupCount = 20;
-            DiscoveryPort = 24565;
-            IsHttpServerEnabled = true;
-            HttpServerPort = 24566;
-            NodeName = string.Empty;
-            AnnounceIpOverride = string.Empty;
         }
 
         [DataMember]
@@ -50,16 +45,6 @@ namespace Wrestling.Data
         public int MaxBackupCount { get; set; }
         [DataMember]
         public string BackupFolderPath { get; set; }
-        [DataMember]
-        public int DiscoveryPort { get; set; }
-        [DataMember]
-        public bool IsHttpServerEnabled { get; set; }
-        [DataMember]
-        public int HttpServerPort { get; set; }
-        [DataMember]
-        public string NodeName { get; set; }
-        [DataMember]
-        public string AnnounceIpOverride { get; set; }
         [DataMember]
         public string SignatureFooterImagePath { get; set; }
     }

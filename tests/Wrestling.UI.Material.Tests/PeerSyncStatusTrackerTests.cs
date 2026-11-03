@@ -24,6 +24,7 @@ public sealed class PeerSyncStatusTrackerTests
 {
     private sealed class TestDiscovery : IPeerDiscoveryService
     {
+        public int? ActualPort => null;
         public event EventHandler<DiscoveredPeer> PeerUpserted;
         public event EventHandler<DiscoveredPeer> PeerExpired;
         public event EventHandler<string> DiagnosticMessage { add { } remove { } }
@@ -331,5 +332,41 @@ public sealed class PeerSyncStatusTrackerTests
         disc.RaiseUpserted(MakePeer(Guid.NewGuid(), "Ковёр 3", "h", clock.Now));
 
         tr.Peers.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public void Duplicate_names_show_computer_details_without_merging_live_instances()
+    {
+        var (tracker, discovery, _, clock) = Build();
+        using (tracker)
+        {
+            var first = MakePeer(Guid.NewGuid(), "Ковёр A", "h", clock.Now);
+            var second = MakePeer(Guid.NewGuid(), "Ковёр A", "h", clock.Now);
+            typeof(DiscoveredPeer).GetProperty("ComputerName").SetValue(first, "LAPTOP-1");
+            typeof(DiscoveredPeer).GetProperty("ComputerName").SetValue(second, "LAPTOP-2");
+            discovery.RaiseUpserted(first); discovery.RaiseUpserted(second);
+            tracker.Peers.Should().HaveCount(2);
+            tracker.Peers.Should().OnlyContain(p => p.Details.Contains("Одинаковое имя"));
+            tracker.Peers[0].Details.Should().Contain("LAPTOP-1");
+            typeof(DiscoveredPeer).GetProperty("NodeName").SetValue(second, "Ковёр B");
+            discovery.RaiseUpserted(second);
+            tracker.Peers.Should().OnlyContain(p => !p.Details.Contains("Одинаковое имя"));
+        }
+    }
+
+    [Fact]
+    public void Delayed_advertisement_after_closing_or_switching_tournament_is_ignored()
+    {
+        var (tracker, discovery, context, clock) = Build();
+        using (tracker)
+        {
+            var peer = MakePeer(Guid.NewGuid(), "Old tournament peer", "h", clock.Now);
+            context.Tournament = null;
+            discovery.RaiseUpserted(peer);
+            tracker.Peers.Should().BeEmpty();
+            context.Tournament = new Entities.Tournament(new GlobalSettings()) { ID = Guid.NewGuid() };
+            discovery.RaiseUpserted(peer);
+            tracker.Peers.Should().BeEmpty();
+        }
     }
 }

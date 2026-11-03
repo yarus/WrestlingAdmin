@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Wrestling.Entities
 {
@@ -40,11 +40,6 @@ namespace Wrestling.Entities
         private int _maxBackupCount;
         private string _backupFolderPath;
 
-        private int _discoveryPort;
-        private bool _isHttpServerEnabled;
-        private int _httpServerPort;
-        private string _nodeName;
-        private string _announceIpOverride;
 
         private string _signatureFooterImagePath;
 
@@ -62,27 +57,6 @@ namespace Wrestling.Entities
             IsBackupEnabled = true;
             MaxBackupCount = 20;
             BackupFolderPath = string.Empty;
-            DiscoveryPort = 24565;
-            IsHttpServerEnabled = true;
-            HttpServerPort = 24566;
-            // Default NodeName to the machine's host name so a fresh tournament
-            // is immediately discoverable on the LAN without operator setup.
-            // The user can override later from the Settings screen.
-            NodeName = SafeMachineName();
-            AnnounceIpOverride = string.Empty;
-        }
-
-        private static string SafeMachineName()
-        {
-            try
-            {
-                var name = Environment.MachineName;
-                return string.IsNullOrWhiteSpace(name) ? string.Empty : name;
-            }
-            catch
-            {
-                return string.Empty;
-            }
         }
 
         public string IntegrationUserName
@@ -244,62 +218,6 @@ namespace Wrestling.Entities
             {
                 _backupFolderPath = value;
                 OnPropertyChanged("BackupFolderPath");
-            }
-        }
-
-        public int DiscoveryPort
-        {
-            get { return _discoveryPort; }
-            set
-            {
-                _discoveryPort = value;
-                OnPropertyChanged("DiscoveryPort");
-            }
-        }
-
-        public bool IsHttpServerEnabled
-        {
-            get { return _isHttpServerEnabled; }
-            set
-            {
-                _isHttpServerEnabled = value;
-                OnPropertyChanged("IsHttpServerEnabled");
-            }
-        }
-
-        public int HttpServerPort
-        {
-            get { return _httpServerPort; }
-            set
-            {
-                _httpServerPort = value;
-                OnPropertyChanged("HttpServerPort");
-            }
-        }
-
-        public string NodeName
-        {
-            get { return _nodeName; }
-            set
-            {
-                _nodeName = value;
-                OnPropertyChanged("NodeName");
-            }
-        }
-
-        // Manual override for the IP advertised in the HTTP URL announced to
-        // peers. Empty string means "auto-pick the first private-range IPv4
-        // via LocalIpAddressProbe.PickDefault()" — preserves legacy behavior.
-        // Operators set this when a laptop has multiple NICs and the auto
-        // pick lands on the wrong subnet (e.g. a hotspot interface instead
-        // of the tournament LAN).
-        public string AnnounceIpOverride
-        {
-            get { return _announceIpOverride; }
-            set
-            {
-                _announceIpOverride = value;
-                OnPropertyChanged("AnnounceIpOverride");
             }
         }
 
