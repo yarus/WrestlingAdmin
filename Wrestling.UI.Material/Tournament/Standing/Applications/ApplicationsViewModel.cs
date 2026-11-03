@@ -506,7 +506,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
             if (_editWrestlerDialogOpened) return;
 
             var tmpWrestler = wrestler.Clone() as Wrestler;
-            tmpWrestler.Timestamp = DateTime.Now;
 
             var vm = new AddWrestlerViewModel(DiContainer, tmpWrestler);
             vm.InitData();
@@ -524,6 +523,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
                 var teamApp = Items.FirstOrDefault(a => a.Team.ID == wrestler.TeamID);
                 if (teamApp != null && tmpWrestler != null)
                 {
+                    tmpWrestler.Timestamp = DateTime.Now;
                     if (DataContext.Tournament.UpdateWrestlerRegistration(wrestler, tmpWrestler))
                     {
                         ResultsService?.Recalculate(DataContext.Tournament);

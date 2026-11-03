@@ -57,7 +57,7 @@ public class SubGroupsBranchSyncTests
                 match == target ? MatchWinTypeEnum.MutualInjury : MatchWinTypeEnum.PointsWin);
         }
         g.IsBracketCompleted.Should().BeTrue();
-        var importer = new TournamentImporter(null, new List<IGroupBracketProcessor> { new SubGroupsToOlympicBracketProcessor() }, null);
+        var importer = new TournamentImporter(null, new GroupBracketProcessorFactory(() => new SubGroupsToOlympicBracketProcessor()), null);
         importer.Apply(peer, ImportPlan.Proceed(Clone(t)));
         foreach (var restored in new[] { Clone(t), peer })
         {
@@ -90,7 +90,7 @@ public class SubGroupsBranchSyncTests
     {
         var (t, g, p) = Setup();
         var peer = Clone(t);
-        var importer = new TournamentImporter(null, new List<IGroupBracketProcessor> { new SubGroupsToOlympicBracketProcessor() }, null);
+        var importer = new TournamentImporter(null, new GroupBracketProcessorFactory(() => new SubGroupsToOlympicBracketProcessor()), null);
         var mutual = g.Bracket.MainRounds().First().RoundMatches[0];
         mutual.Version++;
         p.CompleteMatch(mutual, null, type);
@@ -149,7 +149,7 @@ public class SubGroupsBranchSyncTests
         sf.MatchActions.Add(new MatchAction { Type = MatchActionType.SetPoints, Points = 4, IsForRed = true });
         sf.Version++;
         p.CompleteMatch(sf, null, type);
-        var importer = new TournamentImporter(null, new List<IGroupBracketProcessor> { new SubGroupsToOlympicBracketProcessor() }, null);
+        var importer = new TournamentImporter(null, new GroupBracketProcessorFactory(() => new SubGroupsToOlympicBracketProcessor()), null);
 
         importer.Apply(peer, ImportPlan.Proceed(Clone(t)));
 
@@ -219,7 +219,7 @@ public class SubGroupsBranchSyncTests
         var original = sf.WrestlerInRed;
         sf.Version++; p.CompleteMatch(sf, null, MatchWinTypeEnum.MutualDisqualify);
         sf.Version++; p.CompleteMatch(sf, null, MatchWinTypeEnum.MutualNoShow);
-        var importer = new TournamentImporter(null, new List<IGroupBracketProcessor> { new SubGroupsToOlympicBracketProcessor() }, null);
+        var importer = new TournamentImporter(null, new GroupBracketProcessorFactory(() => new SubGroupsToOlympicBracketProcessor()), null);
 
         importer.Apply(peer, ImportPlan.Proceed(Clone(t)));
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Wrestling.Entities;
 using Wrestling.Entities.Bracket;
@@ -39,7 +39,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         {
             var result = new List<IGroupBracketProcessor>();
 
-            var allProcessors = Resolve<List<IGroupBracketProcessor>>();
+            var allProcessors = Resolve<IGroupBracketProcessorFactory>().CreateAll();
 
             foreach (var groupBracketProcessor in allProcessors)
             {

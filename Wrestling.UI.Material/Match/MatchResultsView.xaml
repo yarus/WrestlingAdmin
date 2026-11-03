@@ -352,6 +352,7 @@
                                                     <Binding Path="Type" />
                                                     <Binding Path="IsForRed" />
                                                     <Binding Path="Points" />
+                                                    <Binding Path="WarningDelta" />
                                                 </MultiBinding>
                                             </TextBlock.Text>
                                         </TextBlock>

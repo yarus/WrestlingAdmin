@@ -12,6 +12,15 @@ namespace Wrestling.Entities
         private int _secondInRound;
         private bool? _isForRed;
         private int _points;
+        private int? _warningDelta;
+
+        // Signed actual counter change for warning actions. Missing on old
+        // records: their direction cannot be recovered from the old log.
+        public int? WarningDelta
+        {
+            get => _warningDelta;
+            set { _warningDelta = value; OnPropertyChanged(); }
+        }
 
         // Discriminator. Persisted as a string in the .wrt schema; legacy
         // entries without a Type round-trip via LegacyMatchActionTypeInferrer.

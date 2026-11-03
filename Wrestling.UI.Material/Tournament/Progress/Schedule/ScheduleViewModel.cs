@@ -75,22 +75,15 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             {
                 foreach (var item in expandedMats)
                 {
-                    var newMatData = _filteredStats.First(x => x.MatID == item.MatID);
-                    newMatData.IsExpanded = item.IsExpanded;
+                    var newMatData = _filteredStats.FirstOrDefault(x => x.MatID == item.MatID);
+                    if (newMatData != null) newMatData.IsExpanded = item.IsExpanded;
                 }
             }
 
             Filter(FilterString);
 
-            if (SelectedMat == null && _filteredStats?.Count > 0)
-            {
-                SelectedMat = _filteredStats[0];
-            }
-            else if (_filteredStats?.Count > 0)
-            {
-                var newMat = _filteredStats.First(x => x.MatID == SelectedMat.MatID);
-                SelectedMat = newMat;
-            }
+            SelectedMat = _filteredStats.FirstOrDefault(x => x.MatID == SelectedMat?.MatID)
+                ?? _filteredStats.FirstOrDefault();
 
             // One-shot preselection wins over the previously-selected mat —
             // a Conducting card click should always land the operator on the

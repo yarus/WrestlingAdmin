@@ -35,7 +35,7 @@ public sealed class BindGroupPartsTests
         var di = new TestDiContainer();
         di.Add<IDataContext>(new DataContext { Tournament = tournament });
         di.Add<IMatRedistributionService>(new MatRedistributionService(new MatMatchNumbersGenerator(),
-            new List<IGroupBracketProcessor> { processor }));
+            new GroupBracketProcessorFactory(() => new RoundRobinGroupBracketProcessor())));
         return (tournament, group, mat, target, di);
     }
 

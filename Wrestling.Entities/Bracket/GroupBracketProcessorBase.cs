@@ -97,12 +97,27 @@ namespace Wrestling.Entities.Bracket
             SetMatchesCount();
         }
 
+        // Explicit legacy recovery, called on a freshly loaded tournament graph.
+        // Binding an operation or calculating results must not complete matches.
+        public virtual void NormalizeBracket() => SetMatchesCount();
+
+        protected void EnsureMatchBelongsToGroup(WrestlingMatch match)
+        {
+            // Subgroup processors also bind private pool groups; membership in
+            // the bound bracket is the authoritative check for those matches.
+            if (Group?.Bracket == null || Tournament == null
+                || !Group.Bracket.Rounds.SelectMany(r => r.RoundMatches).Contains(match))
+                throw new BracketStateException("The match does not belong to the processor's current bracket.");
+        }
+
         public virtual void CompleteMatch(WrestlingMatch wrestlingMatch, bool? isRedWon, MatchWinTypeEnum winType)
         {
             if (wrestlingMatch == null)
             {
                 throw new ArgumentNullException(nameof(wrestlingMatch));
             }
+
+            EnsureMatchBelongsToGroup(wrestlingMatch);
 
             wrestlingMatch.IsRedWon = isRedWon;
             wrestlingMatch.WinType = winType;
@@ -299,9 +314,13 @@ namespace Wrestling.Entities.Bracket
 
         public virtual bool CanMatchBeReverted(WrestlingMatch wrestlingMatch)
         {
-            // Match can be reverted if it is not Pending, WinType is set and it is not free win
+            EnsureMatchBelongsToGroup(wrestlingMatch);
+            // Genuine first-round byes are structural. A full pair incorrectly
+            // marked FreeWin must remain correctable while its next match is pending.
 
-            if (wrestlingMatch.Status == MatchStatusEnum.Pending || !wrestlingMatch.WinType.HasValue || (wrestlingMatch.RoundNumber == 1 && wrestlingMatch.WinType.Value == MatchWinTypeEnum.FreeWin)) return false;
+            if (wrestlingMatch.Status == MatchStatusEnum.Pending || !wrestlingMatch.WinType.HasValue
+                || (wrestlingMatch.RoundNumber == 1 && wrestlingMatch.WinType.Value == MatchWinTypeEnum.FreeWin
+                    && (wrestlingMatch.WrestlerInRed == null || wrestlingMatch.WrestlerInBlue == null))) return false;
 
             if (!string.IsNullOrEmpty(wrestlingMatch.NextMatchBracketFullNumber))
             {
@@ -316,6 +335,7 @@ namespace Wrestling.Entities.Bracket
 
         public virtual void RevertMatch(WrestlingMatch wrestlingMatch)
         {
+            EnsureMatchBelongsToGroup(wrestlingMatch);
             if (!CanMatchBeReverted(wrestlingMatch)) throw new InvalidOperationException("Match cannot be reverted in its current state (next match is already completed or it is a round-1 free win).");
 
             // Revert of mutual DSQ: clear IsDisqualified set by this match.

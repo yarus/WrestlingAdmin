@@ -12,13 +12,7 @@ namespace Wrestling.UI.Material.Tests;
 
 public class MatchNumbersGeneratorPartsTests
 {
-    private static List<IGroupBracketProcessor> BuiltInProcessors() => new()
-    {
-        new OlympicWithConsolationFromFinalistsGroupBracketProcessor(),
-        new OlympicGroupBracketProcessor(),
-        new RoundRobinGroupBracketProcessor(),
-        new SubGroupsToOlympicBracketProcessor()
-    };
+    private static IGroupBracketProcessorFactory BuiltInProcessors() => new GroupBracketProcessorFactory();
 
     private static AgeWeightGroup BuildGroup(WTournament t, Mat mat, Guid? partId, int weightKg, int wrestlers)
     {

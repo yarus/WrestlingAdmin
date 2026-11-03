@@ -14,7 +14,7 @@ namespace Wrestling.Providers
         private static readonly IReadOnlyList<TournamentTeamResult> EmptyTeamResults = new List<TournamentTeamResult>();
         private static readonly IReadOnlyList<WrestlerAchievement> EmptyAchievements = new List<WrestlerAchievement>();
 
-        private readonly List<IGroupBracketProcessor> _bracketProcessors;
+        private readonly IGroupBracketProcessorFactory _processorFactory;
         private readonly ITeamResultsCalculator _teamCalculator;
         private readonly List<IAchievementCalculator> _achievementCalculators;
 
@@ -31,11 +31,11 @@ namespace Wrestling.Providers
             = new Dictionary<Guid, IReadOnlyList<TournamentTeamResult>>();
 
         public ResultsService(
-            List<IGroupBracketProcessor> bracketProcessors,
+            IGroupBracketProcessorFactory bracketProcessors,
             ITeamResultsCalculator teamCalculator,
             List<IAchievementCalculator> achievementCalculators)
         {
-            _bracketProcessors = bracketProcessors ?? new List<IGroupBracketProcessor>();
+            _processorFactory = bracketProcessors ?? new GroupBracketProcessorFactory(new System.Func<IGroupBracketProcessor>[0]);
             _teamCalculator = teamCalculator;
             _achievementCalculators = achievementCalculators ?? new List<IAchievementCalculator>();
 
@@ -115,7 +115,7 @@ namespace Wrestling.Providers
             {
                 if (group.Bracket == null) continue;
 
-                var processor = _bracketProcessors.FirstOrDefault(p => p.Code == group.Bracket.BracketTypeCode);
+                var processor = _processorFactory.Create(group.Bracket.BracketTypeCode);
                 if (processor == null) continue;
 
                 processor.Load(tournament, group);

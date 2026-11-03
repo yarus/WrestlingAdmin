@@ -1,7 +1,9 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
 
@@ -11,44 +13,35 @@ namespace Wrestling.UI.Material.Utils.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            var imgPath = $"{AppDomain.CurrentDomain.BaseDirectory}Images\\";
+            return TryLoadImage(value?.ToString()) ?? TryLoadImage(parameter?.ToString() ?? "DefaultLogo.png");
+        }
 
-            string defaultImageName;
-            if (parameter != null)
+        private static BitmapImage TryLoadImage(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return null;
+            try
             {
-                defaultImageName = parameter.ToString();
+                if (!File.Exists(path))
+                    path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", Path.GetFileName(path));
+                if (!File.Exists(path) || !new[] { ".png", ".jpg", ".jpeg", ".bmp", ".gif" }
+                    .Contains(Path.GetExtension(path).ToLowerInvariant())) return null;
+
+                // External emblems may disappear, be unreadable or contain a corrupt image.
+                // Load completely now so the file can be replaced and decoder errors use the fallback.
+                using var stream = File.OpenRead(path);
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.StreamSource = stream;
+                image.EndInit();
+                image.Freeze();
+                return image;
             }
-            else
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException
+                or ArgumentException or NotSupportedException or FormatException or COMException)
             {
-                defaultImageName = "DefaultLogo.png";
+                return null;
             }
-
-            var defaultEmblem = new BitmapImage(new Uri($"{imgPath}{defaultImageName}", UriKind.Absolute));
-
-            if (string.IsNullOrEmpty(value?.ToString())) return defaultEmblem;
-
-            string fullFilePath = string.Empty;
-
-            if (File.Exists(value.ToString())) {
-                fullFilePath = value.ToString();
-            }
-            else
-            {
-                var fileNameItems = value.ToString().Split('\\');
-                string fileName = fileNameItems[fileNameItems.Length - 1];
-                fullFilePath = $"{imgPath}{fileName}";
-            }
-
-            var supportedFormats = new[]
-            {
-                ".png",".jpeg",".bmp",".gif"
-            };
-
-            var targetExtension = Path.GetExtension(fullFilePath).ToLower();
-
-            return File.Exists(fullFilePath) && supportedFormats.Contains(targetExtension)
-                ? new BitmapImage(new Uri(fullFilePath, UriKind.Absolute))
-                : defaultEmblem;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

@@ -591,18 +591,13 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
                 return;
             }
 
-            var matsWithPending = mats
-                .Where(c => tournament.Groups
-                    .Where(g => g.Bracket != null && g.MatID == c.ID)
-                    .SelectMany(g => g.Bracket.Rounds)
-                    .SelectMany(r => r.RoundMatches)
-                    .Any(rm => !rm.IsMatchCompleted))
-                .ToList();
-
-            if (matsWithPending.Count == 0)
+            var (confirmed, selectedPart) = await PartSelectorDialog.PromptAsync(tournament);
+            if (!confirmed || !ReferenceEquals(DataContext.Tournament, tournament)) return;
+            var jobs = BuildScheduleExportJobs(tournament, selectedPart);
+            if (jobs.Count == 0)
             {
                 Dialog.ShowMessageBox(this,
-                    T("MatsExport_NoPending", "На коврах нет непройденных схваток."),
+                    T("MatsExport_NoPending", "В выбранных частях нет непройденных схваток."),
                     T("MatsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
@@ -621,23 +616,6 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
 
             try
             {
-                var jobs = new List<BulkPdfExportJob>();
-                foreach (var mat in matsWithPending)
-                {
-                    var capturedMat = mat;
-                    jobs.Add(new BulkPdfExportJob
-                    {
-                        FileName = T("MatsExport_FilePrefix", "Расписание_") + BulkBracketPdfExporter.MakeSafeFileName(capturedMat.Name) + ".pdf",
-                        Landscape = false,
-                        ViewFactory = () =>
-                        {
-                            var vm = new PrintScheduleViewModel(DiContainer, capturedMat);
-                            vm.InitData();
-                            return new PrintScheduleView { DataContext = vm };
-                        }
-                    });
-                }
-
                 ShowSnackMessage(string.Format(T("MatsExport_Snack_Building", "Идет создание расписаний ковров: {0} файлов..."), jobs.Count));
 
                 var exporter = new BulkBracketPdfExporter();
@@ -661,6 +639,36 @@ namespace Wrestling.UI.Material.Tournament.Standing.Mats
                     T("Export_ErrorPrefix", "Ошибка экспорта: ") + ex.Message,
                     T("MatsExport_DialogTitle", "Расписание ковров"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        internal List<BulkPdfExportJob> BuildScheduleExportJobs(Entities.Tournament tournament, TournamentPart selectedPart)
+        {
+            var parts = selectedPart != null ? new[] { selectedPart }
+                : tournament.Parts.Count > 0 ? tournament.Parts.ToArray() : new TournamentPart[] { null };
+            var jobs = new List<BulkPdfExportJob>();
+            foreach (var part in parts)
+            {
+                foreach (var mat in tournament.Mats)
+                {
+                    // Prepare selection on the UI thread. The renderer only
+                    // creates the view from this ready list of matches.
+                    var vm = new PrintScheduleViewModel(DiContainer, mat, part);
+                    vm.InitData();
+                    if (vm.Stat == null || vm.Stat.MatchesCount == 0) continue;
+                    var partSuffix = part != null && tournament.Parts.Count > 1
+                        ? "_" + (tournament.Parts.ToList().FindIndex(p => p.ID == part.ID) + 1)
+                            + "_" + BulkBracketPdfExporter.MakeSafeFileName(part.Name)
+                        : string.Empty;
+                    jobs.Add(new BulkPdfExportJob
+                    {
+                        FileName = T("MatsExport_FilePrefix", "Расписание_")
+                            + BulkBracketPdfExporter.MakeSafeFileName(mat.Name) + partSuffix + ".pdf",
+                        Landscape = false,
+                        ViewFactory = () => new PrintScheduleView { DataContext = vm }
+                    });
+                }
+            }
+            return jobs;
         }
     }
 }

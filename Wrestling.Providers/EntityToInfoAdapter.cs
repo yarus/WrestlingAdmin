@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Wrestling.Data;
 using Wrestling.Entities;
+using Wrestling.Entities.Bracket;
 using Wrestling.Providers.Localization;
 
 namespace Wrestling.Providers
@@ -40,6 +41,7 @@ namespace Wrestling.Providers
                 SliderMaxSecond = info.SliderMaxSecond,
                 SliderOpacityValue = info.SliderOpacityValue,
                 IsOverlayOlympic = info.IsOverlayOlympic,
+                IsRoundRobinTwoThirdPlaces = info.IsRoundRobinTwoThirdPlaces,
                 IsBackupEnabled = info.IsBackupEnabled,
                 MaxBackupCount = info.MaxBackupCount,
                 BackupFolderPath = info.BackupFolderPath,
@@ -95,6 +97,7 @@ namespace Wrestling.Providers
                 SliderMaxSecond = entity.SliderMaxSecond,
                 SliderOpacityValue = entity.SliderOpacityValue,
                 IsOverlayOlympic = entity.IsOverlayOlympic,
+                IsRoundRobinTwoThirdPlaces = entity.IsRoundRobinTwoThirdPlaces,
                 IsBackupEnabled = entity.IsBackupEnabled,
                 MaxBackupCount = entity.MaxBackupCount,
                 BackupFolderPath = entity.BackupFolderPath,
@@ -270,6 +273,17 @@ namespace Wrestling.Providers
             if (!tournEntity.ID.HasValue)
             {
                 tournEntity.ID = Guid.NewGuid();
+            }
+
+            // Recover legacy derived playoff states on the newly loaded graph.
+            // Ordinary processor.Load and results queries are read-only for results.
+            var processorFactory = new GroupBracketProcessorFactory();
+            foreach (var group in tournEntity.Groups.Where(g => g.Bracket != null))
+            {
+                var processor = processorFactory.Create(group.Bracket.BracketTypeCode);
+                if (processor == null) continue;
+                processor.Load(tournEntity, group);
+                processor.NormalizeBracket();
             }
 
             return tournEntity;
@@ -495,6 +509,7 @@ namespace Wrestling.Providers
                     SecondInRound = m.SecondInRound,
                     IsForRed = m.IsForRed,
                     Points = m.Points,
+                    WarningDelta = m.WarningDelta,
                     // Prefer the explicit discriminator. Fall back to the
                     // legacy text-based inferrer for .wrt files written
                     // before MatchActionType existed.
@@ -517,25 +532,28 @@ namespace Wrestling.Providers
                 item.ID = Guid.NewGuid();
             }
 
+            // Materialize DTO collections before an async save can wait
+            // behind another writer. Deferred Select would read later UI merges
+            // on the storage thread and mix different revisions in one file.
             var info = new TournamentInfo
             {
                 ID = item.ID.Value,
                 Name = item.Name,
                 StartDate = item.StartDate,
                 Status = item.Status.ToString(),
-                Groups = item.Groups.Select(GetInfoFromEntity),
+                Groups = item.Groups.Select(GetInfoFromEntity).ToList(),
                 MainJudge = item.MainJudge,
                 MainSecretary = item.MainSecretary,
                 Address = item.Address,
                 Country = item.Country,
                 City = item.City,
                 Settings = settings,
-                TeamApplications = item.TeamApplications.Select(GetInfoFromEntity),
-                Wrestlers = item.Wrestlers.Select(GetInfoFromEntity),
-                Mats = item.Mats.Select(GetInfoFromEntity),
-                Parts = item.Parts.Select(GetInfoFromEntity),
+                TeamApplications = item.TeamApplications.Select(GetInfoFromEntity).ToList(),
+                Wrestlers = item.Wrestlers.Select(GetInfoFromEntity).ToList(),
+                Mats = item.Mats.Select(GetInfoFromEntity).ToList(),
+                Parts = item.Parts.Select(GetInfoFromEntity).ToList(),
                 MetaVersion = item.MetaVersion,
-                SlideChannels = item.SlideChannels.Select(GetInfoFromEntity),
+                SlideChannels = item.SlideChannels.Select(GetInfoFromEntity).ToList(),
                 HashTag = item.HashTag,
                 MainJudgeEmail = item.MainJudgeEmail,
                 MainJudgePhone = item.MainJudgePhone,
@@ -589,7 +607,7 @@ namespace Wrestling.Providers
                 Name = entity.Name,
                 ActivePartID = entity.ActivePartID,
                 FieldsVersion = entity.FieldsVersion,
-                Groups = entity.Groups.Select(g => g.ID)
+                Groups = entity.Groups.Select(g => g.ID).ToList()
             };
 
             return info;
@@ -739,7 +757,7 @@ namespace Wrestling.Providers
                 MaxTimeoutSecond = entity.MaxTimeoutSecond,
                 MaxActionSecond = entity.MaxActionSecond,
                 RoundName = entity.RoundName,
-                MatchActions = entity.MatchActions?.Select(GetInfoFromEntity),
+                MatchActions = entity.MatchActions?.Select(GetInfoFromEntity).ToList(),
                 BracketNumber = entity.BracketNumber,
                 NextMatchBracketFullNumber = entity.NextMatchBracketFullNumber
             };
@@ -758,11 +776,12 @@ namespace Wrestling.Providers
                 SecondInRound = entity.SecondInRound,
                 IsForRed = entity.IsForRed,
                 Points = entity.Points,
+                WarningDelta = entity.WarningDelta,
                 Type = entity.Type.ToString(),
                 // Computed display text — kept in the schema purely so an
                 // older app version reading this .wrt still shows meaningful
                 // protocol entries (it has no awareness of Type).
-                Text = MatchActionDescriber.Describe(entity.Type, entity.IsForRed, entity.Points),
+                Text = MatchActionDescriber.Describe(entity.Type, entity.IsForRed, entity.Points, entity.WarningDelta),
             };
 
             return info;

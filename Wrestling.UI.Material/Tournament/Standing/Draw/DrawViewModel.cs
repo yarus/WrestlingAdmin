@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -29,7 +29,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
         private ICommand _regenerateAllBrackets;
         private ICommand _unfixAllSeedsCommand;
 
-        private List<IGroupBracketProcessor> _drawTypes;
+        private IGroupBracketProcessorFactory _processorFactory;
         private ObservableCollection<AgeWeightGroup> _groups;
 
         private IList<CommandButtonItem> _quickButtons;
@@ -52,7 +52,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             _quickButtons = null;
             _matchNumbersGenerator = Resolve<IMatchNumbersGenerator>();
 
-            _drawTypes = Resolve<List<IGroupBracketProcessor>>();
+            _processorFactory = Resolve<IGroupBracketProcessorFactory>();
             _seedingStrategy = Resolve<ISeedingStrategy>();
 
             var groups = DataContext.Tournament.Groups.OrderBy(g => g.IsFemale).ThenByDescending(g => g.BirthYearMin).ThenBy(g => g.WeightMax).ToList();
@@ -207,7 +207,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                 {
                     if (DataContext.Tournament.Mats.FirstOrDefault(c => c.Groups.Contains(ageWeightGroup)) != null)
                     {
-                        _matchNumbersGenerator.Generate(DataContext.Tournament, _drawTypes);
+                        _matchNumbersGenerator.Generate(DataContext.Tournament, _processorFactory);
                     }
 
                     // We need to refresh Rounds collection to redraw it on UI
@@ -234,15 +234,15 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
                 
             if (group.Wrestlers.Count <= 5)
             {
-                drawType = _drawTypes.First(x => x.Code == BracketTypeEnum.RoundRobin.ToString());
+                drawType = _processorFactory.Create(BracketTypeEnum.RoundRobin.ToString());
             } 
             else if (group.Wrestlers.Count > 5 && group.Wrestlers.Count < 8)
             {
-                drawType = _drawTypes.First(x => x.Code == BracketTypeEnum.SubGroupsIntoOlympic.ToString());
+                drawType = _processorFactory.Create(BracketTypeEnum.SubGroupsIntoOlympic.ToString());
             }
             else
             {
-                drawType = _drawTypes.First(x => x.Code == BracketTypeEnum.OlympicConsilationFinalists.ToString());
+                drawType = _processorFactory.Create(BracketTypeEnum.OlympicConsilationFinalists.ToString());
             }
 
             return drawType;
@@ -263,7 +263,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             var result = await DialogHost.Show(view, "RootDialog");
             if (result == null || !(bool)result) return;
 
-            var drawType = _drawTypes.FirstOrDefault(d => d.Title == vm.SelectedDrawType.Title);
+            var drawType = _processorFactory.Create(vm.SelectedDrawType.Code);
             if (drawType == null) throw new ArgumentException($"Unknown bracket type code '{group.Bracket?.BracketTypeCode}' — no matching processor found.", nameof(group));
 
             SeedWrestlers(group);
@@ -280,7 +280,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Draw
             {
                 if (DataContext.Tournament.Mats.FirstOrDefault(c => c.Groups.Contains(group)) != null)
                 {
-                    _matchNumbersGenerator.Generate(DataContext.Tournament, _drawTypes);
+                    _matchNumbersGenerator.Generate(DataContext.Tournament, _processorFactory);
                 }
 
                 group.Bracket.Rounds = new List<GroupRound>(group.Bracket.Rounds);

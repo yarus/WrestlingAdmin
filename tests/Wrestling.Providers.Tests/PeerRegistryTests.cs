@@ -106,6 +106,27 @@ public class PeerRegistryTests
     }
 
     [Fact]
+    public void Rename_and_network_change_keep_the_same_running_instance()
+    {
+        var registry = new PeerRegistry();
+        var tournament = Guid.NewGuid();
+        registry.SetContext(Guid.NewGuid(), tournament);
+        var instance = Guid.NewGuid();
+        registry.Ingest(Ad(instance, tournament, "Старое имя"), AnySender, T0);
+        var original = registry.Snapshot().Single();
+        var changed = Ad(instance, tournament, "Новое имя");
+        changed.HttpUrl = "http://10.1.30.5:24566/tournament/" + tournament + ".wrt";
+
+        registry.Ingest(changed, IPAddress.Parse("10.1.30.5"), T0.AddSeconds(5));
+
+        var peer = registry.Snapshot().Should().ContainSingle().Subject;
+        peer.Should().BeSameAs(original);
+        peer.NodeName.Should().Be("Новое имя");
+        peer.HttpUrl.Should().Be(changed.HttpUrl);
+        peer.SenderAddress.Should().Be(IPAddress.Parse("10.1.30.5"));
+    }
+
+    [Fact]
     public void Tick_expires_peers_past_the_timeout_window()
     {
         var registry = new PeerRegistry(TimeSpan.FromSeconds(6));

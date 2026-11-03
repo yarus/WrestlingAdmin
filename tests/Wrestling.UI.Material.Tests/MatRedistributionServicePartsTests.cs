@@ -12,13 +12,7 @@ namespace Wrestling.UI.Material.Tests;
 
 public class MatRedistributionServicePartsTests
 {
-    private static List<IGroupBracketProcessor> BuiltInProcessors() => new()
-    {
-        new OlympicWithConsolationFromFinalistsGroupBracketProcessor(),
-        new OlympicGroupBracketProcessor(),
-        new RoundRobinGroupBracketProcessor(),
-        new SubGroupsToOlympicBracketProcessor()
-    };
+    private static IGroupBracketProcessorFactory BuiltInProcessors() => new GroupBracketProcessorFactory();
 
     private static (WTournament t, AgeWeightGroup group, TournamentPart partA, TournamentPart partB) BuildTwoPart()
     {

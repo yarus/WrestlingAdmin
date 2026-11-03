@@ -18,7 +18,7 @@ namespace Wrestling.UI.Material.Tournament.Conducting
     // «Проведение» — admin landing page. Central pane is an aggregator
     // dashboard (tournament progress, per-mat status, last 3 results).
     // Sidebar carries navigation cards (Schedule, Slider) and peer-sync status.
-    public class ConductingViewModel : TournamentViewModelBase
+    public partial class ConductingViewModel : TournamentViewModelBase
     {
         private PeerSyncStatusTracker _tracker;
         private IResultsService _resultsService;
@@ -254,6 +254,7 @@ namespace Wrestling.UI.Material.Tournament.Conducting
         public override void InitData()
         {
             base.InitData();
+            _manualImporter = Resolve<ManualTournamentImportService>();
 
             if (_tracker == null)
             {

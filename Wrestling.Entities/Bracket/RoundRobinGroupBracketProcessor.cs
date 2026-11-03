@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Wrestling.Entities.Localization;
+using Wrestling.Entities.Results;
 
 namespace Wrestling.Entities.Bracket
 {
@@ -144,6 +145,20 @@ namespace Wrestling.Entities.Bracket
                     finalPlace++;
                 }
             }
+        }
+
+        public override IEnumerable<TournamentResult> GetResults()
+        {
+            var results = base.GetResults().ToList();
+            // Internal pools of SubGroupsIntoOlympic also use this processor;
+            // their ranking must remain distinct for advancement and final placement.
+            if (Tournament?.Settings?.IsRoundRobinTwoThirdPlaces == true
+                && Group.Bracket?.BracketTypeCode == Code)
+            {
+                foreach (var result in results.Where(r => r.Wrestler.FinalPlace == 4))
+                    result.Wrestler.FinalPlace = 3;
+            }
+            return results;
         }
 
         private void GenerateGroupBracket()

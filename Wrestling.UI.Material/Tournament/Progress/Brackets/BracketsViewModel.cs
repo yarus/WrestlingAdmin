@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -28,7 +28,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
         private ICommand _changeMatCommand;
         private ICommand _clearDisqualifyCommand;
         private ICommand _undoReplacementCommand;
-        private List<IGroupBracketProcessor> _processors;
+        private IGroupBracketProcessorFactory _processorFactory;
 
         private IList<CommandButtonItem> _quickButtons;
 
@@ -52,7 +52,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             }
 
             _quickButtons = null;
-            _processors = Resolve<List<IGroupBracketProcessor>>();
+            _processorFactory = Resolve<IGroupBracketProcessorFactory>();
             Mats = DataContext.Tournament.Mats;
 
             if (Mats.Count > 0 && _selectedMat == null || (Mats.Count > 0 && !Mats.Contains(SelectedMat))) SelectedMat = Mats[0];
@@ -181,7 +181,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
         {
             if (match == null || !match.HasPreviousResults) return;
             var group = Tournament.Groups.FirstOrDefault(g => g.ID == match.GroupID);
-            var processor = _processors?.FirstOrDefault(p => p.Code == group?.Bracket?.BracketTypeCode) as SubGroupsToOlympicBracketProcessor;
+            var processor = _processorFactory?.Create(group?.Bracket?.BracketTypeCode) as SubGroupsToOlympicBracketProcessor;
             if (processor == null) return;
             processor.LoadTournamentGroup(Tournament, group);
             if (!processor.CanMatchBeReverted(match))
@@ -222,7 +222,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
                 .FirstOrDefault(g => g.Wrestlers.Any(w => w.SameAs(wrestler)));
             if (hostGroup?.Bracket == null) return;
 
-            var processor = _processors?.FirstOrDefault(p => p.Code == hostGroup.Bracket.BracketTypeCode);
+            var processor = _processorFactory?.Create(hostGroup.Bracket.BracketTypeCode);
             if (processor is SubGroupsToOlympicBracketProcessor subgroup)
             {
                 subgroup.LoadTournamentGroup(Tournament, hostGroup);

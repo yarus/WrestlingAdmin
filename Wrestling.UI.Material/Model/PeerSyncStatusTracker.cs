@@ -19,7 +19,8 @@ namespace Wrestling.UI.Material.Model
     //
     // Status is recomputed periodically on the UI dispatcher because some
     // states age out by time (a recently-disconnected peer crosses the
-    // 5-minute boundary even though no event fired).
+    // 5-minute boundary even though no event fired). Offline rows are
+    // removed earlier if a live instance already serves the same URL.
     public sealed class PeerSyncStatusTracker : IDisposable
     {
         public static readonly TimeSpan SessionCacheRetention = TimeSpan.FromMinutes(5);
@@ -30,16 +31,19 @@ namespace Wrestling.UI.Material.Model
         private readonly Dispatcher _uiDispatcher;
         private readonly DispatcherTimer _refreshTimer;
         private readonly Func<DateTime> _clock;
+        private readonly PeerSyncDiagnostics _diagnostics;
         private readonly Dictionary<Guid, PeerStatusViewModel> _byInstance = new Dictionary<Guid, PeerStatusViewModel>();
 
         public ObservableCollection<PeerStatusViewModel> Peers { get; } = new ObservableCollection<PeerStatusViewModel>();
 
-        public PeerSyncStatusTracker(IPeerDiscoveryService discovery, IDataContext dc, Dispatcher uiDispatcher, Func<DateTime> clock = null)
+        public PeerSyncStatusTracker(IPeerDiscoveryService discovery, IDataContext dc, Dispatcher uiDispatcher, Func<DateTime> clock = null, PeerSyncDiagnostics diagnostics = null)
         {
             _discovery = discovery;
             _dataContext = dc;
             _uiDispatcher = uiDispatcher;
             _clock = clock ?? (() => DateTime.UtcNow);
+            _diagnostics = diagnostics;
+            if (_diagnostics != null) _diagnostics.Changed += OnDiagnosticsChanged;
 
             if (_discovery != null)
             {
@@ -95,7 +99,8 @@ namespace Wrestling.UI.Material.Model
                 _byInstance[peer.InstanceId] = vm;
                 Peers.Add(vm);
             }
-            vm.UpdateLive(peer.NodeName, peer.StateHash, peer.LastSeenUtc);
+            vm.Connection = peer;
+            vm.UpdateLive(peer.NodeName, peer.StateHash, peer.LastSeenUtc, peer.HttpUrl);
             Refresh();
         }
 
@@ -103,6 +108,9 @@ namespace Wrestling.UI.Material.Model
         {
             if (peer == null) return;
             if (!_byInstance.TryGetValue(peer.InstanceId, out var vm)) return;
+            // Expiry is raised outside the registry lock. The same instance
+            // may already have returned as a new connection by this point.
+            if (!ReferenceEquals(vm.Connection, peer)) return;
             vm.MarkDisconnected();
             Refresh();
         }
@@ -119,18 +127,29 @@ namespace Wrestling.UI.Material.Model
             var snapshot = new List<PeerStatusViewModel>(_byInstance.Values);
             foreach (var vm in snapshot)
             {
-                if (!vm.IsLive && (now - vm.LastSeenUtc) > SessionCacheRetention)
+                if (!vm.IsLive && ((now - vm.LastSeenUtc) > SessionCacheRetention
+                    || snapshot.Exists(other => other.IsLive && SharesEndpoint(vm.Address, other.Address))))
                 {
                     _byInstance.Remove(vm.InstanceId);
                     Peers.Remove(vm);
                     continue;
                 }
+                vm.Diagnostic = _diagnostics?.Get(vm.InstanceId);
                 vm.RecomputeStatus(localHash);
             }
         }
 
+        private static bool SharesEndpoint(string first, string second)
+        {
+            return Uri.TryCreate(first, UriKind.Absolute, out var firstUri)
+                && (firstUri.Scheme == Uri.UriSchemeHttp || firstUri.Scheme == Uri.UriSchemeHttps)
+                && Uri.TryCreate(second, UriKind.Absolute, out var secondUri)
+                && firstUri.Equals(secondUri);
+        }
+
         public void Dispose()
         {
+            if (_diagnostics != null) _diagnostics.Changed -= OnDiagnosticsChanged;
             _refreshTimer?.Stop();
             if (_discovery != null)
             {
@@ -142,6 +161,8 @@ namespace Wrestling.UI.Material.Model
                 _dataContext.TournamentChanged -= OnTournamentChanged;
             }
         }
+
+        private void OnDiagnosticsChanged() => RunUi(Refresh);
     }
 
     public sealed class PeerStatusViewModel : INotifyPropertyChanged
@@ -183,18 +204,24 @@ namespace Wrestling.UI.Material.Model
         public string StateHash { get; private set; } = string.Empty;
         public DateTime LastSeenUtc { get; private set; }
         public bool IsLive { get; private set; }
+        public string Address { get; private set; }
+        internal DiscoveredPeer Connection { get; set; }
+        internal PeerSyncDiagnostic Diagnostic { get; set; }
+        private string _details;
+        public string Details { get => _details; private set { _details = value; Raise(); } }
 
         public PeerStatusViewModel(Guid instanceId)
         {
             InstanceId = instanceId;
         }
 
-        public void UpdateLive(string nodeName, string stateHash, DateTime lastSeenUtc)
+        public void UpdateLive(string nodeName, string stateHash, DateTime lastSeenUtc, string address = null)
         {
             NodeName = string.IsNullOrWhiteSpace(nodeName) ? T("PeerSync_NoName", "(без имени)") : nodeName;
             StateHash = stateHash ?? string.Empty;
             LastSeenUtc = lastSeenUtc;
             IsLive = true;
+            Address = address;
         }
 
         public void MarkDisconnected()
@@ -204,10 +231,56 @@ namespace Wrestling.UI.Material.Model
 
         public void RecomputeStatus(string localHash)
         {
+            var diagnostic = Diagnostic;
+            var lines = new List<string>();
+            var address = Address ?? diagnostic?.Address;
+            if (!string.IsNullOrEmpty(address)) lines.Add(Uri.TryCreate(address, UriKind.Absolute, out var url) ? url.GetLeftPart(UriPartial.Authority) : address);
+            if (diagnostic != null)
+            {
+                lines.Add(T("PeerSync_LastAttempt", "Проверка") + ": " + diagnostic.LastAttemptUtc.ToLocalTime().ToString("HH:mm:ss"));
+                if (diagnostic.LastSuccessUtc.HasValue)
+                    lines.Add(T("PeerSync_LastSuccess", "Успешно") + ": " + diagnostic.LastSuccessUtc.Value.ToLocalTime().ToString("HH:mm:ss"));
+                if (diagnostic.ImportedCount > 0)
+                    lines.Add(T("PeerSync_ImportedCount", "Применено изменений") + ": " + diagnostic.ImportedCount);
+                if (diagnostic.RetryAtUtc.HasValue)
+                    lines.Add(T("PeerSync_RetryAt", "Следующая попытка") + ": " + diagnostic.RetryAtUtc.Value.ToLocalTime().ToString("HH:mm:ss"));
+                foreach (var conflict in diagnostic.Conflicts)
+                {
+                    var reason = conflict.Reason switch
+                    {
+                        ImportConflictReason.DifferentResult => T("PeerSync_Conflict_Result", "Разные результаты одной версии"),
+                        ImportConflictReason.DifferentParticipants => T("PeerSync_Conflict_Participants", "Разные участники встречи"),
+                        ImportConflictReason.CompletedDependentMatch => T("PeerSync_Conflict_Dependent", "Следующая встреча уже завершена"),
+                        ImportConflictReason.InvalidResult => T("PeerSync_Conflict_Invalid", "Неполный результат встречи"),
+                        _ => T("PeerSync_Conflict_Structure", "Различается структура сетки")
+                    };
+                    lines.Add(conflict.GroupName + (conflict.MatchNumber.HasValue ? " №" + conflict.MatchNumber : "") + ": " + reason);
+                }
+                if (!string.IsNullOrEmpty(diagnostic.Detail)) lines.Add(diagnostic.Detail);
+            }
+            Details = string.Join(" · ", lines);
             if (!IsLive)
             {
                 StatusGlyph = "⚠";
                 StatusText = T("PeerSync_Offline", "не в сети");
+                return;
+            }
+            if (diagnostic != null && diagnostic.Phase is not PeerSyncPhase.Synchronized)
+            {
+                StatusGlyph = diagnostic.Phase is PeerSyncPhase.Downloading or PeerSyncPhase.Applying or PeerSyncPhase.AwaitingSavedFile or PeerSyncPhase.LocalAhead ? "⏳" : "⚠";
+                StatusText = diagnostic.Phase switch
+                {
+                    PeerSyncPhase.Downloading => T("PeerSync_Downloading", "получение файла"),
+                    PeerSyncPhase.Applying => T("PeerSync_Applying", "применение изменений"),
+                    PeerSyncPhase.NoNewData => T("PeerSync_NoNewData", "новых данных нет; состояния различаются"),
+                    PeerSyncPhase.LocalAhead => T("PeerSync_LocalAhead", "локальная копия новее"),
+                    PeerSyncPhase.AwaitingSavedFile => T("PeerSync_AwaitingSavedFile", "ожидание сохранения на другом компьютере"),
+                    PeerSyncPhase.Conflict => T("PeerSync_Conflict", "конфликт результатов"),
+                    PeerSyncPhase.FileUnavailable => T("PeerSync_FileUnavailable", "не удалось получить файл"),
+                    PeerSyncPhase.TournamentMismatch => T("PeerSync_TournamentMismatch", "открыт другой турнир"),
+                    PeerSyncPhase.SaveFailed => T("PeerSync_SaveFailed", "изменения не сохранены"),
+                    _ => T("PeerSync_Error", "ошибка синхронизации")
+                };
                 return;
             }
             if (string.IsNullOrEmpty(StateHash))

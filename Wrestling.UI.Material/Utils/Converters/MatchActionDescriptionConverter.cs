@@ -6,7 +6,7 @@ using Wrestling.Entities;
 namespace Wrestling.UI.Material.Utils.Converters
 {
     // Renders the protocol log column on MatchResultsView. Takes the typed
-    // MatchAction fields (Type, IsForRed, Points) and delegates to the shared
+    // MatchAction fields (Type, IsForRed, Points, WarningDelta) and delegates to the shared
     // MatchActionDescriber so display text stays in lockstep with whatever
     // the adapter writes into the .wrt's legacy Text field.
     public class MatchActionDescriptionConverter : IMultiValueConverter
@@ -19,7 +19,8 @@ namespace Wrestling.UI.Material.Utils.Converters
             var isForRed = values[1] as bool?;
             var points = values[2] is int p ? p : 0;
 
-            return MatchActionDescriber.Describe(type, isForRed, points);
+            var warningDelta = values.Length > 3 ? values[3] as int? : null;
+            return MatchActionDescriber.Describe(type, isForRed, points, warningDelta);
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

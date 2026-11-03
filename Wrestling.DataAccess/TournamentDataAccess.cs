@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Security;
 using System.Threading;
@@ -28,6 +29,14 @@ namespace Wrestling.DataAccess
         private const string DefaultBackupFolderName = "Backups";
         private const int FallbackMaxBackupCount = 20;
 
+        // Share the gate across instances and sync/async entry points. Keep the
+        // entire backup/write/verify/restore/rotation transaction exclusive.
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> SaveGates =
+            new ConcurrentDictionary<string, SemaphoreSlim>(StringComparer.OrdinalIgnoreCase);
+
+        private static SemaphoreSlim GetSaveGate(string fileName) =>
+            SaveGates.GetOrAdd(Path.GetFullPath(fileName), _ => new SemaphoreSlim(1, 1));
+
         private readonly IStorageDataAccess _storageDataAccess;
 
         public TournamentDataAccess(IStorageDataAccess storageDataAccess)
@@ -37,38 +46,48 @@ namespace Wrestling.DataAccess
 
         public bool SaveToFile(TournamentInfo item, string fileName)
         {
-            TryCreateBackup(fileName, item?.Settings);
-
-            _storageDataAccess.SaveToFile(item, fileName);
-
-            if (!VerifySavedFile(fileName))
+            var gate = GetSaveGate(fileName);
+            gate.Wait();
+            try
             {
-                TryRestoreLatestBackup(fileName, item?.Settings);
-                FileLogger.Log("TournamentDataAccess.SaveToFile [Corrupt]", fileName,
-                    "post-save verification failed; latest backup restored if available");
-                return false;
-            }
+                TryCreateBackup(fileName, item?.Settings);
+                if (!_storageDataAccess.SaveToFile(item, fileName)) return false;
 
-            TryRotateBackups(fileName, item?.Settings);
-            return true;
+                if (!VerifySavedFile(fileName))
+                {
+                    TryRestoreLatestBackup(fileName, item?.Settings);
+                    FileLogger.Log("TournamentDataAccess.SaveToFile [Corrupt]", fileName,
+                        "post-save verification failed; latest backup restored if available");
+                    return false;
+                }
+
+                TryRotateBackups(fileName, item?.Settings);
+                return true;
+            }
+            finally { gate.Release(); }
         }
 
         public async Task<bool> SaveToFileAsync(TournamentInfo item, string fileName, CancellationToken cancellationToken = default)
         {
-            TryCreateBackup(fileName, item?.Settings);
-
-            await _storageDataAccess.SaveToFileAsync(item, fileName, cancellationToken).ConfigureAwait(false);
-
-            if (!await VerifySavedFileAsync(fileName, cancellationToken).ConfigureAwait(false))
+            var gate = GetSaveGate(fileName);
+            await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
-                TryRestoreLatestBackup(fileName, item?.Settings);
-                FileLogger.Log("TournamentDataAccess.SaveToFileAsync [Corrupt]", fileName,
-                    "post-save verification failed; latest backup restored if available");
-                return false;
-            }
+                TryCreateBackup(fileName, item?.Settings);
+                if (!await _storageDataAccess.SaveToFileAsync(item, fileName, cancellationToken).ConfigureAwait(false)) return false;
 
-            TryRotateBackups(fileName, item?.Settings);
-            return true;
+                if (!await VerifySavedFileAsync(fileName, cancellationToken).ConfigureAwait(false))
+                {
+                    TryRestoreLatestBackup(fileName, item?.Settings);
+                    FileLogger.Log("TournamentDataAccess.SaveToFileAsync [Corrupt]", fileName,
+                        "post-save verification failed; latest backup restored if available");
+                    return false;
+                }
+
+                TryRotateBackups(fileName, item?.Settings);
+                return true;
+            }
+            finally { gate.Release(); }
         }
 
         public TournamentInfo LoadFromFile(string fileName)

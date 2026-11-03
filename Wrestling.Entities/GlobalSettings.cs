@@ -20,6 +20,18 @@ namespace Wrestling.Entities
         private int _maxActionSecond;
 
         private bool _isOverlayOlympic;
+        private bool _isRoundRobinTwoThirdPlaces;
+
+        public bool IsRoundRobinTwoThirdPlaces
+        {
+            get => _isRoundRobinTwoThirdPlaces;
+            set
+            {
+                if (_isRoundRobinTwoThirdPlaces == value) return;
+                _isRoundRobinTwoThirdPlaces = value;
+                OnPropertyChanged(nameof(IsRoundRobinTwoThirdPlaces));
+            }
+        }
 
         private string _integrationUserName;
         private string _integrationPassword;

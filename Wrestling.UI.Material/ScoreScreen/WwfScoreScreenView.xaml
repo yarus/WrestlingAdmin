@@ -4,6 +4,7 @@
         xmlns:converters1="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
         xmlns:converters2="clr-namespace:Wrestling.UI.Material.Utils.Converters"
         xmlns:model="clr-namespace:Wrestling.UI.Material.Model"
+        xmlns:score="clr-namespace:Wrestling.UI.Material.ScoreScreen"
         xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
         Icon="../Resources/scoreboard.ico"
         Title="{loc:Loc ScoreScreen_Title}" Height="600" Width="800" Foreground="White" Background="Black" WindowStartupLocation="Manual">
@@ -29,46 +30,7 @@
 
     <Border BorderThickness="1" BorderBrush="White">
         <Grid>
-            <Grid Visibility="{Binding IsWinnerDialogVisible, Converter={StaticResource BoolToVis}}">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="1*" />
-                    <RowDefinition Height="3*" />
-                    <RowDefinition Height="1*" />
-                </Grid.RowDefinitions>
-
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="3*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
-
-                <Border Grid.Row="1" Grid.Column="1" BorderBrush="White" BorderThickness="5" Background="{Binding WinnerColorBrush}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="1*" />
-                            <RowDefinition Height="1*" />
-                            <RowDefinition Height="3*" />
-                            <RowDefinition Height="1*" />
-                        </Grid.RowDefinitions>
-                            
-                        <Viewbox Stretch="Uniform" Grid.Row="0" Grid.Column="0">
-                            <TextBlock Text="{loc:Loc ScoreScreen_Winner}" />
-                        </Viewbox>
-                            
-                        <Viewbox Stretch="Uniform" Grid.Row="1" Grid.Column="0">
-                            <TextBlock Text="{Binding Winner.LastFirstName, Converter={StaticResource UpperCaseConverter}}"/>
-                        </Viewbox>
-                            
-                        <Viewbox Grid.Row="2" Grid.Column="0" Stretch="Uniform">
-                            <Image Source="{Binding Path=WinnerTeamEmblem, Converter={StaticResource ClubToIconConverter}, ConverterParameter=DefaultLogo.png}" Stretch="UniformToFill" />
-                        </Viewbox>
-
-                        <Viewbox Grid.Row="3" Grid.Column="0" Stretch="Uniform">
-                            <TextBlock Text="{Binding Winner.TeamName, Converter={StaticResource UpperCaseConverter}}"/>
-                        </Viewbox>
-                    </Grid>
-                </Border>
-            </Grid>
+            <score:WinnerAnnouncementView Visibility="{Binding IsWinnerDialogVisible, Converter={StaticResource BoolToVis}}" />
 
             <Grid Visibility="{Binding IsMainScreenVisible, Converter={StaticResource BoolToVis}}">
                 <Grid.RowDefinitions>

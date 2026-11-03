@@ -184,7 +184,7 @@ namespace Wrestling.Providers.Network
                         WriteStatus(stream, 404, "Not Found");
                         return;
                     }
-                    if (string.IsNullOrEmpty(servedPath) || !File.Exists(servedPath))
+                    if (string.IsNullOrEmpty(servedPath))
                     {
                         WriteStatus(stream, 404, "Not Found");
                         return;
@@ -193,7 +193,17 @@ namespace Wrestling.Providers.Network
                     byte[] fileBytes;
                     try
                     {
-                        fileBytes = File.ReadAllBytes(servedPath);
+                        fileBytes = ReadSnapshot(servedPath);
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        WriteStatus(stream, 404, "Not Found");
+                        return;
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                        WriteStatus(stream, 404, "Not Found");
+                        return;
                     }
                     catch (Exception ex)
                     {
@@ -220,6 +230,29 @@ namespace Wrestling.Providers.Network
             finally
             {
                 try { client.Close(); } catch { }
+            }
+        }
+
+        private static byte[] ReadSnapshot(string path)
+        {
+            for (var attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    // Keep reading the opened snapshot when an atomic save
+                    // replaces the path. Windows can still briefly reject an
+                    // open during ReplaceFile itself (sharing error or a briefly
+                    // missing path); retry before reporting a failed download.
+                    using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                    using var buffer = new MemoryStream();
+                    file.CopyTo(buffer);
+                    return buffer.ToArray();
+                }
+                catch (IOException ex) when (attempt < 5 &&
+                    (ex is FileNotFoundException || (ex.HResult & 0xffff) == 32 || (ex.HResult & 0xffff) == 33))
+                {
+                    Thread.Sleep(10 * (attempt + 1));
+                }
             }
         }
 

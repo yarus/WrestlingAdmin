@@ -114,7 +114,7 @@ public class SubGroupsEmptyBranchTests
     }
 
     [Fact]
-    public void Loading_a_legacy_hanging_bronze_repairs_only_the_resolved_branch()
+    public void Explicit_normalization_of_a_legacy_hanging_bronze_repairs_only_the_resolved_branch()
     {
         var (t, g, p) = Setup();
         CompletePools(g, p, MatchWinTypeEnum.MutualDisqualify);
@@ -127,6 +127,10 @@ public class SubGroupsEmptyBranchTests
 
         p.Load(t, g);
         p.Load(t, g);
+
+        bronze.Status.Should().Be(MatchStatusEnum.Pending, "binding does not change match results");
+        p.NormalizeBracket();
+        p.NormalizeBracket();
 
         bronze.Status.Should().Be(MatchStatusEnum.Completed);
         bronze.WinType.Should().Be(MatchWinTypeEnum.FreeWin);

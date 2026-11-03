@@ -19,7 +19,7 @@ namespace Wrestling.UI.Material.Model
     // implementation.
     public class MatMatchNumbersGenerator : IMatchNumbersGenerator
     {
-        public void Generate(Entities.Tournament tournament, List<IGroupBracketProcessor> processors)
+        public void Generate(Entities.Tournament tournament, IGroupBracketProcessorFactory processors)
         {
             // Defensive fallback for tournaments without explicit Parts:
             // treat the whole mat as a single virtual slice (the legacy
@@ -54,7 +54,7 @@ namespace Wrestling.UI.Material.Model
         // Runs the existing per-slice numbering pipeline: reset → Bind* by
         // round-shape (qualification → semis → consolation → 3rd place →
         // finals) → catch-all. Shared between per-Part and legacy paths.
-        private void NumberSlice(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors)
+        private void NumberSlice(List<AgeWeightGroup> groups, IGroupBracketProcessorFactory processors)
         {
             if (groups.Count == 0) return;
 
@@ -99,7 +99,7 @@ namespace Wrestling.UI.Material.Model
             }
         }
 
-        private void BindMainBracketQualification(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
+        private void BindMainBracketQualification(List<AgeWeightGroup> groups, IGroupBracketProcessorFactory processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
         {
             int maxRound = groups.SelectMany(g => g.Bracket.Rounds).Where(r => r.RoundType == GroupRoundTypeEnum.Main).Max(r => r.RoundNumber);
 
@@ -107,7 +107,7 @@ namespace Wrestling.UI.Material.Model
             {
                 foreach (var group in groups)
                 {
-                    var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
+                    var processor = processors.Create(group.Bracket.BracketTypeCode);
                     if (processor == null)
                     {
                         throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
@@ -129,12 +129,12 @@ namespace Wrestling.UI.Material.Model
             }
         }
 
-        private void BindSemiFinals(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
+        private void BindSemiFinals(List<AgeWeightGroup> groups, IGroupBracketProcessorFactory processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
         {
             // Bind semi-finals
             foreach (var group in groups)
             {
-                var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
+                var processor = processors.Create(group.Bracket.BracketTypeCode);
                 if (processor == null)
                 {
                     throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
@@ -157,13 +157,13 @@ namespace Wrestling.UI.Material.Model
             }
         }
 
-        private void BindAdditionalQualificationMatches(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
+        private void BindAdditionalQualificationMatches(List<AgeWeightGroup> groups, IGroupBracketProcessorFactory processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
         {
             var maxRounds = 0;
 
             foreach(var group in groups)
             {
-                var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
+                var processor = processors.Create(group.Bracket.BracketTypeCode);
                 if (processor == null)
                 {
                     throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
@@ -181,7 +181,7 @@ namespace Wrestling.UI.Material.Model
             {
                 foreach (var group in groups)
                 {
-                    var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
+                    var processor = processors.Create(group.Bracket.BracketTypeCode);
                     if (processor == null)
                     {
                         throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
@@ -208,11 +208,11 @@ namespace Wrestling.UI.Material.Model
             }
         }
 
-        private void BindThirdPlaceMatches(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
+        private void BindThirdPlaceMatches(List<AgeWeightGroup> groups, IGroupBracketProcessorFactory processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
         {
             foreach (var group in groups)
             {
-                var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
+                var processor = processors.Create(group.Bracket.BracketTypeCode);
                 if (processor == null)
                 {
                     throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");
@@ -233,11 +233,11 @@ namespace Wrestling.UI.Material.Model
             }
         }
 
-        private void BindFinalMatches(List<AgeWeightGroup> groups, List<IGroupBracketProcessor> processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
+        private void BindFinalMatches(List<AgeWeightGroup> groups, IGroupBracketProcessorFactory processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)
         {
             foreach (var group in groups)
             {
-                var processor = processors.FirstOrDefault(d => d.Code == group.Bracket.BracketTypeCode);
+                var processor = processors.Create(group.Bracket.BracketTypeCode);
                 if (processor == null)
                 {
                     throw new InvalidOperationException($"No processor registered for bracket type '{group.Bracket.BracketTypeCode}'. Check DI registration in App.xaml.cs.");

@@ -98,14 +98,16 @@ Policy lives on the tournament being saved (`info.Settings.IsBackupEnabled` / `M
 - **`PrepareAsync(target, fileName, cancellationToken)`** — loads, deserializes and runs the adapter off the UI thread. Does not mutate the target's `ObservableCollection<T>` graph. Returns an `ImportPlan` that either short-circuits (`ImportPlan.Skip(outcome)`) or carries the loaded remote tournament (`ImportPlan.Proceed(remote)`).
 - **`Apply(target, plan)`** — UI-thread only. Reconciles registrations and versioned tournament/mat/group fields, replaces newer brackets, and applies newer match completions, reverts or result edits through bracket processors. Touches `ObservableCollection` and raises `INotifyPropertyChanged`.
 
-`PeerSyncService.PullAndApplyAsync` wraps `PrepareAsync` in `Task.Run`, then calls `Apply` on the UI context. It rejects a prepared result when the target tournament has been closed or replaced. The classified `ImportResult` (`Imported` / `NoNewData` / `FileUnavailable` / `TournamentMismatch` / `Error`) drives logging, retry behavior and the autosave gate. `ImportViewModel` and its timer were removed.
+Manual fallback import lives on Conducting (`ConductingViewModel.FileImport.cs`, “Import from file…”), using `ManualTournamentImportService` and the same `ITournamentImporter` for local/USB/UNC `.wrt` files. Prepare runs off-thread; Apply and the save snapshot run on the UI thread. The merge is first evaluated on a detached, non-normalizing snapshot using the same Apply engine. With no accepted changes, skip recovery-copy creation and saving (except a pending failed save). Before applying actual changes, a verified recovery copy of the in-memory state is saved under `%LocalAppData%/WrestlingAdmin/Backups/ManualImports/<tournament ID>/`, independently of the ordinary backup toggle. A failed recovery copy prevents manual apply. Accepted changes, including independent changes accompanying conflicts, recalculate results and save to the working file; the source path never replaces `Tournament.FileName`. Import outcomes, conflicts and save failures are enqueued through the shell snackbar; there is no persistent report under the button. Closing/replacing the tournament cancels the operation. There is still no standalone Import page or polling of file sources.
+
+`PeerSyncService.PullAndApplyAsync` wraps `PrepareAsync` in `Task.Run`, then calls `Apply` on the UI context. It rejects a prepared result when the target tournament has been closed or replaced. `Apply` stages bracket/result edits on a detached category; a conflict leaves that category untouched while independent categories can merge. `ImportResult.Conflict` carries category/match/reason details and may have a positive `ImportedCount` for accepted independent changes. Equal-version completed results that differ are conflicts. Same-participant/same-advancement result edits update fields without reverting completed descendants. `GroupResultState.RebuildExclusions` derives NoShow/DSQ from accepted results and replacement history before recalculating places. `ImportViewModel` and its timer were removed.
 
 ### Autosave is event-driven, not timer-based
 
 There is **no** DispatcherTimer for autosave and **no** user-facing toggle. Automatic saves fire after:
 
 1. **Match approval or revert** — `MatchResultsViewModel.ApproveAsync` / `RejectAsync` call `SaveIfAutosaveEnabledAsync()` after updating the bracket and match version.
-2. **Peer-sync merge** — `PeerSyncService.SaveAfterMergeAsync` writes the local `.wrt` only for outcome `Imported`, after recalculating results. `NoNewData` and failed pulls do not save.
+2. **Peer-sync merge** — accepted changes are recalculated and saved, including the accepted part of an import with conflicts. Version-only updates also count as changes. `false` from `SaveToFileAsync` is a visible failure; saving is retried on subsequent announcements even if no new import is needed. `NoNewData` without a pending save and failed downloads do not save.
 
 The UI hook is `TournamentViewModelBase.SaveIfAutosaveEnabledAsync`. It short-circuits when `Tournament` is null or `FileName` is empty, then awaits `TournamentManager.SaveToFileAsync` and surfaces success/failure via snackbar. The peer-sync path has its own guard, cancellation and logging.
 
@@ -114,13 +116,14 @@ The empty-FileName guard matters: background sync and post-match handlers must n
 ### Bracket generation is a Strategy pattern
 
 - Interface: `IGroupBracketProcessor` in `Wrestling.Entities/Bracket/`. Base: `GroupBracketProcessorBase` (template method — `Generate()` orchestrates `GenerateMainRounds()` + `GenerateAdditionalRounds()`).
-- Current implementations (registered as a `List<IGroupBracketProcessor>` in `App.xaml.cs`):
+- `IGroupBracketProcessorFactory` is registered in `App.xaml.cs`; `GroupBracketProcessorFactory` in Entities creates fresh processors for each operation/category. Never register or cache bound processors as shared services. Current implementations:
   - `OlympicGroupBracketProcessor` — 8+ participants, single elimination + 3rd place match
   - `OlympicWithConsolationFromFinalistsGroupBracketProcessor` — variant consolation
   - `RoundRobinGroupBracketProcessor` — <6 participants, all-play-all
   - `SubGroupsToOlympicBracketProcessor` — 6–7 participants, round-robin subgroups feeding an Olympic final
 - Selection rule (per README): <6 → RoundRobin; 6–7 → SubGroups; 8+ → Olympic with consolation.
-- To add a new format: implement `IGroupBracketProcessor`, register the singleton in `App.xaml.cs` list. `CompleteMatch` / `RevertMatch` must keep bracket state consistent — winners propagate via the `NextMatchBracketFullNumber` link on `WrestlingMatch`.
+- To add a new format: implement `IGroupBracketProcessor`, register its creator in `GroupBracketProcessorFactory`. `CompleteMatch` / `RevertMatch` must keep bracket state consistent — winners propagate via the `NextMatchBracketFullNumber` link on `WrestlingMatch`.
+- `Load` binds a processor and refreshes counters; it must not complete matches or rebuild results. Explicit `NormalizeBracket()` recovers legacy derived states on a newly loaded tournament in `EntityToInfoAdapter`. Normal match operations resolve their own derived transitions. A missing consolation slot is a genuine bye only after that side's semifinal and all preceding consolation feeders are resolved.
 
 ### Team results and achievements are also Strategy-based
 
@@ -131,11 +134,11 @@ The empty-FileName guard matters: background sync and post-match handlers must n
 
 Each mat PC keeps a local copy of the same tournament `.wrt`. `NetworkServicesLifecycle` watches `IDataContext.TournamentChanged`, starts/stops UDP discovery and the embedded HTTP server, and restarts them when network settings change. Discovery is always enabled; HTTP serving is controlled by `IsHttpServerEnabled` and requires a saved file. Defaults: discovery UDP `24565`, HTTP `24566`; announcements every 5 seconds, peers expire after 15 seconds. `AnnounceIpOverride` selects the advertised local IPv4 address; an invalid override falls back to automatic selection.
 
-`PeerSyncService` listens for peer advertisements. A differing `StateHash` triggers a pull from the advertised HTTP URL through `ITournamentImporter`; there is no Import page, import-source list or timer polling UNC files. Successful peer/hash pairs are cached; failed pulls can retry, with a cooldown after repeated failures. `PeerSyncStatusTracker` exposes status on Conducting and keeps disconnected peers visible for five minutes.
+`PeerSyncService` listens for peer advertisements. A differing `StateHash` triggers a pull from the advertised HTTP URL through `ITournamentImporter`; there is no Import page, import-source list or timer polling UNC files. Successful peer/hash pairs are cached; failed pulls and conflicts can retry, with a cooldown after repeated failures. Shared `PeerSyncDiagnostics` connects actual operation outcomes to `PeerSyncStatusTracker`: downloading/applying, conflicts, unavailable files, save failures, remote unsaved state and locally newer versions. Conducting shows address, attempt/success times, accepted-change count, conflict match and next retry. Disconnected peers remain visible for five minutes.
 
 - Identity is `Tournament.ID`; only legacy missing-ID files use the name/date/group heuristic. Renaming a file or tournament does not create a new identity. Create a fresh tournament for a new event, then distribute copies of that saved file.
 - Newer versions win: `WrestlingMatch.Version` handles completions, reverts and result edits; `AgeWeightGroup.FieldsVersion` handles category fields, timing, mat/part assignment; `BracketVersion` replaces a bracket; `Tournament.MetaVersion` covers parts; `Mat.FieldsVersion` covers active-part changes. Equal versions preserve local state; this is not conflict-free concurrent editing.
-- `PeerStateHasher` hashes tournament meta version, mat IDs/field versions, group IDs/field and bracket versions, and match identities/versions. Changing synchronized data without the appropriate version bump can leave peers unaware of the change.
+- `PeerStateHasher` hashes meta/mat/group/match versions and registration timestamps, plus completed result contents, action logs, replacement history and wrestler exclusion flags. Pending live scores/timers and calculated FinalPlace caches are excluded. Still bump the relevant version for authored edits: a content difference at equal completed-match versions is detected as a conflict, not an instruction to overwrite. This hash format requires the same updated build on all tournament computers.
 - Match sync uses bracket identity (`BracketFullNumber` within its group), not the display `MatchNumber`. Structural changes regenerate display numbers.
 - Keep DTO round-trip compatibility, but do not assume different app versions support the same synchronization semantics. Use the same build across tournament computers.
 
@@ -154,9 +157,13 @@ Each mat PC keeps a local copy of the same tournament `.wrt`. `NetworkServicesLi
 
 `IResultsService` caches calculated results and notifies consumers through `ResultsChanged`. Recalculation is wired to tournament open/close, match approval/revert and peer merge. Keep these consumers consistent when adding a mutation that affects results.
 
+Personal Results exposes `GlobalSettings.IsRoundRobinTwoThirdPlaces` beside the medalists filter. It defaults to false (including legacy files), round-trips through the settings DTO/adapter and triggers `IResultsService.Recalculate` when toggled. `RoundRobinGroupBracketProcessor.GetResults` maps fourth to shared third only for standalone `RoundRobin` brackets; internal pools of `SubGroupsIntoOlympic` retain distinct places. With “medalists only”, Personal Results hides unfinished categories even when some medal places are already known.
+
 `Tournament.SlideChannels` stores named channels, each with its own slide list and interval. Legacy flat `Slides` are migrated into a default channel. `ISliderWindowManager` manages playback windows; `ISlideType.CreateViewControl()` creates separate view controls per host, rather than sharing a singleton rendering VM across windows. `MatBracketsSlide` expands into group-bracket slides and is not persisted as a playable slide.
 
 Bulk PDF actions now live on their phases: `ApplicationsViewModel` (weighing), `DrawViewModel` (draw), `MatsViewModel` (schedule), `ResultsViewModel` (brackets/results). They reuse `BulkBracketPdfExporter` with view factories. Read `docs/PrintingNotes.md` before changing rendering or adding print views. Match control uses `MatchControlView2`; the score window uses `WwfScoreScreenView`.
+
+Schedule protocol export prompts with `PartSelectorDialog` independently of the mats' active parts. `PrintScheduleViewModel` receives the requested part explicitly (null means all), never derives it from `ActivePartID`. Exporting all parts creates one PDF per nonempty `(mat, part)` pair, with the part in the header and filename. `MatsViewModel.BuildScheduleExportJobs` prepares match lists on the UI thread before the render-thread view factory runs.
 
 ### Error handling and crash recovery
 

@@ -43,6 +43,8 @@ namespace Wrestling.Data
         [DataMember]
         public bool IsOverlayOlympic { get; set; }
         [DataMember]
+        public bool IsRoundRobinTwoThirdPlaces { get; set; }
+        [DataMember]
         public bool IsBackupEnabled { get; set; }
         [DataMember]
         public int MaxBackupCount { get; set; }

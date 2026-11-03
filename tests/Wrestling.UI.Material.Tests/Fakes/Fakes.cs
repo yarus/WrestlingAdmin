@@ -8,6 +8,7 @@ using MvvmDialogs;
 using MvvmDialogs.FrameworkDialogs.OpenFile;
 using MvvmDialogs.FrameworkDialogs.SaveFile;
 using Wrestling.Entities;
+using Wrestling.Entities.Bracket;
 using Wrestling.Providers;
 using Wrestling.UI.Material.Model;
 using WTournament = Wrestling.Entities.Tournament;
@@ -64,6 +65,7 @@ public sealed class FakeNavigationService : INavigationService
 
 public sealed class FakeTournamentsManager : ITournamentsManager
 {
+    public bool SaveAsyncResult { get; set; } = true;
     public Dictionary<string, WTournament> Store { get; } = new();
     public int SaveCount { get; private set; }
     public int SaveAsyncCount { get; private set; }
@@ -81,6 +83,7 @@ public sealed class FakeTournamentsManager : ITournamentsManager
 
     public Task<bool> SaveToFileAsync(WTournament item, string fileName, System.Threading.CancellationToken cancellationToken = default)
     {
+        if (!SaveAsyncResult) { SaveAsyncCount++; return Task.FromResult(false); }
         Store[fileName] = item;
         item.FileName = fileName;
         SaveAsyncCount++;
@@ -130,6 +133,7 @@ public static class TestContainerBuilder
         di.Add<IDialogService>(new FakeDialogService());
         di.Add<INavigationService>(nav);
         di.Add<GlobalSettings>(new GlobalSettings());
+            di.Add<IGroupBracketProcessorFactory>(new GroupBracketProcessorFactory());
         di.Add<ITournamentsManager>(new FakeTournamentsManager());
         di.Add<ICacheManager>(new FakeCacheManager());
 

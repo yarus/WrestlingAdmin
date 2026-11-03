@@ -1,0 +1,78 @@
+<UserControl x:Class="Wrestling.UI.Material.ScoreScreen.WinnerAnnouncementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+             xmlns:utils="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+             xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
+             Background="Black" Foreground="White" FontFamily="Segoe UI">
+    <UserControl.Resources>
+        <converters:PathToImageConverter x:Key="TeamEmblem" />
+        <utils:UpperCaseConverter x:Key="UpperCase" />
+        <Style x:Key="HeaderMetadata" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="100" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#E5EDF7" />
+            <Setter Property="TextWrapping" Value="NoWrap" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="WinnerName" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="100" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="TextWrapping" Value="NoWrap" />
+        </Style>
+    </UserControl.Resources>
+
+    <Viewbox Stretch="Uniform">
+        <Canvas Width="1920" Height="1080">
+            <Border x:Name="WinnerColorIndicator" Canvas.Left="104" Canvas.Top="109" Width="58" Height="58" CornerRadius="3"
+                    Background="{Binding WinnerColorBrush}" />
+            <Grid Canvas.Left="192" Canvas.Top="98" Width="490" Height="80">
+                <Viewbox Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <TextBlock Text="{loc:Loc ScoreScreen_Winner}" FontSize="100" FontWeight="Bold" />
+                </Viewbox>
+            </Grid>
+            <Grid Canvas.Left="720" Canvas.Top="98" Width="480" Height="80">
+                <TextBlock x:Name="WinnerRound" Text="{Binding WinnerRoundName, NotifyOnTargetUpdated=True}"
+                           Style="{StaticResource HeaderMetadata}" HorizontalAlignment="Center" TargetUpdated="OnHeaderTextUpdated" />
+            </Grid>
+            <Grid Canvas.Left="1240" Canvas.Top="98" Width="576" Height="80">
+                <TextBlock x:Name="WinnerCategory" Text="{Binding WinnerGroupLabel, NotifyOnTargetUpdated=True}"
+                           Style="{StaticResource HeaderMetadata}" HorizontalAlignment="Right" TargetUpdated="OnHeaderTextUpdated" />
+            </Grid>
+            <Border x:Name="WinnerHeaderRule" Canvas.Left="104" Canvas.Top="214" Width="1712" Height="3" Background="{Binding WinnerColorBrush}" />
+
+            <Border Canvas.Left="104" Canvas.Top="314" Width="320" Height="396" Background="White" CornerRadius="12">
+                <Image Source="{Binding WinnerTeamEmblem, Converter={StaticResource TeamEmblem}, ConverterParameter=DefaultLogo.png}"
+                       Stretch="Uniform" Margin="38" />
+            </Border>
+
+            <!-- One Viewbox gives both name lines the same font AND scale.
+                 The full name remains intact even for very long surnames. -->
+            <Grid Canvas.Left="520" Canvas.Top="292" Width="1296" Height="392">
+                <Viewbox x:Name="WinnerNameViewbox" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock x:Name="WinnerLastName" Text="{Binding Winner.LastName, Converter={StaticResource UpperCase}}"
+                                   Style="{StaticResource WinnerName}" />
+                        <TextBlock x:Name="WinnerFirstName" Text="{Binding Winner.FirstName}"
+                                   Style="{StaticResource WinnerName}" Margin="0,-16,0,0" />
+                    </StackPanel>
+                </Viewbox>
+            </Grid>
+
+            <Border x:Name="WinnerDetailsRule" Canvas.Left="520" Canvas.Top="718" Width="1296" Height="3" Background="{Binding WinnerColorBrush}" />
+            <Grid Canvas.Left="520" Canvas.Top="752" Width="1296" Height="104">
+                <Viewbox Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <TextBlock x:Name="WinnerTeam" Text="{Binding WinnerTeamName}" FontSize="100" FontWeight="SemiBold" Foreground="#E5EDF7" />
+                </Viewbox>
+            </Grid>
+            <Grid Canvas.Left="520" Canvas.Top="878" Width="1296" Height="84">
+                <Viewbox Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <TextBlock x:Name="WinnerCity" Text="{Binding WinnerTeamCity}" FontSize="100" FontWeight="Medium" Foreground="#C3D0E3" />
+                </Viewbox>
+            </Grid>
+        </Canvas>
+    </Viewbox>
+</UserControl>

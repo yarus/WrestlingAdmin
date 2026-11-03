@@ -20,6 +20,25 @@ namespace Wrestling.Providers.Tests;
 // LegacyMatchActionTypeInferrer on load.
 public class MatchActionRoundTripTests
 {
+    [Fact]
+    public void Warning_direction_survives_serialization_and_result_snapshot()
+    {
+        var tournament = BuildTournamentWithOpenSemifinal(out var match);
+        var removal = MakeAction(MatchActionType.SetWarning, true, 0);
+        removal.WarningDelta = -1;
+        match.MatchActions.Add(removal);
+        var undo = MakeAction(MatchActionType.RevertWarning, true, 0);
+        undo.WarningDelta = 1;
+        match.MatchActions.Add(undo);
+        match.MatchActions.Add(MakeAction(MatchActionType.SetWarning, false, 0));
+
+        var json = Newtonsoft.Json.JsonConvert.SerializeObject(_adapter.GetInfoFromEntity(tournament));
+        var restored = _adapter.GetEntityFromInfo(Newtonsoft.Json.JsonConvert.DeserializeObject<TournamentInfo>(json));
+        var actions = restored.Groups[0].Bracket.Rounds[0].RoundMatches[0].MatchActions;
+        actions.Select(a => a.WarningDelta).Should().Equal(-1, 1, null);
+        actions.Select(a => a.Points).Should().Equal(0, 0, 0);
+        match.CaptureResult().MatchActions.Select(a => a.WarningDelta).Should().Equal(-1, 1, null);
+    }
     private readonly EntityToInfoAdapter _adapter = new();
 
     [Fact]

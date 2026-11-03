@@ -78,6 +78,24 @@ public sealed class PeerSyncStatusTrackerTests
     }
 
     [Fact]
+    public void Transfer_error_and_conflict_details_are_visible_instead_of_catching_up()
+    {
+        var dc = new DataContext { Tournament = new Entities.Tournament(new GlobalSettings()) };
+        var discovery = new TestDiscovery();
+        var diagnostics = new PeerSyncDiagnostics();
+        using var tracker = new PeerSyncStatusTracker(discovery, dc, null, diagnostics: diagnostics);
+        var peer = MakePeer(Guid.NewGuid(), "Ковер C", "different", DateTime.UtcNow);
+        discovery.RaiseUpserted(peer);
+        diagnostics.Report(peer.InstanceId, "http://10.1.30.49:24566", PeerSyncPhase.Conflict, DateTime.UtcNow,
+            conflicts: new[] { new ImportConflict(Guid.NewGuid(), "2016–2017 / 32 кг", 31, "2.3", ImportConflictReason.CompletedDependentMatch) });
+
+        tracker.Peers[0].StatusText.Should().Be("конфликт результатов");
+        tracker.Peers[0].Details.Should().Contain("№31").And.Contain("Следующая встреча уже завершена");
+        diagnostics.Report(peer.InstanceId, peer.HttpUrl, PeerSyncPhase.SaveFailed, DateTime.UtcNow);
+        tracker.Peers[0].StatusText.Should().Be("изменения не сохранены");
+    }
+
+    [Fact]
     public void New_peer_with_different_hash_is_lagging()
     {
         var (tr, disc, _, clock) = Build();
@@ -123,6 +141,114 @@ public sealed class PeerSyncStatusTrackerTests
 
         tr.Peers.Should().HaveCount(1, "second announce updates the same entry");
         tr.Peers[0].StatusGlyph.Should().Be("✅", "after second announce, hashes match → synced");
+    }
+
+    [Fact]
+    public void Renaming_a_running_instance_updates_its_existing_row()
+    {
+        var (tr, disc, _, clock) = Build();
+        var instance = Guid.NewGuid();
+        disc.RaiseUpserted(MakePeer(instance, "Старое имя", "h", clock.Now));
+        var row = tr.Peers[0];
+
+        disc.RaiseUpserted(MakePeer(instance, "Новое имя", "h", clock.Now.AddSeconds(5)));
+
+        tr.Peers.Should().ContainSingle().Which.Should().BeSameAs(row);
+        row.NodeName.Should().Be("Новое имя");
+        row.IsLive.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Delayed_expiry_of_an_old_connection_does_not_disconnect_a_rediscovered_instance()
+    {
+        var (tr, disc, _, clock) = Build();
+        var instance = Guid.NewGuid();
+        var old = MakePeer(instance, "Старое имя", "h", clock.Now);
+        disc.RaiseUpserted(old);
+        disc.RaiseUpserted(MakePeer(instance, "Новое имя", "h", clock.Now.AddSeconds(20)));
+
+        // Discovery removes the old object under its lock, then raises expiry
+        // outside the lock. A fresh announcement can reach the UI first.
+        disc.RaiseExpired(old);
+
+        tr.Peers.Should().ContainSingle();
+        tr.Peers[0].NodeName.Should().Be("Новое имя");
+        tr.Peers[0].IsLive.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Changed_ip_replaces_the_displayed_address_even_with_previous_transfer_diagnostics()
+    {
+        var dc = new DataContext { Tournament = new Entities.Tournament(new GlobalSettings()) };
+        var discovery = new TestDiscovery();
+        var diagnostics = new PeerSyncDiagnostics();
+        using var tracker = new PeerSyncStatusTracker(discovery, dc, null, diagnostics: diagnostics);
+        var instance = Guid.NewGuid();
+        var hash = PeerStateHasher.Compute(dc.Tournament);
+        var old = MakePeer(instance, "Ковер C", hash, DateTime.UtcNow);
+        typeof(DiscoveredPeer).GetProperty("HttpUrl").SetValue(old, "http://192.168.1.5:24566/tournament/x.wrt");
+        discovery.RaiseUpserted(old);
+        diagnostics.Report(instance, old.HttpUrl, PeerSyncPhase.FileUnavailable, DateTime.UtcNow);
+        var current = MakePeer(instance, "Ковер C", hash, DateTime.UtcNow.AddSeconds(5));
+        typeof(DiscoveredPeer).GetProperty("HttpUrl").SetValue(current, "http://10.1.30.5:24566/tournament/x.wrt");
+
+        discovery.RaiseUpserted(current);
+
+        tracker.Peers.Should().ContainSingle();
+        tracker.Peers[0].Details.Should().Contain("10.1.30.5").And.NotContain("192.168.1.5");
+        tracker.Peers[0].IsLive.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Offline_previous_instance_at_the_same_endpoint_is_removed_on_rename()
+    {
+        var (tr, disc, _, clock) = Build();
+        var old = MakePeer(Guid.NewGuid(), "Старое имя", "h", clock.Now);
+        typeof(DiscoveredPeer).GetProperty("HttpUrl").SetValue(old, "http://192.168.1.5:24566/tournament/x.wrt");
+        disc.RaiseUpserted(old);
+        disc.RaiseExpired(old);
+        var current = MakePeer(Guid.NewGuid(), "Новое имя", "h", clock.Now.AddSeconds(5));
+        typeof(DiscoveredPeer).GetProperty("HttpUrl").SetValue(current, old.HttpUrl);
+
+        disc.RaiseUpserted(current);
+
+        tr.Peers.Should().ContainSingle().Which.NodeName.Should().Be("Новое имя");
+    }
+
+    [Theory]
+    [InlineData("http://192.168.1.6:24566/tournament/x.wrt")]
+    [InlineData("http://192.168.1.5:24567/tournament/x.wrt")]
+    [InlineData(null)]
+    public void Same_name_at_a_different_or_unknown_endpoint_does_not_remove_offline_peer(string address)
+    {
+        var (tr, disc, _, clock) = Build();
+        var old = MakePeer(Guid.NewGuid(), "Ковер", "h", clock.Now);
+        typeof(DiscoveredPeer).GetProperty("HttpUrl").SetValue(old, "http://192.168.1.5:24566/tournament/x.wrt");
+        disc.RaiseUpserted(old);
+        disc.RaiseExpired(old);
+        var current = MakePeer(Guid.NewGuid(), "Ковер", "h", clock.Now.AddSeconds(5));
+        typeof(DiscoveredPeer).GetProperty("HttpUrl").SetValue(current, address);
+
+        disc.RaiseUpserted(current);
+
+        tr.Peers.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void Old_instance_expiring_after_replacement_announcement_is_removed()
+    {
+        var (tr, disc, _, clock) = Build();
+        var old = MakePeer(Guid.NewGuid(), "Старое имя", "h", clock.Now);
+        typeof(DiscoveredPeer).GetProperty("HttpUrl").SetValue(old, "http://192.168.1.5:24566/tournament/x.wrt");
+        var current = MakePeer(Guid.NewGuid(), "Новое имя", "h", clock.Now.AddSeconds(5));
+        typeof(DiscoveredPeer).GetProperty("HttpUrl").SetValue(current, old.HttpUrl);
+        disc.RaiseUpserted(old);
+        disc.RaiseUpserted(current);
+        tr.Peers.Should().HaveCount(2, "separate live instances must not be merged");
+
+        disc.RaiseExpired(old);
+
+        tr.Peers.Should().ContainSingle().Which.InstanceId.Should().Be(current.InstanceId);
     }
 
     [Fact]

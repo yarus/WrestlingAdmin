@@ -8,6 +8,70 @@ namespace Wrestling.Entities.Tests;
 
 public class RoundRobinBracketTests
 {
+    [Theory]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void Two_bronzes_option_changes_only_fourth_place_and_can_be_reversed(int count)
+    {
+        var group = TestHelpers.MakeGroup(count);
+        var tournament = TestHelpers.MakeTournament(group);
+        var processor = new RoundRobinGroupBracketProcessor();
+        processor.Generate(tournament, group);
+        foreach (var match in group.Bracket.Rounds.SelectMany(r => r.RoundMatches))
+            processor.CompleteMatch(match, match.WrestlerInRed.SeedNumber < match.WrestlerInBlue.SeedNumber, MatchWinTypeEnum.PointsWin);
+
+        processor.GetResults().ToList();
+        var ordered = group.Wrestlers.OrderBy(w => w.SeedNumber).ToList();
+        ordered.Select(w => w.FinalPlace).Should().Equal(Enumerable.Range(1, count).Select(i => (int?)i));
+
+        tournament.Settings.IsRoundRobinTwoThirdPlaces = true;
+        processor.GetResults().ToList();
+        ordered.Select(w => w.FinalPlace).Should().Equal(Enumerable.Range(1, count).Select(i => (int?)(i == 4 ? 3 : i)));
+        processor.GetResults().ToList();
+        ordered.Count(w => w.FinalPlace == 3).Should().Be(count >= 4 ? 2 : count == 3 ? 1 : 0);
+
+        tournament.Settings.IsRoundRobinTwoThirdPlaces = false;
+        processor.GetResults().ToList();
+        ordered.Select(w => w.FinalPlace).Should().Equal(Enumerable.Range(1, count).Select(i => (int?)i));
+    }
+
+    [Fact]
+    public void Two_bronzes_does_not_award_provisional_places_in_unfinished_round_robin()
+    {
+        var group = TestHelpers.MakeGroup(4);
+        var tournament = TestHelpers.MakeTournament(group);
+        tournament.Settings.IsRoundRobinTwoThirdPlaces = true;
+        var processor = new RoundRobinGroupBracketProcessor();
+        processor.Generate(tournament, group);
+        processor.CompleteMatch(group.Bracket.Rounds[0].RoundMatches[0], true, MatchWinTypeEnum.PointsWin);
+        processor.GetResults().Should().OnlyContain(r => !r.Wrestler.FinalPlace.HasValue);
+    }
+
+    [Theory]
+    [InlineData(6)]
+    [InlineData(7)]
+    public void Two_bronzes_setting_does_not_change_subgroup_advancement_or_placements(int count)
+    {
+        var group = TestHelpers.MakeGroup(count);
+        var tournament = TestHelpers.MakeTournament(group);
+        var processor = new SubGroupsToOlympicBracketProcessor();
+        processor.Generate(tournament, group);
+        for (var step = 0; step < 40; step++)
+        {
+            var match = group.Bracket.Rounds.SelectMany(r => r.RoundMatches).FirstOrDefault(m => m.IsMatchCanStart);
+            if (match == null) break;
+            processor.CompleteMatch(match, true, MatchWinTypeEnum.PointsWin);
+        }
+        group.IsBracketCompleted.Should().BeTrue();
+        processor.GetResults().ToList();
+        var places = group.Wrestlers.ToDictionary(w => w.ID, w => w.FinalPlace);
+        tournament.Settings.IsRoundRobinTwoThirdPlaces = true;
+        processor.GetResults().ToList();
+        group.Wrestlers.ToDictionary(w => w.ID, w => w.FinalPlace).Should().BeEquivalentTo(places);
+    }
+
     private static (AgeWeightGroup, RoundRobinGroupBracketProcessor) Setup(int wrestlers)
     {
         var group = TestHelpers.MakeGroup(wrestlers);
