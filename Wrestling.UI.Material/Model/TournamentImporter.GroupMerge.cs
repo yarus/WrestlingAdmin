@@ -23,6 +23,40 @@ namespace Wrestling.UI.Material.Model
             // A transaction snapshot must preserve the exact live state instead.
             var clone = new Entities.Tournament(source.Settings) { ID = source.ID, Name = source.Name, StartDate = source.StartDate };
             foreach (var w in source.Wrestlers) clone.Wrestlers.Add((Wrestler)w.Clone());
+            var copied = CopyGroupForImport(group, clone);
+            clone.Groups.Add(copied);
+            foreach (var mat in source.Mats)
+            {
+                var copy = new Mat { ID = mat.ID, Name = mat.Name, FieldsVersion = mat.FieldsVersion, ActivePartID = mat.ActivePartID };
+                if (mat.Groups.Any(g => g.ID == group.ID)) copy.Groups.Add(copied);
+                clone.Mats.Add(copy);
+            }
+            return clone;
+        }
+
+        // Preview uses the exact live graph, without persistence migrations or
+        // normalization that could hide exclusion repairs or other real changes.
+        internal static Entities.Tournament CloneForImportPreview(Entities.Tournament source)
+        {
+            var clone = new Entities.Tournament(source.Settings)
+            {
+                ID = source.ID, Name = source.Name, StartDate = source.StartDate, MetaVersion = source.MetaVersion
+            };
+            foreach (var w in source.Wrestlers) clone.Wrestlers.Add((Wrestler)w.Clone());
+            foreach (var team in source.TeamApplications) clone.TeamApplications.Add((TeamApplication)team.Clone());
+            foreach (var part in source.Parts) clone.Parts.Add(new TournamentPart { ID = part.ID, Name = part.Name });
+            foreach (var group in source.Groups) clone.Groups.Add(CopyGroupForImport(group, clone));
+            foreach (var mat in source.Mats)
+            {
+                var copy = new Mat { ID = mat.ID, Name = mat.Name, FieldsVersion = mat.FieldsVersion, ActivePartID = mat.ActivePartID };
+                foreach (var group in mat.Groups) copy.Groups.Add(clone.Groups.Single(g => g.ID == group.ID));
+                clone.Mats.Add(copy);
+            }
+            return clone;
+        }
+
+        private static AgeWeightGroup CopyGroupForImport(AgeWeightGroup group, Entities.Tournament clone)
+        {
             var copied = (AgeWeightGroup)group.Clone();
             copied.FieldsVersion = group.FieldsVersion;
             copied.BracketVersion = group.BracketVersion;
@@ -49,14 +83,7 @@ namespace Wrestling.UI.Material.Model
                     RoundMatches = r.RoundMatches.Select(CopyMatch).ToList()
                 }).ToList()
             };
-            clone.Groups.Add(copied);
-            foreach (var mat in source.Mats)
-            {
-                var copy = new Mat { ID = mat.ID, Name = mat.Name, FieldsVersion = mat.FieldsVersion, ActivePartID = mat.ActivePartID };
-                if (mat.Groups.Any(g => g.ID == group.ID)) copy.Groups.Add(copied);
-                clone.Mats.Add(copy);
-            }
-            return clone;
+            return copied;
         }
 
         private (int Count, bool Structural) MergeCategory(Entities.Tournament target, AgeWeightGroup local, AgeWeightGroup remote)

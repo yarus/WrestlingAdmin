@@ -19,7 +19,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
         private TeamApplication _selectedItem;
 
         private ObservableCollection<TeamApplication> _cachedTeams;
-        private Dictionary<string, string> _registeredTeams;
+        private HashSet<string> _registeredTeams;
 
         private ICommand _setEmblemCommand;
 
@@ -34,7 +34,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
             CachedTeams = new ObservableCollection<TeamApplication>(DataContext.TeamsCache);
 
-            _registeredTeams = DataContext.Tournament.TeamApplications.Where(x => !string.IsNullOrEmpty(x.HashTag)).ToDictionary(x => x.HashTag, y => y.ShortName);
+            _registeredTeams = DataContext.Tournament.TeamApplications.Where(x => !string.IsNullOrEmpty(x.HashTag)).Select(x => x.HashTag).ToHashSet();
         }
 
         public TeamApplication Item
@@ -92,7 +92,7 @@ namespace Wrestling.UI.Material.Tournament.Standing.Applications
 
                     if (item == null || string.IsNullOrEmpty(searchText) || searchText.Length < 3) return false;
 
-                    if (!string.IsNullOrEmpty(item.HashTag) && _registeredTeams.ContainsKey(item.HashTag)) return false;
+                    if (!string.IsNullOrEmpty(item.HashTag) && _registeredTeams.Contains(item.HashTag)) return false;
 
                     return (!string.IsNullOrEmpty(item.HashTag) && item.HashTag.Contains(searchText, StringComparison.OrdinalIgnoreCase))
                             || (!string.IsNullOrEmpty(item.ShortName) && item.ShortName.Contains(searchText, StringComparison.OrdinalIgnoreCase))

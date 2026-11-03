@@ -567,6 +567,9 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             // ObservableCollection<PeerStatusViewModel> with live status and
             // a 5-minute session-cache for recently disconnected peers.
             di.Add<PeerSyncStatusTracker>(new PeerSyncStatusTracker(discovery, dc, Current.Dispatcher, diagnostics: syncDiagnostics));
+            di.Add<ManualTournamentImportService>(new ManualTournamentImportService(
+                dc, di.Resolve<ITournamentImporter>(), di.Resolve<ITournamentsManager>(),
+                di.Resolve<IResultsService>(), di.Resolve<IEntityToInfoAdapter>(), di.Resolve<ITournamentDataAccess>()));
 
             di.Add(new WwfScoreScreenView(), "ScoreScreen");
 

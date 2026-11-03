@@ -29,7 +29,7 @@
                        FontWeight="Normal" />
 
             <TextBlock Grid.Row="0" Grid.Column="1"
-                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding Path=Stat.MatLabel}"
+                       TextWrapping="NoWrap" Foreground="Black" Text="{Binding MatPartLabel}"
                        FontSize="16" TextAlignment="Right" FontWeight="Normal" />
 
         </Grid>

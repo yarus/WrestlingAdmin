@@ -13,16 +13,20 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
     public class PrintScheduleViewModel : TournamentViewModelBase, IStandingPageViewModel
     {
         private Mat _mat;
+        private readonly TournamentPart _part;
         private MatStats _stat;
         private List<AgeWeightGroup> _groups;
 
         public string PageName => T("Nav_Schedule", "Расписание");
         public override string PageTitle => T("PrintSchedule_PageTitle", "Расписание схваток по коврам");
         
-        public PrintScheduleViewModel(IDiContainer container, Mat mat) : base(container)
+        public PrintScheduleViewModel(IDiContainer container, Mat mat, TournamentPart part = null) : base(container)
         {
             _mat = mat;
+            _part = part;
         }
+
+        public string MatPartLabel => _part == null ? _mat.Name : _mat.Name + " · " + _part.Name;
 
         public override bool IsBackButtonAvailable => true;
 
@@ -41,18 +45,20 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
         {
             base.InitData();
 
-            // Per-mat active-part filter: a single printout is one schedule
-            // for one mat at one point in time. The mat's ActivePartID picks
-            // which part's matches are listed; legacy single-part tournaments
-            // include all groups because every group's PartID matches.
+            // Printing has its own part selection, independent of the part
+            // currently running on the mat. Null includes all parts.
+            Stat = null;
             _groups = new List<AgeWeightGroup>(DataContext.Tournament.Groups
                 .Where(g => g.Bracket != null
                             && g.MatID == _mat.ID
-                            && (!_mat.ActivePartID.HasValue || g.PartID == _mat.ActivePartID.Value)));
+                            && (_part == null || g.PartID == _part.ID)));
 
             if (_groups.Count == 0) return;
 
-            var matches = _groups.SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches).Where(rm => !rm.IsMatchCompleted).OrderBy(m => m.MatchNumber).ToList();
+            var parts = Tournament.Parts.Select(p => (Guid?)p.ID).ToList();
+            var matches = _groups.GroupBy(g => g.PartID).OrderBy(g => parts.IndexOf(g.Key))
+                .SelectMany(groups => groups.SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches)
+                    .Where(m => !m.IsMatchCompleted).OrderBy(m => m.MatchNumber)).ToList();
 
             if (matches.Count == 0) return;
 
@@ -106,8 +112,8 @@ namespace Wrestling.UI.Material.Tournament.Print.PrintSchedule
             {
                 MatID = _mat.ID.Value,
                 MatLabel = _mat.Name,
-                WrestlersCount = _mat.WrestlersCount,
-                GroupsCount = _mat.Groups.Count,
+                WrestlersCount = _groups.Sum(g => g.Wrestlers.Count),
+                GroupsCount = _groups.Count,
                 Matches = new ObservableCollection<WrestlingMatch>(matches)//matches.OrderBy(m => m.MatchNumber))
             };
         }

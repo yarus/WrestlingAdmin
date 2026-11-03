@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
-using System.Windows.Threading;
 using Wrestling.Entities;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Utils;
@@ -54,8 +53,6 @@ namespace Wrestling.UI.Material.ScoreScreen
         private Wrestler _winner;
         private SolidColorBrush _winnerColorBrush;
 
-        private DispatcherTimer _timer;
-
         public ScoreScreenViewModel(IDiContainer container) : base(container)
         {
             IsMainScreenVisible = true;
@@ -67,59 +64,61 @@ namespace Wrestling.UI.Material.ScoreScreen
 
         public void ShowWinner(WrestlingMatch match)
         {
-            if (match.Status != MatchStatusEnum.Completed || !match.IsRedWon.HasValue) return;
+            if (match == null || match.Status != MatchStatusEnum.Completed || !match.IsRedWon.HasValue) return;
+            var winner = match.IsRedWon.Value ? match.WrestlerInRed : match.WrestlerInBlue;
+            if (winner == null) return;
 
-            Winner = match.IsRedWon.Value ? match.WrestlerInRed : match.WrestlerInBlue;
+            Winner = winner;
 
-            if (Winner?.TeamID != null)
-            {
-                var team = DataContext.Tournament.TeamApplications.FirstOrDefault(a => a.ID == Winner.TeamID.Value);
-                if (team != null)
-                {
-                    WinnerTeamEmblem = team.EmblemPath;
-                }
-            }
-            else
-            {
-                var imgPath = $"{AppDomain.CurrentDomain.BaseDirectory}Images\\";
+            var team = DataContext?.Tournament?.TeamApplications.FirstOrDefault(a => a.ID == winner.TeamID);
+            WinnerTeamEmblem = team?.EmblemPath ?? string.Empty;
+            WinnerTeamName = !string.IsNullOrWhiteSpace(winner.TeamName) ? winner.TeamName
+                : !string.IsNullOrWhiteSpace(team?.ShortName) ? team.ShortName : team?.FullName ?? string.Empty;
+            WinnerTeamCity = !string.IsNullOrWhiteSpace(winner.TeamCity) ? winner.TeamCity : team?.City ?? string.Empty;
+            WinnerGroupLabel = match.GroupName ?? string.Empty;
+            WinnerRoundName = match.RoundName ?? string.Empty;
+            NotifyWinnerDetails();
 
-                WinnerTeamEmblem = $"{imgPath}DefaultLogo.png";
-            }
-
-            WinnerColorBrush = new SolidColorBrush(match.IsRedWon.Value ? Colors.Red : Colors.Blue);
+            WinnerColorBrush = new SolidColorBrush(match.IsRedWon.Value
+                ? Color.FromRgb(237, 67, 85) : Color.FromRgb(57, 121, 234));
 
             IsMainScreenVisible = false;
             IsWinnerDialogVisible = true;
-
-            _timer = new DispatcherTimer(DispatcherPriority.Send);
-            _timer.Tick += OnWinnerShowCompleted;
-            _timer.Interval = new TimeSpan(0, 0, 0, 5);
-            _timer.Start();
         }
 
-        private void OnWinnerShowCompleted(object sender, EventArgs e)
+        internal void EndWinnerAnnouncement()
         {
             WinnerColorBrush = null;
             WinnerTeamEmblem = string.Empty;
+            WinnerTeamName = string.Empty;
+            WinnerTeamCity = string.Empty;
+            WinnerGroupLabel = string.Empty;
+            WinnerRoundName = string.Empty;
+            NotifyWinnerDetails();
             IsWinnerDialogVisible = false;
             IsMainScreenVisible = true;
 
             Winner = null;
-
-            if (_timer != null)
-            {
-                _timer.Stop();
-                _timer.Tick -= OnWinnerShowCompleted;
-                _timer = null;
-            }
         }
+
+        private void NotifyWinnerDetails()
+        {
+            OnPropertyChanged(nameof(WinnerTeamName));
+            OnPropertyChanged(nameof(WinnerTeamCity));
+            OnPropertyChanged(nameof(WinnerGroupLabel));
+            OnPropertyChanged(nameof(WinnerRoundName));
+        }
+
+        public string WinnerTeamName { get; private set; }
+        public string WinnerTeamCity { get; private set; }
+        public string WinnerGroupLabel { get; private set; }
+        public string WinnerRoundName { get; private set; }
 
         public override void InitData()
         {
             base.InitData();
 
-            IsWinnerDialogVisible = false;
-            IsMainScreenVisible = true;
+            EndWinnerAnnouncement();
 
             if (DataContext.WrestlingMatch.LastSecondInMatch == 0)
             {

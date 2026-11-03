@@ -19,7 +19,8 @@ namespace Wrestling.UI.Material.Model
     //
     // Status is recomputed periodically on the UI dispatcher because some
     // states age out by time (a recently-disconnected peer crosses the
-    // 5-minute boundary even though no event fired).
+    // 5-minute boundary even though no event fired). Offline rows are
+    // removed earlier if a live instance already serves the same URL.
     public sealed class PeerSyncStatusTracker : IDisposable
     {
         public static readonly TimeSpan SessionCacheRetention = TimeSpan.FromMinutes(5);
@@ -98,6 +99,7 @@ namespace Wrestling.UI.Material.Model
                 _byInstance[peer.InstanceId] = vm;
                 Peers.Add(vm);
             }
+            vm.Connection = peer;
             vm.UpdateLive(peer.NodeName, peer.StateHash, peer.LastSeenUtc, peer.HttpUrl);
             Refresh();
         }
@@ -106,6 +108,9 @@ namespace Wrestling.UI.Material.Model
         {
             if (peer == null) return;
             if (!_byInstance.TryGetValue(peer.InstanceId, out var vm)) return;
+            // Expiry is raised outside the registry lock. The same instance
+            // may already have returned as a new connection by this point.
+            if (!ReferenceEquals(vm.Connection, peer)) return;
             vm.MarkDisconnected();
             Refresh();
         }
@@ -122,7 +127,8 @@ namespace Wrestling.UI.Material.Model
             var snapshot = new List<PeerStatusViewModel>(_byInstance.Values);
             foreach (var vm in snapshot)
             {
-                if (!vm.IsLive && (now - vm.LastSeenUtc) > SessionCacheRetention)
+                if (!vm.IsLive && ((now - vm.LastSeenUtc) > SessionCacheRetention
+                    || snapshot.Exists(other => other.IsLive && SharesEndpoint(vm.Address, other.Address))))
                 {
                     _byInstance.Remove(vm.InstanceId);
                     Peers.Remove(vm);
@@ -131,6 +137,14 @@ namespace Wrestling.UI.Material.Model
                 vm.Diagnostic = _diagnostics?.Get(vm.InstanceId);
                 vm.RecomputeStatus(localHash);
             }
+        }
+
+        private static bool SharesEndpoint(string first, string second)
+        {
+            return Uri.TryCreate(first, UriKind.Absolute, out var firstUri)
+                && (firstUri.Scheme == Uri.UriSchemeHttp || firstUri.Scheme == Uri.UriSchemeHttps)
+                && Uri.TryCreate(second, UriKind.Absolute, out var secondUri)
+                && firstUri.Equals(secondUri);
         }
 
         public void Dispose()
@@ -191,6 +205,7 @@ namespace Wrestling.UI.Material.Model
         public DateTime LastSeenUtc { get; private set; }
         public bool IsLive { get; private set; }
         public string Address { get; private set; }
+        internal DiscoveredPeer Connection { get; set; }
         internal PeerSyncDiagnostic Diagnostic { get; set; }
         private string _details;
         public string Details { get => _details; private set { _details = value; Raise(); } }
@@ -218,7 +233,7 @@ namespace Wrestling.UI.Material.Model
         {
             var diagnostic = Diagnostic;
             var lines = new List<string>();
-            var address = diagnostic?.Address ?? Address;
+            var address = Address ?? diagnostic?.Address;
             if (!string.IsNullOrEmpty(address)) lines.Add(Uri.TryCreate(address, UriKind.Absolute, out var url) ? url.GetLeftPart(UriPartial.Authority) : address);
             if (diagnostic != null)
             {
