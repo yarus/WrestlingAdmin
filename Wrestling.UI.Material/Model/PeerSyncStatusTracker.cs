@@ -93,6 +93,8 @@ namespace Wrestling.UI.Material.Model
         private void UpsertPeer(DiscoveredPeer peer)
         {
             if (peer == null) return;
+            var tournament = _dataContext?.Tournament;
+            if (tournament == null || (tournament.ID.HasValue && peer.TournamentId != tournament.ID.Value)) return;
             if (!_byInstance.TryGetValue(peer.InstanceId, out var vm))
             {
                 vm = new PeerStatusViewModel(peer.InstanceId);
@@ -100,7 +102,7 @@ namespace Wrestling.UI.Material.Model
                 Peers.Add(vm);
             }
             vm.Connection = peer;
-            vm.UpdateLive(peer.NodeName, peer.StateHash, peer.LastSeenUtc, peer.HttpUrl);
+            vm.UpdateLive(peer.NodeName, peer.StateHash, peer.LastSeenUtc, peer.HttpUrl, peer.ComputerName);
             Refresh();
         }
 
@@ -135,6 +137,8 @@ namespace Wrestling.UI.Material.Model
                     continue;
                 }
                 vm.Diagnostic = _diagnostics?.Get(vm.InstanceId);
+                vm.HasDuplicateName = vm.IsLive && snapshot.Exists(other => other.IsLive && other.InstanceId != vm.InstanceId
+                    && string.Equals(other.NodeName, vm.NodeName, StringComparison.OrdinalIgnoreCase));
                 vm.RecomputeStatus(localHash);
             }
         }
@@ -205,6 +209,8 @@ namespace Wrestling.UI.Material.Model
         public DateTime LastSeenUtc { get; private set; }
         public bool IsLive { get; private set; }
         public string Address { get; private set; }
+        public string ComputerName { get; private set; }
+        internal bool HasDuplicateName { get; set; }
         internal DiscoveredPeer Connection { get; set; }
         internal PeerSyncDiagnostic Diagnostic { get; set; }
         private string _details;
@@ -215,13 +221,14 @@ namespace Wrestling.UI.Material.Model
             InstanceId = instanceId;
         }
 
-        public void UpdateLive(string nodeName, string stateHash, DateTime lastSeenUtc, string address = null)
+        public void UpdateLive(string nodeName, string stateHash, DateTime lastSeenUtc, string address = null, string computerName = null)
         {
             NodeName = string.IsNullOrWhiteSpace(nodeName) ? T("PeerSync_NoName", "(без имени)") : nodeName;
             StateHash = stateHash ?? string.Empty;
             LastSeenUtc = lastSeenUtc;
             IsLive = true;
             Address = address;
+            ComputerName = computerName;
         }
 
         public void MarkDisconnected()
@@ -233,6 +240,8 @@ namespace Wrestling.UI.Material.Model
         {
             var diagnostic = Diagnostic;
             var lines = new List<string>();
+            if (!string.IsNullOrEmpty(ComputerName)) lines.Add(ComputerName);
+            if (HasDuplicateName) lines.Add(T("Network_DuplicatePeerName", "Одинаковое имя у разных компьютеров"));
             var address = Address ?? diagnostic?.Address;
             if (!string.IsNullOrEmpty(address)) lines.Add(Uri.TryCreate(address, UriKind.Absolute, out var url) ? url.GetLeftPart(UriPartial.Authority) : address);
             if (diagnostic != null)

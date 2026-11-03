@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 namespace Wrestling.Providers.Network
 {
     // Wire format for UDP peer discovery announcements. Serialized as JSON UTF-8
-    // and broadcast on the LAN every 2 seconds.
+    // and broadcast on the LAN every 5 seconds.
     public sealed class PeerAdvertisement
     {
         public const int CurrentProto = 1;
@@ -24,6 +24,9 @@ namespace Wrestling.Providers.Network
 
         [JsonProperty("nodeName")]
         public string NodeName { get; set; }
+
+        [JsonProperty("computerName")]
+        public string ComputerName { get; set; }
 
         [JsonProperty("httpUrl")]
         public string HttpUrl { get; set; }

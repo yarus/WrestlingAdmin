@@ -9,6 +9,8 @@ namespace Wrestling.Providers.Network
         event EventHandler<DiscoveredPeer> PeerExpired;
         event EventHandler<string> DiagnosticMessage;
 
+        int? ActualPort { get; }
+
         IReadOnlyCollection<DiscoveredPeer> SnapshotPeers();
 
         void StartForTournament(

@@ -206,12 +206,9 @@
             </materialDesign:Card>
         </Grid>
 
-        <!-- Side rail: navigation + composition + peer status. No own
-             ScrollViewer — Состав is moved to the bottom on purpose so it's
-             the first thing clipped on short windows (per spec, hiding it is
-             acceptable). The cards above are operationally important and
-             should always be visible. -->
+        <!-- Connection details and peer diagnostics can grow; keep every action reachable. -->
         <Border Grid.Column="1" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource MaterialDesignDivider}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Orientation="Vertical" Margin="12">
 
                 <!-- Режим Проведения — entry points to the two operator-facing
@@ -265,89 +262,39 @@
                     </Grid>
                 </materialDesign:Card>
 
-                <!-- Сеть — имя узла, тоггл синхронизации, публичный URL.
-                     UDP/HTTP-порты в UI не выставлены: дефолты из GlobalSettings
-                     работают на любой обычной локалке турнира; правка через .wrt
-                     при реальном конфликте портов. -->
+                <!-- Local name and actionable connection errors. -->
                 <materialDesign:Card Margin="0,0,0,12">
                     <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="72" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="LanConnect" Width="48" Height="48"
+                        <materialDesign:PackIcon Grid.Column="0" Kind="DesktopClassic" Width="48" Height="48"
                                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
 
-                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,12,12,12">
-                            <TextBlock Margin="0 0 0 4" FontWeight="SemiBold" Text="{loc:Loc Conducting_NetworkHeader}" />
-                            <TextBlock TextWrapping="Wrap"
-                                       Foreground="{DynamicResource MaterialDesignBodyLight}"
-                                       Text="{loc:Loc Conducting_NetworkDescription}" />
+                        <StackPanel Grid.Column="1" Margin="0,12,12,12">
+                            <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="{loc:Loc Conducting_NetworkHeader}" />
+                            <TextBlock Margin="0,8,0,2" FontSize="12" Text="{loc:Loc Conducting_NodeName_Hint}" />
+                            <TextBox x:Name="LocalNetworkName" Text="{Binding Network.Identity.NodeName, UpdateSourceTrigger=LostFocus}" />
+                            <TextBlock x:Name="NetworkWarning" Margin="0,8,0,0" TextWrapping="Wrap" Foreground="#9C3C13"
+                                       Text="{Binding Network.Warning}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Network.Warning}" Value="">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Network.Warning}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </StackPanel>
-
-                        <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" BorderThickness="0 1 0 0"
-                                BorderBrush="{DynamicResource MaterialDesignDivider}" Padding="12">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-
-                                <materialDesign:PackIcon Grid.Row="0" Grid.Column="0" Kind="AccountBox" Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                                <TextBox Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="10,5,0,5"
-                                         Text="{Binding Path=Settings.NodeName, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="{loc:Loc Conducting_NodeName_Hint}" />
-
-                                <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0 8 0 0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <ToggleButton Grid.Column="0" VerticalAlignment="Center"
-                                                  ToolTip="{loc:Loc Conducting_SyncToggle_Tooltip}"
-                                                  IsChecked="{Binding Path=Settings.IsHttpServerEnabled, UpdateSourceTrigger=PropertyChanged}" />
-                                    <TextBlock Grid.Column="1" Margin="12 0 0 0" VerticalAlignment="Center" TextWrapping="Wrap"
-                                               Text="{loc:Loc Conducting_SyncToggle_Label}" />
-                                </Grid>
-
-                                <!-- Visible only when the laptop has more than one IPv4 (or
-                                     a stale override is saved). The frame says exactly when
-                                     to use it: "if neighbors don't see this node, try
-                                     another address" — operators don't need to know what
-                                     NIC means to recognize that symptom. -->
-                                <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0 8 0 0" Padding="8"
-                                        Background="{DynamicResource MaterialDesignChipBackground}"
-                                        Visibility="{Binding IsAnnounceAddressPickerVisible, Converter={StaticResource BoolToVis}}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <materialDesign:PackIcon Grid.Column="0" Kind="AlertCircleOutline" Width="20" Height="20" VerticalAlignment="Top" Margin="0 2 10 0" Foreground="{DynamicResource MaterialDesignBodyLight}" />
-                                        <StackPanel Grid.Column="1">
-                                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBodyLight}"
-                                                       Text="{loc:Loc Conducting_MultipleIPs_Warning}" />
-                                            <ComboBox Margin="0 8 0 0"
-                                                      ItemsSource="{Binding AnnounceAddressOptions}"
-                                                      SelectedItem="{Binding SelectedAnnounceAddress, UpdateSourceTrigger=PropertyChanged}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                            </Grid>
-                        </Border>
                     </Grid>
                 </materialDesign:Card>
-
                 <!-- Соседние компьютеры (peer-sync status) -->
                 <materialDesign:Card Margin="0,0,0,12">
                     <Grid>
@@ -497,6 +444,7 @@
                 </materialDesign:Card>
 
             </StackPanel>
+            </ScrollViewer>
         </Border>
     </Grid>
 </UserControl>

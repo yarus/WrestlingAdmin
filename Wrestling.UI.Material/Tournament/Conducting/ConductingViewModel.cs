@@ -5,7 +5,6 @@ using System.Linq;
 using System.Windows.Input;
 using Wrestling.Entities;
 using Wrestling.Providers;
-using Wrestling.Providers.Network;
 using Wrestling.UI.Material.Match;
 using Wrestling.UI.Material.Model;
 using Wrestling.UI.Material.Slider;
@@ -194,60 +193,7 @@ namespace Wrestling.UI.Material.Tournament.Conducting
 
         #region Network card
 
-        // Tournament-level GlobalSettings — directly bound by the Сеть card
-        // (NodeName, DiscoveryPort, IsHttpServerEnabled, HttpServerPort).
-        // Conducting is only reachable when a tournament is open, so this is
-        // never null in practice; the null-conditional defends against design-time.
-        public GlobalSettings Settings => DataContext?.Tournament?.Settings;
-
-        public const string AnnounceAuto = "(Авто)";
-
-        // Hidden when the host has a single IP and no stale override — there's
-        // nothing to choose. Mirrors the rule from the old Settings page.
-        public bool IsAnnounceAddressPickerVisible
-        {
-            get
-            {
-                if (LocalIpAddressProbe.EnumerateLanAddresses().Count > 1) return true;
-                return Settings != null && !string.IsNullOrEmpty(Settings.AnnounceIpOverride);
-            }
-        }
-
-        public IList<string> AnnounceAddressOptions
-        {
-            get
-            {
-                var options = new List<string> { AnnounceAuto };
-                foreach (var ip in LocalIpAddressProbe.EnumerateLanAddresses())
-                {
-                    options.Add(ip.ToString());
-                }
-                // Preserve a stale override even if the matching NIC is gone —
-                // operators need to see (and clear) what's currently set.
-                var saved = Settings?.AnnounceIpOverride;
-                if (!string.IsNullOrWhiteSpace(saved) && !options.Contains(saved))
-                {
-                    options.Add(saved);
-                }
-                return options;
-            }
-        }
-
-        public string SelectedAnnounceAddress
-        {
-            get
-            {
-                if (Settings == null) return AnnounceAuto;
-                return string.IsNullOrEmpty(Settings.AnnounceIpOverride) ? AnnounceAuto : Settings.AnnounceIpOverride;
-            }
-            set
-            {
-                if (Settings == null) return;
-                Settings.AnnounceIpOverride = (string.IsNullOrEmpty(value) || value == AnnounceAuto) ? string.Empty : value;
-                OnPropertyChanged(nameof(SelectedAnnounceAddress));
-                OnPropertyChanged(nameof(IsAnnounceAddressPickerVisible));
-            }
-        }
+        public NetworkServicesLifecycle Network { get; private set; }
 
         #endregion
 
@@ -255,6 +201,8 @@ namespace Wrestling.UI.Material.Tournament.Conducting
         {
             base.InitData();
             _manualImporter = Resolve<ManualTournamentImportService>();
+            Network = Resolve<NetworkServicesLifecycle>();
+            OnPropertyChanged(nameof(Network));
 
             if (_tracker == null)
             {
@@ -322,13 +270,6 @@ namespace Wrestling.UI.Material.Tournament.Conducting
             OnPropertyChanged(nameof(TeamsCount));
             OnPropertyChanged(nameof(RegionsCount));
 
-            // Network card derives from Tournament.Settings + the live IP probe;
-            // refresh on tournament-change ticks so the picker reflects the
-            // current network state when the operator returns to this page.
-            OnPropertyChanged(nameof(Settings));
-            OnPropertyChanged(nameof(SelectedAnnounceAddress));
-            OnPropertyChanged(nameof(AnnounceAddressOptions));
-            OnPropertyChanged(nameof(IsAnnounceAddressPickerVisible));
         }
 
         private const int RecentResultsLimit = 10;

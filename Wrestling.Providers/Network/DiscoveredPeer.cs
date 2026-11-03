@@ -11,6 +11,7 @@ namespace Wrestling.Providers.Network
         public Guid TournamentId { get; }
         public string TournamentTitle { get; internal set; }
         public string NodeName { get; internal set; }
+        public string ComputerName { get; internal set; }
         public string HttpUrl { get; internal set; }
         public string AppVersion { get; internal set; }
         public string StateHash { get; internal set; }

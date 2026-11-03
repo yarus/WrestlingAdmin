@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using Wrestling.Providers.Localization;
@@ -23,6 +22,7 @@ namespace Wrestling.Providers.Network
         private readonly Func<DateTime> _clock;
         private readonly TimeSpan _announceInterval;
         private readonly string _appVersion;
+        private readonly Func<IReadOnlyList<LocalIpAddressProbe.LanAddress>> _addresses;
 
         private readonly object _stateLock = new object();
         private UdpClient _listener;
@@ -31,6 +31,7 @@ namespace Wrestling.Providers.Network
         private Timer _expiryTimer;
         private volatile bool _running;
         private int _activePort;
+        private int _firstPort;
         private PeerAdvertisement _currentAd;
         private Func<string> _stateHashProvider;
 
@@ -38,16 +39,20 @@ namespace Wrestling.Providers.Network
         public event EventHandler<DiscoveredPeer> PeerExpired;
         public event EventHandler<string> DiagnosticMessage;
 
+        public int? ActualPort { get { lock (_stateLock) return _running ? _activePort : null; } }
+
         public PeerDiscoveryService()
             : this(clock: null, announceInterval: null, expiry: null, appVersion: null)
         {
         }
 
-        public PeerDiscoveryService(Func<DateTime> clock = null, TimeSpan? announceInterval = null, TimeSpan? expiry = null, string appVersion = null)
+        public PeerDiscoveryService(Func<DateTime> clock = null, TimeSpan? announceInterval = null, TimeSpan? expiry = null,
+            string appVersion = null, Func<IReadOnlyList<LocalIpAddressProbe.LanAddress>> addresses = null)
         {
             _clock = clock ?? (() => DateTime.UtcNow);
             _announceInterval = announceInterval ?? DefaultAnnounceInterval;
             _appVersion = appVersion ?? "1.0.0";
+            _addresses = addresses ?? LocalIpAddressProbe.EnumerateLanInterfaces;
             _registry = new PeerRegistry(expiry ?? DefaultExpiry);
             _registry.PeerUpserted += (s, p) => PeerUpserted?.Invoke(this, p);
             _registry.PeerExpired += (s, p) => PeerExpired?.Invoke(this, p);
@@ -69,6 +74,7 @@ namespace Wrestling.Providers.Network
                 TournamentId = tournamentId,
                 TournamentTitle = tournamentTitle ?? string.Empty,
                 NodeName = nodeName ?? string.Empty,
+                ComputerName = Environment.MachineName,
                 HttpUrl = httpUrl ?? string.Empty,
                 AppVersion = _appVersion,
                 StateHash = string.Empty
@@ -78,24 +84,34 @@ namespace Wrestling.Providers.Network
             {
                 _currentAd = ad;
                 _stateHashProvider = stateHashProvider;
-                _activePort = port;
+                _firstPort = port;
                 _registry.SetContext(_instanceId, tournamentId);
-
-                try
+                Exception failure = null;
+                foreach (var candidate in DiscoveryPorts(port))
                 {
-                    _listener = new UdpClient(new IPEndPoint(IPAddress.Any, port));
-                    _listener.EnableBroadcast = true;
+                    var listener = new UdpClient(AddressFamily.InterNetwork);
+                    try
+                    {
+                        listener.ExclusiveAddressUse = true;
+                        listener.Client.Bind(new IPEndPoint(IPAddress.Any, candidate));
+                        listener.EnableBroadcast = true;
+                        _listener = listener;
+                        _activePort = candidate;
+                        break;
+                    }
+                    catch (SocketException ex) { failure = ex; listener.Dispose(); }
                 }
-                catch (Exception ex)
+                if (_listener == null)
                 {
-                    DiagnosticMessage?.Invoke(this, string.Format(ProviderLocalization.T("Network_UdpPortOpenFailed", "Не удалось открыть UDP порт {0}: {1}"), port, ex.Message));
-                    try { _listener?.Close(); } catch { }
-                    _listener = null;
+                    DiagnosticMessage?.Invoke(this, string.Format(ProviderLocalization.T("Network_UdpRangeUnavailable",
+                        "Автоматическая синхронизация недоступна: не удалось открыть порты обнаружения UDP {0}–{1}. Они заняты или недоступны. {2}"),
+                        port, Math.Min(65535, port + NetworkDefaults.DiscoveryPortCount - 1), failure?.Message));
                     return;
                 }
 
                 _running = true;
-                _receiveThread = new Thread(ReceiveLoop) { IsBackground = true, Name = "PeerDiscovery.Receive" };
+                var activeListener = _listener;
+                _receiveThread = new Thread(() => ReceiveLoop(activeListener)) { IsBackground = true, Name = "PeerDiscovery.Receive" };
                 _receiveThread.Start();
 
                 _announceTimer = new Timer(_ => AnnounceSafely(), null, TimeSpan.Zero, _announceInterval);
@@ -126,12 +142,9 @@ namespace Wrestling.Providers.Network
             Stop();
         }
 
-        private void ReceiveLoop()
+        private void ReceiveLoop(UdpClient listener)
         {
-            // Capture a local reference so Stop()-ing nil'ing _listener doesn't
-            // NPE us between iterations.
-            var listener = _listener;
-            while (_running && listener != null)
+            while (IsCurrent(listener))
             {
                 IPEndPoint remote = new IPEndPoint(IPAddress.Any, 0);
                 byte[] data;
@@ -139,8 +152,13 @@ namespace Wrestling.Providers.Network
                 {
                     data = listener.Receive(ref remote);
                 }
-                catch (SocketException)
+                catch (SocketException ex)
                 {
+                    if (IsCurrent(listener))
+                    {
+                        lock (_stateLock) { if (ReferenceEquals(_listener, listener)) _running = false; }
+                        DiagnosticMessage?.Invoke(this, ProviderLocalization.T("Network_UdpReceiveError", "Ошибка приёма UDP: ") + ex.Message);
+                    }
                     break;
                 }
                 catch (ObjectDisposedException)
@@ -154,7 +172,7 @@ namespace Wrestling.Providers.Network
                 }
 
                 var ad = PeerAdvertisement.TryFromBytes(data);
-                if (ad == null) continue;
+                if (ad == null || !IsCurrent(listener)) continue;
                 _registry.Ingest(ad, remote.Address, _clock());
             }
         }
@@ -166,35 +184,42 @@ namespace Wrestling.Providers.Network
             lock (_stateLock) { ad = _currentAd; hashProvider = _stateHashProvider; }
             if (ad == null) return;
 
-            ad.SentAt = _clock();
+            var hash = string.Empty;
             if (hashProvider != null)
             {
-                try { ad.StateHash = hashProvider() ?? string.Empty; }
-                catch { ad.StateHash = string.Empty; }
+                try { hash = hashProvider() ?? string.Empty; }
+                catch { hash = string.Empty; }
             }
-            byte[] bytes;
-            try { bytes = ad.ToBytes(); }
-            catch (Exception ex)
-            {
-                DiagnosticMessage?.Invoke(this, ProviderLocalization.T("Network_AnnounceSerializeError", "Ошибка сериализации анонса: ") + ex.Message);
-                return;
-            }
-
             int port;
-            lock (_stateLock) { port = _activePort; }
+            lock (_stateLock)
+            {
+                if (!_running || !ReferenceEquals(ad, _currentAd)) return;
+                port = _firstPort;
+            }
             if (port <= 0) return;
 
-            foreach (var broadcast in EnumerateBroadcastAddresses())
+            foreach (var address in _addresses())
             {
                 try
                 {
-                    using (var sender = new UdpClient())
+                    var packet = new PeerAdvertisement
                     {
-                        sender.EnableBroadcast = true;
-                        sender.Send(bytes, bytes.Length, new IPEndPoint(broadcast, port));
+                        Proto = ad.Proto, InstanceId = ad.InstanceId, TournamentId = ad.TournamentId,
+                        TournamentTitle = ad.TournamentTitle, NodeName = ad.NodeName, ComputerName = ad.ComputerName,
+                        HttpUrl = HttpUrlForAddress(ad.HttpUrl, address.Address), AppVersion = ad.AppVersion,
+                        StateHash = hash, SentAt = _clock()
+                    };
+                    var bytes = packet.ToBytes();
+                    using var sender = new UdpClient(new IPEndPoint(address.Address, 0));
+                    sender.EnableBroadcast = true;
+                    foreach (var destination in DiscoveryPorts(port))
+                    {
+                        lock (_stateLock) { if (!_running || !ReferenceEquals(ad, _currentAd)) return; }
+                        try { sender.Send(bytes, bytes.Length, new IPEndPoint(address.BroadcastAddress, destination)); }
+                        catch (SocketException) { /* Try the remaining discovery ports on this interface. */ }
                     }
                 }
-                catch
+                catch (SocketException)
                 {
                     // One flaky interface should not block the rest. Next tick
                     // will retry — announcements are idempotent.
@@ -202,46 +227,21 @@ namespace Wrestling.Providers.Network
             }
         }
 
-        private static IEnumerable<IPAddress> EnumerateBroadcastAddresses()
+        private bool IsCurrent(UdpClient listener)
         {
-            // Limited broadcast always — reaches peers on the default
-            // interface even when we can't enumerate NICs.
-            yield return IPAddress.Broadcast;
+            lock (_stateLock) return _running && ReferenceEquals(_listener, listener);
+        }
 
-            NetworkInterface[] nics;
-            try
-            {
-                nics = NetworkInterface.GetAllNetworkInterfaces();
-            }
-            catch
-            {
-                yield break;
-            }
+        private static IEnumerable<int> DiscoveryPorts(int first)
+        {
+            for (var i = 0; i < NetworkDefaults.DiscoveryPortCount && first + i <= 65535; i++)
+                if (first + i > 0) yield return first + i;
+        }
 
-            foreach (var nic in nics)
-            {
-                if (nic.OperationalStatus != OperationalStatus.Up) continue;
-                if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
-                IPInterfaceProperties props;
-                try { props = nic.GetIPProperties(); }
-                catch { continue; }
-
-                foreach (var unicast in props.UnicastAddresses)
-                {
-                    if (unicast.Address.AddressFamily != AddressFamily.InterNetwork) continue;
-                    var mask = unicast.IPv4Mask;
-                    if (mask == null) continue;
-                    var addrBytes = unicast.Address.GetAddressBytes();
-                    var maskBytes = mask.GetAddressBytes();
-                    if (addrBytes.Length != 4 || maskBytes.Length != 4) continue;
-                    var broadcastBytes = new byte[4];
-                    for (int i = 0; i < 4; i++)
-                    {
-                        broadcastBytes[i] = (byte)(addrBytes[i] | (~maskBytes[i] & 0xFF));
-                    }
-                    yield return new IPAddress(broadcastBytes);
-                }
-            }
+        internal static string HttpUrlForAddress(string url, IPAddress address)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var parsed) || parsed.Scheme != Uri.UriSchemeHttp) return string.Empty;
+            return new UriBuilder(parsed) { Host = address.ToString() }.Uri.AbsoluteUri;
         }
     }
 }

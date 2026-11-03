@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -6,11 +7,39 @@ using System.Net.Sockets;
 namespace Wrestling.Providers.Network
 {
     // Enumerates IPv4 addresses on the local machine that look like the
-    // tournament LAN — UP interfaces, not loopback, not APIPA. Consumers use
-    // the first address to construct the announced http:// URL; settings UI
-    // shows the full list for operator override.
+    // tournament LAN — UP interfaces, not loopback, not APIPA. Automatic
+    // discovery announces from each interface with its own HTTP address.
     public static class LocalIpAddressProbe
     {
+        public sealed record LanAddress(IPAddress Address, IPAddress BroadcastAddress, string NetworkName);
+
+        public static IReadOnlyList<LanAddress> EnumerateLanInterfaces()
+        {
+            var result = new List<LanAddress>();
+            NetworkInterface[] interfaces;
+            try { interfaces = NetworkInterface.GetAllNetworkInterfaces(); }
+            catch (NetworkInformationException) { return result; }
+            foreach (var nic in interfaces)
+            {
+                if (nic.OperationalStatus != OperationalStatus.Up || nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                IPInterfaceProperties properties;
+                try { properties = nic.GetIPProperties(); }
+                catch (NetworkInformationException) { continue; }
+                foreach (var unicast in properties.UnicastAddresses)
+                {
+                    var address = unicast.Address;
+                    if (address.AddressFamily != AddressFamily.InterNetwork || IPAddress.IsLoopback(address)) continue;
+                    var bytes = address.GetAddressBytes();
+                    if (bytes[0] == 169 && bytes[1] == 254 || address.Equals(IPAddress.Any)) continue;
+                    var mask = unicast.IPv4Mask?.GetAddressBytes();
+                    if (mask == null || mask.Length != 4) continue;
+                    var broadcast = bytes.Select((b, i) => (byte)(b | (~mask[i] & 0xff))).ToArray();
+                    result.Add(new LanAddress(address, new IPAddress(broadcast), nic.Name));
+                }
+            }
+            return result.DistinctBy(x => x.Address).ToList();
+        }
+
         public static IList<IPAddress> EnumerateLanAddresses()
         {
             var addresses = new List<IPAddress>();
@@ -58,13 +87,8 @@ namespace Wrestling.Providers.Network
             return list.Count > 0 ? list[0] : IPAddress.Loopback;
         }
 
-        // Resolves the IP to advertise in the HTTP announcement URL. When the
-        // operator pinned a specific address via Settings.AnnounceIpOverride
-        // (e.g. on a multi-NIC laptop where auto-pick lands on the wrong
-        // subnet) we honor that — but only if it actually exists on the
-        // machine. A stale override (NIC unplugged, IP reassigned by DHCP)
-        // would otherwise advertise an unreachable URL to peers; falling
-        // back to PickDefault recovers gracefully.
+        // Legacy helper for callers that need one address. Discovery itself
+        // uses EnumerateLanInterfaces and does not persist or consult overrides.
         public static IPAddress PickAnnounceAddress(string overrideValue)
         {
             if (!string.IsNullOrWhiteSpace(overrideValue) &&

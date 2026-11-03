@@ -279,53 +279,23 @@ public class AdapterRoundTripTests
         t.ID.Should().Be(info.ID, "the entity is mutated to carry the new Guid");
     }
 
-    [Fact]
-    public void Round_trip_preserves_network_settings()
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"NodeName\":\"Ковёр чужого ПК\",\"DiscoveryPort\":40000,\"HttpServerPort\":40001,\"IsHttpServerEnabled\":false,\"AnnounceIpOverride\":\"192.168.88.42\"}")]
+    public void Legacy_network_fields_are_ignored_and_not_written_into_copied_tournament(string settingsJson)
     {
-        var settings = new GlobalSettings
+        var info = new TournamentInfo
         {
-            DiscoveryPort = 40000,
-            IsHttpServerEnabled = false,
-            HttpServerPort = 40001,
-            NodeName = "Ковёр 3",
-            AnnounceIpOverride = "192.168.88.42"
+            ID = Guid.NewGuid(), Name = "Copied cup",
+            Settings = Newtonsoft.Json.JsonConvert.DeserializeObject<GlobalSettingsInfo>(settingsJson)
         };
-        var t = new Tournament(settings) { ID = Guid.NewGuid(), Name = "N" };
-
-        var info = _adapter.GetInfoFromEntity(t);
         var restored = _adapter.GetEntityFromInfo(info);
-
-        restored.Settings.DiscoveryPort.Should().Be(40000);
-        restored.Settings.IsHttpServerEnabled.Should().BeFalse();
-        restored.Settings.HttpServerPort.Should().Be(40001);
-        restored.Settings.NodeName.Should().Be("Ковёр 3");
-        restored.Settings.AnnounceIpOverride.Should().Be("192.168.88.42");
+        restored.ID.Should().Be(info.ID);
+        var saved = Newtonsoft.Json.Linq.JObject.FromObject(_adapter.GetInfoFromEntity(restored));
+        var settings = (Newtonsoft.Json.Linq.JObject)saved["Settings"];
+        foreach (var key in new[] { "NodeName", "DiscoveryPort", "HttpServerPort", "IsHttpServerEnabled", "AnnounceIpOverride" })
+            settings.Property(key).Should().BeNull();
     }
-
-    [Fact]
-    public void Legacy_info_without_network_fields_applies_safe_defaults()
-    {
-        // Simulates a .wrt saved before the discovery feature: the persisted
-        // DiscoveryPort/HttpServerPort are missing (0), NodeName absent.
-        // The info constructor seeds defaults, the adapter normalizes zero-ports
-        // and falls back to MachineName for an empty NodeName so the laptop is
-        // discoverable out of the box.
-        var legacyInfo = new Wrestling.Data.TournamentInfo
-        {
-            ID = Guid.NewGuid(),
-            Name = "legacy",
-            Settings = new Wrestling.Data.GlobalSettingsInfo { DiscoveryPort = 0, HttpServerPort = 0 }
-        };
-
-        var restored = _adapter.GetEntityFromInfo(legacyInfo);
-
-        restored.Settings.DiscoveryPort.Should().Be(24565);
-        restored.Settings.IsHttpServerEnabled.Should().BeTrue();
-        restored.Settings.HttpServerPort.Should().Be(24566);
-        restored.Settings.NodeName.Should().Be(Environment.MachineName);
-        restored.Settings.AnnounceIpOverride.Should().BeEmpty();
-    }
-
     [Fact]
     public void Round_trip_of_bracket_preserves_match_state_and_winner_reference()
     {

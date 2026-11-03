@@ -546,7 +546,9 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             var httpServer = new TournamentHttpServer();
             di.Add<IPeerDiscoveryService>(discovery);
             di.Add<ITournamentHttpServer>(httpServer);
-            di.Add<NetworkServicesLifecycle>(new NetworkServicesLifecycle(dc, discovery, httpServer, Current.Dispatcher));
+            var networkIdentity = new LocalNetworkIdentity(di.Resolve<IStorageDataAccess>());
+            di.Add<LocalNetworkIdentity>(networkIdentity);
+            di.Add<NetworkServicesLifecycle>(new NetworkServicesLifecycle(dc, discovery, httpServer, Current.Dispatcher, networkIdentity));
 
             // PeerSyncService listens for incoming peer advertisements with a
             // divergent stateHash and pulls+applies via the existing importer.

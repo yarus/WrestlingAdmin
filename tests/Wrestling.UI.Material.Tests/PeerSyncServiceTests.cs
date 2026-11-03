@@ -63,6 +63,7 @@ public sealed class PeerSyncServiceTests
 
     private sealed class TestDiscovery : IPeerDiscoveryService
     {
+        public int? ActualPort => null;
         // PeerUpserted is unused in tests because we drive HandlePeerAsync
         // directly; suppress the unused-event warning.
 #pragma warning disable CS0067

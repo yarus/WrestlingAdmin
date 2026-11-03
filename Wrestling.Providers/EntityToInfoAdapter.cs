@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -45,22 +45,8 @@ namespace Wrestling.Providers
                 IsBackupEnabled = info.IsBackupEnabled,
                 MaxBackupCount = info.MaxBackupCount,
                 BackupFolderPath = info.BackupFolderPath,
-                DiscoveryPort = info.DiscoveryPort,
-                IsHttpServerEnabled = info.IsHttpServerEnabled,
-                HttpServerPort = info.HttpServerPort,
-                NodeName = info.NodeName ?? string.Empty,
-                AnnounceIpOverride = info.AnnounceIpOverride ?? string.Empty,
                 SignatureFooterImagePath = info.SignatureFooterImagePath
             };
-
-            // Legacy .wrt files saved before NodeName was an auto-default field
-            // come back with NodeName="". Without a NodeName the laptop is
-            // invisible to peers — fall back to MachineName so the user is
-            // discoverable out of the box and can rename later in Settings.
-            if (string.IsNullOrWhiteSpace(entity.NodeName))
-            {
-                try { entity.NodeName = Environment.MachineName ?? string.Empty; } catch { entity.NodeName = string.Empty; }
-            }
 
             // Legacy .wrt files saved before the backup feature shipped don't
             // carry MaxBackupCount. The GlobalSettingsInfo constructor seeds
@@ -69,13 +55,6 @@ namespace Wrestling.Providers
             // indistinguishable from "missing". Treat 0 as "use default".
             if (entity.MaxBackupCount <= 0) entity.MaxBackupCount = 20;
 
-            // Same kind of legacy-zero concern: .wrt files saved before the
-            // network feature shipped can deserialize with DiscoveryPort = 0 /
-            // HttpServerPort = 0 (field missing → DTO ctor seeds defaults, but
-            // a pre-feature file that ever serialized them as zero is possible
-            // in theory). Re-seed to defaults so listeners start on usable ports.
-            if (entity.DiscoveryPort <= 0) entity.DiscoveryPort = 24565;
-            if (entity.HttpServerPort <= 0) entity.HttpServerPort = 24566;
 
             return entity;
         }
@@ -101,11 +80,6 @@ namespace Wrestling.Providers
                 IsBackupEnabled = entity.IsBackupEnabled,
                 MaxBackupCount = entity.MaxBackupCount,
                 BackupFolderPath = entity.BackupFolderPath,
-                DiscoveryPort = entity.DiscoveryPort,
-                IsHttpServerEnabled = entity.IsHttpServerEnabled,
-                HttpServerPort = entity.HttpServerPort,
-                NodeName = entity.NodeName ?? string.Empty,
-                AnnounceIpOverride = entity.AnnounceIpOverride ?? string.Empty,
                 SignatureFooterImagePath = entity.SignatureFooterImagePath
             };
 
