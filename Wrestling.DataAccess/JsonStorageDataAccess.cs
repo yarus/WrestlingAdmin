@@ -105,7 +105,7 @@ namespace Wrestling.DataAccess
                     }
                 }
 
-                AtomicReplace(tmpPath, fileName);
+                await AtomicReplaceAsync(tmpPath, fileName, cancellationToken).ConfigureAwait(false);
                 return true;
             }
             catch (OperationCanceledException)
@@ -148,13 +148,13 @@ namespace Wrestling.DataAccess
         {
             try
             {
-                if (File.Exists(destination))
+                for (var attempt = 0; ; attempt++)
                 {
-                    File.Replace(source, destination, destinationBackupFileName: null, ignoreMetadataErrors: true);
-                }
-                else
-                {
-                    File.Move(source, destination);
+                    try { ReplaceFile(source, destination); return; }
+                    catch (IOException ex) when (attempt < 5 && IsTemporaryReplaceError(ex))
+                    {
+                        Thread.Sleep(20 * (attempt + 1));
+                    }
                 }
             }
             catch
@@ -162,6 +162,44 @@ namespace Wrestling.DataAccess
                 TryDelete(source);
                 throw;
             }
+        }
+
+        private static async Task AtomicReplaceAsync(string source, string destination, CancellationToken cancellationToken)
+        {
+            try
+            {
+                for (var attempt = 0; ; attempt++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    try { ReplaceFile(source, destination); return; }
+                    catch (IOException ex) when (attempt < 5 && IsTemporaryReplaceError(ex))
+                    {
+                        await Task.Delay(20 * (attempt + 1), cancellationToken).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch
+            {
+                TryDelete(source);
+                throw;
+            }
+        }
+
+        private static void ReplaceFile(string source, string destination)
+        {
+            if (File.Exists(destination))
+                File.Replace(source, destination, destinationBackupFileName: null, ignoreMetadataErrors: true);
+            else
+                File.Move(source, destination);
+        }
+
+        private static bool IsTemporaryReplaceError(IOException exception)
+        {
+            // Brief Windows reader/antivirus locks can reject ReplaceFile even
+            // though the fully serialized sibling is ready. These errors leave
+            // the original destination intact; retry the same atomic operation.
+            var code = exception.HResult & 0xffff;
+            return OperatingSystem.IsWindows() && (code == 32 || code == 33 || code == 1175);
         }
 
         private static void TryDelete(string path)
