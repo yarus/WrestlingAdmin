@@ -12,6 +12,38 @@ namespace Wrestling.UI.Material.Tests;
 
 public class MatchNumbersGeneratorTests
 {
+    [Fact]
+    public void Rest_aware_generation_is_stable_after_results_and_does_not_mutate_brackets()
+    {
+        var (t, group, mat) = BuildOneGroup(9);
+        new OlympicWithConsolationFromFinalistsGroupBracketProcessor().Generate(t, group);
+        for (int i = 0; i < 3; i++)
+        {
+            var extra = new AgeWeightGroup { ID = Guid.NewGuid() };
+            extra.Wrestlers = Enumerable.Range(0, 3).Select(n => new Wrestler
+            {
+                ID = Guid.NewGuid(), GroupID = extra.ID, SeedNumber = n + 1
+            }).ToList();
+            new RoundRobinGroupBracketProcessor().Generate(t, extra);
+            mat.Groups.Add(extra);
+            t.Groups.Add(extra);
+        }
+        var generator = new MatMatchNumbersGenerator();
+        generator.Generate(t, BuiltInProcessors());
+        var all = t.Groups.SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches).ToList();
+        var numbers = all.ToDictionary(m => m, m => m.MatchNumber);
+        var identities = all.ToDictionary(m => m, m => (m.BracketFullNumber, m.NextMatchBracketFullNumber));
+        var processor = new OlympicWithConsolationFromFinalistsGroupBracketProcessor();
+        processor.Load(t, group);
+        var pending = group.Bracket.Rounds.SelectMany(r => r.RoundMatches).First(m => m.IsMatchCanStart);
+        processor.CompleteMatch(pending, true, MatchWinTypeEnum.PointsWin);
+        generator.Generate(t, BuiltInProcessors());
+        all.Should().OnlyContain(m => m.MatchNumber == numbers[m]);
+        all.Should().OnlyContain(m => m.BracketFullNumber == identities[m].BracketFullNumber
+            && m.NextMatchBracketFullNumber == identities[m].NextMatchBracketFullNumber);
+        all.Select(m => m.MatchNumber).Should().BeEquivalentTo(Enumerable.Range(1, all.Count));
+    }
+
     private static IGroupBracketProcessorFactory BuiltInProcessors() => new GroupBracketProcessorFactory();
 
     private static (WTournament, AgeWeightGroup, Mat) BuildOneGroup(int wrestlers)

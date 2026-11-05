@@ -97,6 +97,10 @@ namespace Wrestling.UI.Material.Model
                     }
                 }
             }
+
+            var original = assigned.OrderBy(m => m.MatchNumber).ToList();
+            var ordered = RestAwareMatchOrder.Optimize(original, groups);
+            for (int i = 0; i < ordered.Count; i++) ordered[i].MatchNumber = i + 1;
         }
 
         private void BindMainBracketQualification(List<AgeWeightGroup> groups, IGroupBracketProcessorFactory processors, ref int currentMatchNumber, HashSet<WrestlingMatch> assigned)

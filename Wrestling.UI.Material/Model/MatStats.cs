@@ -153,11 +153,12 @@ namespace Wrestling.UI.Material.Model
         private void RebuildMatchesReady()
         {
             _matchesReady.Clear();
-            if (_matches == null) return;
-
-            foreach (var m in _matches.Where(x => x.IsMatchCanStart))
+            if (_matches != null)
             {
-                _matchesReady.Add(m);
+                foreach (var m in _matches.Where(x => x.IsMatchCanStart))
+                {
+                    _matchesReady.Add(m);
+                }
             }
 
             OnPropertyChanged("MatchesReadyCount");

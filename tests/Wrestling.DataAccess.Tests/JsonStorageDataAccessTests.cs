@@ -27,6 +27,73 @@ public sealed class JsonStorageDataAccessTests : IDisposable
 
     private string Path_(string name) => Path.Combine(_dir, name);
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Save_retries_a_short_windows_lock_without_losing_the_existing_file(bool asyncSave)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var path = Path_("temporarily-locked.json");
+        _storage.SaveToFile(new Payload { Name = "original" }, path);
+        Task<bool> save;
+        using (var reader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            var updated = new Payload { Name = "updated" };
+            save = Task.Run(() => asyncSave ? _storage.SaveToFileAsync(updated, path) : Task.FromResult(_storage.SaveToFile(updated, path)));
+            // Wait until serialization has produced a sibling, so the writer
+            // reaches ReplaceFile while this reader still denies deletion.
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            while (!save.IsCompleted && !Directory.GetFiles(_dir, "*.tmp.*").Any() && DateTime.UtcNow < deadline)
+                await Task.Delay(5);
+            await Task.Delay(100);
+        }
+        (await save).Should().BeTrue();
+        _storage.ReadFromFile<Payload>(path).Name.Should().Be("updated");
+        Directory.GetFiles(_dir, "*.tmp.*").Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Save_keeps_previous_content_and_cleans_temp_when_windows_lock_persists(bool asyncSave)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var path = Path_("persistently-locked.json");
+        _storage.SaveToFile(new Payload { Name = "original" }, path);
+        var original = File.ReadAllText(path);
+        using (var reader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            Func<Task> save = async () =>
+            {
+                if (asyncSave) await _storage.SaveToFileAsync(new Payload { Name = "updated" }, path);
+                else _storage.SaveToFile(new Payload { Name = "updated" }, path);
+            };
+            await save.Should().ThrowAsync<IOException>();
+        }
+        File.ReadAllText(path).Should().Be(original);
+        Directory.GetFiles(_dir, "*.tmp.*").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Async_save_can_cancel_while_retrying_a_windows_lock()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var path = Path_("cancel-locked.json");
+        _storage.SaveToFile(new Payload { Name = "original" }, path);
+        var original = File.ReadAllText(path);
+        using var cancellation = new System.Threading.CancellationTokenSource();
+        using (var reader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            var saving = _storage.SaveToFileAsync(new Payload { Name = "updated" }, path, cancellation.Token);
+            await Task.Delay(80);
+            cancellation.Cancel();
+            Func<Task> waitForSave = async () => await saving;
+            await waitForSave.Should().ThrowAsync<OperationCanceledException>();
+        }
+        File.ReadAllText(path).Should().Be(original);
+        Directory.GetFiles(_dir, "*.tmp.*").Should().BeEmpty();
+    }
+
     public sealed class Payload
     {
         public string Name { get; set; }

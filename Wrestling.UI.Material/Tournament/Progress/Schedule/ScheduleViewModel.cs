@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -38,13 +39,17 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         private string _filterString;
 
         private IKeyHandler _keyHandler;
+        private bool _resultsSubscribed;
+        private bool _isActive;
+
+        public ObservableCollection<ScheduleMatchRow> ScheduleRows { get; private set; }
 
         public string PageName => T("Nav_Schedule", "Расписание");
         public override string PageTitle => T("Schedule_PageTitle", "Расписание схваток по коврам");
 
-        public int MatsCount => DataContext.Tournament.Mats.Count;
-        public int MatchesCount => DataContext.Tournament.Groups.Sum(g => g.Bracket?.MatchesCount ?? 0);
-        public int CompletedMatchesCount => DataContext.Tournament.Groups.Sum(g => g.Bracket?.CompletedMatchesCount ?? 0);
+        public int MatsCount => DataContext?.Tournament?.Mats.Count ?? 0;
+        public int MatchesCount => DataContext?.Tournament?.Groups.Sum(g => g.Bracket?.MatchesCount ?? 0) ?? 0;
+        public int CompletedMatchesCount => DataContext?.Tournament?.Groups.Sum(g => g.Bracket?.CompletedMatchesCount ?? 0) ?? 0;
         public int LeftMatchesCount => MatchesCount - CompletedMatchesCount;
 
         public ScheduleViewModel(IDiContainer container) : base(container)
@@ -58,32 +63,16 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         public override void InitData()
         {
             base.InitData();
+            _isActive = true;
+
+            if (ResultsService != null && !_resultsSubscribed)
+            {
+                ResultsService.ResultsChanged += OnResultsChanged;
+                _resultsSubscribed = true;
+            }
 
             _quickButtons = null;
-            _mats = DataContext.Tournament.Mats;
-
-            if (_mats.Count == 0 || (Stats != null && _mats.Count != Stats.Count))
-            {
-                Stats = null;
-            }
-
-            var expandedMats = _filteredStats?.Where(x => x.IsExpanded).ToList();
-
-            _filteredStats = GenerateStats();
-
-            if (expandedMats?.Count > 0)
-            {
-                foreach (var item in expandedMats)
-                {
-                    var newMatData = _filteredStats.FirstOrDefault(x => x.MatID == item.MatID);
-                    if (newMatData != null) newMatData.IsExpanded = item.IsExpanded;
-                }
-            }
-
-            Filter(FilterString);
-
-            SelectedMat = _filteredStats.FirstOrDefault(x => x.MatID == SelectedMat?.MatID)
-                ?? _filteredStats.FirstOrDefault();
+            RefreshStats();
 
             // One-shot preselection wins over the previously-selected mat —
             // a Conducting card click should always land the operator on the
@@ -109,10 +98,52 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
         protected override void OnNavigatingOut()
         {
             base.OnNavigatingOut();
+            _isActive = false;
+            if (_selectedMat != null) _selectedMat.PropertyChanged -= OnSelectedMatPropertyChanged;
+            if (_resultsSubscribed)
+            {
+                ResultsService.ResultsChanged -= OnResultsChanged;
+                _resultsSubscribed = false;
+            }
             if (_keyHandler != null)
             {
                 _keyHandler.KeyPressed -= KeyHandler_KeyPressed;
             }
+            ReleaseStats();
+        }
+
+        private void OnResultsChanged() => RefreshStats();
+
+        private void RefreshStats()
+        {
+            var selectedMatId = SelectedMat?.MatID;
+            var expandedMats = _filteredStats?.Where(x => x.IsExpanded).Select(x => x.MatID).ToHashSet();
+            // Detach the selected queue before releasing its match subscriptions.
+            SelectedMat = null;
+            ReleaseStats();
+            _mats = DataContext.Tournament?.Mats ?? new ObservableCollection<Mat>();
+            Stats = GenerateStats();
+            foreach (var stat in Stats)
+                stat.IsExpanded = expandedMats?.Contains(stat.MatID) == true;
+            Filter(FilterString);
+            SelectedMat = Stats.FirstOrDefault(x => x.MatID == selectedMatId) ?? Stats.FirstOrDefault();
+            OnPropertyChanged(nameof(MatsCount));
+            OnPropertyChanged(nameof(MatchesCount));
+            OnPropertyChanged(nameof(CompletedMatchesCount));
+            OnPropertyChanged(nameof(LeftMatchesCount));
+        }
+
+        private void OnSelectedMatPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            // MatStats raises this after rebuilding MatchesReady, even when
+            // its count is unchanged. Avoid observing intermediate Clear/Adds.
+            if (e.PropertyName == nameof(MatStats.MatchesReadyCount)) RefreshScheduleRows();
+        }
+
+        private void ReleaseStats()
+        {
+            if (_filteredStats == null) return;
+            foreach (var stat in _filteredStats) stat.Matches = null;
         }
 
         private void KeyHandler_KeyPressed(object sender, System.Windows.Input.KeyEventArgs e)
@@ -144,13 +175,11 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
                 _matIdFilter = value;
                 OnPropertyChanged(nameof(MatIdFilter));
 
-                // Drop the cached Stats so the next Filter() call regenerates
-                // through GenerateStats() with the new filter applied. If we
-                // were never InitData'd yet, the next InitData call covers it.
+                // Rebuild through the same path so the old queue subscriptions
+                // are released and selection belongs to the filtered mats.
                 if (_mats != null)
                 {
-                    Stats = null;
-                    Filter(FilterString);
+                    RefreshStats();
                 }
             }
         }
@@ -160,9 +189,12 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             get { return _selectedMat; }
             set
             {
+                if (_selectedMat != null) _selectedMat.PropertyChanged -= OnSelectedMatPropertyChanged;
                 _selectedMat = value;
+                if (_isActive && _selectedMat != null) _selectedMat.PropertyChanged += OnSelectedMatPropertyChanged;
 
                 OnPropertyChanged("SelectedMat");
+                RefreshScheduleRows();
             }
         }
 
@@ -223,7 +255,8 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             {
                 if (_openMatchCommand == null)
                 {
-                    _openMatchCommand = new RelayCommand(param => OpenMatch(param as WrestlingMatch), param => param != null && (((WrestlingMatch)param).IsMatchCompleted || ((WrestlingMatch)param).IsMatchCanStart));
+                    _openMatchCommand = new RelayCommand(param => OpenMatch(UnwrapMatch(param)),
+                        param => UnwrapMatch(param) is WrestlingMatch match && (match.IsMatchCompleted || match.IsMatchCanStart));
                 }
                 return _openMatchCommand;
             }
@@ -332,6 +365,29 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
                     stat.IsExpanded = true;
                 }
             }
+            if (SelectedMat != null && Stats.Contains(SelectedMat)) RefreshScheduleRows();
+        }
+
+        private static WrestlingMatch UnwrapMatch(object value) => value is ScheduleMatchRow row ? row.Match : value as WrestlingMatch;
+
+        private void RefreshScheduleRows()
+        {
+            var mat = _mats?.FirstOrDefault(m => m.ID == SelectedMat?.MatID);
+            var upcoming = mat?.Groups.Where(g => g.Bracket != null
+                    && (!mat.ActivePartID.HasValue || g.PartID == mat.ActivePartID))
+                .SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches)
+                .Where(m => m.IsMatchCanStart).OrderBy(m => m.MatchNumber).Take(5).ToHashSet()
+                ?? new HashSet<WrestlingMatch>();
+            var athleteIds = upcoming.SelectMany(m => new[] { m.WrestlerInRed.ID, m.WrestlerInBlue.ID });
+            var history = Tournament?.Groups.Where(g => g.Bracket != null)
+                .SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches)
+                ?? Enumerable.Empty<WrestlingMatch>();
+            var last = RecentWrestlerBouts.FindLastCompletions(history, athleteIds);
+            var now = DateTime.Now;
+            ScheduleRows = new ObservableCollection<ScheduleMatchRow>(
+                (SelectedMat?.MatchesReady ?? Enumerable.Empty<WrestlingMatch>())
+                .Select(m => new ScheduleMatchRow(m, last, now, upcoming.Contains(m))));
+            OnPropertyChanged(nameof(ScheduleRows));
         }
 
         private static bool MatchPassesFilter(WrestlingMatch match, string filter)
