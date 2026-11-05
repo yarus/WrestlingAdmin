@@ -80,6 +80,8 @@ namespace Wrestling.UI.Material.Model
             {
                 // All navigation paths must release the outgoing page's keyboard handlers.
                 ShellVm.CurrentViewModel?.NotifyNavigatingOut();
+                if (vm is not MatchControlViewModel && vm is not MatchResultsViewModel)
+                    _container.Resolve<MatchActivityService>()?.Release();
                 vm.InitData();
                 ShellVm.CurrentViewModel = vm;
                 vm.OnNavigationCompleted();

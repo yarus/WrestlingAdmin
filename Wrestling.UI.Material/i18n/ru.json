@@ -1,4 +1,11 @@
 {
+  "MatchActivity_ToolTip": "Схватка открыта на ковре «{0}».",
+  "MatchActivity_ConfirmTitle": "Схватка уже открыта",
+  "MatchActivity_ConfirmBody": "Схватка уже открыта на ковре «{0}». Открыть её на этом компьютере?",
+  "MatchActivity_Open": "Открыть",
+  "MatchActivity_Cancel": "Отмена",
+  "MatchActivity_ConnectionLost": "Связь потеряна — возможно, схватка продолжается.",
+  "MatchActivity_Concurrent": "Эта схватка также открыта на ковре «{0}».",
   "Schedule_RecentBout_Tooltip": "{0}: после завершения схватки прошло {1} мин.",
   "_meta": {
     "code": "ru",

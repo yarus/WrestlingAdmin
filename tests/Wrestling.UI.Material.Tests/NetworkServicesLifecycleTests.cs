@@ -36,6 +36,7 @@ public sealed class NetworkServicesLifecycleTests
         }
         public void PublishPeers(IReadOnlyCollection<DiscoveredPeer> peers) { Peers = peers; PeerUpserted?.Invoke(this, peers.First()); }
         public void Stop() { StopCalls++; ActualPort = null; }
+        public void SetActiveMatch(ActiveMatchIdentity match) { }
         public void Dispose() { }
     }
 

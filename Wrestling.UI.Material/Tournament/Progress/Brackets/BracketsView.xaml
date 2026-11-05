@@ -8,6 +8,7 @@
              xmlns:converters2="clr-namespace:Wrestling.UI.Material.Utils.Converters"
              xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:match="clr-namespace:Wrestling.UI.Material.Match"
              md:DialogServiceViews.IsRegistered="True"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="800">
@@ -423,6 +424,9 @@
                                                                                         Height="22" />
                                                                                     </Button>
                                                                                 </StackPanel>
+                                                                                <match:MatchActivityIndicator Grid.Row="0" Grid.RowSpan="2" Grid.Column="4"
+                                                                                    HorizontalAlignment="Center" Match="{Binding}"
+                                                                                    Activity="{Binding ElementName=RootControl, Path=DataContext.MatchActivity}" />
                                                                             </Grid>
 
                                                                             <Grid Row="1">

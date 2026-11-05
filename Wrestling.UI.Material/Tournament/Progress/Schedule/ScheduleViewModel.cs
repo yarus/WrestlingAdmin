@@ -151,7 +151,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             if (e.Key != System.Windows.Input.Key.Enter) return;
             var topMatch = SelectedMat?.Matches?.FirstOrDefault(m => m != null && m.IsMatchCanStart);
             if (topMatch == null) return;
-            OpenMatch(topMatch);
+            if (OpenMatchCommand.CanExecute(topMatch)) OpenMatchCommand.Execute(topMatch);
             e.Handled = true;
         }
 
@@ -255,7 +255,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             {
                 if (_openMatchCommand == null)
                 {
-                    _openMatchCommand = new RelayCommand(param => OpenMatch(UnwrapMatch(param)),
+                    _openMatchCommand = new AsyncRelayCommand(param => OpenMatchAsync(UnwrapMatch(param)),
                         param => UnwrapMatch(param) is WrestlingMatch match && (match.IsMatchCompleted || match.IsMatchCanStart));
                 }
                 return _openMatchCommand;
@@ -376,7 +376,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             var upcoming = mat?.Groups.Where(g => g.Bracket != null
                     && (!mat.ActivePartID.HasValue || g.PartID == mat.ActivePartID))
                 .SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches)
-                .Where(m => m.IsMatchCanStart).OrderBy(m => m.MatchNumber).Take(5).ToHashSet()
+                .Where(m => m.IsMatchCanStart).OrderBy(m => m.MatchNumber).Take(10).ToHashSet()
                 ?? new HashSet<WrestlingMatch>();
             var athleteIds = upcoming.SelectMany(m => new[] { m.WrestlerInRed.ID, m.WrestlerInBlue.ID });
             var history = Tournament?.Groups.Where(g => g.Bracket != null)
@@ -409,7 +409,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             NavigateToView<BracketsViewModel>();
         }
 
-        private void OpenMatch(WrestlingMatch match)
+        internal async Task OpenMatchAsync(WrestlingMatch match)
         {
             if (match == null) return;
 
@@ -421,6 +421,11 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             }
             else if (match.IsMatchCanStart)
             {
+                var tournament = DataContext.Tournament;
+                if (!await ConfirmMatchOpeningAsync(match)) return;
+                if (!ReferenceEquals(tournament, DataContext.Tournament) || !match.IsMatchCanStart
+                    || !tournament.Groups.Any(g => g.ID == match.GroupID && g.Bracket != null
+                        && g.Bracket.Rounds.SelectMany(r => r.RoundMatches).Contains(match))) return;
                 DataContext.WrestlingMatch = match;
                 DataContext.Group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == match.GroupID);
                 NavigateToView<MatchControlViewModel>();

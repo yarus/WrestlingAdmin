@@ -71,6 +71,7 @@ namespace Wrestling.UI.Material
             var di = DiContainer.Instance;
             SafeDispose(() => di.Resolve<PeerSyncStatusTracker>()?.Dispose(), nameof(PeerSyncStatusTracker));
             SafeDispose(() => di.Resolve<PeerSyncService>()?.Dispose(), nameof(PeerSyncService));
+            SafeDispose(() => di.Resolve<MatchActivityService>()?.Dispose(), nameof(MatchActivityService));
             SafeDispose(() => di.Resolve<NetworkServicesLifecycle>()?.Dispose(), nameof(NetworkServicesLifecycle));
             SafeDispose(() => (di.Resolve<IPeerDiscoveryService>() as IDisposable)?.Dispose(), nameof(IPeerDiscoveryService));
             SafeDispose(() => (di.Resolve<ITournamentHttpServer>() as IDisposable)?.Dispose(), nameof(ITournamentHttpServer));
@@ -174,6 +175,8 @@ namespace Wrestling.UI.Material
             app.Show();
 
             navService.NavigateToView<HomeViewModel>();
+            if (e.Args.Length > 0)
+                navService.GetViewModel<HomeViewModel>().OpenFromFile(e.Args[0]);
         }
 
         private static IList<INavigationItem> BuildNavigationItems(INavigationService navService)
@@ -548,6 +551,8 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
             di.Add<ITournamentHttpServer>(httpServer);
             var networkIdentity = new LocalNetworkIdentity(di.Resolve<IStorageDataAccess>());
             di.Add<LocalNetworkIdentity>(networkIdentity);
+            di.Add<MatchActivityService>(new MatchActivityService(discovery, dc, Current.Dispatcher,
+                message => di.Resolve<INavigationService>()?.ShellVm?.ShowSnackbarMessage(message)));
             di.Add<NetworkServicesLifecycle>(new NetworkServicesLifecycle(dc, discovery, httpServer, Current.Dispatcher, networkIdentity));
 
             // PeerSyncService listens for incoming peer advertisements with a

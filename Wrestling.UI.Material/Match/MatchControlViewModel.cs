@@ -157,6 +157,8 @@ namespace Wrestling.UI.Material.Match
             // the next Start.
             _startDateTime = DataContext.WrestlingMatch.StartDateTime;
 
+            MatchActivity?.Open(DataContext.WrestlingMatch);
+
             _matchActions = DataContext.WrestlingMatch.LastSecondInMatch == 0
                 ? new List<MatchAction>()
                 : DataContext.WrestlingMatch.MatchActions;

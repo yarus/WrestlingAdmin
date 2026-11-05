@@ -43,6 +43,44 @@ public class PeerDiscoveryServiceTests
         addresses: () => new[] { new LocalIpAddressProbe.LanAddress(IPAddress.Loopback, IPAddress.Loopback, "Test") });
 
     [Fact]
+    public async Task Four_instances_publish_three_open_bouts_and_release_immediately_without_changing_hash()
+    {
+        using var range = new Reservation();
+        for (int i = 0; i < 4; i++) range.Sockets[i].Dispose();
+        PeerDiscoveryService Create() => new(announceInterval: TimeSpan.FromSeconds(30),
+            addresses: () => new[] { new LocalIpAddressProbe.LanAddress(IPAddress.Loopback, IPAddress.Loopback, "Test") });
+        using var first = Create(); using var second = Create(); using var third = Create(); using var fourth = Create();
+        var tournament = Guid.NewGuid(); var group = Guid.NewGuid();
+        var seen = new System.Collections.Concurrent.ConcurrentDictionary<string, ActiveMatchIdentity>();
+        var allOpen = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var released = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        first.PeerUpserted += (_, peer) =>
+        {
+            if (peer.ActiveMatch != null)
+            {
+                seen[peer.NodeName] = peer.ActiveMatch;
+                if (seen.Count == 3) allOpen.TrySetResult();
+            }
+            if (peer.NodeName == "B" && peer.ActiveMatch == null && peer.ActivityRevision >= 3) released.TrySetResult();
+        };
+        first.StartForTournament(range.First, tournament, "T", "A", string.Empty, () => "same");
+        var helpers = new[] { second, third, fourth };
+        for (int i = 0; i < 3; i++)
+        {
+            helpers[i].StartForTournament(range.First, tournament, "T", ((char)('B' + i)).ToString(), string.Empty, () => "same");
+            helpers[i].SetActiveMatch(new ActiveMatchIdentity(group, 1, "1." + (i + 1)));
+        }
+        await allOpen.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        seen.Values.Select(m => m.BracketFullNumber).Should().BeEquivalentTo("1.1", "1.2", "1.3");
+        second.SetActiveMatch(null);
+        second.Stop(); // A graceful close must announce release before disposing its timers.
+        await released.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        first.SnapshotPeers().Single(p => p.NodeName == "B").ActiveMatch.Should().BeNull();
+        first.SnapshotPeers().Where(p => p.NodeName != "B").Should().OnlyContain(p => p.ActiveMatch != null);
+        first.SnapshotPeers().Should().OnlyContain(p => p.StateHash == "same");
+    }
+
+    [Fact]
     public void Fresh_service_has_no_peers()
     {
         using var service = MakeService();

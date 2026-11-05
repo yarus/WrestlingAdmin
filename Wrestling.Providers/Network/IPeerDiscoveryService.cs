@@ -22,5 +22,7 @@ namespace Wrestling.Providers.Network
             Func<string> stateHashProvider = null);
 
         void Stop();
+
+        void SetActiveMatch(ActiveMatchIdentity match);
     }
 }

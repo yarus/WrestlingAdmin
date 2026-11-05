@@ -161,8 +161,8 @@ namespace Wrestling.UI.Material.Home
         }
 
         // Returns true on a successful open. Handles the full pipeline used
-        // by both OpenTournament (file dialog) and OpenRecent (tile click).
-        private bool OpenFromFile(string fileName)
+        // by the file dialog, recent-file tiles and the startup argument.
+        internal bool OpenFromFile(string fileName)
         {
             var tournament = _tournManager.LoadFromFile(fileName);
             if (tournament == null)
@@ -170,6 +170,11 @@ namespace Wrestling.UI.Material.Home
                 ShowSnackMessage(T("Snack_OpenError", "Не удалось открыть файл"));
                 return false;
             }
+
+            // Keep a startup path relative to the launch directory stable if
+            // a later file dialog changes the process working directory.
+            fileName = Path.GetFullPath(fileName);
+            tournament.FileName = fileName;
 
             VerifyTeamEmblems(tournament);
 
