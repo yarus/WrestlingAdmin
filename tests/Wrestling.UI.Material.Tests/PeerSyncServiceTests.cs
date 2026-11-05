@@ -75,6 +75,7 @@ public sealed class PeerSyncServiceTests
         public IReadOnlyCollection<DiscoveredPeer> SnapshotPeers() => Array.Empty<DiscoveredPeer>();
         public void StartForTournament(int port, Guid tournamentId, string tournamentTitle, string nodeName, string httpUrl, Func<string> stateHashProvider = null) { }
         public void Stop() { }
+        public void SetActiveMatch(ActiveMatchIdentity match) { }
         public void Dispose() { }
 
         public void RaiseExpired(DiscoveredPeer p) => PeerExpired?.Invoke(this, p);

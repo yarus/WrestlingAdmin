@@ -41,6 +41,13 @@ namespace Wrestling.Providers.Network
         [JsonProperty("stateHash")]
         public string StateHash { get; set; }
 
+        [JsonProperty("activeMatch")]
+        public ActiveMatchIdentity ActiveMatch { get; set; }
+
+        // Null identifies older senders which do not advertise match presence.
+        [JsonProperty("activityRevision")]
+        public long? ActivityRevision { get; set; }
+
         [JsonProperty("sentAt")]
         public DateTime SentAt { get; set; }
 

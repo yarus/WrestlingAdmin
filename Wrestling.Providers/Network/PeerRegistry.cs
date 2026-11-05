@@ -78,6 +78,11 @@ namespace Wrestling.Providers.Network
                 peer.HttpUrl = ad.HttpUrl;
                 peer.AppVersion = ad.AppVersion;
                 peer.StateHash = ad.StateHash ?? string.Empty;
+                if (ad.ActivityRevision.HasValue && (!peer.ActivityRevision.HasValue || ad.ActivityRevision >= peer.ActivityRevision))
+                {
+                    peer.ActiveMatch = ad.ActiveMatch;
+                    peer.ActivityRevision = ad.ActivityRevision;
+                }
                 peer.LastSeenUtc = now;
                 peer.SenderAddress = sender;
                 upserted = peer;

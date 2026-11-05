@@ -34,6 +34,8 @@ namespace Wrestling.Providers.Network
         private int _firstPort;
         private PeerAdvertisement _currentAd;
         private Func<string> _stateHashProvider;
+        private ActiveMatchIdentity _activeMatch;
+        private long _activityRevision = 1;
 
         public event EventHandler<DiscoveredPeer> PeerUpserted;
         public event EventHandler<DiscoveredPeer> PeerExpired;
@@ -142,6 +144,21 @@ namespace Wrestling.Providers.Network
             Stop();
         }
 
+        public void SetActiveMatch(ActiveMatchIdentity match)
+        {
+            lock (_stateLock)
+            {
+                if (Equals(_activeMatch, match)) return;
+                _activeMatch = match;
+                _activityRevision++;
+                // Announce on the worker: computing the tournament hash may marshal to the UI.
+                _announceTimer?.Change(TimeSpan.Zero, _announceInterval);
+            }
+            // Closing/replacing the tournament stops the timer immediately afterwards.
+            // Send release now using the last advertised hash, without invoking the UI.
+            if (match == null) AnnounceSafely(refreshHash: false);
+        }
+
         private void ReceiveLoop(UdpClient listener)
         {
             while (IsCurrent(listener))
@@ -177,24 +194,29 @@ namespace Wrestling.Providers.Network
             }
         }
 
-        private void AnnounceSafely()
+        private void AnnounceSafely(bool refreshHash = true)
         {
             PeerAdvertisement ad;
             Func<string> hashProvider;
             lock (_stateLock) { ad = _currentAd; hashProvider = _stateHashProvider; }
             if (ad == null) return;
 
-            var hash = string.Empty;
-            if (hashProvider != null)
+            var hash = ad.StateHash ?? string.Empty;
+            if (refreshHash && hashProvider != null)
             {
                 try { hash = hashProvider() ?? string.Empty; }
                 catch { hash = string.Empty; }
             }
             int port;
+            ActiveMatchIdentity activeMatch;
+            long activityRevision;
             lock (_stateLock)
             {
                 if (!_running || !ReferenceEquals(ad, _currentAd)) return;
+                if (refreshHash) ad.StateHash = hash;
                 port = _firstPort;
+                activeMatch = _activeMatch;
+                activityRevision = _activityRevision;
             }
             if (port <= 0) return;
 
@@ -207,7 +229,8 @@ namespace Wrestling.Providers.Network
                         Proto = ad.Proto, InstanceId = ad.InstanceId, TournamentId = ad.TournamentId,
                         TournamentTitle = ad.TournamentTitle, NodeName = ad.NodeName, ComputerName = ad.ComputerName,
                         HttpUrl = HttpUrlForAddress(ad.HttpUrl, address.Address), AppVersion = ad.AppVersion,
-                        StateHash = hash, SentAt = _clock()
+                        StateHash = hash, SentAt = _clock(),
+                        ActiveMatch = activeMatch, ActivityRevision = activityRevision
                     };
                     var bytes = packet.ToBytes();
                     using var sender = new UdpClient(new IPEndPoint(address.Address, 0));

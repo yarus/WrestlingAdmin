@@ -133,7 +133,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             {
                 if (_openMatchCommand == null)
                 {
-                    _openMatchCommand = new RelayCommand(param => OpenMatch(param as WrestlingMatch), param => param != null);
+                    _openMatchCommand = new AsyncRelayCommand(param => OpenMatchAsync(param as WrestlingMatch), param => param != null);
                 }
                 return _openMatchCommand;
             }
@@ -320,7 +320,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             NavigateToView<Conducting.ConductingViewModel>();
         }
 
-        private void OpenMatch(WrestlingMatch match)
+        internal async System.Threading.Tasks.Task OpenMatchAsync(WrestlingMatch match)
         {
             if (match == null) return;
 
@@ -337,6 +337,11 @@ namespace Wrestling.UI.Material.Tournament.Progress.Brackets
             }
             else if (match.IsMatchCanStart)
             {
+                var tournament = DataContext.Tournament;
+                if (!await ConfirmMatchOpeningAsync(match)) return;
+                if (!ReferenceEquals(tournament, DataContext.Tournament) || !match.IsMatchCanStart
+                    || !tournament.Groups.Any(g => g.ID == match.GroupID && g.Bracket != null
+                        && g.Bracket.Rounds.SelectMany(r => r.RoundMatches).Contains(match))) return;
                 DataContext.Group = DataContext.Tournament.Groups.FirstOrDefault(g => g.ID == match.GroupID);
                 DataContext.WrestlingMatch = match;
                 NavigateToView<MatchControlViewModel>();

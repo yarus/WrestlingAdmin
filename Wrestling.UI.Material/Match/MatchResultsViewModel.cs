@@ -717,6 +717,8 @@ namespace Wrestling.UI.Material.Match
 
             CompleteMatch(processor);
 
+            MatchActivity?.Release();
+
             // ResultsService and autosave both need a Tournament — gate them
             // on that. Always return the operator to their previous screen
             // (mat/schedule/etc) via NavigateToMatches; there is no

@@ -1,4 +1,11 @@
 {
+  "MatchActivity_ToolTip": "The match is open on mat “{0}”.",
+  "MatchActivity_ConfirmTitle": "Match already open",
+  "MatchActivity_ConfirmBody": "The match is already open on mat “{0}”. Open it on this computer?",
+  "MatchActivity_Open": "Open",
+  "MatchActivity_Cancel": "Cancel",
+  "MatchActivity_ConnectionLost": "Connection lost — the match may still be in progress.",
+  "MatchActivity_Concurrent": "This match is also open on mat “{0}”.",
   "Schedule_RecentBout_Tooltip": "{0}: previous bout ended {1} min ago.",
   "_meta": {
     "code": "en",

@@ -1,5 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Windows.Input;
+using System;
+using System.Threading.Tasks;
+using Wrestling.UI.Material.Match;
 using MvvmDialogs;
 using Wrestling.Entities;
 using Wrestling.UI.Utils;
@@ -51,6 +54,16 @@ namespace Wrestling.UI.Material.Model
 
         protected IDialogService Dialog => _dialogService;
 
+        public MatchActivityService MatchActivity { get; private set; }
+
+        internal Func<MatchActivityStatus, Task<bool>> ConfirmMatchActivity { get; set; } = MatchActivityDialog.ConfirmAsync;
+
+        protected Task<bool> ConfirmMatchOpeningAsync(WrestlingMatch match)
+        {
+            var status = MatchActivity?.GetStatus(match);
+            return status?.IsOccupied == true ? ConfirmMatchActivity(status) : Task.FromResult(true);
+        }
+
         protected ViewModelBase(IDiContainer container)
         {
             _container = container;
@@ -64,6 +77,7 @@ namespace Wrestling.UI.Material.Model
             _dataContext = Resolve<IDataContext>();
             _navService = Resolve<INavigationService>();
             _settings = Resolve<GlobalSettings>();
+            MatchActivity = Resolve<MatchActivityService>();
         }
         
         public virtual void OnNavigationCompleted()
