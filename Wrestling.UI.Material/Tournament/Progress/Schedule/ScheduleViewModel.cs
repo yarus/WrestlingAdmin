@@ -376,7 +376,7 @@ namespace Wrestling.UI.Material.Tournament.Progress.Schedule
             var upcoming = mat?.Groups.Where(g => g.Bracket != null
                     && (!mat.ActivePartID.HasValue || g.PartID == mat.ActivePartID))
                 .SelectMany(g => g.Bracket.Rounds).SelectMany(r => r.RoundMatches)
-                .Where(m => m.IsMatchCanStart).OrderBy(m => m.MatchNumber).Take(5).ToHashSet()
+                .Where(m => m.IsMatchCanStart).OrderBy(m => m.MatchNumber).Take(10).ToHashSet()
                 ?? new HashSet<WrestlingMatch>();
             var athleteIds = upcoming.SelectMany(m => new[] { m.WrestlerInRed.ID, m.WrestlerInBlue.ID });
             var history = Tournament?.Groups.Where(g => g.Bracket != null)

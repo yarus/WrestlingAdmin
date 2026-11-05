@@ -174,6 +174,8 @@ namespace Wrestling.UI.Material
             app.Show();
 
             navService.NavigateToView<HomeViewModel>();
+            if (e.Args.Length > 0)
+                navService.GetViewModel<HomeViewModel>().OpenFromFile(e.Args[0]);
         }
 
         private static IList<INavigationItem> BuildNavigationItems(INavigationService navService)

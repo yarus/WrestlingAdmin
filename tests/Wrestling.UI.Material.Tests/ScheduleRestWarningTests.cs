@@ -13,7 +13,7 @@ namespace Wrestling.UI.Material.Tests;
 
 public class ScheduleRestWarningTests
 {
-    private static (ScheduleViewModel Vm, IDataContext Context, ResultsService Results) CreateSchedule()
+    private static (ScheduleViewModel Vm, IDataContext Context, ResultsService Results) CreateSchedule(int matchCount = 6)
     {
         var di = TestContainerBuilder.MakeDefault();
         var results = new ResultsService(null, null, null);
@@ -30,7 +30,7 @@ public class ScheduleRestWarningTests
             tournament.Groups.Add(group);
             mat.Groups.Add(group);
             tournament.Mats.Add(mat);
-            for (int n = 1; n <= 6; n++)
+            for (int n = 1; n <= matchCount; n++)
                 round.RoundMatches.Add(new WrestlingMatch
                 {
                     GroupID = group.ID, MatchNumber = n,
@@ -93,14 +93,14 @@ public class ScheduleRestWarningTests
     }
 
     [Fact]
-    public void Ready_queue_changes_promote_sixth_match_into_warning_window()
+    public void Ready_queue_changes_promote_eleventh_match_into_warning_window()
     {
-        var (vm, context, _) = CreateSchedule();
+        var (vm, context, _) = CreateSchedule(11);
         var matches = vm.SelectedMat.Matches;
-        var sixth = matches[5];
+        var eleventh = matches[10];
         var history = new WrestlingMatch
         {
-            WrestlerInRed = sixth.WrestlerInRed, Status = MatchStatusEnum.Completed,
+            WrestlerInRed = eleventh.WrestlerInRed, Status = MatchStatusEnum.Completed,
             WinType = MatchWinTypeEnum.PointsWin,
             MatchActions = new() { new MatchAction { Type = MatchActionType.MatchCompleted, DateTime = DateTime.Now.AddMinutes(-2) } }
         };
@@ -109,7 +109,7 @@ public class ScheduleRestWarningTests
         vm.ScheduleRows.Last().HasRestWarning.Should().BeFalse();
 
         matches[0].Status = MatchStatusEnum.Completed;
-        vm.ScheduleRows.Last().Match.Should().BeSameAs(sixth);
+        vm.ScheduleRows.Last().Match.Should().BeSameAs(eleventh);
         vm.ScheduleRows.Last().RestWarningLevel.Should().Be(2);
         vm.NotifyNavigatingOut();
     }
@@ -149,7 +149,7 @@ public class ScheduleRestWarningTests
     }
 
     [Fact]
-    public void Warning_is_limited_to_canonical_first_five_and_survives_filtering_and_reentry()
+    public void Warning_is_limited_to_canonical_first_ten_and_survives_filtering_and_reentry()
     {
         var di = TestContainerBuilder.MakeDefault();
         var results = new ResultsService(null, null, null);
@@ -164,7 +164,7 @@ public class ScheduleRestWarningTests
         var athlete = new Wrestler { ID = Guid.NewGuid(), LastName = "Recent" };
         var round = new GroupRound();
         group.Bracket.Rounds.Add(round);
-        for (int i = 1; i <= 6; i++)
+        for (int i = 1; i <= 11; i++)
             round.RoundMatches.Add(new WrestlingMatch
             {
                 GroupID = group.ID, MatchNumber = i, WrestlerInRed = athlete,
@@ -180,14 +180,14 @@ public class ScheduleRestWarningTests
         round.RoundMatches.Add(completed);
         var vm = new ScheduleViewModel(di);
         vm.InitData();
-        vm.ScheduleRows.Should().HaveCount(6);
-        vm.ScheduleRows.Take(5).Should().OnlyContain(r => r.RestWarningLevel == 2);
+        vm.ScheduleRows.Should().HaveCount(11);
+        vm.ScheduleRows.Take(10).Should().OnlyContain(r => r.RestWarningLevel == 2);
         vm.ScheduleRows.Last().HasRestWarning.Should().BeFalse();
         vm.OpenMatchCommand.CanExecute(vm.ScheduleRows[0]).Should().BeTrue();
 
-        vm.FilterString = "Opponent6";
+        vm.FilterString = "Opponent11";
         vm.ScheduleRows.Should().ContainSingle().Which.HasRestWarning.Should().BeFalse();
-        vm.FilterString = "Opponent1";
+        vm.FilterString = "Opponent10";
         vm.ScheduleRows.Should().ContainSingle().Which.HasRestWarning.Should().BeTrue();
 
         completed.Status = MatchStatusEnum.Pending;
