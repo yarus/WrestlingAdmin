@@ -28,6 +28,37 @@ namespace Wrestling.UI.Material.Tests;
 public sealed class PersonalResultsViewModelTests
 {
     [Fact]
+    public void Expansion_survives_filters_background_results_and_hidden_categories()
+    {
+        var results = MakeResults(2010, 2010, 60, places: new int?[] { 1, 2, 3, 4 });
+        var hidden = MakeResults(2010, 2010, 70, places: new int?[] { null });
+        var (di, _) = BuildContainer(results.Concat(hidden).ToList());
+        var vm = new PersonalResultsViewModel(di);
+        vm.InitData();
+        vm.Items[0].IsExpanded = true;
+        vm.Items[1].IsExpanded = true;
+
+        vm.IsOnlyMedalsVisible = true;
+        vm.Items.Single().IsExpanded.Should().BeTrue();
+        vm.Items.Single().IsExpanded = false;
+        ((ConfigurableResultsService)di.Resolve<IResultsService>()).Replace(results.Concat(hidden).ToList());
+        vm.Items.Single().IsExpanded.Should().BeFalse("background updates preserve manual collapse too");
+        vm.IsOnlyMedalsVisible = false;
+        vm.Items[0].IsExpanded.Should().BeFalse();
+        vm.Items[1].IsExpanded.Should().BeTrue("a hidden category retains its state");
+
+        vm.FilterString = "missing";
+        vm.Items.Should().BeEmpty();
+        vm.FilterString = "";
+        vm.Items[1].IsExpanded.Should().BeTrue();
+
+        // Even reused category IDs must not carry UI state to another tournament.
+        di.Resolve<IDataContext>().Tournament = BuildTournamentFromResults(results.Concat(hidden).ToList());
+        vm.InitData();
+        vm.Items.Should().OnlyContain(row => !row.IsExpanded);
+    }
+
+    [Fact]
     public void Medalists_filter_hides_unfinished_group_even_when_bronze_is_already_known()
     {
         var results = MakeResults(2010, 2010, 60, places: new int?[] { 1, 2, 3, 3 });
@@ -76,7 +107,9 @@ public sealed class PersonalResultsViewModelTests
         vm.IsOnlyMedalsVisible = true;
         vm.Items.Single().Wrestlers.Should().HaveCount(3);
         service.TeamResults.Single().BronzeMedals.Should().Be(1);
+        vm.Items.Single().IsExpanded = true;
         vm.IsRoundRobinTwoThirdPlaces = true;
+        vm.Items.Single().IsExpanded.Should().BeTrue();
         tournament.Settings.IsRoundRobinTwoThirdPlaces.Should().BeTrue();
         vm.Items.Single().Wrestlers.Should().HaveCount(4);
         vm.Items.Single().MedalsCount.Should().Be(4);
