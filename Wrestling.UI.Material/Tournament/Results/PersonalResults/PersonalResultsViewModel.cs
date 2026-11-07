@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -23,6 +24,8 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
         private string _filterString;
         private bool _isOnlyMedalsVisible;
         private TournamentPart _selectedPart;
+        private Entities.Tournament _expansionTournament;
+        private readonly Dictionary<Guid, bool> _expansionStates = new();
 
         public PersonalResultsViewModel(IDiContainer container) : base(container)
         {
@@ -175,6 +178,17 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
 
         private void Rebuild()
         {
+            if (!ReferenceEquals(_expansionTournament, Tournament))
+            {
+                _expansionStates.Clear();
+                _expansionTournament = Tournament;
+            }
+            else if (Items != null)
+            {
+                foreach (var row in Items)
+                    _expansionStates[row.Category.ID] = row.IsExpanded;
+            }
+
             if (_resultsService == null || Tournament == null)
             {
                 Items = new List<WeightCategoryResultsViewModel>();
@@ -217,11 +231,28 @@ namespace Wrestling.UI.Material.Tournament.Results.PersonalResults
             }
 
             Items = rows;
+            foreach (var row in rows)
+                row.IsExpanded = _expansionStates.TryGetValue(row.Category.ID, out var expanded)
+                    ? expanded
+                    : ShouldAutoExpand;
         }
     }
 
-    public class WeightCategoryResultsViewModel
+    public class WeightCategoryResultsViewModel : ObservableObject
     {
+        private bool _isExpanded;
+
+        public bool IsExpanded
+        {
+            get => _isExpanded;
+            set
+            {
+                if (_isExpanded == value) return;
+                _isExpanded = value;
+                OnPropertyChanged(nameof(IsExpanded));
+            }
+        }
+
         public WeightCategoryResultsViewModel(AgeWeightGroup category, IList<TournamentResult> allResults, IList<TournamentResult> visibleWrestlers)
         {
             Category = category;

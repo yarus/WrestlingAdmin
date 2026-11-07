@@ -91,7 +91,7 @@
                 <DataTemplate>
                     <Expander Background="{DynamicResource MaterialDesignToolBarBackground}" Margin="0" Padding="0" x:Name="Expander"
                               HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                              IsExpanded="{Binding Path=DataContext.ShouldAutoExpand, ElementName=RootControl, Mode=OneWay}">
+                              IsExpanded="{Binding IsExpanded, Mode=TwoWay}">
                         <Expander.Header>
                             <Grid Margin="0">
                                 <Grid.ColumnDefinitions>
