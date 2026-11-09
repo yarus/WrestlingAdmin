@@ -9,6 +9,7 @@
              xmlns:imageSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.ImageSlide"
              xmlns:videoSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.VideoSlide"
              xmlns:upcomingMatchesSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide"
+             xmlns:tournamentUpcoming="clr-namespace:Wrestling.UI.Material.Slider.Slides.TournamentUpcomingMatchesSlide"
              xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              md:DialogServiceViews.IsRegistered="True"
              mc:Ignorable="d"
@@ -19,6 +20,9 @@
 
     <model:PanelViewBase.Resources>
         <ResourceDictionary>
+            <DataTemplate DataType="{x:Type tournamentUpcoming:TournamentUpcomingMatchesViewModel}">
+                <tournamentUpcoming:TournamentUpcomingMatchesView />
+            </DataTemplate>
 
             <DataTemplate DataType="{x:Type groupBracketSlide1:GroupBracketViewModel}">
                 <groupBracketSlide1:GroupBracketView />

@@ -1,0 +1,31 @@
+<UserControl x:Class="Wrestling.UI.Material.Slider.Slides.TournamentUpcomingMatchesSlide.TournamentUpcomingMatchesSettings"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:md="https://github.com/fantasticfiasco/mvvm-dialogs"
+ xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+ xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
+ md:DialogServiceViews.IsRegistered="True">
+ <StackPanel>
+  <DockPanel Margin="0,4,0,8">
+   <Button DockPanel.Dock="Right" Content="{loc:Loc Slide_TournamentUpcoming_AllMats}" Command="{Binding SelectAllCommand}" Style="{StaticResource MaterialDesignFlatButton}"/>
+   <TextBlock Text="{loc:Loc Slide_TournamentUpcoming_SelectMats}" VerticalAlignment="Center" FontSize="18"/>
+  </DockPanel>
+  <ScrollViewer MaxHeight="160" VerticalScrollBarVisibility="Auto">
+   <ItemsControl ItemsSource="{Binding Mats}">
+    <ItemsControl.ItemTemplate>
+     <DataTemplate><CheckBox Content="{Binding Mat.Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}" Margin="4,6" FontSize="18"/></DataTemplate>
+    </ItemsControl.ItemTemplate>
+   </ItemsControl>
+  </ScrollViewer>
+  <TextBox Margin="0,12,0,8" FontSize="18" Style="{DynamicResource MaterialDesignFloatingHintTextBox}"
+   materialDesign:HintAssist.Hint="{loc:Loc Slide_TournamentUpcoming_MatchCount}"
+   Text="{Binding ShowMatchesCount, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"/>
+  <DockPanel Margin="0,8">
+   <Button DockPanel.Dock="Right" Content="…" Command="{Binding SetSliderBackgroundCommand}" Width="36" Margin="8,0,0,0" Padding="0"/>
+   <TextBox FontSize="18" Style="{DynamicResource MaterialDesignFloatingHintTextBox}"
+    materialDesign:HintAssist.Hint="{loc:Loc Settings_Slider_BackgroundHint}" Text="{Binding SliderBackgroundImagePath, UpdateSourceTrigger=PropertyChanged}"/>
+  </DockPanel>
+  <TextBlock Text="{loc:Loc Settings_Slider_OpacityLabel}" Margin="0,8"/>
+  <Slider Value="{Binding SliderOpacityValue}" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"/>
+ </StackPanel>
+</UserControl>

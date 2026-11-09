@@ -271,7 +271,12 @@ namespace Wrestling.Providers
             {
                 Title = info.Title,
                 Duration = info.Duration,
-                SlideType = info.SlideType,
+                SlideType = info.SlideType switch
+                {
+                    "Ближайшие схватки турнира — таблица" or "Ближайшие схватки турнира — карточки" => "Ближайшие схватки турнира",
+                    "Tournament upcoming matches — table" or "Tournament upcoming matches — cards" => "Tournament upcoming matches",
+                    _ => info.SlideType
+                },
                 NamedValues = info.NamedValues
             };
 

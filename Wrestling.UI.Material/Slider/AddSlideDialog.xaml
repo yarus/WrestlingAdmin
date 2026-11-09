@@ -11,11 +11,15 @@
              xmlns:imageSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.ImageSlide"
              xmlns:videoSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.VideoSlide"
              xmlns:upcomingMatchesSlide="clr-namespace:Wrestling.UI.Material.Slider.Slides.UpcomingMatchesSlide"
+             xmlns:tournamentUpcoming="clr-namespace:Wrestling.UI.Material.Slider.Slides.TournamentUpcomingMatchesSlide"
              xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
              mc:Ignorable="d" MinWidth="460" MaxWidth="680"
              d:DesignHeight="200" d:DesignWidth="300">
 
     <UserControl.Resources>
+        <DataTemplate DataType="{x:Type tournamentUpcoming:TournamentUpcomingMatchesSettingsViewModel}">
+            <tournamentUpcoming:TournamentUpcomingMatchesSettings />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type groupBracketSlide1:GroupBracketSlideSettingsViewModel}">
             <groupBracketSlide1:GroupBracketSlideSettings />
         </DataTemplate>

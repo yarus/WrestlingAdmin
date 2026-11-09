@@ -497,6 +497,7 @@ INNER EXCEPTION: {ex.InnerException?.ToString() ?? "None"}
                 new GroupBracketSlide(di),
                 new MatBracketsSlide(di),
                 new UpcomingMatchesSlide(di),
+                new Slider.Slides.TournamentUpcomingMatchesSlide.TournamentUpcomingMatchesSlide(di),
                 new ImageSlide(di),
                 new VideoSlide(di)
             });
