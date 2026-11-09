@@ -12,6 +12,34 @@ public class AdapterEdgeCasesTests
 {
     private readonly EntityToInfoAdapter _adapter = new();
 
+    [Theory]
+    [InlineData("Ближайшие схватки турнира — таблица", "Ближайшие схватки турнира")]
+    [InlineData("Ближайшие схватки турнира — карточки", "Ближайшие схватки турнира")]
+    [InlineData("Tournament upcoming matches — table", "Tournament upcoming matches")]
+    [InlineData("Tournament upcoming matches — cards", "Tournament upcoming matches")]
+    public void Previous_upcoming_slide_names_migrate_and_keep_their_settings(string oldType, string newType)
+    {
+        var settings = new Dictionary<string, object> { ["MatIDs"] = Guid.NewGuid().ToString(), ["ShowMatchesCount"] = 6 };
+        var info = new TournamentInfo
+        {
+            ID = Guid.NewGuid(), Name = "N", Settings = new GlobalSettingsInfo(),
+            SlideChannels = new List<SlideChannelInfo>
+            {
+                new SlideChannelInfo { Name = "Main", Slides = new List<ScreenSlideInfo>
+                {
+                    new ScreenSlideInfo { Title = "Schedule", Duration = 20, SlideType = oldType, NamedValues = settings }
+                }}
+            }
+        };
+
+        var slide = _adapter.GetEntityFromInfo(info).SlideChannels[0].Slides[0];
+
+        slide.SlideType.Should().Be(newType);
+        slide.Title.Should().Be("Schedule");
+        slide.Duration.Should().Be(20);
+        slide.NamedValues.Should().BeEquivalentTo(settings);
+    }
+
     [Fact]
     public void GetEntityFromInfo_returns_null_for_null_input()
     {

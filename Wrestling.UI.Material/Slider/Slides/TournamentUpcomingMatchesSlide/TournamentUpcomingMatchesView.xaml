@@ -1,0 +1,110 @@
+<UserControl x:Class="Wrestling.UI.Material.Slider.Slides.TournamentUpcomingMatchesSlide.TournamentUpcomingMatchesView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:converters="clr-namespace:Wrestling.UI.Material.Utils.Converters"
+ xmlns:utils="clr-namespace:Wrestling.UI.Utils.Converters;assembly=Wrestling.UI.Utils"
+ xmlns:loc="clr-namespace:Wrestling.UI.Utils.Localization;assembly=Wrestling.UI.Utils"
+ Foreground="White" FontFamily="Segoe UI">
+ <UserControl.Resources>
+  <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+  <converters:PathToImageConverter x:Key="PathToImage"/>
+  <utils:UpperCaseConverter x:Key="UpperCase"/>
+  <Style x:Key="MatchText" TargetType="TextBlock">
+   <Setter Property="FontSize" Value="28"/>
+   <Setter Property="VerticalAlignment" Value="Center"/>
+   <Setter Property="TextWrapping" Value="NoWrap"/>
+  </Style>
+  <DataTemplate x:Key="CardMatch">
+   <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Top"
+    Width="{Binding DataContext.CardWidth, RelativeSource={RelativeSource AncestorType=UserControl}}"
+    Height="{Binding DataContext.CardHeight, RelativeSource={RelativeSource AncestorType=UserControl}}">
+   <Grid Width="720" Height="150">
+   <Border BorderBrush="#526D93" BorderThickness="1" Background="#F2192A43" CornerRadius="10" Padding="12,6" Margin="0,0,0,12">
+    <Grid Width="694">
+     <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="*"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+     <Grid Grid.Row="0" Margin="0,0,0,3">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <Border Background="#30496C" CornerRadius="5" Padding="8,0" Margin="0,0,12,0">
+       <TextBlock Style="{StaticResource MatchText}" Text="{Binding MatchNumber, StringFormat=№{0}}" FontWeight="Bold"
+        HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
+      </Border>
+      <Viewbox Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="0,0,12,0">
+       <TextBlock Style="{StaticResource MatchText}" Text="{Binding GroupName}" Foreground="#D9E4F4"/>
+      </Viewbox>
+      <TextBlock Grid.Column="2" Style="{StaticResource MatchText}" Text="{loc:LocRound RoundName}" Foreground="#D9E4F4"/>
+     </Grid>
+     <Grid Grid.Row="1" Margin="0,2">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="14"/><ColumnDefinition Width="1.4*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <Border Background="#F34751"/>
+      <Viewbox Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="10,0,12,0">
+       <TextBlock Style="{StaticResource MatchText}" Text="{Binding WrestlerInRed.LastFirstName, Converter={StaticResource UpperCase}}" FontWeight="SemiBold"/>
+      </Viewbox>
+      <Viewbox Grid.Column="2" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="0,0,8,0">
+       <TextBlock Style="{StaticResource MatchText}" Text="{Binding WrestlerInRed.TeamName}" Foreground="#D9E4F4"
+        FontSize="25.2"/>
+      </Viewbox>
+     </Grid>
+     <Grid Grid.Row="2" Margin="0,2">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="14"/><ColumnDefinition Width="1.4*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <Border Background="#3287FF"/>
+      <Viewbox Grid.Column="1" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="10,0,12,0">
+       <TextBlock Style="{StaticResource MatchText}" Text="{Binding WrestlerInBlue.LastFirstName, Converter={StaticResource UpperCase}}" FontWeight="SemiBold"/>
+      </Viewbox>
+      <Viewbox Grid.Column="2" Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="0,0,8,0">
+       <TextBlock Style="{StaticResource MatchText}" Text="{Binding WrestlerInBlue.TeamName}" Foreground="#D9E4F4"
+        FontSize="25.2"/>
+      </Viewbox>
+     </Grid>
+    </Grid>
+   </Border>
+   </Grid></Viewbox>
+  </DataTemplate>
+ </UserControl.Resources>
+ <Grid Background="#0C1728">
+  <Viewbox Stretch="Uniform">
+   <Grid Width="1920" Height="1080">
+    <Grid.Background>
+     <ImageBrush ImageSource="{Binding SliderBackgroundImagePath, Converter={StaticResource PathToImage}, ConverterParameter=SliderLogo.jpg}"
+      Opacity="{Binding SliderOpacity}" Stretch="Uniform"/>
+    </Grid.Background>
+    <Grid Margin="30,20,30,24">
+     <Grid.RowDefinitions><RowDefinition Height="80"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+     <TextBlock Text="{Binding Header}" FontSize="40" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+     <ItemsControl Grid.Row="1" ItemsSource="{Binding Columns}">
+      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+       <DataTemplate>
+        <Grid Margin="10,0" Width="{Binding DataContext.MatColumnWidth, RelativeSource={RelativeSource AncestorType=UserControl}}" ClipToBounds="True">
+         <Grid.RowDefinitions><RowDefinition Height="72"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+         <Border BorderBrush="#526D93" BorderThickness="0,0,0,2" Margin="0,0,0,16" HorizontalAlignment="Center"
+          Width="{Binding DataContext.CardWidth, RelativeSource={RelativeSource AncestorType=UserControl}}">
+          <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="8,0,8,12">
+           <TextBlock Text="{Binding Mat.Name}" FontSize="36" FontWeight="Bold"/>
+          </Viewbox>
+         </Border>
+         <TextBlock Grid.Row="1" Text="{loc:Loc Slide_TournamentUpcoming_Empty}" Foreground="#BECEE5" FontSize="26"
+          HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10,32"
+          Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}"/>
+         <ItemsControl Grid.Row="1" ItemsSource="{Binding Matches}" HorizontalAlignment="Center" VerticalAlignment="Top"
+          Width="{Binding DataContext.CardWidth, RelativeSource={RelativeSource AncestorType=UserControl}}"
+          Height="{Binding DataContext.QueueHeight, RelativeSource={RelativeSource AncestorType=UserControl}}">
+          <ItemsControl.ItemsPanel>
+           <ItemsPanelTemplate><UniformGrid Columns="1" Rows="{Binding DataContext.ShowMatchesCount, RelativeSource={RelativeSource AncestorType=UserControl}}"/></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+           <DataTemplate>
+            <ContentControl Content="{Binding}" ContentTemplate="{StaticResource CardMatch}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+           </DataTemplate>
+          </ItemsControl.ItemTemplate>
+         </ItemsControl>
+        </Grid>
+       </DataTemplate>
+      </ItemsControl.ItemTemplate>
+     </ItemsControl>
+     <TextBlock Grid.Row="1" Text="{loc:Loc Slide_TournamentUpcoming_NoMats}" FontSize="32" HorizontalAlignment="Center"
+      Visibility="{Binding HasNoColumns, Converter={StaticResource BoolToVis}}"/>
+    </Grid>
+   </Grid>
+  </Viewbox>
+ </Grid>
+</UserControl>
